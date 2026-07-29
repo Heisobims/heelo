@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block subject %}Update: {{ event.title }} — details have changed{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:900;color:#000000;line-height:1.2;">
+  Event Update
+</h1>
+<p style="margin:0 0 28px;font-family:system-ui,-apple-system,sans-serif;font-size:16px;color:#555555;line-height:1.5;">
+  Hi {{ attendee_name }}, the details for <strong style="color:#000;">{{ event.title }}</strong> have been updated. Here's what changed:
+</p>
+
+<!-- Changes list -->
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background:#f7f7f7;border-radius:10px;margin-bottom:28px;">
+  <tr>
+    <td style="padding:20px 24px;">
+      {% for change in changes %}
+      <p style="margin:0 0 8px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#333333;line-height:1.5;">
+        <strong>{{ change.field }}:</strong>
+        <span style="color:#777;">{{ change.old }}</span>
+        &rarr;
+        <span style="color:#000;font-weight:600;">{{ change.new }}</span>
+      </p>
+      {% endfor %}
+    </td>
+  </tr>
+</table>
+
+<!-- Updated event details -->
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border:2px solid #000;border-radius:12px;margin-bottom:28px;overflow:hidden;">
+  <tr>
+    <td style="background:#000;padding:16px 24px;">
+      <p style="margin:0;font-family:Georgia,serif;font-size:18px;font-weight:900;color:#fff;">Updated Details</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:20px 24px;">
+      {% if event.start_datetime %}
+      <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
+        📅&nbsp; <strong>{{ event.start_datetime.strftime('%A, %B %d, %Y at %-I:%M %p') }}</strong>
+      </p>
+      {% endif %}
+      {% if event.venue_name %}
+      <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
+        📍&nbsp; <strong>{{ event.venue_name }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}</strong>
+      </p>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+
+<!-- CTA -->
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="background:#00FFF3;border-radius:8px;">
+      <a href="{{ frontend_url }}/e/{{ event.slug }}" style="display:inline-block;padding:13px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;color:#000000;text-decoration:none;">
+        View Event
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:24px 0 0;font-family:system-ui,-apple-system,sans-serif;font-size:12px;color:#aaaaaa;line-height:1.5;">
+  Your ticket is still valid. No action required unless you have questions — reach out to the event organiser directly.
+</p>
+{% endblock %}

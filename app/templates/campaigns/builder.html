@@ -1,0 +1,512 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}{% if campaign %}Edit{% else %}New{% endif %} Campaign · {{ org.name }} — Heelo{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .cb-wrap { max-width: 780px; margin: 0 auto; padding: 1.5rem; }
+  .cb-header { margin-bottom: 2rem; }
+  .cb-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem; }
+  .cb-sub { font-size: 0.875rem; color: var(--text-secondary); }
+
+  /* ── Step progress ─────────────────────────────────────────────────────── */
+  .steps { display: flex; gap: 0; margin-bottom: 2rem; }
+  .step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+  .step:not(:last-child)::after { content: ''; position: absolute; top: 15px; left: 50%; right: -50%; height: 2px; background: var(--border); z-index: 0; }
+  .step-circle { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; z-index: 1; transition: all 200ms; }
+  .step.active .step-circle { border-color: var(--cyan); background: var(--cyan); color: #000; }
+  .step.done .step-circle { border-color: #22c55e; background: #22c55e; color: #fff; }
+  .step-label { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.375rem; font-weight: 500; }
+  .step.active .step-label { color: var(--text); font-weight: 600; }
+
+  /* ── Cards ─────────────────────────────────────────────────────────────── */
+  .cb-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
+  .cb-card-title { font-weight: 700; font-size: 1rem; margin: 0 0 0.25rem; }
+  .cb-card-sub { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 1.25rem; }
+
+  /* ── Channel cards ─────────────────────────────────────────────────────── */
+  .channel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+  @media(max-width:600px) { .channel-grid { grid-template-columns: 1fr; } }
+  .channel-card { border: 2px solid var(--border); border-radius: 12px; padding: 1.125rem; cursor: pointer; transition: all 150ms; text-align: center; }
+  .channel-card:hover { border-color: var(--text-secondary); }
+  .channel-card.selected { border-color: var(--cyan); background: rgba(0,255,243,0.04); }
+  .channel-icon { width: 44px; height: 44px; border-radius: 12px; margin: 0 auto 0.625rem; display: flex; align-items: center; justify-content: center; }
+  .channel-icon.email { background: rgba(0,255,243,0.1); color: var(--cyan-dark,#00b3a9); }
+  .channel-icon.whatsapp { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .channel-icon.sms { background: rgba(168,85,247,0.1); color: #9333ea; }
+  .channel-name { font-weight: 700; font-size: 0.9375rem; }
+  .channel-desc { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+  /* ── Form fields ───────────────────────────────────────────────────────── */
+  .field { margin-bottom: 1.125rem; }
+  .field label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; }
+  .field input, .field select, .field textarea { width: 100%; padding: 0.625rem 0.875rem; border: 1.5px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font-size: 0.9rem; font-family: inherit; outline: none; transition: border-color 150ms; box-sizing: border-box; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--cyan); }
+  .field textarea { resize: vertical; min-height: 160px; line-height: 1.6; }
+  .field-hint { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.375rem; }
+
+  /* ── AI button ─────────────────────────────────────────────────────────── */
+  .ai-gen-btn { display:inline-flex;align-items:center;gap:0.375rem;padding:0.3125rem 0.75rem;border-radius:7px;font-size:0.78rem;font-weight:600;cursor:pointer;border:1.5px solid var(--cyan);background:rgba(0,255,243,0.06);color:var(--cyan-dark,#00b3a9);transition:opacity 150ms;white-space:nowrap; }
+  .ai-gen-btn:hover { opacity:0.8; }
+  .ai-gen-btn:disabled { opacity:0.4;cursor:not-allowed; }
+  .ai-spinner { display:inline-block;width:10px;height:10px;border:1.5px solid var(--cyan-dark,#00b3a9);border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite; }
+
+  /* ── Goal selector ──────────────────────────────────────────────────────── */
+  .goal-select { padding:0.375rem 0.625rem;border:1.5px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text);font-size:0.8rem;outline:none; }
+  .goal-select:focus { border-color:var(--cyan); }
+
+  /* ── Status checkboxes ─────────────────────────────────────────────────── */
+  .check-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .check-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.875rem; border: 1.5px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 150ms; font-size: 0.875rem; }
+  .check-item:has(input:checked) { border-color: var(--cyan); background: rgba(0,255,243,0.04); }
+
+  /* ── Audience count pill ───────────────────────────────────────────────── */
+  .audience-pill { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 100px; background: rgba(0,255,243,0.08); border: 1px solid rgba(0,255,243,0.3); font-size: 0.875rem; font-weight: 600; color: var(--cyan-dark,#00b3a9); margin-top: 1rem; }
+
+  /* ── Variable hints ────────────────────────────────────────────────────── */
+  .var-hints { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  .var-chip { padding: 0.2rem 0.6rem; border-radius: 6px; background: var(--surface-alt,#f5f5f5); border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: background 150ms; }
+  .var-chip:hover { background: rgba(0,255,243,0.1); }
+
+  /* ── Footer buttons ────────────────────────────────────────────────────── */
+  .cb-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; }
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5625rem 1.25rem; border-radius: 9px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: opacity 150ms; }
+  .btn-primary { background: var(--cyan); color: #000; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--text-secondary); }
+  .btn-ghost { background: transparent; color: var(--text-secondary); font-size: 0.875rem; border: none; padding: 0.5rem; cursor: pointer; }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-danger { background: rgba(220,38,38,0.1); color: #dc2626; border: 1.5px solid rgba(220,38,38,0.3); }
+
+  /* ── Review summary ────────────────────────────────────────────────────── */
+  .review-row { display: flex; gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  .review-row:last-child { border-bottom: none; }
+  .review-label { color: var(--text-secondary); width: 120px; flex-shrink: 0; font-weight: 500; }
+  .review-val { flex: 1; }
+  .preview-body { background: var(--surface-alt,#f8f8f8); border: 1px solid var(--border); border-radius: 8px; padding: 0.875rem; font-size: 0.875rem; line-height: 1.6; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; font-family: 'JetBrains Mono', monospace; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="cb-wrap"
+  x-data="campaignBuilder()"
+  x-init="init()"
+>
+
+  <div class="cb-header">
+    <div style="font-size:0.8125rem;color:var(--text-secondary);margin-bottom:0.5rem;">
+      <a href="/org/{{ org.slug }}/campaigns" style="color:var(--text-secondary);text-decoration:none;">Campaigns</a>
+      <span style="opacity:0.4;margin:0 0.375rem;">›</span>
+      <span>{% if campaign %}Edit{% else %}New{% endif %} Campaign</span>
+    </div>
+    <h1 class="cb-title">{% if campaign %}Edit{% else %}New{% endif %} Campaign</h1>
+    <div class="cb-sub">Compose and send a targeted message to your attendees</div>
+  </div>
+
+  <!-- Step progress -->
+  <div class="steps">
+    {% for label in ['Channel', 'Audience', 'Compose', 'Review'] %}
+    <div class="step" :class="{ active: step === {{ loop.index }}, done: step > {{ loop.index }} }">
+      <div class="step-circle">
+        <template x-if="step > {{ loop.index }}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </template>
+        <template x-if="step <= {{ loop.index }}"><span>{{ loop.index }}</span></template>
+      </div>
+      <div class="step-label">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Step 1: Channel ────────────────────────────────────────────────── -->
+  <div x-show="step === 1">
+    <div class="cb-card">
+      <div class="cb-card-title">Choose your channel</div>
+      <div class="cb-card-sub">How will this message be delivered to attendees?</div>
+      <div class="channel-grid">
+        <div class="channel-card" :class="{ selected: form.type === 'email' }" @click="form.type = 'email'">
+          <div class="channel-icon email">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div class="channel-name">Email</div>
+          <div class="channel-desc">Send HTML or plain-text email via Resend</div>
+        </div>
+        <div class="channel-card" :class="{ selected: form.type === 'whatsapp' }" @click="form.type = 'whatsapp'">
+          <div class="channel-icon whatsapp">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          </div>
+          <div class="channel-name">WhatsApp</div>
+          <div class="channel-desc">Send a message via Meta Cloud API</div>
+        </div>
+        <div class="channel-card" :class="{ selected: form.type === 'sms' }" @click="form.type = 'sms'" style="opacity:0.5;cursor:not-allowed;">
+          <div class="channel-icon sms">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="channel-name">SMS</div>
+          <div class="channel-desc">Coming soon — Termii / Twilio</div>
+        </div>
+      </div>
+    </div>
+    <div class="cb-footer">
+      <a href="/org/{{ org.slug }}/campaigns" class="btn-ghost">Cancel</a>
+      <button class="btn btn-primary" @click="step = 2" :disabled="!form.type">Next →</button>
+    </div>
+  </div>
+
+  <!-- ── Step 2: Audience ───────────────────────────────────────────────── -->
+  <div x-show="step === 2" style="display:none;">
+    <div class="cb-card">
+      <div class="cb-card-title">Campaign name</div>
+      <div class="cb-card-sub">Give this campaign a descriptive internal name.</div>
+      <div class="field">
+        <label>Name *</label>
+        <input type="text" x-model="form.name" placeholder="e.g. Pre-event reminder — June meetup" maxlength="255">
+      </div>
+    </div>
+
+    <div class="cb-card">
+      <div class="cb-card-title">Audience</div>
+      <div class="cb-card-sub">Choose which attendees will receive this campaign.</div>
+
+      <div class="field">
+        <label>Event (optional)</label>
+        <select x-model="form.event_id" @change="fetchAudienceCount()">
+          <option value="">— All events in {{ org.name }} —</option>
+          {% for ev in events %}
+          <option value="{{ ev.id }}">{{ ev.title }}{% if ev.status != 'published' and ev.status != 'live' %} ({{ ev.status }}){% endif %}</option>
+          {% endfor %}
+        </select>
+        <div class="field-hint">Leave blank to reach attendees across all your events.</div>
+      </div>
+
+      <div class="field">
+        <label>Registration statuses to include</label>
+        <div class="check-row">
+          <label class="check-item">
+            <input type="checkbox" value="confirmed" x-model="form.audience_statuses" @change="fetchAudienceCount()"> Confirmed
+          </label>
+          <label class="check-item">
+            <input type="checkbox" value="checked_in" x-model="form.audience_statuses" @change="fetchAudienceCount()"> Checked in
+          </label>
+          <label class="check-item">
+            <input type="checkbox" value="pending" x-model="form.audience_statuses" @change="fetchAudienceCount()"> Pending payment
+          </label>
+        </div>
+      </div>
+
+      <div class="audience-pill" x-show="audienceCount !== null">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span x-text="audienceCount + ' recipient' + (audienceCount === 1 ? '' : 's')"></span>
+      </div>
+    </div>
+
+    <div class="cb-footer">
+      <button class="btn btn-outline" @click="step = 1">← Back</button>
+      <button class="btn btn-primary" @click="step = 3" :disabled="!form.name || !form.audience_statuses.length">Next →</button>
+    </div>
+  </div>
+
+  <!-- ── Step 3: Compose ────────────────────────────────────────────────── -->
+  <div x-show="step === 3" style="display:none;">
+    <div class="cb-card">
+      <div class="cb-card-title">Compose your message</div>
+      <div class="cb-card-sub">Use <code>{{name}}</code>, <code>{{event_name}}</code>, <code>{{event_date}}</code>, <code>{{org_name}}</code> as template variables.</div>
+
+      <template x-if="form.type === 'email'">
+        <div class="field">
+          <label>Subject *</label>
+          <input type="text" x-model="form.subject" placeholder="e.g. You're in! Here's what's next for {{event_name}}" maxlength="500">
+        </div>
+      </template>
+
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.375rem;flex-wrap:wrap;gap:0.5rem;">
+          <label style="margin:0;" x-text="form.type === 'email' ? 'Body (HTML or plain text)' : 'Message'"></label>
+          <div style="display:flex;align-items:center;gap:0.5rem;">
+            <select class="goal-select" x-model="aiGoal">
+              <option value="reminder">Reminder</option>
+              <option value="announcement">Announcement</option>
+              <option value="last_tickets">Last Tickets</option>
+              <option value="early_bird">Early Bird</option>
+              <option value="thank_you">Thank You</option>
+            </select>
+            <button type="button" class="ai-gen-btn" @click="generateCopy()" :disabled="aiGenerating">
+              <span x-show="!aiGenerating"><span class="material-symbols-outlined">auto_awesome</span> Generate</span>
+              <span x-show="aiGenerating" style="display:none;"><span class="ai-spinner"></span> Writing…</span>
+            </button>
+          </div>
+        </div>
+        <textarea x-model="form.body" id="bodyEditor"
+          :placeholder="form.type === 'email'
+            ? 'Hi {{name}},\n\nWe\'re so excited to have you at {{event_name}} on {{event_date}}!\n\n...'
+            : 'Hi {{name}}! Just a reminder about {{event_name}} on {{event_date}}. See you there!'"
+          :rows="form.type === 'email' ? 12 : 6"></textarea>
+        <div class="field-hint" x-text="form.type !== 'email' ? (form.body || '').length + ' / 1000 characters' : ''"></div>
+        <div class="var-hints">
+          <span style="font-size:0.75rem;color:var(--text-secondary);align-self:center;">Insert:</span>
+          <template x-for="v in ['{{name}}', '{{event_name}}', '{{event_date}}', '{{org_name}}']">
+            <span class="var-chip" @click="insertVar(v)" x-text="v"></span>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <div class="cb-footer">
+      <button class="btn btn-outline" @click="step = 2">← Back</button>
+      <button class="btn btn-primary" @click="step = 4"
+        :disabled="!form.body || (form.type === 'email' && !form.subject)">
+        Next →
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Step 4: Review & send ──────────────────────────────────────────── -->
+  <div x-show="step === 4" style="display:none;">
+    <div class="cb-card">
+      <div class="cb-card-title">Review</div>
+      <div class="cb-card-sub">Confirm everything looks right before sending.</div>
+
+      <div class="review-row">
+        <div class="review-label">Campaign</div>
+        <div class="review-val" x-text="form.name"></div>
+      </div>
+      <div class="review-row">
+        <div class="review-label">Channel</div>
+        <div class="review-val" x-text="form.type.charAt(0).toUpperCase() + form.type.slice(1)"></div>
+      </div>
+      <div class="review-row">
+        <div class="review-label">Recipients</div>
+        <div class="review-val">
+          <span x-text="audienceCount !== null ? audienceCount + ' attendees' : '—'"></span>
+          <span x-show="form.event_id" style="color:var(--text-secondary);font-size:0.8rem;margin-left:0.5rem;" x-text="'(' + (form.event_id ? 'selected event' : 'all events') + ')'"></span>
+        </div>
+      </div>
+      <template x-if="form.type === 'email'">
+        <div class="review-row">
+          <div class="review-label">Subject</div>
+          <div class="review-val" x-text="form.subject"></div>
+        </div>
+      </template>
+      <div class="review-row">
+        <div class="review-label">Message</div>
+        <div class="review-val">
+          <div class="preview-body" x-text="form.body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule option -->
+    <div class="cb-card">
+      <div class="cb-card-title">When to send</div>
+      <div x-data="{ sendMode: 'now' }" style="display:flex;flex-direction:column;gap:0.75rem;">
+        <label class="check-item" style="justify-content:flex-start;">
+          <input type="radio" name="sendMode" value="now" x-model="sendMode"> Send now
+        </label>
+        <label class="check-item" style="justify-content:flex-start;">
+          <input type="radio" name="sendMode" value="later" x-model="sendMode"> Schedule for later
+        </label>
+        <div x-show="sendMode === 'later'" class="field" style="margin-bottom:0;margin-top:0.25rem;">
+          <input type="datetime-local" x-model="scheduledAt" style="max-width:280px;">
+        </div>
+        <div style="margin-top:0.75rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+          <button class="btn btn-primary"
+            :disabled="sending || (sendMode === 'later' && !scheduledAt)"
+            @click="sendCampaign(sendMode === 'later' ? scheduledAt : null)"
+          >
+            <template x-if="sending">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            </template>
+            <span x-text="sending ? 'Saving...' : (sendMode === 'later' ? 'Schedule' : 'Send now')"></span>
+          </button>
+          <button class="btn btn-outline" @click="saveDraft()" :disabled="sending">Save draft</button>
+        </div>
+        <div x-show="errorMsg" class="field-hint" style="color:#dc2626;" x-text="errorMsg"></div>
+      </div>
+    </div>
+
+    <div class="cb-footer" style="justify-content:flex-start;">
+      <button class="btn btn-outline" @click="step = 3">← Back</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function campaignBuilder() {
+  return {
+    step: 1,
+    form: {
+      type: {{ (campaign.type | tojson) if campaign else 'null' }},
+      name: {{ (campaign.name | tojson) if campaign else '""' }},
+      subject: {{ (campaign.subject | tojson) if campaign and campaign.subject else '""' }},
+      body: {{ (campaign.body | tojson) if campaign and campaign.body else '""' }},
+      event_id: {{ (campaign.event_id | string | tojson) if campaign and campaign.event_id else '""' }},
+      audience_statuses: {{ ((campaign.audience_filter or {}).get('statuses', ['confirmed', 'checked_in']) | tojson) if campaign else '["confirmed", "checked_in"]' }},
+    },
+    campaignId: {{ (campaign.id | string | tojson) if campaign else 'null' }},
+    audienceCount: null,
+    scheduledAt: '',
+    sending: false,
+    errorMsg: '',
+    aiGenerating: false,
+    aiGoal: 'reminder',
+
+    init() {
+      if (this.form.type) this.step = this.campaignId ? 2 : 1;
+      this.fetchAudienceCount();
+    },
+
+    async fetchAudienceCount() {
+      const params = new URLSearchParams();
+      if (this.form.event_id) params.set('event_id', this.form.event_id);
+      (this.form.audience_statuses || []).forEach(s => params.append('statuses', s));
+      try {
+        const res = await fetch(`/api/v1/organizations/{{ org.slug }}/campaigns/_audience-count?${params}`, {credentials:'include'});
+        const j = await res.json();
+        this.audienceCount = j.data?.count ?? null;
+      } catch { this.audienceCount = null; }
+    },
+
+    insertVar(v) {
+      const ta = document.getElementById('bodyEditor');
+      if (!ta) return;
+      const s = ta.selectionStart, e = ta.selectionEnd;
+      this.form.body = this.form.body.slice(0, s) + v + this.form.body.slice(e);
+      this.$nextTick(() => { ta.selectionStart = ta.selectionEnd = s + v.length; ta.focus(); });
+    },
+
+    async generateCopy() {
+      this.aiGenerating = true;
+      this.form.body = '';
+      if (this.form.type === 'email') this.form.subject = '';
+      const orgSlug = '{{ org.slug }}';
+      const events = {{ events_json | safe if events_json is defined else '[]' }};
+      const selectedEvent = events.find(e => e.id === this.form.event_id) || {};
+      try {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/ai/generate-campaign-copy`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          credentials: 'include',
+          body: JSON.stringify({
+            channel: this.form.type,
+            event_title: selectedEvent.title || '',
+            event_date: selectedEvent.start_datetime || '',
+            event_description: selectedEvent.description || '',
+            goal: this.aiGoal,
+            org_name: '{{ org.name }}',
+          }),
+        });
+        if (!res.ok) return;
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '', fullText = '';
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, {stream: true});
+          const lines = buf.split('\n');
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const payload = line.slice(6);
+            if (payload === '[DONE]') break;
+            try { const obj = JSON.parse(payload); if (obj.text) fullText += obj.text; } catch {}
+          }
+        }
+        // Parse SUBJECT: / BODY: for email
+        if (this.form.type === 'email' && fullText.includes('SUBJECT:')) {
+          const subjectMatch = fullText.match(/SUBJECT:\s*(.+)/i);
+          const bodyMatch = fullText.match(/BODY:\s*([\s\S]+)/i);
+          if (subjectMatch) this.form.subject = subjectMatch[1].trim();
+          if (bodyMatch) this.form.body = bodyMatch[1].trim();
+        } else {
+          this.form.body = fullText.trim();
+        }
+      } catch { /* silent — leave fields as-is */ }
+      finally { this.aiGenerating = false; }
+    },
+
+    async saveDraft() {
+      this.sending = true; this.errorMsg = '';
+      try {
+        const payload = {
+          type: this.form.type,
+          name: this.form.name,
+          subject: this.form.subject || null,
+          body: this.form.body,
+          event_id: this.form.event_id || null,
+          audience_statuses: this.form.audience_statuses,
+        };
+        let res;
+        if (this.campaignId) {
+          res = await fetch(`/api/v1/organizations/{{ org.slug }}/campaigns/${this.campaignId}`, {
+            method: 'PATCH', credentials: 'include',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+          });
+        } else {
+          res = await fetch(`/api/v1/organizations/{{ org.slug }}/campaigns`, {
+            method: 'POST', credentials: 'include',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload),
+          });
+        }
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error?.message || 'Save failed.');
+        this.campaignId = j.data.id;
+        window.location.href = `/org/{{ org.slug }}/campaigns/${this.campaignId}`;
+      } catch (e) {
+        this.errorMsg = e.message;
+      } finally { this.sending = false; }
+    },
+
+    async sendCampaign(scheduledAt) {
+      this.sending = true; this.errorMsg = '';
+      try {
+        // Save/update first
+        const savePayload = {
+          type: this.form.type,
+          name: this.form.name,
+          subject: this.form.subject || null,
+          body: this.form.body,
+          event_id: this.form.event_id || null,
+          audience_statuses: this.form.audience_statuses,
+        };
+        let saveRes;
+        if (this.campaignId) {
+          saveRes = await fetch(`/api/v1/organizations/{{ org.slug }}/campaigns/${this.campaignId}`, {
+            method: 'PATCH', credentials: 'include',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(savePayload),
+          });
+        } else {
+          saveRes = await fetch(`/api/v1/organizations/{{ org.slug }}/campaigns`, {
+            method: 'POST', credentials: 'include',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(savePayload),
+          });
+        }
+        const saveJ = await saveRes.json();
+        if (!saveRes.ok) throw new Error(saveJ.error?.message || 'Save failed.');
+        this.campaignId = saveJ.data.id;
+
+        // Now send/schedule
+        const sendRes = await fetch(`/api/v1/organizations/{{ org.slug }}/campaigns/${this.campaignId}/send`, {
+          method: 'POST', credentials: 'include',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null }),
+        });
+        const sendJ = await sendRes.json();
+        if (!sendRes.ok) throw new Error(sendJ.error?.message || 'Send failed.');
+        window.location.href = `/org/{{ org.slug }}/campaigns/${this.campaignId}`;
+      } catch (e) {
+        this.errorMsg = e.message;
+      } finally { this.sending = false; }
+    },
+  };
+}
+</script>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+{% endblock %}
+

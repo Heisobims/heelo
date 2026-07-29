@@ -1,0 +1,149 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ detail.user.full_name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:8px;">
+  <a href="/admin/users" style="color:var(--text-muted,#71717a);font-size:0.82rem;text-decoration:none;">&larr; Users</a>
+</div>
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <div style="width:56px;height:56px;border-radius:50%;background:var(--admin-accent)30;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;color:var(--admin-accent);">
+      {{ detail.user.full_name[0].upper() }}
+    </div>
+    <div>
+      <h1 style="font-size:1.3rem;font-weight:700;">{{ detail.user.full_name }}</h1>
+      <p style="color:var(--text-muted,#71717a);font-size:0.85rem;">
+        {{ detail.user.email }} &middot;
+        {% if detail.user.role == 'admin' %}<span class="badge badge-admin">admin</span>
+        {% else %}<span>{{ detail.user.role }}</span>{% endif %} &middot;
+        <span class="badge {{ 'badge-suspended' if detail.user.deleted_at else 'badge-active' }}" id="user-status-badge">
+          {{ 'Banned' if detail.user.deleted_at else 'Active' }}
+        </span>
+      </p>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    {% if not detail.user.deleted_at %}
+    <button class="btn btn-danger" id="ban-btn" onclick="banUser('{{ detail.user.id }}')">Ban User</button>
+    {% else %}
+    <button class="btn btn-accent" id="ban-btn" onclick="unbanUser('{{ detail.user.id }}')">Unban User</button>
+    {% endif %}
+    {% if detail.user.role != 'admin' %}
+    <button class="btn btn-ghost" id="role-btn" onclick="promoteAdmin('{{ detail.user.id }}')">Make Admin</button>
+    {% else %}
+    <button class="btn btn-ghost" id="role-btn" onclick="demoteAdmin('{{ detail.user.id }}')">Remove Admin</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-label">Owned Organizations</div>
+    <div class="stat-value">{{ detail.owned_orgs|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Confirmed Registrations</div>
+    <div class="stat-value">{{ detail.confirmed_registration_count }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Email Verified</div>
+    <div class="stat-value">{% if detail.user.is_verified %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>{% else %}<span class="material-symbols-outlined" style="color:#e53e3e;">close</span>{% endif %}</div>
+  </div>
+</div>
+
+<div class="section-card">
+  <div class="section-header"><span class="section-title">Account Details</span></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:0.85rem;">
+    <div>
+      <p style="color:var(--text-muted,#71717a);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">User ID</p>
+      <p style="font-family:monospace;font-size:0.8rem;">{{ detail.user.id }}</p>
+    </div>
+    <div>
+      <p style="color:var(--text-muted,#71717a);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">OAuth Provider</p>
+      <p>{{ detail.user.oauth_provider or 'Email/Password' }}</p>
+    </div>
+    <div>
+      <p style="color:var(--text-muted,#71717a);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Joined</p>
+      <p>{{ detail.user.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    </div>
+    <div>
+      <p style="color:var(--text-muted,#71717a);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Last Seen</p>
+      <p>{{ detail.user.last_seen_at.strftime('%Y-%m-%d %H:%M') if detail.user.last_seen_at else '—' }}</p>
+    </div>
+    <div>
+      <p style="color:var(--text-muted,#71717a);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">WhatsApp</p>
+      <p>{{ detail.user.whatsapp_number or '—' }}</p>
+    </div>
+    <div>
+      <p style="color:var(--text-muted,#71717a);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Username</p>
+      <p>{{ '@' + detail.user.username if detail.user.username else '—' }}</p>
+    </div>
+  </div>
+</div>
+
+{% if detail.owned_orgs %}
+<div class="section-card">
+  <div class="section-header"><span class="section-title">Owned Organizations</span></div>
+  <table class="data-table">
+    <thead><tr><th>Name</th><th>Plan</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for org in detail.owned_orgs %}
+      <tr>
+        <td><a href="/admin/organizations/{{ org.id }}">{{ org.name }}</a><br><span style="color:var(--text-muted,#71717a);font-size:0.72rem;">/{{ org.slug }}</span></td>
+        <td><span class="badge badge-plan-{{ org.plan }}">{{ org.plan }}</span></td>
+        <td><span class="badge {{ 'badge-active' if org.is_active else 'badge-suspended' }}">{{ 'Active' if org.is_active else 'Suspended' }}</span></td>
+        <td><a href="/org/{{ org.slug }}" target="_blank" style="color:var(--admin-accent);font-size:0.8rem;">View &rarr;</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const _uid = "{{ detail.user.id }}";
+
+async function banUser(id) {
+  if (!confirm("Ban this user? They will lose access immediately.")) return;
+  const r = await fetch(`/api/v1/admin/users/${id}/ban`, { method: 'POST' });
+  if (r.ok) {
+    document.getElementById('user-status-badge').className = 'badge badge-suspended';
+    document.getElementById('user-status-badge').textContent = 'Banned';
+    document.getElementById('ban-btn').textContent = 'Unban User';
+    document.getElementById('ban-btn').className = 'btn btn-accent';
+    document.getElementById('ban-btn').setAttribute('onclick', `unbanUser('${id}')`);
+  } else { alert('Failed to ban user.'); }
+}
+
+async function unbanUser(id) {
+  if (!confirm("Unban this user?")) return;
+  const r = await fetch(`/api/v1/admin/users/${id}/unban`, { method: 'POST' });
+  if (r.ok) {
+    document.getElementById('user-status-badge').className = 'badge badge-active';
+    document.getElementById('user-status-badge').textContent = 'Active';
+    document.getElementById('ban-btn').textContent = 'Ban User';
+    document.getElementById('ban-btn').className = 'btn btn-danger';
+    document.getElementById('ban-btn').setAttribute('onclick', `banUser('${id}')`);
+  } else { alert('Failed to unban user.'); }
+}
+
+async function promoteAdmin(id) {
+  if (!confirm("Make this user a platform admin?")) return;
+  const r = await fetch(`/api/v1/admin/users/${id}/role`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({role:'admin'}),
+  });
+  if (r.ok) { location.reload(); } else { alert('Failed.'); }
+}
+
+async function demoteAdmin(id) {
+  if (!confirm("Remove admin role?")) return;
+  const r = await fetch(`/api/v1/admin/users/${id}/role`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({role:'organizer'}),
+  });
+  if (r.ok) { location.reload(); } else { alert('Failed.'); }
+}
+</script>
+{% endblock %}

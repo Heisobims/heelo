@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Admin{% endblock %} — Heelo Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/main.css" />
+  <style>
+    :root {
+      --admin-accent: #ff6b35;
+      --admin-bg: #0d0d0d;
+      --admin-surface: #1a1a1a;
+      --admin-surface-raised: #222;
+      --admin-border: #2a2a2a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Stack Sans Headline', sans-serif; background: var(--admin-bg); color: var(--text, #e4e4e7); min-height: 100vh; display: flex; flex-direction: column; }
+
+    .admin-header {
+      background: var(--admin-surface);
+      border-bottom: 1px solid var(--admin-border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      height: 56px;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .admin-logo { font-weight: 700; font-size: 1rem; color: var(--admin-accent); letter-spacing: -0.02em; }
+    .admin-logo span { color: #fff; }
+    .admin-nav { display: flex; gap: 4px; margin-left: 24px; }
+    .admin-nav a {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted, #71717a);
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .admin-nav a:hover { background: var(--admin-surface-raised); color: #fff; }
+    .admin-nav a.active { background: var(--admin-accent)20; color: var(--admin-accent); }
+    .admin-user { margin-left: auto; font-size: 0.8rem; color: var(--text-muted, #71717a); }
+    .admin-badge { background: var(--admin-accent); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.05em; }
+
+    .admin-content { flex: 1; padding: 32px; max-width: 1280px; width: 100%; margin: 0 auto; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .stat-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 10px; padding: 20px; }
+    .stat-label { font-size: 0.75rem; color: var(--text-muted, #71717a); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; }
+
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted, #71717a); padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--admin-border); }
+    .data-table td { padding: 12px 12px; font-size: 0.83rem; border-bottom: 1px solid var(--admin-border)50; vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--admin-surface); }
+    .data-table a { color: var(--admin-accent); text-decoration: none; }
+    .data-table a:hover { text-decoration: underline; }
+
+    .section-card { background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .section-title { font-size: 1rem; font-weight: 600; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .badge-active { background: #00FFF320; color: #00FFF3; }
+    .badge-suspended { background: #ff6b6b20; color: #ff6b6b; }
+    .badge-plan-starter { background: #71717a20; color: #a1a1aa; }
+    .badge-plan-growth { background: #3b82f620; color: #60a5fa; }
+    .badge-plan-pro { background: #8b5cf620; color: #a78bfa; }
+    .badge-plan-enterprise { background: #f59e0b20; color: #fbbf24; }
+    .badge-admin { background: var(--admin-accent)20; color: var(--admin-accent); }
+
+    .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; font-family: inherit; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-accent { background: var(--admin-accent); color: #fff; }
+    .btn-danger { background: #ff6b6b; color: #fff; }
+    .btn-ghost { background: transparent; border: 1px solid var(--admin-border); color: var(--text-muted, #71717a); }
+    .btn-sm { padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; }
+
+    .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-bar input, .search-bar select {
+      background: var(--admin-surface);
+      border: 1px solid var(--admin-border);
+      color: var(--text, #e4e4e7);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.83rem;
+      font-family: inherit;
+    }
+    .search-bar input { flex: 1; }
+    .search-bar input:focus, .search-bar select:focus { outline: none; border-color: var(--admin-accent); }
+
+    .pagination { display: flex; gap: 8px; align-items: center; margin-top: 16px; }
+    .pagination a { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--admin-border); font-size: 0.8rem; color: var(--text-muted, #71717a); text-decoration: none; }
+    .pagination a:hover { border-color: var(--admin-accent); color: var(--admin-accent); }
+    .pagination .current { background: var(--admin-accent); color: #fff; border-color: var(--admin-accent); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; }
+    .pagination .info { color: var(--text-muted, #71717a); font-size: 0.8rem; margin-left: auto; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<header class="admin-header">
+  <div class="admin-logo">heelo <span>admin</span><span class="admin-badge">STAFF</span></div>
+  <nav class="admin-nav">
+    <a href="/admin" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
+    <a href="/admin/organizations" class="{{ 'active' if active_page == 'organizations' else '' }}">Organizations</a>
+    <a href="/admin/users" class="{{ 'active' if active_page == 'users' else '' }}">Users</a>
+    <a href="/admin/events" class="{{ 'active' if active_page == 'events' else '' }}">Events</a>
+  </nav>
+  <div class="admin-user">{{ admin_user.email }} &rarr; <a href="/dashboard" style="color:var(--admin-accent);text-decoration:none;">Back to app</a></div>
+</header>
+
+<main class="admin-content">
+  {% block content %}{% endblock %}
+</main>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

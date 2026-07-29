@@ -1,0 +1,219 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Contacts · {{ org.name }} — Heelo{% endblock %}
+{% set active = 'contacts' %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .ct-wrap { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+  .ct-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .ct-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.2rem; }
+  .ct-sub { font-size: 0.875rem; color: var(--text-secondary); margin: 0; }
+
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 9px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: opacity 150ms; }
+  .btn-primary { background: var(--cyan); color: #000; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--text-secondary); }
+
+  /* Filters */
+  .ct-filters { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 0.75rem; }
+  .ct-search { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 0.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0 0.75rem; }
+  .ct-search svg { color: var(--text-secondary); flex-shrink: 0; }
+  .ct-search input { flex: 1; border: none; background: transparent; padding: 0.5rem 0; font-size: 0.875rem; color: var(--text); outline: none; }
+  .ct-search input::placeholder { color: var(--text-secondary); }
+
+  /* Tag pills */
+  .ct-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .ct-tag-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--border); background: var(--bg); color: var(--text-secondary); text-decoration: none; transition: all 0.12s; }
+  .ct-tag-pill:hover { border-color: var(--text-secondary); color: var(--text); }
+  .ct-tag-pill.active { border-color: var(--cyan); background: rgba(0,255,243,0.06); color: var(--cyan-dark, #00b3a9); }
+
+  /* Table */
+  .ct-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; overflow-x: auto; }
+  .ct-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .ct-table thead tr { border-bottom: 1px solid var(--border); }
+  .ct-table th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); white-space: nowrap; }
+  .ct-table td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .ct-table tbody tr:last-child td { border-bottom: none; }
+  .ct-table tbody tr:hover { background: var(--surface-alt, rgba(0,0,0,0.02)); }
+
+  .ct-name { font-weight: 600; }
+  .ct-email { font-size: 0.8rem; color: var(--text-secondary); }
+  .ct-source { font-size: 0.75rem; padding: 2px 8px; border-radius: 100px; background: var(--surface-alt, #f0f0f0); color: var(--text-secondary); font-weight: 600; }
+
+  /* Inline tag editor */
+  .ct-tag-editor { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .ct-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 100px; background: rgba(0,255,243,0.08); color: var(--cyan-dark, #00b3a9); font-size: 11px; font-weight: 600; }
+  .ct-tag button { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 11px; padding: 0; line-height: 1; opacity: 0.7; }
+  .ct-tag button:hover { opacity: 1; }
+  .ct-add-tag { font-size: 11px; color: var(--text-muted); background: transparent; border: 1px dashed var(--border); border-radius: 100px; padding: 2px 8px; cursor: pointer; }
+  .ct-add-tag:hover { border-color: var(--cyan); color: var(--cyan-dark, #00b3a9); }
+
+  /* Pagination */
+  .ct-pagination { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+  .page-btn { display: inline-flex; align-items: center; padding: 0.4375rem 0.875rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.8125rem; font-weight: 600; text-decoration: none; color: var(--text); transition: border-color 150ms; }
+  .page-btn:hover { border-color: var(--text-secondary); }
+  .page-info { font-size: 0.8125rem; color: var(--text-secondary); }
+
+  .ct-empty { text-align: center; padding: 4rem 1.5rem; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="ct-wrap">
+
+  <div class="ct-header">
+    <div>
+      <h1 class="ct-title">Contacts</h1>
+      <p class="ct-sub">{{ total }} contact{{ 's' if total != 1 }} — import via CSV, tag &amp; segment</p>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="/org/{{ org.slug }}/registrations" class="btn btn-outline">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        Registrations
+      </a>
+      {# Re-use the Import CSV modal from the registrations page by linking there #}
+    </div>
+  </div>
+
+  <!-- Search -->
+  <form method="GET" action="/org/{{ org.slug }}/contacts">
+    <div class="ct-filters">
+      <div class="ct-search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Search by name or email…" autocomplete="off">
+      </div>
+      {% if tag %}
+      <input type="hidden" name="tag" value="{{ tag }}">
+      {% endif %}
+      <input type="hidden" name="page" value="1">
+    </div>
+  </form>
+
+  <!-- Tag filter pills -->
+  {% if all_tags %}
+  <div class="ct-tags">
+    <a href="/org/{{ org.slug }}/contacts?q={{ q }}" class="ct-tag-pill {% if not tag %}active{% endif %}">All</a>
+    {% for t in all_tags %}
+    <a href="/org/{{ org.slug }}/contacts?q={{ q }}&tag={{ t | urlencode }}" class="ct-tag-pill {% if tag == t %}active{% endif %}">{{ t }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if contacts %}
+  <div class="ct-table-wrap">
+    <table class="ct-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Source</th>
+          <th>Tags</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in contacts %}
+        <tr>
+          <td>
+            <div class="ct-name">{{ c.name }}</div>
+          </td>
+          <td>
+            <div class="ct-email">{{ c.email or '—' }}</div>
+          </td>
+          <td style="font-size:0.8rem; color:var(--text-secondary);">{{ c.phone or c.whatsapp_number or '—' }}</td>
+          <td><span class="ct-source">{{ c.source.replace('_', ' ') }}</span></td>
+          <td>
+            <div
+              x-data="tagEditor({{ c.id | string | tojson }}, {{ (c.tags or []) | tojson }}, '{{ org.slug }}')"
+              class="ct-tag-editor"
+            >
+              <template x-for="(t, i) in tags" :key="i">
+                <span class="ct-tag">
+                  <span x-text="t"></span>
+                  <button @click="removeTag(i)" type="button" title="Remove tag">×</button>
+                </span>
+              </template>
+              <button @click="addTag()" type="button" class="ct-add-tag">+ tag</button>
+            </div>
+          </td>
+          <td>
+            {% if c.is_unsubscribed %}
+            <span style="font-size:0.75rem;color:#e53e3e;font-weight:600;">Unsubscribed</span>
+            {% else %}
+            <span style="font-size:0.75rem;color:#16a34a;font-weight:600;">Active</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="ct-pagination">
+    {% if page > 1 %}
+    <a href="?q={{ q }}&tag={{ tag }}&page={{ page - 1 }}" class="page-btn">← Prev</a>
+    {% endif %}
+    <span class="page-info">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="?q={{ q }}&tag={{ tag }}&page={{ page + 1 }}" class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="ct-empty">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 12px;display:block;opacity:.3;"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+    <p style="margin:0 0 8px; font-weight:600;">No contacts yet</p>
+    <p style="font-size:0.8125rem; margin:0;">
+      Import contacts via the
+      <a href="/org/{{ org.slug }}/registrations" style="color:var(--cyan-dark,#00b3a9); text-decoration:none; font-weight:600;">Registrations page</a>
+      CSV import button.
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+
+<style>[x-cloak]{display:none!important}</style>
+<script>
+function tagEditor(contactId, initialTags, orgSlug) {
+  return {
+    tags: [...initialTags],
+    saving: false,
+
+    async save() {
+      if (this.saving) return;
+      this.saving = true;
+      try {
+        await fetch(`/api/v1/organizations/${orgSlug}/contacts/${contactId}/tags`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(this.tags),
+        });
+      } catch {}
+      this.saving = false;
+    },
+
+    async addTag() {
+      const tag = prompt('New tag (e.g. vip, speaker, sponsor):');
+      if (!tag || !tag.trim()) return;
+      const clean = tag.trim().toLowerCase().slice(0, 50);
+      if (!this.tags.includes(clean)) {
+        this.tags.push(clean);
+        await this.save();
+      }
+    },
+
+    async removeTag(i) {
+      this.tags.splice(i, 1);
+      await this.save();
+    },
+  };
+}
+</script>
+{% endblock %}

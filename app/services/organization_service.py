@@ -1,0 +1,442 @@
+from __future__ import annotations
+
+import uuid
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import structlog
+from jose import JWTError, jwt
+from slugify import slugify
+from sqlalchemy import func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.config import settings
+from app.models.event import Event
+from app.models.organization import Organization, OrganizationMember
+from app.models.payment import PaymentAccount
+from app.models.user import User
+from app.schemas.organization import (
+    OnboardingState,
+    OrgCreateRequest,
+    OrgUpdateRequest,
+)
+from app.utils.email import send_team_invite_email
+
+logger = structlog.get_logger()
+
+_INVITE_TOKEN_TYPE = "org_invite"
+_INVITE_EXPIRE_DAYS = 7
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _make_invite_token(org_id: uuid.UUID, invited_email: str, role: str) -> str:
+    payload = {
+        "type": _INVITE_TOKEN_TYPE,
+        "org_id": str(org_id),
+        "invited_email": invited_email.lower(),
+        "role": role,
+        "exp": datetime.now(UTC) + timedelta(days=_INVITE_EXPIRE_DAYS),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def decode_invite_token(token: str) -> dict[str, Any]:
+    payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+    if payload.get("type") != _INVITE_TOKEN_TYPE:
+        raise ValueError("Invalid invite token type.")
+    return payload
+
+
+async def _unique_slug(db: AsyncSession, base: str) -> str:
+    slug = base
+    counter = 2
+    while await db.scalar(select(Organization.id).where(Organization.slug == slug)):
+        slug = f"{base}-{counter}"
+        counter += 1
+    return slug
+
+
+def _org_initials(name: str) -> str:
+    words = name.strip().split()
+    if len(words) >= 2:
+        return (words[0][0] + words[1][0]).upper()
+    return name[:2].upper()
+
+
+# ── Organization CRUD ─────────────────────────────────────────────────────────
+
+async def create_organization(
+    db: AsyncSession,
+    owner_id: uuid.UUID,
+    data: OrgCreateRequest,
+) -> Organization:
+    base_slug = slugify(data.name, max_length=80, word_boundary=True, separator="-")
+    slug = await _unique_slug(db, base_slug)
+    now = datetime.now(UTC)
+
+    org = Organization(
+        owner_id=owner_id,
+        name=data.name,
+        slug=slug,
+        country=data.country,
+        currency=data.currency,
+        plan="starter",
+        is_active=True,
+    )
+    db.add(org)
+    await db.flush()  # get org.id without committing
+
+    # Owner is auto-added as admin member
+    member = OrganizationMember(
+        org_id=org.id,
+        user_id=owner_id,
+        invited_email=None,
+        role="admin",
+        invited_by=None,
+        invited_at=now,
+        accepted_at=now,
+        status="active",
+    )
+    db.add(member)
+
+    logger.info("org.created", org_id=str(org.id), slug=slug, owner_id=str(owner_id))
+    return org
+
+
+async def get_organization_by_slug(db: AsyncSession, slug: str) -> Organization | None:
+    return await db.scalar(
+        select(Organization)
+        .where(Organization.slug == slug, Organization.is_active == True)
+    )
+
+
+async def get_organization_by_id(db: AsyncSession, org_id: uuid.UUID) -> Organization | None:
+    return await db.scalar(
+        select(Organization).where(Organization.id == org_id, Organization.is_active == True)
+    )
+
+
+async def update_organization(
+    db: AsyncSession,
+    org: Organization,
+    data: OrgUpdateRequest,
+) -> Organization:
+    update_data = data.model_dump(exclude_none=True)
+    for field, value in update_data.items():
+        setattr(org, field, value)
+    logger.info("org.updated", org_id=str(org.id))
+    return org
+
+
+# ── User's org list ───────────────────────────────────────────────────────────
+
+async def get_user_organizations(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> list[dict]:
+    """Return all orgs the user owns or is an active member of, with role info."""
+    # Owned orgs
+    owned_result = await db.scalars(
+        select(Organization).where(
+            Organization.owner_id == user_id,
+            Organization.is_active == True,
+        )
+    )
+    owned = {org.id: org for org in owned_result.all()}
+
+    # Membership orgs (active, non-owner)
+    memberships_result = await db.execute(
+        select(OrganizationMember, Organization)
+        .join(Organization, Organization.id == OrganizationMember.org_id)
+        .where(
+            OrganizationMember.user_id == user_id,
+            OrganizationMember.status == "active",
+            Organization.is_active == True,
+        )
+    )
+
+    result: list[dict] = []
+    # Owned orgs first (admin role)
+    for org in owned.values():
+        result.append({"org": org, "role": "admin", "is_owner": True})
+
+    for member, org in memberships_result.all():
+        if org.id not in owned:
+            result.append({"org": org, "role": member.role, "is_owner": False})
+
+    return result
+
+
+# ── Membership ────────────────────────────────────────────────────────────────
+
+async def get_org_membership(
+    db: AsyncSession,
+    org_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> OrganizationMember | None:
+    return await db.scalar(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == org_id,
+            OrganizationMember.user_id == user_id,
+            OrganizationMember.status == "active",
+        )
+    )
+
+
+async def get_org_members(
+    db: AsyncSession,
+    org_id: uuid.UUID,
+) -> list[dict]:
+    """Return active + pending members with user info."""
+    rows = await db.execute(
+        select(OrganizationMember, User)
+        .outerjoin(User, User.id == OrganizationMember.user_id)
+        .where(
+            OrganizationMember.org_id == org_id,
+            OrganizationMember.status.in_(["active", "invite_pending"]),
+        )
+        .order_by(OrganizationMember.created_at)
+    )
+    result = []
+    for member, user in rows.all():
+        result.append({
+            "member": member,
+            "user": user,
+            "display_name": user.full_name if user else member.invited_email,
+            "display_email": user.email if user else member.invited_email,
+            "display_avatar": user.avatar_url if user else None,
+        })
+    return result
+
+
+async def invite_member(
+    db: AsyncSession,
+    org: Organization,
+    inviter: User,
+    email: str,
+    role: str,
+) -> str:
+    """Create pending membership + send invite email. Returns the invite token."""
+    email = email.lower().strip()
+
+    # Check if already a member
+    existing_user = await db.scalar(select(User).where(User.email == email))
+    if existing_user:
+        existing_member = await db.scalar(
+            select(OrganizationMember).where(
+                OrganizationMember.org_id == org.id,
+                OrganizationMember.user_id == existing_user.id,
+                OrganizationMember.status.in_(["active", "invite_pending"]),
+            )
+        )
+        if existing_member:
+            raise ValueError(f"{'Already a member' if existing_member.status == 'active' else 'Invite already sent'}.")
+
+    # Check pending invite by email
+    existing_invite = await db.scalar(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == org.id,
+            OrganizationMember.invited_email == email,
+            OrganizationMember.status == "invite_pending",
+        )
+    )
+    if existing_invite:
+        raise ValueError("An invite has already been sent to that email.")
+
+    now = datetime.now(UTC)
+    member = OrganizationMember(
+        org_id=org.id,
+        user_id=existing_user.id if existing_user else None,
+        invited_email=email,
+        role=role,
+        invited_by=inviter.id,
+        invited_at=now,
+        accepted_at=None,
+        status="invite_pending",
+    )
+    db.add(member)
+    await db.flush()
+
+    token = _make_invite_token(org.id, email, role)
+    invite_url = f"{settings.FRONTEND_URL}/accept-invite/{token}"
+
+    try:
+        send_team_invite_email(email, inviter.full_name, org.name, invite_url)
+    except Exception as exc:
+        logger.error("org.invite_email_failed", exc=str(exc), email=email)
+
+    logger.info("org.member_invited", org_id=str(org.id), email=email, role=role)
+    return token
+
+
+async def accept_invite(
+    db: AsyncSession,
+    token: str,
+    current_user: User,
+) -> Organization:
+    """Validate invite token and activate the membership for the current user."""
+    try:
+        payload = decode_invite_token(token)
+    except JWTError:
+        raise ValueError("This invite link is invalid or has expired.")
+
+    org_id = uuid.UUID(payload["org_id"])
+    invited_email = payload["invited_email"]
+    role = payload["role"]
+
+    if current_user.email.lower() != invited_email:
+        raise ValueError(
+            f"This invite was sent to {invited_email}. "
+            f"You are signed in as {current_user.email}."
+        )
+
+    org = await get_organization_by_id(db, org_id)
+    if not org:
+        raise ValueError("Organization not found.")
+
+    # Find the pending membership (by email or by user_id)
+    member = await db.scalar(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == org_id,
+            or_(
+                OrganizationMember.invited_email == invited_email,
+                OrganizationMember.user_id == current_user.id,
+            ),
+            OrganizationMember.status == "invite_pending",
+        )
+    )
+
+    if not member:
+        # Might have been accepted already
+        existing = await get_org_membership(db, org_id, current_user.id)
+        if existing:
+            return org
+        raise ValueError("Invite not found. It may have already been accepted or revoked.")
+
+    now = datetime.now(UTC)
+    member.user_id = current_user.id
+    member.role = role
+    member.accepted_at = now
+    member.status = "active"
+
+    logger.info("org.invite_accepted", org_id=str(org_id), user_id=str(current_user.id))
+    return org
+
+
+async def remove_member(
+    db: AsyncSession,
+    org: Organization,
+    user_id_to_remove: uuid.UUID,
+    requesting_user_id: uuid.UUID,
+) -> None:
+    if user_id_to_remove == org.owner_id:
+        raise ValueError("Cannot remove the organization owner.")
+
+    member = await db.scalar(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == org.id,
+            OrganizationMember.user_id == user_id_to_remove,
+        )
+    )
+    if not member:
+        raise ValueError("Member not found.")
+
+    await db.delete(member)
+    logger.info("org.member_removed", org_id=str(org.id), removed=str(user_id_to_remove))
+
+
+async def update_member_role(
+    db: AsyncSession,
+    org: Organization,
+    user_id: uuid.UUID,
+    new_role: str,
+) -> OrganizationMember:
+    if user_id == org.owner_id:
+        raise ValueError("Cannot change the owner's role.")
+
+    member = await db.scalar(
+        select(OrganizationMember).where(
+            OrganizationMember.org_id == org.id,
+            OrganizationMember.user_id == user_id,
+            OrganizationMember.status == "active",
+        )
+    )
+    if not member:
+        raise ValueError("Active member not found.")
+
+    member.role = new_role
+    return member
+
+
+# ── Onboarding & metrics ──────────────────────────────────────────────────────
+
+async def get_onboarding_state(db: AsyncSession, org_id: uuid.UUID) -> OnboardingState:
+    event_count = await db.scalar(
+        select(func.count(Event.id)).where(
+            Event.org_id == org_id, Event.deleted_at.is_(None)
+        )
+    ) or 0
+
+    payment_count = await db.scalar(
+        select(func.count(PaymentAccount.id)).where(PaymentAccount.org_id == org_id)
+    ) or 0
+
+    active_member_count = await db.scalar(
+        select(func.count(OrganizationMember.id)).where(
+            OrganizationMember.org_id == org_id,
+            OrganizationMember.status == "active",
+        )
+    ) or 0
+
+    return OnboardingState(
+        has_event=event_count > 0,
+        has_payment_account=payment_count > 0,
+        has_team_member=active_member_count > 1,  # owner + ≥1 more
+        has_whatsapp=bool(settings.WHATSAPP_TOKEN and settings.WHATSAPP_PHONE_NUMBER_ID),
+    )
+
+
+async def get_org_metrics(db: AsyncSession, org_id: uuid.UUID) -> dict:
+    from app.models.ticketing import Order, Registration
+
+    total_events = await db.scalar(
+        select(func.count(Event.id)).where(
+            Event.org_id == org_id, Event.deleted_at.is_(None)
+        )
+    ) or 0
+
+    total_registrations = await db.scalar(
+        select(func.count(Registration.id))
+        .join(Event, Event.id == Registration.event_id)
+        .where(
+            Event.org_id == org_id,
+            Registration.status.in_(["confirmed", "checked_in"]),
+        )
+    ) or 0
+
+    total_revenue_row = await db.scalar(
+        select(func.coalesce(func.sum(Order.net_amount), 0))
+        .join(Event, Event.id == Order.event_id)
+        .where(
+            Event.org_id == org_id,
+            Order.payment_status == "paid",
+        )
+    ) or 0
+
+    return {
+        "total_events": total_events,
+        "total_registrations": total_registrations,
+        "total_revenue": float(total_revenue_row),
+    }
+
+
+async def get_recent_events(db: AsyncSession, org_id: uuid.UUID, limit: int = 5) -> list[Event]:
+    result = await db.scalars(
+        select(Event)
+        .where(Event.org_id == org_id, Event.deleted_at.is_(None))
+        .order_by(Event.created_at.desc())
+        .limit(limit)
+    )
+    return list(result.all())

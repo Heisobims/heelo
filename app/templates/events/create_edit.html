@@ -1,0 +1,1480 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}{% if mode == 'create' %}Create event{% else %}Edit: {{ event.title }}{% endif %} — Heelo{% endblock %}
+{% set active_page = 'events' %}
+
+{% block head %}
+{{ super() }}
+<style>
+/* ── Card shell ───────────────────────────────────────────────── */
+.ev-card {
+  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.18s, border-color 0.18s;
+}
+.ev-card:focus-within {
+  border-color: rgba(0,255,243,0.35);
+  box-shadow: 0 0 0 3px rgba(0,255,243,0.07);
+}
+
+/* ── Section header ───────────────────────────────────────────── */
+.ev-sec-hd {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+  cursor: pointer;
+  user-select: none;
+  min-height: 64px;
+}
+.ev-sec-hd:hover .ev-sec-icon {
+  background: rgba(0,255,243,0.1);
+  color: #009e95;
+}
+.ev-sec-icon {
+  width: 38px; height: 38px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.ev-sec-icon.active {
+  background: rgba(0,255,243,0.1);
+  color: #009e95;
+}
+.ev-sec-label { flex: 1; min-width: 0; }
+.ev-sec-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
+.ev-sec-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340px; }
+.ev-sec-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.badge-cnt {
+  font-size: 11px; font-weight: 700;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 100px;
+  background: rgba(0,255,243,0.14); color: #009e95;
+  display: flex; align-items: center; justify-content: center;
+}
+.badge-req {
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 100px;
+  background: rgba(229,62,62,0.08); color: #e53e3e;
+}
+.ev-chevron {
+  color: var(--text-muted); font-size: 12px;
+  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  flex-shrink: 0;
+}
+.ev-chevron.open { transform: rotate(180deg); }
+
+/* ── Section body ─────────────────────────────────────────────── */
+.ev-sec-divider { height: 1px; background: var(--border-light); margin: 0 22px; }
+.ev-sec-body { padding: 20px 22px 22px; }
+
+/* ── Inline add forms ─────────────────────────────────────────── */
+.inline-form {
+  border: 1.5px dashed var(--border-light);
+  border-radius: 12px;
+  padding: 18px 16px 16px;
+  margin-top: 10px;
+  background: var(--bg-secondary);
+}
+.add-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; padding: 9px;
+  border: 1.5px dashed var(--border-light);
+  border-radius: 10px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer; background: transparent;
+  transition: border-color 0.14s, color 0.14s, background 0.14s;
+  margin-top: 10px;
+}
+.add-btn:hover { border-color: var(--cyan); color: #009e95; background: rgba(0,255,243,0.04); }
+
+/* ── Format radio cards ───────────────────────────────────────── */
+.fmt-card {
+  padding: 14px 10px; border: 2px solid var(--border-light);
+  border-radius: 10px; text-align: center; cursor: pointer;
+  user-select: none; transition: border-color 0.14s, background 0.14s;
+}
+.fmt-card.active { border-color: var(--cyan); background: rgba(0,255,243,0.07); }
+
+/* ── Category pills ───────────────────────────────────────────── */
+.cat-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 14px; border: 1.5px solid var(--border-light);
+  border-radius: 100px; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: border-color 0.12s, background 0.12s; user-select: none;
+}
+.cat-pill.selected { border-color: var(--cyan); background: rgba(0,255,243,0.1); }
+
+/* ── Toggle ───────────────────────────────────────────────────── */
+.tog { position: relative; width: 40px; height: 22px; border-radius: 11px; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+.tog-knob { position: absolute; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s; }
+
+/* ── Ticket rows ──────────────────────────────────────────────── */
+.ticket-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border: 1.5px solid var(--border-light);
+  border-radius: 10px; margin-bottom: 8px;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  animation: fadeInUp 0.18s ease;
+}
+.ticket-row:hover { border-color: rgba(0,255,243,0.4); }
+.tier-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.t-free { background: #22c55e; }
+.t-general { background: #64748b; }
+.t-early_bird { background: #f59e0b; }
+.t-vip { background: #9333ea; }
+.t-group { background: #3b82f6; }
+
+/* ── Agenda ───────────────────────────────────────────────────── */
+.agenda-row {
+  display: flex; gap: 14px; padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  animation: fadeInUp 0.18s ease;
+}
+.agenda-row:last-child { border-bottom: none; }
+.agenda-time { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; min-width: 100px; padding-top: 2px; }
+.agenda-content { flex: 1; min-width: 0; }
+.stype-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.st-talk { background: #009e95; }
+.st-panel { background: #9333ea; }
+.st-workshop { background: #3b82f6; }
+.st-networking { background: #22c55e; }
+.st-break { background: #f59e0b; }
+.st-ceremony { background: #ec4899; }
+
+/* ── Person cards ─────────────────────────────────────────────── */
+.people-tabs { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 14px; }
+.people-tab {
+  padding: 6px 13px; border-radius: 8px; font-size: 12px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; border: none; background: transparent;
+  color: var(--text-muted); transition: background 0.12s, color 0.12s;
+}
+.people-tab.active { background: rgba(0,255,243,0.1); color: #009e95; font-weight: 600; }
+.people-tab:hover:not(.active) { background: var(--bg-secondary); }
+.person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 10px; }
+.person-card {
+  border: 1.5px solid var(--border-light); border-radius: 12px; padding: 14px 10px;
+  text-align: center; position: relative;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  animation: fadeInUp 0.18s ease;
+}
+.person-card:hover { border-color: rgba(0,255,243,0.5); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.person-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--bg-secondary); margin: 0 auto 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--text-muted); overflow: hidden;
+  border: 2px solid var(--border-light); transition: border-color 0.12s;
+}
+.person-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.person-name { font-size: 12px; font-weight: 600; line-height: 1.3; }
+.person-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.person-rm {
+  position: absolute; top: 6px; right: 6px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(229,62,62,0.1); color: #e53e3e;
+  font-size: 9px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; transition: opacity 0.12s; border: none;
+}
+.person-card:hover .person-rm { opacity: 1; }
+
+/* ── Partner cards ────────────────────────────────────────────── */
+.partner-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.partner-card {
+  border: 1.5px solid var(--border-light); border-radius: 10px;
+  padding: 12px 10px; display: flex; align-items: center; gap: 10px;
+  position: relative; animation: fadeInUp 0.18s ease;
+  transition: border-color 0.12s;
+}
+.partner-card:hover { border-color: rgba(0,255,243,0.4); }
+.partner-logo {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--bg-secondary); display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 13px; color: var(--text-muted); overflow: hidden;
+}
+.partner-logo img { width: 100%; height: 100%; object-fit: contain; }
+.partner-name { font-size: 12px; font-weight: 600; }
+.tier-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+.tlbl-platinum { color: #9333ea; }
+.tlbl-gold { color: #d97706; }
+.tlbl-silver { color: #64748b; }
+.tlbl-bronze { color: #92400e; }
+.tlbl-partner { color: #2563eb; }
+.tlbl-media { color: #059669; }
+.partner-rm {
+  position: absolute; top: 6px; right: 6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(229,62,62,0.1); color: #e53e3e;
+  font-size: 9px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; transition: opacity 0.12s; border: none;
+}
+.partner-card:hover .partner-rm { opacity: 1; }
+
+/* ── Thumbnail grid ───────────────────────────────────────────── */
+.thumb-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.thumb-slot {
+  aspect-ratio: 16/9; border: 2px dashed var(--border-light);
+  border-radius: 10px; background: var(--bg-secondary);
+  position: relative; overflow: hidden; cursor: pointer; transition: border-color 0.14s;
+}
+.thumb-slot:hover { border-color: var(--cyan); }
+.thumb-slot.filled { border-style: solid; border-color: var(--border-light); }
+.thumb-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb-ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--text-muted); }
+.thumb-badge { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: #fff; font-size: 11px; font-weight: 500; padding: 4px 8px; pointer-events: none; }
+.thumb-clear { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; border: none; }
+.thumb-loader { position: absolute; inset: 0; background: rgba(255,255,255,0.75); display: flex; align-items: center; justify-content: center; }
+.spin-ring { width: 22px; height: 22px; border: 3px solid var(--border-light); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+/* ── AI button ────────────────────────────────────────────────── */
+.ai-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 7px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--cyan); background: rgba(0,255,243,0.06); color: #009e95;
+  cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+}
+.ai-btn:hover { opacity: 0.8; }
+.ai-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ai-spinner { width: 10px; height: 10px; border: 1.5px solid #009e95; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+
+/* ── Field errors ─────────────────────────────────────────────── */
+.form-input.field-err { border-color: #e53e3e !important; background: #fff5f5; }
+.field-err-msg { font-size: 12px; color: #e53e3e; margin-top: 4px; display: none; }
+.field-err-msg.show { display: block; }
+
+/* ── Animations ───────────────────────────────────────────────── */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Misc ─────────────────────────────────────────────────────── */
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row-3 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+.inline-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="dash-content" style="max-width:820px; padding-bottom:60px;">
+
+  <!-- Breadcrumb -->
+  <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">
+    <a href="/org/{{ org.slug }}/events" style="color:var(--text-muted); text-decoration:none;">
+      <span class="material-symbols-outlined" style="font-size:11px; margin-right:4px;">arrow_back</span>Events
+    </a>
+    <span style="margin:0 6px; opacity:.4;">›</span>
+    {% if mode == 'create' %}New event{% else %}Edit event{% endif %}
+  </div>
+  <div class="dash-greeting" style="margin-bottom:24px;">
+    {% if mode == 'create' %}
+      <span class="material-symbols-outlined" style="font-size:20px; margin-right:10px; color:var(--cyan);">event</span>Create an event
+    {% else %}
+      <span class="material-symbols-outlined" style="font-size:20px; margin-right:10px; color:var(--cyan);">edit</span>Edit event
+    {% endif %}
+  </div>
+
+  <div x-data="eventForm()">
+
+    <!-- Global error -->
+    <div x-show="globalError" x-text="globalError" class="alert alert-danger"
+      style="margin-bottom:16px; display:none; animation: fadeInUp 0.2s ease;"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 1 · ABOUT -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.basics = !sections.basics">
+        <div class="ev-sec-icon" :class="{ active: sections.basics }">
+          <span class="material-symbols-outlined">info</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">About the event</div>
+          <div class="ev-sec-sub" x-show="!sections.basics" x-text="form.title || 'Title, format, description'" style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="badge-req" x-show="!form.title && !sections.basics" style="display:none;">Required</span>
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.basics" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+
+          <!-- Title -->
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label">Event title <span style="color:#e53e3e;">*</span></label>
+            <input type="text" :class="['form-input', fe.title ? 'field-err' : '']"
+              placeholder="Give your event a clear, compelling name"
+              x-model="form.title" @input="clr('title')" maxlength="500" autofocus>
+            <p class="field-err-msg" :class="{ show: fe.title }" x-text="fe.title || ''"></p>
+          </div>
+
+          <!-- Format -->
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label">Format</label>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px;">
+              {% for fmt, label, icon in [('in_person','In person','location_on'),('virtual','Virtual','laptop_mac'),('hybrid','Hybrid','shuffle')] %}
+              <label style="display:block;">
+                <input type="radio" x-model="form.format" value="{{ fmt }}" style="position:absolute;opacity:0;pointer-events:none;">
+                <div :class="['fmt-card', form.format === '{{ fmt }}' ? 'active' : '']">
+                  <div style="font-size:22px; margin-bottom:6px; color:var(--text-muted);">
+                    <span class="material-symbols-outlined">{{ icon }}</span>
+                  </div>
+                  <div style="font-size:13px; font-weight:500;">{{ label }}</div>
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Description + AI -->
+          <div class="form-group" style="margin-bottom:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <label class="form-label" style="margin-bottom:0;">Description</label>
+              <button type="button" class="ai-btn" @click="generateDescription()" :disabled="!form.title || aiGenerating">
+                <span x-show="!aiGenerating"><span class="material-symbols-outlined" style="font-size:10px;">auto_awesome</span> Write for me</span>
+                <span x-show="aiGenerating" style="display:flex; align-items:center; gap:5px; display:none;">
+                  <span class="ai-spinner"></span> Generating…
+                </span>
+              </button>
+            </div>
+            <textarea class="form-input" rows="5"
+              placeholder="What will attendees experience? Highlights, dress code, what to expect…"
+              x-model="form.description" style="resize:vertical; line-height:1.65;"></textarea>
+            <p x-show="aiError" x-text="aiError" style="font-size:12px; color:#e53e3e; margin-top:4px; display:none;"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 2 · DATE & TIME -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.datetime = !sections.datetime">
+        <div class="ev-sec-icon" :class="{ active: sections.datetime }">
+          <span class="material-symbols-outlined">calendar_month</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Date &amp; time</div>
+          <div class="ev-sec-sub" x-show="!sections.datetime" x-text="form.start_datetime ? formatDatePreview() : 'Start date, end date, timezone'" style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="badge-req" x-show="!form.start_datetime && !sections.datetime" style="display:none;">Required</span>
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.datetime" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+          <div class="form-row-2" style="margin-bottom:14px;">
+            <div class="form-group">
+              <label class="form-label"><span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted);">schedule</span>Starts <span style="color:#e53e3e;">*</span></label>
+              <input type="datetime-local" :class="['form-input', fe.start_datetime ? 'field-err' : '']"
+                x-model="form.start_datetime" @change="clr('start_datetime')">
+              <p class="field-err-msg" :class="{ show: fe.start_datetime }" x-text="fe.start_datetime || ''"></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label"><span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted);">schedule</span>Ends <span style="color:#e53e3e;">*</span></label>
+              <input type="datetime-local" :class="['form-input', fe.end_datetime ? 'field-err' : '']"
+                x-model="form.end_datetime" @change="clr('end_datetime')">
+              <p class="field-err-msg" :class="{ show: fe.end_datetime }" x-text="fe.end_datetime || ''"></p>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label"><span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted);">language</span>Timezone</label>
+            <select class="form-input" x-model="form.timezone" style="appearance:auto;">
+              <optgroup label="Africa">
+                <option value="Africa/Lagos">Africa/Lagos (WAT, UTC+1)</option>
+                <option value="Africa/Accra">Africa/Accra (GMT, UTC+0)</option>
+                <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
+                <option value="Africa/Johannesburg">Africa/Johannesburg (SAST, UTC+2)</option>
+                <option value="Africa/Cairo">Africa/Cairo (EET, UTC+2)</option>
+                <option value="Africa/Abidjan">Africa/Abidjan (GMT, UTC+0)</option>
+                <option value="Africa/Dakar">Africa/Dakar (GMT, UTC+0)</option>
+                <option value="Africa/Kigali">Africa/Kigali (CAT, UTC+2)</option>
+              </optgroup>
+              <optgroup label="International">
+                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                <option value="America/New_York">America/New_York (ET)</option>
+                <option value="America/Los_Angeles">America/Los_Angeles (PT)</option>
+                <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
+                <option value="UTC">UTC</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 3 · LOCATION -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.location = !sections.location">
+        <div class="ev-sec-icon" :class="{ active: sections.location }">
+          <span class="material-symbols-outlined">location_on</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title" x-text="form.format === 'virtual' ? 'Online details' : 'Venue'"></div>
+          <div class="ev-sec-sub" x-show="!sections.location"
+            x-text="(form.venue_name || form.venue_city) ? (form.venue_name || form.venue_city) : 'Venue address or stream link'"
+            style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.location" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+
+          <!-- Physical -->
+          <div x-show="form.format !== 'virtual'" style="display:flex; flex-direction:column; gap:14px;">
+            <div class="form-group">
+              <label class="form-label"><span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted);">business</span>Venue name</label>
+              <input type="text" class="form-input" placeholder="e.g. Eko Hotels &amp; Suites" x-model="form.venue_name" maxlength="500">
+            </div>
+            <div class="form-group">
+              <label class="form-label"><span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted);">route</span>Address</label>
+              <input type="text" class="form-input" placeholder="Full address" x-model="form.venue_address">
+            </div>
+            <div class="form-row-3">
+              <div class="form-group">
+                <label class="form-label">City <span x-show="form.format === 'in_person'" style="color:#e53e3e;">*</span></label>
+                <input type="text" :class="['form-input', fe.venue_city ? 'field-err' : '']"
+                  placeholder="Lagos" x-model="form.venue_city" @input="clr('venue_city')" maxlength="255">
+                <p class="field-err-msg" :class="{ show: fe.venue_city }" x-text="fe.venue_city || ''"></p>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Country</label>
+                <select class="form-input" x-model="form.venue_country" style="appearance:auto;">
+                  <option value="">Select…</option>
+                  <option value="NG">Nigeria</option><option value="GH">Ghana</option>
+                  <option value="KE">Kenya</option><option value="ZA">South Africa</option>
+                  <option value="TZ">Tanzania</option><option value="UG">Uganda</option>
+                  <option value="RW">Rwanda</option><option value="ET">Ethiopia</option>
+                  <option value="CM">Cameroon</option><option value="SN">Senegal</option>
+                  <option value="GB">UK</option><option value="US">USA</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Virtual -->
+          <div :style="{ display: form.format !== 'in_person' ? 'flex' : 'none', flexDirection: 'column', gap: '14px' }">
+            <div class="form-group">
+              <label class="form-label">
+                <span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted);">videocam</span>
+                Stream / meeting URL <span x-show="form.format !== 'in_person'" style="color:#e53e3e;">*</span>
+              </label>
+              <input type="url" :class="['form-input', fe.virtual_url ? 'field-err' : '']"
+                placeholder="https://zoom.us/j/..." x-model="form.virtual_url" @input="clr('virtual_url')">
+              <p class="field-err-msg" :class="{ show: fe.virtual_url }" x-text="fe.virtual_url || ''"></p>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                <span class="material-symbols-outlined" style="font-size:10px; margin-right:3px;">lock</span>Sent to registered attendees only.
+              </p>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Platform</label>
+              <select class="form-input" x-model="form.virtual_platform" style="appearance:auto;">
+                <option value="">Select platform…</option>
+                <option value="zoom">Zoom</option><option value="meet">Google Meet</option>
+                <option value="teams">Microsoft Teams</option><option value="webex">Webex</option>
+                <option value="streamyard">StreamYard</option><option value="youtube_live">YouTube Live</option>
+                <option value="custom">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 4 · TICKETING -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.ticketing = !sections.ticketing">
+        <div class="ev-sec-icon" :class="{ active: sections.ticketing || tickets.length > 0 }">
+          <span class="material-symbols-outlined">confirmation_number</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Ticketing</div>
+          <div class="ev-sec-sub" x-show="!sections.ticketing"
+            x-text="tickets.length ? tickets.length + ' ticket type' + (tickets.length !== 1 ? 's' : '') : 'Pricing, tiers and capacity'"
+            style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="badge-cnt" x-show="tickets.length > 0" x-text="tickets.length" style="display:none;"></span>
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.ticketing" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+
+          <!-- Free event info strip -->
+          <div style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg-secondary); border-radius:10px; margin-bottom:14px;">
+            <span class="material-symbols-outlined" style="color:var(--text-muted); font-size:13px; flex-shrink:0;">info</span>
+            <div style="flex:1;">
+              <div style="font-size:13px; font-weight:500;">Free event</div>
+              <div style="font-size:12px; color:var(--text-muted);">No tickets required — attendees register at no cost</div>
+            </div>
+            <div class="tog" @click="toggleFree()" :style="isFree ? 'background:var(--cyan)' : 'background:var(--border-color)'">
+              <div class="tog-knob" :style="isFree ? 'transform:translateX(18px)' : 'transform:translateX(2px)'"></div>
+            </div>
+          </div>
+
+          <!-- Ticket list -->
+          <div x-show="!isFree">
+            <template x-for="(tt, idx) in tickets" :key="tt._key">
+              <div class="ticket-row">
+                <div class="tier-dot" :class="'t-' + tt.tier"></div>
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:13px; font-weight:600;" x-text="tt.name"></div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                    <span x-text="tt.tier === 'free' ? 'Free' : (tt.currency + ' ' + Number(tt.price || 0).toLocaleString())"></span>
+                    <span x-show="tt.quantity"> · <span x-text="tt.quantity"></span> spots</span>
+                  </div>
+                </div>
+                <span style="font-size:11px; font-weight:600; padding:3px 8px; border-radius:100px; text-transform:capitalize;"
+                  :style="{
+                    background: tt.tier==='vip' ? '#9333ea22' : tt.tier==='early_bird' ? '#f59e0b22' : tt.tier==='free' ? '#22c55e22' : 'var(--bg-secondary)',
+                    color: tt.tier==='vip' ? '#9333ea' : tt.tier==='early_bird' ? '#d97706' : tt.tier==='free' ? '#16a34a' : 'var(--text-muted)'
+                  }"
+                  x-text="tt.tier.replace(/_/g,' ')">
+                </span>
+                <button type="button" @click="tickets.splice(idx,1)"
+                  style="width:26px;height:26px;border-radius:50%;border:none;background:rgba(229,62,62,0.1);color:#e53e3e;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </template>
+
+            <!-- Add ticket inline form -->
+            <div x-show="addingTicket" class="inline-form" style="display:none;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
+                <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">confirmation_number</span>New ticket type
+              </div>
+              <div class="inline-form-grid" style="margin-bottom:10px;">
+                <div class="form-group" style="margin:0; grid-column:1/-1;">
+                  <label class="form-label" style="font-size:12px;">Name <span style="color:#e53e3e;">*</span></label>
+                  <input type="text" class="form-input" placeholder="e.g. General Admission"
+                    x-model="tDraft.name" style="font-size:13px;">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Tier</label>
+                  <select class="form-input" x-model="tDraft.tier"
+                    @change="if(tDraft.tier==='free') tDraft.price=0" style="appearance:auto; font-size:13px;">
+                    <option value="free">Free</option>
+                    <option value="general">General</option>
+                    <option value="early_bird">Early Bird</option>
+                    <option value="vip">VIP</option>
+                    <option value="group">Group / Table</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Quantity (blank = unlimited)</label>
+                  <input type="number" class="form-input" placeholder="Unlimited" min="1"
+                    x-model.number="tDraft.quantity" style="font-size:13px;">
+                </div>
+                <div class="form-group" style="margin:0;" x-show="tDraft.tier !== 'free'" style="display:none;">
+                  <label class="form-label" style="font-size:12px;">Currency</label>
+                  <select class="form-input" x-model="tDraft.currency" style="appearance:auto; font-size:13px;">
+                    <option value="NGN">NGN</option><option value="GHS">GHS</option>
+                    <option value="KES">KES</option><option value="ZAR">ZAR</option>
+                    <option value="USD">USD</option><option value="GBP">GBP</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0;" x-show="tDraft.tier !== 'free'" style="display:none;">
+                  <label class="form-label" style="font-size:12px;">Price</label>
+                  <input type="number" class="form-input" placeholder="0" min="0" step="100"
+                    x-model.number="tDraft.price" style="font-size:13px;">
+                </div>
+                <div class="form-group" style="margin:0; grid-column:1/-1;">
+                  <label class="form-label" style="font-size:12px;">Description (optional)</label>
+                  <input type="text" class="form-input" placeholder="What's included?"
+                    x-model="tDraft.description" style="font-size:13px;" maxlength="255">
+                </div>
+              </div>
+              <div style="display:flex; gap:8px; justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary btn-sm" @click="addingTicket=false">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm" @click="saveTicket()">
+                  <span class="material-symbols-outlined" style="font-size:11px;">check</span> Add ticket
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="add-btn" x-show="!addingTicket"
+              @click="addingTicket=true; tDraft={ name:'', tier:'general', price:0, currency:'NGN', quantity:null, description:'' }">
+              <span class="material-symbols-outlined">add</span> Add ticket type
+            </button>
+          </div>
+
+          <div x-show="isFree" style="padding:10px 0; text-align:center; font-size:13px; color:var(--text-muted); display:none;">
+            <span class="material-symbols-outlined" style="color:#22c55e; margin-right:6px;">check_circle</span>
+            Attendees can register for free. Toggle off to add paid ticket types.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 5 · AGENDA -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.agenda = !sections.agenda">
+        <div class="ev-sec-icon" :class="{ active: sections.agenda || agenda.length > 0 }">
+          <span class="material-symbols-outlined">checklist</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Agenda</div>
+          <div class="ev-sec-sub" x-show="!sections.agenda"
+            x-text="agenda.length ? agenda.length + ' session' + (agenda.length !== 1 ? 's' : '') : 'Schedule, sessions and programme'"
+            style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="badge-cnt" x-show="agenda.length > 0" x-text="agenda.length" style="display:none;"></span>
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.agenda" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+
+          <!-- Agenda list -->
+          <div x-show="agenda.length > 0" style="margin-bottom:12px; display:none;">
+            <template x-for="(item, idx) in agenda" :key="item._key">
+              <div class="agenda-row">
+                <div class="agenda-time">
+                  <span x-text="item.time || '–'"></span>
+                  <span x-show="item.end_time"> – <span x-text="item.end_time"></span></span>
+                </div>
+                <div class="agenda-content">
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span class="stype-dot" :class="'st-' + item.type"></span>
+                    <span style="font-size:14px; font-weight:600;" x-text="item.title"></span>
+                    <span style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted); text-transform:capitalize;"
+                      x-text="item.type.replace('_',' ')"></span>
+                  </div>
+                  <div x-show="item.speaker" style="font-size:12px; color:var(--text-muted); margin-top:3px; display:none;">
+                    <span class="material-symbols-outlined" style="font-size:10px; margin-right:4px;">mic</span><span x-text="item.speaker"></span>
+                  </div>
+                  <div x-show="item.track" style="font-size:11px; color:#009e95; margin-top:2px; display:none;">
+                    <span class="material-symbols-outlined" style="font-size:9px; margin-right:3px;">sell</span><span x-text="item.track"></span>
+                  </div>
+                </div>
+                <button type="button" @click="agenda.splice(idx,1)"
+                  style="width:26px;height:26px;border-radius:50%;border:none;background:rgba(229,62,62,0.08);color:#e53e3e;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;transition:opacity 0.12s;"
+                  onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </template>
+          </div>
+
+          <!-- Add agenda form -->
+          <div x-show="addingAgenda" class="inline-form" style="display:none;">
+            <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
+              <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">add</span>Add session
+            </div>
+            <div class="inline-form-grid" style="margin-bottom:10px;">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Start</label>
+                  <input type="time" class="form-input" x-model="aDraft.time" style="font-size:13px;">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">End</label>
+                  <input type="time" class="form-input" x-model="aDraft.end_time" style="font-size:13px;">
+                </div>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:12px;">Type</label>
+                <select class="form-input" x-model="aDraft.type" style="appearance:auto; font-size:13px;">
+                  <option value="talk">Talk / Keynote</option>
+                  <option value="panel">Panel Discussion</option>
+                  <option value="workshop">Workshop</option>
+                  <option value="networking">Networking</option>
+                  <option value="break">Break</option>
+                  <option value="ceremony">Ceremony / Award</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0; grid-column:1/-1;">
+                <label class="form-label" style="font-size:12px;">Session title <span style="color:#e53e3e;">*</span></label>
+                <input type="text" class="form-input" placeholder="e.g. Opening Keynote"
+                  x-model="aDraft.title" style="font-size:13px;" maxlength="200">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:12px;">Speaker / Host</label>
+                <input type="text" class="form-input" placeholder="Name(s)"
+                  x-model="aDraft.speaker" style="font-size:13px;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:12px;">Track (optional)</label>
+                <input type="text" class="form-input" placeholder="e.g. Main Stage"
+                  x-model="aDraft.track" style="font-size:13px;">
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm" @click="addingAgenda=false">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" @click="saveAgenda()">
+                <span class="material-symbols-outlined" style="font-size:11px;">check</span> Add session
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="add-btn" x-show="!addingAgenda"
+            @click="addingAgenda=true; aDraft={ time:'', end_time:'', title:'', type:'talk', speaker:'', track:'' }">
+            <span class="material-symbols-outlined">add</span> Add session
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 6 · PEOPLE -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.people = !sections.people">
+        <div class="ev-sec-icon" :class="{ active: sections.people || totalPeople() > 0 }">
+          <span class="material-symbols-outlined">group</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">People</div>
+          <div class="ev-sec-sub" x-show="!sections.people"
+            x-text="totalPeople() ? totalPeople() + ' person' + (totalPeople()!==1?'s':'') + ' added' : 'Speakers, panelists, moderators, judges, organizers'"
+            style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="badge-cnt" x-show="totalPeople() > 0" x-text="totalPeople()" style="display:none;"></span>
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.people" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+
+          <!-- Role tabs -->
+          <div class="people-tabs">
+            <template x-for="tab in personTabs" :key="tab.id">
+              <button type="button" class="people-tab" :class="{ active: activeTab === tab.id }"
+                @click="activeTab = tab.id; addingPerson = false">
+                <span class="material-symbols-outlined" x-text="tab.icon" style="margin-right:3px; font-size:14px;"></span>
+                <span x-text="tab.label"></span>
+                <span x-show="people[tab.id].length > 0"
+                  x-text="' (' + people[tab.id].length + ')'"
+                  style="margin-left:2px; opacity:0.8;"></span>
+              </button>
+            </template>
+          </div>
+
+          <!-- Person cards -->
+          <div class="person-grid" x-show="people[activeTab].length > 0" style="display:none;">
+            <template x-for="(p, idx) in people[activeTab]" :key="p._key">
+              <div class="person-card">
+                <button type="button" class="person-rm" @click.stop="people[activeTab].splice(idx,1)">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+                <div class="person-avatar">
+                  <img x-show="p.photo_url" :src="p.photo_url" :alt="p.name" style="display:none;">
+                  <span class="material-symbols-outlined" x-show="!p.photo_url">person</span>
+                </div>
+                <div class="person-name" x-text="p.name"></div>
+                <div class="person-meta" x-show="p.title" x-text="p.title" style="display:none;"></div>
+                <div class="person-meta" x-show="p.company" x-text="p.company" style="display:none;"></div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Add person form -->
+          <div x-show="addingPerson" class="inline-form" style="display:none;">
+            <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
+              <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">person_add</span>
+              Add <span x-text="personTabs.find(t=>t.id===activeTab)?.label.slice(0,-1).toLowerCase() || 'person'"></span>
+            </div>
+            <div style="display:flex; gap:14px; align-items:flex-start; margin-bottom:12px;">
+              <div style="text-align:center; flex-shrink:0;">
+                <div class="person-avatar" style="width:60px; height:60px; cursor:pointer; margin-bottom:4px;"
+                  @click="$refs.personPhoto.click()">
+                  <img x-show="pDraft.photo_url" :src="pDraft.photo_url" style="display:none;">
+                  <span class="material-symbols-outlined" x-show="!pDraft.photo_url" style="font-size:18px;">photo_camera</span>
+                </div>
+                <input type="file" x-ref="personPhoto" accept="image/*" style="display:none;"
+                  @change="readPersonPhoto($event)">
+                <div style="font-size:10px; color:var(--text-muted);">Photo</div>
+              </div>
+              <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div class="form-group" style="margin:0; grid-column:1/-1;">
+                  <label class="form-label" style="font-size:12px;">Full name <span style="color:#e53e3e;">*</span></label>
+                  <input type="text" class="form-input" placeholder="Full name"
+                    x-model="pDraft.name" style="font-size:13px;" maxlength="100">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Title / Role</label>
+                  <input type="text" class="form-input" placeholder="e.g. CEO"
+                    x-model="pDraft.title" style="font-size:13px;">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Company / Org</label>
+                  <input type="text" class="form-input" placeholder="e.g. Acme Corp"
+                    x-model="pDraft.company" style="font-size:13px;">
+                </div>
+                <div class="form-group" style="margin:0; grid-column:1/-1;">
+                  <label class="form-label" style="font-size:12px;">Short bio (optional)</label>
+                  <input type="text" class="form-input" placeholder="One-liner"
+                    x-model="pDraft.bio" style="font-size:13px;" maxlength="160">
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm" @click="addingPerson=false">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" @click="savePerson()">
+                <span class="material-symbols-outlined" style="font-size:11px;">check</span> Add
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="add-btn" x-show="!addingPerson"
+            @click="addingPerson=true; pDraft={ name:'', title:'', company:'', bio:'', photo_url:'' }">
+            <span class="material-symbols-outlined">person_add</span>
+            Add <span x-text="personTabs.find(t=>t.id===activeTab)?.label.slice(0,-1).toLowerCase() || 'person'"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 7 · PARTNERS & SPONSORS -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.partners = !sections.partners">
+        <div class="ev-sec-icon" :class="{ active: sections.partners || partners.length > 0 }">
+          <span class="material-symbols-outlined">handshake</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Partners &amp; Sponsors</div>
+          <div class="ev-sec-sub" x-show="!sections.partners"
+            x-text="partners.length ? partners.length + ' added' : 'Sponsoring orgs, media partners, supporters'"
+            style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="badge-cnt" x-show="partners.length > 0" x-text="partners.length" style="display:none;"></span>
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.partners" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+
+          <div class="partner-grid" x-show="partners.length > 0" style="display:none;">
+            <template x-for="(p, idx) in partners" :key="p._key">
+              <div class="partner-card">
+                <button type="button" class="partner-rm" @click="partners.splice(idx,1)">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+                <div class="partner-logo">
+                  <img x-show="p.logo_url" :src="p.logo_url" :alt="p.name" style="display:none;">
+                  <span class="material-symbols-outlined" x-show="!p.logo_url">business</span>
+                </div>
+                <div>
+                  <div class="partner-name" x-text="p.name"></div>
+                  <div class="tier-lbl" :class="'tlbl-' + p.tier"
+                    x-text="p.tier.charAt(0).toUpperCase() + p.tier.slice(1)"></div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Add partner form -->
+          <div x-show="addingPartner" class="inline-form" style="display:none;">
+            <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
+              <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">add</span>
+              Add partner / sponsor
+            </div>
+            <div class="inline-form-grid" style="margin-bottom:10px;">
+              <div class="form-group" style="margin:0; grid-column:1/-1;">
+                <label class="form-label" style="font-size:12px;">Organization name <span style="color:#e53e3e;">*</span></label>
+                <input type="text" class="form-input" placeholder="e.g. TechCorp Nigeria"
+                  x-model="partDraft.name" style="font-size:13px;" maxlength="100">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:12px;">Tier / Type</label>
+                <select class="form-input" x-model="partDraft.tier" style="appearance:auto; font-size:13px;">
+                  <option value="platinum">Platinum Sponsor</option>
+                  <option value="gold">Gold Sponsor</option>
+                  <option value="silver">Silver Sponsor</option>
+                  <option value="bronze">Bronze Sponsor</option>
+                  <option value="partner">Partner</option>
+                  <option value="media">Media Partner</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:12px;">Website (optional)</label>
+                <input type="url" class="form-input" placeholder="https://..."
+                  x-model="partDraft.website" style="font-size:13px;">
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm" @click="addingPartner=false">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" @click="savePartner()">
+                <span class="material-symbols-outlined" style="font-size:11px;">check</span> Add
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="add-btn" x-show="!addingPartner"
+            @click="addingPartner=true; partDraft={ name:'', tier:'partner', website:'', logo_url:'' }">
+            <span class="material-symbols-outlined">add</span> Add partner / sponsor
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 8 · MEDIA & GALLERY -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.media = !sections.media">
+        <div class="ev-sec-icon" :class="{ active: sections.media }">
+          <span class="material-symbols-outlined">photo_library</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Media &amp; gallery</div>
+          <div class="ev-sec-sub" x-show="!sections.media">Cover photo and gallery images</div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.media" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
+            Add up to 3 images. The first is your primary cover shown on listings.
+          </p>
+          <div class="thumb-grid">
+
+            <div>
+              <div class="thumb-slot" :class="{ filled: thumb0.preview || thumb0.url }" @click="document.getElementById('ti0').click()">
+                <img x-show="thumb0.preview || thumb0.url" :src="thumb0.preview || thumb0.url" alt="" style="display:none;">
+                <div class="thumb-ph" x-show="!thumb0.preview && !thumb0.url">
+                  <span class="material-symbols-outlined" style="font-size:22px;">image</span>
+                  <span style="font-size:11px; font-weight:500;">Primary cover</span>
+                </div>
+                <button type="button" class="thumb-clear" x-show="thumb0.preview || thumb0.url" @click.stop="clearThumb(0)" style="display:none;">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+                <div class="thumb-loader" x-show="thumb0.uploading" style="display:none;"><div class="spin-ring"></div></div>
+                <div class="thumb-badge">Cover</div>
+              </div>
+              <input id="ti0" type="file" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="pickThumb(0,$event)">
+              <p x-show="thumb0.error" x-text="thumb0.error" style="font-size:11px;color:#e53e3e;margin-top:4px;display:none;"></p>
+            </div>
+
+            <div>
+              <div class="thumb-slot" :class="{ filled: thumb1.preview || thumb1.url }" @click="document.getElementById('ti1').click()">
+                <img x-show="thumb1.preview || thumb1.url" :src="thumb1.preview || thumb1.url" alt="" style="display:none;">
+                <div class="thumb-ph" x-show="!thumb1.preview && !thumb1.url">
+                  <span class="material-symbols-outlined" style="font-size:22px;">image</span>
+                  <span style="font-size:11px; font-weight:500;">Add image</span>
+                </div>
+                <button type="button" class="thumb-clear" x-show="thumb1.preview || thumb1.url" @click.stop="clearThumb(1)" style="display:none;">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+                <div class="thumb-loader" x-show="thumb1.uploading" style="display:none;"><div class="spin-ring"></div></div>
+                <div class="thumb-badge">Image 2</div>
+              </div>
+              <input id="ti1" type="file" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="pickThumb(1,$event)">
+            </div>
+
+            <div>
+              <div class="thumb-slot" :class="{ filled: thumb2.preview || thumb2.url }" @click="document.getElementById('ti2').click()">
+                <img x-show="thumb2.preview || thumb2.url" :src="thumb2.preview || thumb2.url" alt="" style="display:none;">
+                <div class="thumb-ph" x-show="!thumb2.preview && !thumb2.url">
+                  <span class="material-symbols-outlined" style="font-size:22px;">image</span>
+                  <span style="font-size:11px; font-weight:500;">Add image</span>
+                </div>
+                <button type="button" class="thumb-clear" x-show="thumb2.preview || thumb2.url" @click.stop="clearThumb(2)" style="display:none;">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+                <div class="thumb-loader" x-show="thumb2.uploading" style="display:none;"><div class="spin-ring"></div></div>
+                <div class="thumb-badge">Image 3</div>
+              </div>
+              <input id="ti2" type="file" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="pickThumb(2,$event)">
+            </div>
+
+          </div>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:10px;">
+            <span class="material-symbols-outlined" style="margin-right:4px;">info</span>
+            JPEG, PNG or WebP · Max 10 MB · Recommended 1920×1080
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 9 · SETTINGS -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.settings = !sections.settings">
+        <div class="ev-sec-icon" :class="{ active: sections.settings }">
+          <span class="material-symbols-outlined">tune</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Settings</div>
+          <div class="ev-sec-sub" x-show="!sections.settings">Capacity, privacy and categories</div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.settings" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+          <div style="display:flex; flex-direction:column; gap:20px;">
+
+            <!-- Capacity -->
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">
+                <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">group</span>Max capacity
+              </label>
+              <input type="number" class="form-input" placeholder="Leave blank for unlimited"
+                x-model.number="form.max_capacity" min="1" style="max-width:220px;">
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Total across all ticket types.</p>
+            </div>
+
+            <!-- Private toggle -->
+            <div>
+              <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+                <div class="tog" @click="form.is_private = !form.is_private"
+                  :style="form.is_private ? 'background:var(--cyan)' : 'background:var(--border-color)'">
+                  <div class="tog-knob" :style="form.is_private ? 'transform:translateX(18px)' : 'transform:translateX(2px)'"></div>
+                </div>
+                <div>
+                  <div style="font-size:14px; font-weight:500;">
+                    <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">lock</span>Private event
+                  </div>
+                  <div style="font-size:12px; color:var(--text-muted);">Requires a password or invite link</div>
+                </div>
+              </label>
+              <div x-show="form.is_private" style="display:none; margin-top:14px; padding-left:52px;">
+                <label class="form-label">
+                  <span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted); font-size:12px;">key</span>Event password
+                </label>
+                <input type="text" class="form-input" placeholder="Attendees enter this to access"
+                  x-model="form.password" style="max-width:300px;">
+              </div>
+            </div>
+
+            <!-- Categories -->
+            <div>
+              <label class="form-label" style="margin-bottom:8px;">
+                <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">label</span>Categories
+              </label>
+              {% if categories %}
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                {% for cat in categories %}
+                <label style="cursor:pointer; user-select:none;">
+                  <input type="checkbox" x-model="form.category_ids" value="{{ cat.id | string }}"
+                    style="position:absolute;opacity:0;pointer-events:none;">
+                  <div :class="['cat-pill', form.category_ids.includes('{{ cat.id | string }}') ? 'selected' : '']">
+                    {% if cat.icon %}<span>{{ cat.icon }}</span>{% endif %}{{ cat.name }}
+                  </div>
+                </label>
+                {% endfor %}
+              </div>
+              {% else %}
+              <p style="font-size:13px; color:var(--text-muted);">No categories set up yet.</p>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Action bar ─────────────────────────────────────────────────── -->
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:20px 0 4px;">
+      <a href="/org/{{ org.slug }}/events" class="btn btn-secondary">
+        <span class="material-symbols-outlined" style="font-size:11px; margin-right:6px;">arrow_back</span>Cancel
+      </a>
+      <div style="display:flex; gap:10px;">
+        <button type="button" class="btn btn-secondary"
+          :class="{ 'btn-loading': saving && !publishing }"
+          :disabled="saving || publishing"
+          @click="submit('draft')">
+          <span class="material-symbols-outlined" style="font-size:12px; margin-right:6px;">save</span>Save draft
+        </button>
+
+        {% if mode == 'edit' and event and event.status == 'draft' %}
+        <button type="button" class="btn btn-primary"
+          :class="{ 'btn-loading': publishing }"
+          :disabled="saving || publishing"
+          @click="submit('publish')">
+          <span class="material-symbols-outlined" style="font-size:12px; margin-right:6px;">rocket_launch</span>Publish
+        </button>
+        {% endif %}
+
+        {% if mode == 'create' %}
+        <button type="button" class="btn btn-primary"
+          :class="{ 'btn-loading': saving && !publishing }"
+          :disabled="saving || publishing"
+          @click="submit('save')">
+          <span class="material-symbols-outlined" style="font-size:12px; margin-right:6px;">arrow_forward</span>Create event
+        </button>
+        {% endif %}
+      </div>
+    </div>
+
+  </div><!-- /x-data -->
+</div>
+
+<script>
+function eventForm() {
+  const existing = {{ event_dict | tojson if event_dict is defined and event_dict else 'null' }};
+  const existingTickets = {{ existing_tickets | tojson if existing_tickets is defined and existing_tickets else '[]' }};
+  const orgSlug = '{{ org.slug }}';
+  const existingId = existing ? existing.id : null;
+
+  function toLocal(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  const defTz = '{{ org.country == "GH" and "Africa/Accra" or org.country == "KE" and "Africa/Nairobi" or org.country == "ZA" and "Africa/Johannesburg" or "Africa/Lagos" }}';
+  const ex = existing || {};
+  const extras = ex.extras || {};
+  let _k = 0;
+  const k = () => ++_k;
+
+  return {
+    /* ─ Core form ─ */
+    form: {
+      title:            ex.title || '',
+      description:      ex.description || '',
+      format:           ex.format || 'in_person',
+      start_datetime:   toLocal(ex.start_datetime),
+      end_datetime:     toLocal(ex.end_datetime),
+      timezone:         ex.timezone || defTz,
+      venue_name:       ex.venue_name || '',
+      venue_address:    ex.venue_address || '',
+      venue_city:       ex.venue_city || '',
+      venue_country:    ex.venue_country || '{{ org.country or "" }}',
+      virtual_url:      ex.virtual_url || '',
+      virtual_platform: ex.virtual_platform || '',
+      max_capacity:     ex.max_capacity || null,
+      is_private:       ex.is_private || false,
+      password:         ex.password || '',
+      category_ids:     (ex.categories || []).map(c => String(c.id)),
+    },
+
+    /* ─ Section open/close ─ */
+    sections: { basics:true, datetime:true, location:true, ticketing:false, agenda:false, people:false, partners:false, media:false, settings:false },
+
+    /* ─ Ticketing ─ */
+    tickets: existingTickets.map(tt => ({ ...tt, _key: k() })),
+    isFree: existingTickets.length === 0,
+    addingTicket: false,
+    tDraft: { name:'', tier:'general', price:0, currency:'NGN', quantity:null, description:'' },
+
+    /* ─ Agenda ─ */
+    agenda: (extras.agenda || []).map(a => ({ ...a, _key: k() })),
+    addingAgenda: false,
+    aDraft: { time:'', end_time:'', title:'', type:'talk', speaker:'', track:'' },
+
+    /* ─ People ─ */
+    personTabs: [
+      { id:'speakers',   label:'Speakers',   icon:'mic' },
+      { id:'panelists',  label:'Panelists',  icon:'forum' },
+      { id:'moderators', label:'Moderators', icon:'gavel' },
+      { id:'judges',     label:'Judges',     icon:'balance' },
+      { id:'organizers', label:'Organizers', icon:'business' },
+    ],
+    activeTab: 'speakers',
+    people: {
+      speakers:   (extras.people?.speakers   || []).map(p => ({ ...p, _key: k() })),
+      panelists:  (extras.people?.panelists  || []).map(p => ({ ...p, _key: k() })),
+      moderators: (extras.people?.moderators || []).map(p => ({ ...p, _key: k() })),
+      judges:     (extras.people?.judges     || []).map(p => ({ ...p, _key: k() })),
+      organizers: (extras.people?.organizers || []).map(p => ({ ...p, _key: k() })),
+    },
+    addingPerson: false,
+    pDraft: { name:'', title:'', company:'', bio:'', photo_url:'' },
+
+    /* ─ Partners ─ */
+    partners: (extras.partners || []).map(p => ({ ...p, _key: k() })),
+    addingPartner: false,
+    partDraft: { name:'', tier:'partner', website:'', logo_url:'' },
+
+    /* ─ Images ─ */
+    thumb0: { preview:null, url: ex.cover_image_url || null,  file:null, uploading:false, error:null },
+    thumb1: { preview:null, url: ex.gallery_1_url  || null,   file:null, uploading:false, error:null },
+    thumb2: { preview:null, url: ex.gallery_2_url  || null,   file:null, uploading:false, error:null },
+
+    /* ─ UI ─ */
+    saving:false, publishing:false, globalError:null, fe:{},
+    aiGenerating:false, aiError:'',
+
+    /* ── helpers ── */
+    clr(f) { if (this.fe[f]) { const c={...this.fe}; delete c[f]; this.fe=c; } },
+
+    formatDatePreview() {
+      try { return new Date(this.form.start_datetime).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+      catch { return ''; }
+    },
+
+    totalPeople() { return Object.values(this.people).reduce((s,a)=>s+a.length,0); },
+
+    /* ── ticketing ── */
+    toggleFree() {
+      this.isFree = !this.isFree;
+      if (this.isFree) this.tickets = [];
+    },
+    saveTicket() {
+      if (!this.tDraft.name.trim()) return;
+      const tt = { ...this.tDraft, _key: k() };
+      if (tt.tier === 'free') tt.price = 0;
+      this.tickets.push(tt);
+      this.addingTicket = false;
+    },
+
+    /* ── agenda ── */
+    saveAgenda() {
+      if (!this.aDraft.title.trim()) return;
+      this.agenda.push({ ...this.aDraft, _key: k() });
+      this.addingAgenda = false;
+    },
+
+    /* ── people ── */
+    savePerson() {
+      if (!this.pDraft.name.trim()) return;
+      this.people[this.activeTab].push({ ...this.pDraft, _key: k() });
+      this.addingPerson = false;
+    },
+    readPersonPhoto(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      const r = new FileReader();
+      r.onload = e => { this.pDraft.photo_url = e.target.result; };
+      r.readAsDataURL(file);
+    },
+
+    /* ── partners ── */
+    savePartner() {
+      if (!this.partDraft.name.trim()) return;
+      this.partners.push({ ...this.partDraft, _key: k() });
+      this.addingPartner = false;
+    },
+
+    /* ── image upload ── */
+    setThumb(i, obj) {
+      if      (i===0) this.thumb0 = {...this.thumb0,...obj};
+      else if (i===1) this.thumb1 = {...this.thumb1,...obj};
+      else            this.thumb2 = {...this.thumb2,...obj};
+    },
+    pickThumb(i, ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      if (file.size > 10*1024*1024) { this.setThumb(i,{error:'Max 10 MB.',file:null,preview:null}); return; }
+      const r = new FileReader();
+      if (existingId) {
+        r.onload = async e => { this.setThumb(i,{preview:e.target.result,file,error:null}); await this.uploadThumb(i,file,existingId); };
+      } else {
+        r.onload = e => this.setThumb(i,{preview:e.target.result,file,error:null});
+      }
+      r.readAsDataURL(file);
+    },
+    clearThumb(i) {
+      this.setThumb(i,{preview:null,url:null,file:null,error:null});
+      const inp = document.getElementById('ti'+i);
+      if (inp) inp.value = '';
+    },
+    async uploadThumb(i, file, eventId) {
+      this.setThumb(i,{uploading:true,error:null});
+      const fd = new FormData();
+      let endpoint;
+      if (i===0) { fd.append('cover',file); endpoint=`/api/v1/organizations/${orgSlug}/events/${eventId}/cover`; }
+      else        { fd.append('image',file); endpoint=`/api/v1/organizations/${orgSlug}/events/${eventId}/gallery/${i}`; }
+      try {
+        const res = await fetch(endpoint,{method:'POST',credentials:'include',body:fd});
+        const data = await res.json();
+        if (!res.ok||!data.success) { this.setThumb(i,{uploading:false,error:data.error?.message||'Upload failed.'}); return false; }
+        const url = data.data.cover_image_url||data.data.gallery_1_url||data.data.gallery_2_url;
+        this.setThumb(i,{uploading:false,url,preview:null});
+        return true;
+      } catch { this.setThumb(i,{uploading:false,error:'Upload failed.'}); return false; }
+    },
+
+    /* ── AI description ── */
+    async generateDescription() {
+      if (!this.form.title) return;
+      this.aiGenerating=true; this.aiError=''; this.form.description='';
+      try {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/ai/generate-event-description`,{
+          method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+          body: JSON.stringify({ title:this.form.title, format:this.form.format, location:this.form.venue_city||this.form.venue_name||'', existing:'' }),
+        });
+        if (!res.ok) { this.aiError='AI generation failed.'; return; }
+        const reader=res.body.getReader(); const dec=new TextDecoder(); let buf='';
+        while(true) {
+          const {done,value}=await reader.read();
+          if(done) break;
+          buf+=dec.decode(value,{stream:true});
+          const lines=buf.split('\n'); buf=lines.pop();
+          for(const ln of lines) {
+            if(!ln.startsWith('data: ')) continue;
+            const payload=ln.slice(6);
+            if(payload==='[DONE]') break;
+            try { const obj=JSON.parse(payload); if(obj.text) this.form.description+=obj.text; } catch{}
+          }
+        }
+      } catch { this.aiError='Network error.'; }
+      finally { this.aiGenerating=false; }
+    },
+
+    /* ── validate ── */
+    validate() {
+      const e={};
+      if (!this.form.title.trim()) e.title='Event title is required.';
+      if (!this.form.start_datetime) e.start_datetime='Start date & time is required.';
+      if (!this.form.end_datetime) e.end_datetime='End date & time is required.';
+      if (this.form.start_datetime && this.form.end_datetime && new Date(this.form.end_datetime)<=new Date(this.form.start_datetime))
+        e.end_datetime='End must be after start.';
+      if (this.form.format==='in_person' && !this.form.venue_city.trim()) e.venue_city='City is required for in-person events.';
+      if ((this.form.format==='virtual'||this.form.format==='hybrid') && !this.form.virtual_url.trim()) e.virtual_url='Stream URL is required.';
+      return e;
+    },
+
+    /* ── submit ── */
+    async submit(action) {
+      this.globalError=null; this.fe={};
+      const errs=this.validate();
+      if (Object.keys(errs).length>0) {
+        this.fe=errs;
+        if (errs.title||errs.start_datetime||errs.end_datetime) this.sections.basics=true;
+        if (errs.venue_city||errs.virtual_url) this.sections.location=true;
+        this.$nextTick(()=>{ const el=document.querySelector('.field-err,.field-err-msg.show'); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); });
+        return;
+      }
+
+      const isPublish=action==='publish';
+      if(isPublish) this.publishing=true; else this.saving=true;
+
+      const strip = obj => { const {_key,...rest}=obj; return rest; };
+
+      const extras = {
+        agenda:   this.agenda.map(strip),
+        people: {
+          speakers:   this.people.speakers.map(strip),
+          panelists:  this.people.panelists.map(strip),
+          moderators: this.people.moderators.map(strip),
+          judges:     this.people.judges.map(strip),
+          organizers: this.people.organizers.map(strip),
+        },
+        partners: this.partners.map(strip),
+      };
+
+      const payload = {
+        ...this.form,
+        max_capacity:     this.form.max_capacity ? parseInt(this.form.max_capacity) : null,
+        start_datetime:   this.form.start_datetime ? new Date(this.form.start_datetime).toISOString() : null,
+        end_datetime:     this.form.end_datetime   ? new Date(this.form.end_datetime).toISOString()   : null,
+        venue_country:    this.form.venue_country    || null,
+        venue_name:       this.form.venue_name       || null,
+        venue_address:    this.form.venue_address    || null,
+        venue_city:       this.form.venue_city       || null,
+        virtual_url:      this.form.virtual_url      || null,
+        virtual_platform: this.form.virtual_platform || null,
+        password:         this.form.password         || null,
+        extras,
+      };
+
+      try {
+        const isEdit=!!existingId;
+        const url = isEdit ? `/api/v1/organizations/${orgSlug}/events/${existingId}` : `/api/v1/organizations/${orgSlug}/events`;
+        const method = isEdit ? 'PATCH' : 'POST';
+        const res = await fetch(url,{method,headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(payload)});
+        const data = await res.json();
+
+        if (!res.ok||!data.success) {
+          const det=data.error?.details||{};
+          if (Object.keys(det).length>0) {
+            this.fe=Object.fromEntries(Object.entries(det).map(([kk,v])=>[kk,Array.isArray(v)?v[0]:String(v)]));
+          } else {
+            this.globalError=data.error?.message||'Something went wrong.';
+          }
+          return;
+        }
+
+        const eventId=data.data.id||existingId;
+
+        /* upload pending images in create mode */
+        if (!isEdit) {
+          for (const {state,i} of [{state:this.thumb0,i:0},{state:this.thumb1,i:1},{state:this.thumb2,i:2}]) {
+            if (state.file) await this.uploadThumb(i,state.file,eventId);
+          }
+        }
+
+        /* create ticket types in create mode */
+        if (!isEdit && !this.isFree && this.tickets.length>0) {
+          for (const tt of this.tickets) {
+            const {_key,...body}=tt;
+            await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/ticket-types`,{
+              method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+              body: JSON.stringify({...body, price: Number(body.price||0)}),
+            });
+          }
+        }
+
+        /* sync ticket types in edit mode: delete removed, add new */
+        if (isEdit) {
+          const existingIds = new Set(existingTickets.map(t=>t.id));
+          const currentIds  = new Set(this.tickets.filter(t=>t.id).map(t=>t.id));
+          for (const id of existingIds) {
+            if (!currentIds.has(id)) {
+              await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/ticket-types/${id}`,{method:'DELETE',credentials:'include'});
+            }
+          }
+          for (const tt of this.tickets.filter(t=>!t.id)) {
+            const {_key,...body}=tt;
+            await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/ticket-types`,{
+              method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+              body: JSON.stringify({...body, price: Number(body.price||0)}),
+            });
+          }
+        }
+
+        if (isPublish) {
+          await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/publish`,{method:'POST',credentials:'include'});
+        }
+
+        window.location.href=`/org/${orgSlug}/events/${eventId}`;
+      } catch {
+        this.globalError='Network error. Please try again.';
+      } finally {
+        this.saving=false; this.publishing=false;
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

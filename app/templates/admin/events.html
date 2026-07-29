@@ -1,0 +1,68 @@
+{% extends "admin/layout.html" %}
+{% block title %}Events{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:1.4rem;font-weight:700;">All Events</h1>
+  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">{{ total }} total events across the platform</p>
+</div>
+
+<div class="section-card">
+  <form method="get" action="/admin/events">
+    <div class="search-bar">
+      <input name="q" value="{{ q }}" placeholder="Search by title or slug..." />
+      <select name="status">
+        <option value="">All statuses</option>
+        {% for s in ['draft','published','ended','cancelled'] %}
+        <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-accent">Filter</button>
+    </div>
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Title</th><th>Organization</th><th>Status</th><th>Date</th><th>Location</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for ev in events %}
+      <tr>
+        <td>
+          <a href="/e/{{ ev.slug }}" target="_blank">{{ ev.title }}</a><br>
+          <span style="color:var(--text-muted,#71717a);font-size:0.72rem;">/e/{{ ev.slug }}</span>
+        </td>
+        <td>
+          {% if ev._org %}
+          <a href="/admin/organizations/{{ ev._org.id }}" style="font-size:0.82rem;">{{ ev._org.name }}</a>
+          {% else %}—{% endif %}
+        </td>
+        <td>
+          <span class="badge {{ 'badge-active' if ev.status == 'published' else 'badge-suspended' }}">{{ ev.status }}</span>
+        </td>
+        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">
+          {{ ev.start_datetime.strftime('%Y-%m-%d') if ev.start_datetime else '—' }}
+        </td>
+        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">
+          {{ ev.location_name or ('Virtual' if ev.is_virtual else '—') }}
+        </td>
+        <td>
+          <a href="/e/{{ ev.slug }}" target="_blank" class="btn btn-sm btn-ghost">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?q={{ q }}&status={{ selected_status }}&page={{ page - 1 }}">&larr; Prev</a>
+    {% endif %}
+    <span class="current">{{ page }}</span>
+    {% if page * per_page < total %}
+    <a href="?q={{ q }}&status={{ selected_status }}&page={{ page + 1 }}">Next &rarr;</a>
+    {% endif %}
+    <span class="info">{{ total }} results</span>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,642 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}{{ campaign.name }} · Campaigns — Heelo{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  .cd-wrap { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
+
+  /* ── Header ───────────────────────────────────────────────────────────── */
+  .cd-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .cd-breadcrumb { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.375rem; }
+  .cd-breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+  .cd-breadcrumb a:hover { color: var(--text); }
+  .cd-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.375rem; }
+  .cd-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--text-secondary); }
+
+  /* ── Badges ───────────────────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.65rem; border-radius: 100px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; }
+  .badge-draft     { background: var(--surface-alt,rgba(120,120,120,0.12)); color: var(--text-secondary); }
+  .badge-scheduled { background: rgba(245,158,11,0.12); color: #d97706; }
+  .badge-sending   { background: rgba(0,255,243,0.1); color: var(--cyan-dark,#00b3a9); animation: pulse-badge 2s ease infinite; }
+  .badge-sent      { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .badge-failed    { background: rgba(239,68,68,0.1); color: #dc2626; }
+  .badge-pending   { background: rgba(245,158,11,0.1); color: #d97706; }
+  .badge-delivered { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .badge-bounced   { background: rgba(239,68,68,0.08); color: #dc2626; }
+  .badge-unsubscribed { background: rgba(120,120,120,0.12); color: var(--text-secondary); }
+  @keyframes pulse-badge { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* ── Action buttons ───────────────────────────────────────────────────── */
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 9px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: opacity 150ms, background 150ms; }
+  .btn-primary { background: var(--cyan); color: #000; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--text-secondary); }
+  .btn-danger { background: rgba(220,38,38,0.08); color: #dc2626; border: 1.5px solid rgba(220,38,38,0.25); }
+  .btn-danger:hover { background: rgba(220,38,38,0.15); }
+  .btn-warning { background: rgba(245,158,11,0.1); color: #d97706; border: 1.5px solid rgba(245,158,11,0.3); }
+  .btn-warning:hover { background: rgba(245,158,11,0.18); }
+  .btn[disabled] { opacity: 0.5; pointer-events: none; }
+
+  /* ── Stat cards ───────────────────────────────────────────────────────── */
+  .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.75rem; }
+  @media(max-width:800px) { .stat-grid { grid-template-columns: repeat(3,1fr); } }
+  @media(max-width:500px) { .stat-grid { grid-template-columns: repeat(2,1fr); } }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.125rem; }
+  .stat-label { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 0.375rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-value { font-size: 1.75rem; font-weight: 800; line-height: 1.1; }
+  .stat-sub { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.2rem; }
+  .stat-card.highlight { border-color: var(--cyan); }
+  .stat-card.highlight .stat-value { color: var(--cyan); }
+  .stat-card.danger .stat-value { color: #dc2626; }
+  .stat-card.success .stat-value { color: #16a34a; }
+
+  /* ── Cards ────────────────────────────────────────────────────────────── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.25rem; border-bottom: 1px solid var(--border); }
+  .card-title { font-weight: 700; font-size: 0.9375rem; margin: 0; }
+  .card-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.125rem; }
+
+  /* ── Progress bar ─────────────────────────────────────────────────────── */
+  .progress-wrap { background: var(--surface-alt,rgba(120,120,120,0.12)); border-radius: 100px; height: 8px; overflow: hidden; margin: 0.875rem 0; }
+  .progress-fill { height: 100%; border-radius: 100px; background: var(--cyan); transition: width 600ms ease; }
+
+  /* ── Chart container ──────────────────────────────────────────────────── */
+  .chart-wrap { position: relative; height: 240px; padding: 1.25rem 1.5rem 1rem; }
+
+  /* ── Status legend ────────────────────────────────────────────────────── */
+  .chart-legend { display: flex; gap: 1rem; flex-wrap: wrap; padding: 0 1.5rem 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8rem; color: var(--text-secondary); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Recipients table ─────────────────────────────────────────────────── */
+  .rec-table { width: 100%; border-collapse: collapse; }
+  .rec-table th { padding: 0.625rem 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-weight: 600; }
+  .rec-table td { padding: 0.8rem 1rem; font-size: 0.875rem; border-bottom: 1px solid var(--border); }
+  .rec-table tr:last-child td { border-bottom: none; }
+  .rec-table tr:hover td { background: var(--surface-alt,rgba(120,120,120,0.05)); }
+  .td-name { font-weight: 600; }
+  .td-contact { font-size: 0.8125rem; color: var(--text-secondary); }
+  .td-mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+  .td-error { font-size: 0.75rem; color: #dc2626; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
+
+  /* ── Body preview ─────────────────────────────────────────────────────── */
+  .body-preview { background: var(--surface-alt,rgba(120,120,120,0.07)); border: 1px solid var(--border); border-radius: 10px; padding: 1.125rem 1.25rem; font-size: 0.875rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word; max-height: 240px; overflow-y: auto; }
+  .body-preview.email { font-family: Georgia, serif; }
+
+  /* ── Empty ────────────────────────────────────────────────────────────── */
+  .empty-row td { text-align: center; padding: 2.5rem; color: var(--text-secondary); }
+  .empty-state { text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary); font-size: 0.9rem; }
+
+  /* ── Two col ──────────────────────────────────────────────────────────── */
+  .cd-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media(max-width:700px) { .cd-cols { grid-template-columns: 1fr; } }
+  .detail-row { display: flex; gap: 0.75rem; padding: 0.625rem 0; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: var(--text-secondary); width: 120px; flex-shrink: 0; font-weight: 500; }
+  .detail-val { flex: 1; }
+
+  /* ── Toast ────────────────────────────────────────────────────────────── */
+  #cd-toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1.125rem; font-size: 0.875rem; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.18); z-index: 9999; transform: translateY(8px); opacity: 0; transition: transform 250ms ease, opacity 250ms ease; pointer-events: none; max-width: 340px; }
+  #cd-toast.show { transform: translateY(0); opacity: 1; }
+  #cd-toast.success { border-color: #16a34a; color: #16a34a; }
+  #cd-toast.error { border-color: #dc2626; color: #dc2626; }
+
+  /* ── Send/cancel action section ────────────────────────────────────────── */
+  .action-bar { background: rgba(0,255,243,0.04); border: 1.5px solid var(--cyan); border-radius: 14px; padding: 1.125rem 1.25rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .action-bar.warning { background: rgba(245,158,11,0.04); border-color: rgba(245,158,11,0.4); }
+  .action-bar-text { font-size: 0.9rem; }
+  .action-bar-title { font-weight: 700; margin-bottom: 0.2rem; }
+  .action-bar-sub { font-size: 0.8rem; color: var(--text-secondary); }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="cd-wrap">
+
+  <!-- ── Toast notification ────────────────────────────────────────────────── -->
+  <div id="cd-toast"></div>
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <div class="cd-header">
+    <div>
+      <div class="cd-breadcrumb">
+        <a href="/org/{{ org.slug }}/campaigns">Campaigns</a>
+        <span style="opacity:0.4;margin:0 0.375rem;">›</span>
+        <span>{{ campaign.name | truncate(50) }}</span>
+      </div>
+      <h1 class="cd-title">{{ campaign.name }}</h1>
+      <div class="cd-meta">
+        <span class="badge badge-{{ campaign.status }}">{{ campaign.status | title }}</span>
+        <span>{{ campaign.type | title }}</span>
+        <span>Created {{ campaign.created_at.strftime('%b %d, %Y') }}</span>
+        {% if campaign.sent_at %}<span>Sent {{ campaign.sent_at.strftime('%b %d at %H:%M') }}</span>{% endif %}
+        {% if campaign.scheduled_at and campaign.status == 'scheduled' %}
+        <span style="color:#d97706;">Scheduled for {{ campaign.scheduled_at.strftime('%b %d, %Y at %H:%M') }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display:flex;gap:0.625rem;align-items:center;padding-top:1.5rem;">
+      {% if campaign.status == 'draft' %}
+      <a href="/org/{{ org.slug }}/campaigns/{{ campaign.id }}/edit" class="btn btn-outline">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </a>
+      <button
+        class="btn btn-danger"
+        hx-delete="/api/v1/organizations/{{ org.slug }}/campaigns/{{ campaign.id }}"
+        hx-confirm="Delete '{{ campaign.name }}'? This cannot be undone."
+        hx-on::after-request="if(event.detail.successful) window.location.href='/org/{{ org.slug }}/campaigns'"
+      >Delete</button>
+      {% elif campaign.status == 'scheduled' %}
+      <a href="/org/{{ org.slug }}/campaigns/{{ campaign.id }}/edit" class="btn btn-outline">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Draft action bar ───────────────────────────────────────────────── -->
+  {% if campaign.status == 'draft' %}
+  <div class="action-bar">
+    <div class="action-bar-text">
+      <div class="action-bar-title">Ready to send?</div>
+      <div class="action-bar-sub">This campaign has {{ campaign.recipient_count }} recipient{{ 's' if campaign.recipient_count != 1 else '' }} queued from your audience filter.</div>
+    </div>
+    <button class="btn btn-primary" id="sendNowBtn" onclick="sendCampaignNow()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      Send Now
+    </button>
+  </div>
+  {% endif %}
+
+  <!-- ── Scheduled action bar ───────────────────────────────────────────── -->
+  {% if campaign.status == 'scheduled' %}
+  <div class="action-bar warning">
+    <div class="action-bar-text">
+      <div class="action-bar-title">Scheduled for {{ campaign.scheduled_at.strftime('%B %d, %Y at %H:%M') }}</div>
+      <div class="action-bar-sub">The campaign will send automatically. Cancel to move it back to draft.</div>
+    </div>
+    <div style="display:flex;gap:0.625rem;">
+      <button class="btn btn-primary" id="sendNowBtn" onclick="sendCampaignNow()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send Now
+      </button>
+      <button class="btn btn-warning" onclick="cancelSchedule()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        Cancel Schedule
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Stat cards ─────────────────────────────────────────────────────── -->
+  <div class="stat-grid">
+    <div class="stat-card highlight">
+      <div class="stat-label">Recipients</div>
+      <div class="stat-value">{{ campaign.recipient_count }}</div>
+      <div class="stat-sub">Total audience</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sent</div>
+      <div class="stat-value">{{ campaign.sent_count }}</div>
+      <div class="stat-sub">
+        {% if campaign.recipient_count > 0 %}{{ ((campaign.sent_count / campaign.recipient_count) * 100) | round | int }}% of audience{% else %}—{% endif %}
+      </div>
+    </div>
+    <div class="stat-card {% if campaign.delivered_count > 0 %}success{% endif %}">
+      <div class="stat-label">Delivered</div>
+      <div class="stat-value">{{ campaign.delivered_count }}</div>
+      <div class="stat-sub">
+        {% if campaign.sent_count > 0 %}{{ ((campaign.delivered_count / campaign.sent_count) * 100) | round | int }}% of sent{% else %}Webhook tracked{% endif %}
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Opened</div>
+      <div class="stat-value">{{ campaign.open_count }}</div>
+      <div class="stat-sub">
+        {% if campaign.sent_count > 0 and campaign.open_count > 0 %}{{ ((campaign.open_count / campaign.sent_count) * 100) | round | int }}% open rate{% else %}Email only{% endif %}
+      </div>
+    </div>
+    <div class="stat-card {% if campaign.failed_count > 0 %}danger{% endif %}">
+      <div class="stat-label">Failed</div>
+      <div class="stat-value">{{ campaign.failed_count }}</div>
+      <div class="stat-sub">
+        {% if campaign.failed_count > 0 and campaign.recipient_count > 0 %}
+          {{ ((campaign.failed_count / campaign.recipient_count) * 100) | round | int }}% failure rate
+        {% else %}—{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sending progress bar ───────────────────────────────────────────── -->
+  {% if campaign.status in ('sending', 'sent') and campaign.recipient_count > 0 %}
+  <div class="progress-wrap" style="margin-bottom:1.75rem;">
+    {% set sent_pct = ((campaign.sent_count / campaign.recipient_count) * 100) | round | int %}
+    <div class="progress-fill" style="width: {{ sent_pct }}%;"></div>
+  </div>
+  {% endif %}
+
+  <!-- ── Details + body preview ─────────────────────────────────────────── -->
+  <div class="cd-cols">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-header"><div class="card-title">Campaign details</div></div>
+      <div style="padding: 0.25rem 1.25rem;">
+        <div class="detail-row">
+          <div class="detail-label">Channel</div>
+          <div class="detail-val">
+            {% if campaign.type == 'email' %}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:0.3rem;vertical-align:middle;"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+            {% elif campaign.type == 'whatsapp' %}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-right:0.3rem;vertical-align:middle;color:#25D366;"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.04 2.002c-5.514.0-10 4.486-10 10.008 0 1.769.467 3.456 1.35 4.952L2 22l5.165-1.352A9.98 9.98 0 0 0 12.04 22c5.514 0 9.96-4.486 9.96-10.008s-4.446-9.99-9.96-9.99zm.0 18.346a8.287 8.287 0 0 1-4.235-1.156l-.303-.18-3.155.826.846-3.068-.198-.315A8.3 8.3 0 0 1 3.74 12.01c0-4.582 3.734-8.31 8.3-8.31 4.566 0 8.3 3.728 8.3 8.31s-3.734 8.338-8.3 8.338z"/></svg>
+            {% endif %}
+            {{ campaign.type | title }}
+          </div>
+        </div>
+        {% if campaign.subject %}
+        <div class="detail-row">
+          <div class="detail-label">Subject</div>
+          <div class="detail-val">{{ campaign.subject }}</div>
+        </div>
+        {% endif %}
+        <div class="detail-row">
+          <div class="detail-label">Event</div>
+          <div class="detail-val">
+            {% if event %}
+            <a href="/org/{{ org.slug }}/events/{{ event.id }}" style="color:var(--text);text-decoration:none;">{{ event.title }}</a>
+            {% else %}
+            All events in {{ org.name }}
+            {% endif %}
+          </div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Audience</div>
+          <div class="detail-val">
+            {% set statuses = (campaign.audience_filter or {}).get('statuses', ['confirmed', 'checked_in']) %}
+            {% for s in statuses %}
+              <span class="badge badge-{{ s }}" style="margin-right:0.25rem;">{{ s | title }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="detail-row" style="border-bottom:none;">
+          <div class="detail-label">Created</div>
+          <div class="detail-val">{{ campaign.created_at.strftime('%b %d, %Y at %H:%M') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-header"><div class="card-title">Message preview</div></div>
+      <div style="padding:1.125rem 1.25rem;">
+        <div class="body-preview {{ campaign.type }}">{{ campaign.body or '(no body)' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Analytics: chart + breakdown ─────────────────────────────────────── -->
+  {% if campaign.status in ('sent', 'sending') and campaign.recipient_count > 0 %}
+  <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+
+    <!-- Delivery funnel bar chart -->
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Delivery funnel</div>
+          <div class="card-sub">From audience to engagement</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+          {% if campaign.sent_count > 0 %}
+          <span style="font-size:0.8rem;color:var(--text-secondary);">{{ ((campaign.sent_count / campaign.recipient_count) * 100) | round | int }}% sent</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="funnelChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Status doughnut -->
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Status breakdown</div>
+          <div class="card-sub">By recipient status</div>
+        </div>
+      </div>
+      <div style="padding:1.25rem;display:flex;flex-direction:column;align-items:center;gap:1rem;">
+        <div style="position:relative;width:160px;height:160px;">
+          <canvas id="statusChart"></canvas>
+        </div>
+        <div class="chart-legend" style="justify-content:center;padding:0;">
+          {% if recipient_stats %}
+            {% if recipient_stats.get('delivered', 0) > 0 %}
+            <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div>Delivered ({{ recipient_stats.get('delivered', 0) }})</div>
+            {% endif %}
+            {% if recipient_stats.get('sent', 0) > 0 %}
+            <div class="legend-item"><div class="legend-dot" style="background:#00FFF3;"></div>Sent ({{ recipient_stats.get('sent', 0) }})</div>
+            {% endif %}
+            {% if recipient_stats.get('pending', 0) > 0 %}
+            <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div>Pending ({{ recipient_stats.get('pending', 0) }})</div>
+            {% endif %}
+            {% if recipient_stats.get('failed', 0) > 0 %}
+            <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div>Failed ({{ recipient_stats.get('failed', 0) }})</div>
+            {% endif %}
+            {% if recipient_stats.get('bounced', 0) > 0 %}
+            <div class="legend-item"><div class="legend-dot" style="background:#f87171;"></div>Bounced ({{ recipient_stats.get('bounced', 0) }})</div>
+            {% endif %}
+          {% else %}
+          <div style="font-size:0.8rem;color:var(--text-secondary);">No status data yet</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+  {% endif %}
+
+  <!-- ── Recipients table ───────────────────────────────────────────────── -->
+  {% if campaign.status not in ('draft',) %}
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Recipients</div>
+        <div class="card-sub">
+          {% if recipients %}Showing {{ recipients | length }} of {{ campaign.recipient_count }} recipient{{ 's' if campaign.recipient_count != 1 else '' }}{% else %}No recipients sent yet{% endif %}
+        </div>
+      </div>
+      {% if recipient_stats %}
+      <div style="display:flex;gap:0.625rem;flex-wrap:wrap;">
+        {% for status, count in recipient_stats.items() %}
+        <span class="badge badge-{{ status }}">{{ count }} {{ status }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="rec-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Status</th>
+            <th>Sent at</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recipients %}
+            {% for r in recipients %}
+            <tr>
+              <td class="td-name">{{ r.name or '—' }}</td>
+              <td class="td-contact">{{ r.email or r.whatsapp_number or r.phone or '—' }}</td>
+              <td>
+                <span class="badge badge-{{ r.status }}">{{ r.status | title }}</span>
+              </td>
+              <td class="td-mono">
+                {% if r.sent_at %}
+                  <span title="{{ r.sent_at.strftime('%Y-%m-%d %H:%M:%S') }}">
+                    {{ r.sent_at.strftime('%b %d, %H:%M') }}
+                  </span>
+                {% else %}—{% endif %}
+              </td>
+              <td>
+                {% if r.error_message %}
+                <span class="td-error" title="{{ r.error_message }}">{{ r.error_message }}</span>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr class="empty-row"><td colspan="5">No recipients yet — campaign hasn't sent yet.</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    {% if campaign.recipient_count > 100 %}
+    <div style="padding:0.875rem 1.25rem;border-top:1px solid var(--border);font-size:0.8rem;color:var(--text-secondary);text-align:center;">
+      Showing first 100 recipients. Export coming soon.
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ── Draft empty recipients message ────────────────────────────────── -->
+  {% if campaign.status == 'draft' %}
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+      <div class="card-title">Recipients</div>
+    </div>
+    <div class="empty-state">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:0.75rem;opacity:0.3;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <p>Recipient list is built when you send the campaign.</p>
+    </div>
+  </div>
+  {% endif %}
+
+</div><!-- /.cd-wrap -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Toast helper ──────────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('cd-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = ''; }, 4000);
+}
+
+// ── Send campaign now ─────────────────────────────────────────────────────────
+async function sendCampaignNow() {
+  const btn = document.getElementById('sendNowBtn');
+  if (!btn) return;
+  if (!confirm('Send this campaign now? This cannot be undone.')) return;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const res = await fetch(
+      '/api/v1/organizations/{{ org.slug }}/campaigns/{{ campaign.id }}/send',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({}) }
+    );
+    const j = await res.json();
+    if (j.success) {
+      showToast('Campaign is sending!', 'success');
+      setTimeout(() => window.location.reload(), 1200);
+    } else {
+      showToast(j.detail || 'Something went wrong.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Now';
+    }
+  } catch (e) {
+    showToast('Network error. Please try again.', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Now';
+  }
+}
+
+// ── Cancel schedule ───────────────────────────────────────────────────────────
+async function cancelSchedule() {
+  if (!confirm('Cancel the schedule and return this campaign to draft?')) return;
+  try {
+    const res = await fetch(
+      '/api/v1/organizations/{{ org.slug }}/campaigns/{{ campaign.id }}/cancel',
+      { method: 'POST', credentials: 'include' }
+    );
+    const j = await res.json();
+    if (j.success) {
+      showToast('Campaign returned to draft.', 'success');
+      setTimeout(() => window.location.reload(), 1200);
+    } else {
+      showToast(j.detail || 'Could not cancel.', 'error');
+    }
+  } catch {
+    showToast('Network error. Please try again.', 'error');
+  }
+}
+</script>
+
+{% if campaign.status in ('sent', 'sending') and campaign.recipient_count > 0 %}
+<script>
+(function() {
+  // ── Funnel bar chart ────────────────────────────────────────────────────────
+  const funnelCtx = document.getElementById('funnelChart');
+  if (funnelCtx) {
+    const funnelValues = [
+      {{ campaign.recipient_count }},
+      {{ campaign.sent_count }},
+      {{ campaign.delivered_count }},
+      {{ campaign.open_count }},
+      {{ campaign.click_count }},
+    ];
+    const funnelMax = funnelValues[0] || 1;
+
+    new Chart(funnelCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Recipients', 'Sent', 'Delivered', 'Opened', 'Clicked'],
+        datasets: [{
+          data: funnelValues,
+          backgroundColor: [
+            'rgba(0,255,243,0.75)',
+            'rgba(0,200,210,0.7)',
+            'rgba(34,197,94,0.7)',
+            'rgba(59,130,246,0.7)',
+            'rgba(139,92,246,0.7)',
+          ],
+          borderColor: [
+            'rgba(0,255,243,0.95)',
+            'rgba(0,200,210,0.9)',
+            'rgba(34,197,94,0.9)',
+            'rgba(59,130,246,0.9)',
+            'rgba(139,92,246,0.9)',
+          ],
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const pct = funnelMax > 0 ? ((ctx.raw / funnelMax) * 100).toFixed(1) : 0;
+                return ` ${ctx.raw.toLocaleString()} (${pct}% of audience)`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: funnelMax,
+            ticks: { precision: 0, color: '#888', font: { size: 11 } },
+            grid: { color: 'rgba(128,128,128,0.1)' },
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#888', font: { size: 11 } },
+          },
+        },
+      },
+    });
+  }
+
+  // ── Status doughnut chart ───────────────────────────────────────────────────
+  const statusCtx = document.getElementById('statusChart');
+  if (statusCtx) {
+    const statusData = {
+      {% if recipient_stats %}
+        {% for status, count in recipient_stats.items() %}
+        '{{ status }}': {{ count }},
+        {% endfor %}
+      {% endif %}
+    };
+
+    const colorMap = {
+      delivered:    '#16a34a',
+      sent:         '#00FFF3',
+      pending:      '#d97706',
+      failed:       '#dc2626',
+      bounced:      '#f87171',
+      unsubscribed: '#888888',
+    };
+
+    const labels = Object.keys(statusData);
+    const values = Object.values(statusData);
+    const colors = labels.map(l => colorMap[l] || '#888888');
+
+    if (values.length > 0 && values.some(v => v > 0)) {
+      new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: colors.map(c => c + 'cc'),
+            borderColor: colors,
+            borderWidth: 2,
+            hoverOffset: 4,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '68%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                  const pct = total > 0 ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+                  return ` ${ctx.raw.toLocaleString()} ${ctx.label} (${pct}%)`;
+                }
+              }
+            }
+          },
+        },
+      });
+    } else {
+      statusCtx.closest('div').innerHTML = '<div style="font-size:0.8rem;color:var(--text-secondary);text-align:center;padding:2rem 0;">No status data yet</div>';
+    }
+  }
+})();
+</script>
+{% endif %}
+
+{% if campaign.status == 'sending' %}
+<script>
+  // Auto-refresh while campaign is actively sending
+  setTimeout(() => window.location.reload(), 6000);
+</script>
+{% endif %}
+{% endblock %}

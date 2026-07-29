@@ -1,0 +1,120 @@
+{% extends "admin/layout.html" %}
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:1.4rem;font-weight:700;">Users</h1>
+  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">{{ total }} total users</p>
+</div>
+
+<div class="section-card">
+  <form method="get" action="/admin/users">
+    <div class="search-bar">
+      <input name="q" value="{{ q }}" placeholder="Search by name or email..." />
+      <select name="role">
+        <option value="">All roles</option>
+        {% for r in ['attendee','organizer','both','admin'] %}
+        <option value="{{ r }}" {% if selected_role == r %}selected{% endif %}>{{ r }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-accent">Filter</button>
+    </div>
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr><th>Name</th><th>Email</th><th>Role</th><th>Verified</th><th>Last seen</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr id="user-row-{{ u.id }}">
+        <td><a href="/admin/users/{{ u.id }}">{{ u.full_name }}</a></td>
+        <td style="font-size:0.8rem;">{{ u.email }}</td>
+        <td>
+          {% if u.role == 'admin' %}<span class="badge badge-admin">admin</span>
+          {% else %}<span style="color:var(--text-muted,#71717a);font-size:0.8rem;">{{ u.role }}</span>{% endif %}
+        </td>
+        <td style="font-size:0.82rem;">{% if u.is_verified %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>{% else %}—{% endif %}</td>
+        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">{{ u.last_seen_at.strftime('%Y-%m-%d') if u.last_seen_at else '—' }}</td>
+        <td>
+          <span class="badge {{ 'badge-suspended' if u.deleted_at else 'badge-active' }}" id="u-badge-{{ u.id }}">
+            {{ 'Banned' if u.deleted_at else 'Active' }}
+          </span>
+        </td>
+        <td style="display:flex;gap:6px;">
+          {% if not u.deleted_at %}
+          <button class="btn btn-sm btn-danger" onclick="banUser('{{ u.id }}', '{{ u.full_name }}')">Ban</button>
+          {% else %}
+          <button class="btn btn-sm btn-accent" onclick="unbanUser('{{ u.id }}', '{{ u.full_name }}')">Unban</button>
+          {% endif %}
+          {% if u.role != 'admin' %}
+          <button class="btn btn-sm btn-ghost" onclick="promoteAdmin('{{ u.id }}', '{{ u.full_name }}')">Make Admin</button>
+          {% else %}
+          <button class="btn btn-sm btn-ghost" onclick="demoteAdmin('{{ u.id }}', '{{ u.full_name }}')">Remove Admin</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?q={{ q }}&role={{ selected_role }}&page={{ page - 1 }}">&larr; Prev</a>
+    {% endif %}
+    <span class="current">{{ page }}</span>
+    {% if page * per_page < total %}
+    <a href="?q={{ q }}&role={{ selected_role }}&page={{ page + 1 }}">Next &rarr;</a>
+    {% endif %}
+    <span class="info">{{ total }} results</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function banUser(id, name) {
+  if (!confirm(`Ban "${name}"? They will lose access immediately.`)) return;
+  const r = await fetch(`/api/v1/admin/users/${id}/ban`, { method: 'POST' });
+  if (r.ok) {
+    document.getElementById(`u-badge-${id}`).className = 'badge badge-suspended';
+    document.getElementById(`u-badge-${id}`).textContent = 'Banned';
+    const row = document.getElementById(`user-row-${id}`);
+    const btns = row.querySelectorAll('td:last-child button');
+    btns[0].textContent = 'Unban';
+    btns[0].className = 'btn btn-sm btn-accent';
+    btns[0].setAttribute('onclick', `unbanUser('${id}','${name}')`);
+  } else { alert('Failed to ban user.'); }
+}
+
+async function unbanUser(id, name) {
+  if (!confirm(`Unban "${name}"?`)) return;
+  const r = await fetch(`/api/v1/admin/users/${id}/unban`, { method: 'POST' });
+  if (r.ok) {
+    document.getElementById(`u-badge-${id}`).className = 'badge badge-active';
+    document.getElementById(`u-badge-${id}`).textContent = 'Active';
+    const row = document.getElementById(`user-row-${id}`);
+    const btns = row.querySelectorAll('td:last-child button');
+    btns[0].textContent = 'Ban';
+    btns[0].className = 'btn btn-sm btn-danger';
+    btns[0].setAttribute('onclick', `banUser('${id}','${name}')`);
+  } else { alert('Failed to unban user.'); }
+}
+
+async function promoteAdmin(id, name) {
+  if (!confirm(`Make "${name}" a platform admin?`)) return;
+  const r = await fetch(`/api/v1/admin/users/${id}/role`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({role:'admin'}),
+  });
+  if (r.ok) { location.reload(); } else { alert('Failed to update role.'); }
+}
+
+async function demoteAdmin(id, name) {
+  if (!confirm(`Remove admin role from "${name}"? They will become an organizer.`)) return;
+  const r = await fetch(`/api/v1/admin/users/${id}/role`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({role:'organizer'}),
+  });
+  if (r.ok) { location.reload(); } else { alert('Failed to update role.'); }
+}
+</script>
+{% endblock %}

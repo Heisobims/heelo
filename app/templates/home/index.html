@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Discover events — Heelo{% endblock %}
+{% block meta_description %}Find and register for events happening near you and around Africa.{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+{% endblock %}
+
+{% block body %}
+<!-- Attendee nav -->
+<header class="dash-topnav">
+  <a href="/" class="dash-topnav-logo">heelo</a>
+
+  <div style="flex:1; max-width:400px; margin:0 16px;">
+    <div style="position:relative;">
+      <input
+        type="search"
+        placeholder="Search events…"
+        style="width:100%; padding:8px 12px 8px 36px; border:1px solid var(--border-light); border-radius:20px; font-size:14px; background:var(--bg-secondary); outline:none;"
+        onkeydown="if(event.key==='Enter'&&this.value.trim())window.location.href='/events?q='+encodeURIComponent(this.value.trim())"
+        name="q"
+      >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </div>
+  </div>
+
+  <div class="dash-topnav-actions">
+    <div style="position:relative;" x-data="{ open: false }">
+      <button class="user-avatar-btn" @click="open = !open" type="button" title="{{ user.full_name }}">
+        {% if user.avatar_url %}<img src="{{ user.avatar_url }}" alt="{{ user.full_name }}">
+        {% else %}{{ user.full_name[0].upper() }}{% endif %}
+      </button>
+      <div x-show="open" x-transition class="user-menu-dropdown" style="display:none;">
+        <div class="user-menu-header">
+          <div class="user-menu-name">{{ user.full_name }}</div>
+          <div class="user-menu-email">{{ user.email }}</div>
+        </div>
+        <a href="/profile" class="user-menu-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Your profile
+        </a>
+        <a href="/my-tickets" class="user-menu-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"/></svg>
+          My tickets
+        </a>
+        <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
+        <button
+          class="user-menu-item danger"
+          @click="fetch('/api/v1/auth/logout',{method:'POST',credentials:'include'}).then(()=>window.location.href='/login')"
+          type="button"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Main content -->
+<div style="background:var(--bg-secondary); min-height:calc(100vh - 56px); padding:32px 24px;">
+  <div style="max-width:1100px; margin:0 auto;">
+
+    <!-- Welcome banner (first visit) -->
+    <div class="animate-in" style="margin-bottom:28px;">
+      <h1 style="font-family:var(--font-serif); font-size:28px; font-weight:700; margin-bottom:6px;">
+        Welcome, {{ user.full_name.split()[0] }}.
+      </h1>
+      <p class="text-secondary">Discover events, connect with people, and make memories.</p>
+    </div>
+
+    <!-- Upcoming events grid -->
+    {% if upcoming_events %}
+    <div style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
+      <h2 style="font-size:17px; font-weight:600;">Upcoming events</h2>
+      <a href="/events" style="font-size:14px; color:var(--text-secondary); text-decoration:none;">Browse all →</a>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;" class="animate-in animate-in-delay-1">
+      {% for event in upcoming_events %}
+      <a href="/e/{{ event.slug }}" style="background:#fff; border:1px solid var(--border-light); border-radius:14px; text-decoration:none; color:inherit; overflow:hidden; display:block; transition:box-shadow 0.15s, transform 0.15s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
+        <!-- Cover image -->
+        <div style="width:100%; aspect-ratio:16/7; background:linear-gradient(135deg,#0A0A0A 0%,#1a1a1a 100%); overflow:hidden; position:relative;">
+          {% if event.cover_image_url %}
+          <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:var(--font-serif);font-size:32px;font-weight:700;color:rgba(255,255,255,0.06);">{{ event.title[0] }}</span>
+          </div>
+          {% endif %}
+          <!-- Format badge -->
+          <span style="position:absolute;top:10px;left:10px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:100px;background:rgba(0,0,0,0.6);color:#fff;backdrop-filter:blur(4px);">
+            {{ event.format | replace('_', ' ') | title }}
+          </span>
+        </div>
+
+        <!-- Info -->
+        <div style="padding:16px;">
+          <h3 style="font-size:15px;font-weight:600;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ event.title }}</h3>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">
+            {% if event.start_datetime %}{{ event.start_datetime.strftime('%a, %d %b %Y · %H:%M') }}{% endif %}
+            {% if event.venue_city %} · {{ event.venue_city }}{% endif %}
+          </p>
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:13px;font-weight:600;color:var(--text-primary);">
+              {# Ticket price shown in Step 5 when ticket types are linked #}
+              View event
+            </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- No events yet -->
+    <div class="empty-state-card animate-in animate-in-delay-1" style="max-width:380px;">
+      <div class="empty-state-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      <h2 class="empty-state-title">No events yet</h2>
+      <p class="empty-state-body">
+        When organizers publish events, they'll show up here. Check back soon.
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

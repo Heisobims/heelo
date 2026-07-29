@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}How will you use Heelo?{% endblock %}
+
+{% block body %}
+<div class="auth-centered">
+  <div class="auth-centered-inner" x-data="roleSelect()">
+
+    <!-- Logo -->
+    <a href="/" style="font-family:var(--font-serif); font-size:22px; font-weight:700; color:var(--text-primary); display:block; margin-bottom:40px;">heelo</a>
+
+    <!-- Step indicator -->
+    <div class="step-indicator" style="justify-content:center; margin-bottom:32px;">
+      <div class="step-dot done"></div>
+      <div class="step-dot done"></div>
+      <div class="step-dot active"></div>
+    </div>
+
+    <h1 class="h1" style="margin-bottom:10px;">How will you use Heelo?</h1>
+    <p class="text-secondary" style="font-size:15px; margin-bottom:0;">We'll tailor your experience. You can always change this later.</p>
+
+    <!-- Role cards -->
+    <div class="role-cards">
+
+      <!-- Organizer -->
+      <button
+        class="role-card"
+        :class="{ active: selected === 'organizer', 'btn-loading': loading && selected === 'organizer' }"
+        @click="pick('organizer')"
+        :disabled="loading"
+        aria-label="I organize events"
+      >
+        <div class="role-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <h3>I organize events</h3>
+        <p>Create and manage events for others.</p>
+      </button>
+
+      <!-- Attendee -->
+      <button
+        class="role-card"
+        :class="{ active: selected === 'attendee', 'btn-loading': loading && selected === 'attendee' }"
+        @click="pick('attendee')"
+        :disabled="loading"
+        aria-label="I attend events"
+      >
+        <div class="role-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h3>I attend events</h3>
+        <p>Discover and register for events.</p>
+      </button>
+
+      <!-- Both -->
+      <button
+        class="role-card"
+        :class="{ active: selected === 'both', 'btn-loading': loading && selected === 'both' }"
+        @click="pick('both')"
+        :disabled="loading"
+        aria-label="I do both"
+      >
+        <div class="role-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Both</h3>
+        <p>I organize and I attend.</p>
+      </button>
+
+    </div>
+
+    <!-- Loading -->
+    <div x-show="loading" style="display:none; margin-top:28px; justify-content:center;">
+      <div class="pulse-dots">
+        <div class="pulse-dot"></div>
+        <div class="pulse-dot"></div>
+        <div class="pulse-dot"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

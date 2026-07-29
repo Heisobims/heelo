@@ -1,0 +1,289 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Plan & Billing — {{ org.name }} — Heelo{% endblock %}
+{% set active_page = 'plan' %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .plan-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 900px) {
+    .plan-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .plan-grid { grid-template-columns: 1fr; }
+  }
+
+  .plan-card {
+    background: #fff;
+    border: 2px solid var(--border-light);
+    border-radius: 14px;
+    padding: 22px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    transition: border-color 0.14s, box-shadow 0.14s;
+  }
+  .plan-card.current {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 4px rgba(0,255,243,0.1);
+  }
+  .plan-card.popular {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.08);
+  }
+  .plan-badge {
+    position: absolute;
+    top: -11px; left: 50%; transform: translateX(-50%);
+    padding: 3px 12px;
+    border-radius: 100px;
+    font-size: 11px; font-weight: 700;
+    white-space: nowrap;
+  }
+  .plan-badge.current-badge { background: var(--cyan); color: #000; }
+  .plan-badge.popular-badge { background: #6366f1; color: #fff; }
+
+  .plan-name {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .plan-price {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 2px;
+    font-family: var(--font-serif);
+  }
+  .plan-price sub {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    vertical-align: baseline;
+    font-family: var(--font-sans);
+  }
+  .plan-tagline {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+    min-height: 32px;
+  }
+  .plan-divider {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 0 0 14px;
+  }
+  .plan-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .plan-feature .check { color: #22c55e; font-size: 11px; margin-top: 1px; flex-shrink: 0; }
+  .plan-feature .cross { color: var(--border-color); font-size: 11px; margin-top: 1px; flex-shrink: 0; }
+  .plan-cta { margin-top: auto; padding-top: 16px; }
+
+  .plan-compare-table {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .compare-head {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    background: var(--bg-secondary);
+    padding: 12px 20px;
+    font-size: 12px; font-weight: 600;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .compare-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    padding: 11px 20px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-light);
+    align-items: center;
+  }
+  .compare-row:last-child { border-bottom: none; }
+  .compare-row:hover { background: var(--bg-secondary); }
+  .compare-row .feature-label { color: var(--text-secondary); }
+  .compare-val { text-align: center; font-weight: 500; }
+  .compare-val.yes { color: #22c55e; }
+  .compare-val.no { color: var(--border-color); }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="dash-content" style="max-width:1000px; padding-bottom:48px;">
+
+  <div style="margin-bottom:8px; font-size:13px; color:var(--text-muted);">Organization</div>
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+    <div class="dash-greeting" style="margin:0;">Plan & billing</div>
+  </div>
+  <p style="font-size:14px; color:var(--text-muted); margin-bottom:28px;">
+    You're currently on the <strong style="color:var(--text-primary);">{{ org.plan | capitalize }}</strong> plan.
+    {% if org.plan == 'starter' %}Scale up to unlock more events, team members, and features.{% endif %}
+  </p>
+
+  <!-- ── Plan cards ─────────────────────────────────────── -->
+  <div class="plan-grid">
+
+    <!-- Starter -->
+    <div class="plan-card {% if org.plan == 'starter' %}current{% endif %}">
+      {% if org.plan == 'starter' %}<div class="plan-badge current-badge">Your plan</div>{% endif %}
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">Free <sub>forever</sub></div>
+      <div class="plan-tagline">Perfect for individuals and small community events.</div>
+      <hr class="plan-divider">
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>3 active events</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>100 tickets / event</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>2 team members</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Basic analytics</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Heelo-branded pages</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">WhatsApp campaigns</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">API access</span></div>
+      <div class="plan-cta">
+        {% if org.plan == 'starter' %}
+        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
+        {% else %}
+        <a href="mailto:hello@heelo.io?subject=Downgrade to Starter" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Downgrade</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Growth -->
+    <div class="plan-card {% if org.plan == 'growth' %}current{% endif %} popular">
+      <div class="plan-badge {% if org.plan == 'growth' %}current-badge{% else %}popular-badge{% endif %}">
+        {% if org.plan == 'growth' %}Your plan{% else %}Most popular{% endif %}
+      </div>
+      <div class="plan-name">Growth</div>
+      <div class="plan-price">$49 <sub>/ mo</sub></div>
+      <div class="plan-tagline">For growing event businesses ready to scale.</div>
+      <hr class="plan-divider">
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited events</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>2,000 tickets / event</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>10 team members</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Full analytics & exports</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>WhatsApp campaigns</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Heelo branding removed</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">Custom domain</span></div>
+      <div class="plan-cta">
+        {% if org.plan == 'growth' %}
+        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
+        {% else %}
+        <a href="mailto:hello@heelo.io?subject=Upgrade to Growth" class="btn btn-primary btn-sm" style="width:100%; text-align:center; background:#6366f1; border-color:#6366f1;">Upgrade to Growth</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Pro -->
+    <div class="plan-card {% if org.plan == 'pro' %}current{% endif %}">
+      {% if org.plan == 'pro' %}<div class="plan-badge current-badge">Your plan</div>{% endif %}
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$149 <sub>/ mo</sub></div>
+      <div class="plan-tagline">Advanced features for professional event teams.</div>
+      <hr class="plan-divider">
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited everything</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited team members</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Custom domain</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>API access + webhooks</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Dedicated check-in app</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Priority support</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Multi-event campaigns</span></div>
+      <div class="plan-cta">
+        {% if org.plan == 'pro' %}
+        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
+        {% else %}
+        <a href="mailto:hello@heelo.io?subject=Upgrade to Pro" class="btn btn-primary btn-sm" style="width:100%; text-align:center;">Upgrade to Pro</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Enterprise -->
+    <div class="plan-card {% if org.plan == 'enterprise' %}current{% endif %}">
+      {% if org.plan == 'enterprise' %}<div class="plan-badge current-badge">Your plan</div>{% endif %}
+      <div class="plan-name">Enterprise</div>
+      <div class="plan-price" style="font-size:20px;">Custom</div>
+      <div class="plan-tagline">White-label, SLA, and dedicated infrastructure for large organisations.</div>
+      <hr class="plan-divider">
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Everything in Pro</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>White-label platform</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>SSO / SAML</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Dedicated account manager</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>99.9% SLA</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Custom integrations</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Onboarding & training</span></div>
+      <div class="plan-cta">
+        {% if org.plan == 'enterprise' %}
+        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
+        {% else %}
+        <a href="mailto:hello@heelo.io?subject=Enterprise enquiry" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Contact sales</a>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Feature comparison ─────────────────────────────── -->
+  <div class="plan-compare-table">
+    <div class="compare-head">
+      <div>Feature</div>
+      <div style="text-align:center;">Starter</div>
+      <div style="text-align:center;">Growth</div>
+      <div style="text-align:center;">Pro</div>
+      <div style="text-align:center;">Enterprise</div>
+    </div>
+    {% set rows = [
+      ('Active events',           '3',          'Unlimited', 'Unlimited', 'Unlimited'),
+      ('Tickets per event',       '100',        '2,000',     'Unlimited', 'Unlimited'),
+      ('Team members',            '2',          '10',        'Unlimited', 'Unlimited'),
+      ('Analytics & exports',     'Basic',      'Full',      'Full',      'Full'),
+      ('WhatsApp campaigns',      '✗',          '✓',         '✓',         '✓'),
+      ('Remove Heelo branding',   '✗',          '✓',         '✓',         '✓'),
+      ('Custom domain',           '✗',          '✗',         '✓',         '✓'),
+      ('API access & webhooks',   '✗',          '✗',         '✓',         '✓'),
+      ('Dedicated check-in app',  '✗',          '✗',         '✓',         '✓'),
+      ('White-label platform',    '✗',          '✗',         '✗',         '✓'),
+      ('SSO / SAML',              '✗',          '✗',         '✗',         '✓'),
+      ('Dedicated SLA',           '✗',          '✗',         '✗',         '✓'),
+    ] %}
+    {% macro feature_val(v) %}
+      {%- if v == '✓' %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>
+      {%- elif v == '✗' %}<span class="material-symbols-outlined" style="color:var(--text-muted,#aaa);">close</span>
+      {%- else %}{{ v }}{%- endif %}
+    {% endmacro %}
+    {% for feature, s, g, p, e in rows %}
+    <div class="compare-row">
+      <div class="feature-label">{{ feature }}</div>
+      <div class="compare-val {% if s == '✓' %}yes{% elif s == '✗' %}no{% endif %}">{{ feature_val(s) }}</div>
+      <div class="compare-val {% if g == '✓' %}yes{% elif g == '✗' %}no{% endif %}">{{ feature_val(g) }}</div>
+      <div class="compare-val {% if p == '✓' %}yes{% elif p == '✗' %}no{% endif %}">{{ feature_val(p) }}</div>
+      <div class="compare-val {% if e == '✓' %}yes{% elif e == '✗' %}no{% endif %}">{{ feature_val(e) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ── Africa-first note ──────────────────────────────── -->
+  <div style="background:rgba(0,255,243,0.06); border:1px solid rgba(0,255,243,0.2); border-radius:12px; padding:20px 24px; display:flex; align-items:flex-start; gap:14px;">
+    <span class="material-symbols-outlined" style="font-size:20px; color:var(--cyan); margin-top:2px; flex-shrink:0;">public</span>
+    <div>
+      <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Built for Africa, ready for the world</div>
+      <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">
+        All plans support Paystack and local currency payouts for NGN, GHS, KES, ZAR and more.
+        Need flexible payment terms or local invoicing? <a href="mailto:hello@heelo.io" style="color:var(--cyan); text-decoration:none;">Reach out</a> — we work with you.
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

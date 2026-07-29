@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register — {{ event.title }}</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #0A0A0A;
+      background: #fff;
+      padding: 16px;
+    }
+
+    --cyan: #00FFF3;
+
+    h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+
+    .event-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .event-meta { font-size: 12px; color: #666; margin-bottom: 16px; }
+
+    .ticket-card {
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      transition: border-color 0.12s;
+    }
+
+    .ticket-card.selected { border-color: #00FFF3; background: #f0fffe; }
+    .ticket-card.sold-out { opacity: 0.5; }
+
+    .ticket-name { font-size: 14px; font-weight: 600; }
+    .ticket-price { font-size: 15px; font-weight: 700; }
+    .ticket-desc { font-size: 12px; color: #666; margin-top: 3px; }
+
+    .qty-control { display: flex; align-items: center; gap: 10px; }
+
+    .qty-btn {
+      width: 30px; height: 30px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 7px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .qty-btn:hover:not(:disabled) { border-color: #00FFF3; }
+    .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .form-group { margin-bottom: 12px; }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      background: #fff;
+      transition: border-color 0.12s;
+    }
+
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #00FFF3;
+    }
+
+    .summary {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      color: #555;
+    }
+
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 700;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: #00FFF3;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.12s;
+    }
+
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-secondary {
+      display: inline-block;
+      padding: 8px 14px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .btn-back {
+      background: transparent;
+      border: none;
+      font-size: 13px;
+      color: #666;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 12px;
+    }
+
+    .alert-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #b91c1c;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .steps {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .step-dot {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .step-line { flex: 1; height: 1px; background: #e5e7eb; }
+
+    .success-screen {
+      text-align: center;
+      padding: 24px 16px;
+    }
+
+    .success-icon {
+      width: 56px; height: 56px;
+      background: #00FFF3;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    [x-cloak] { display: none !important; }
+  </style>
+</head>
+<body x-data="widgetForm()">
+
+<!-- Event info -->
+<div class="event-title">{{ event.title }}</div>
+<div class="event-meta">
+  {{ event.start_datetime.strftime('%d %b %Y · %H:%M') if event.start_datetime else 'Date TBD' }}
+  {% if event.venue_city %} · {{ event.venue_city }}{% endif %}
+</div>
+
+<!-- Step indicator -->
+<div class="steps" x-show="!done">
+  <div class="step-dot" :style="step >= 1 ? 'background:#00FFF3;color:#000;' : 'background:#f3f4f6;color:#9ca3af;'">1</div>
+  <div class="step-line"></div>
+  <div class="step-dot" :style="step >= 2 ? 'background:#00FFF3;color:#000;' : 'background:#f3f4f6;color:#9ca3af;'">2</div>
+</div>
+
+<!-- Step 1: Select tickets -->
+<div x-show="step === 1 && !done">
+  <h2>Choose tickets</h2>
+
+  {% if not ticket_types %}
+  <p style="color:#666; text-align:center; padding:20px 0;">No tickets available.</p>
+  {% else %}
+
+  {% for tt in ticket_types %}
+  <div class="ticket-card"
+    :class="{
+      'selected': getQty('{{ tt.id }}') > 0,
+      'sold-out': {{ 'true' if (tt.quantity is not none and (tt.quantity_sold + tt.quantity_reserved) >= tt.quantity) else 'false' }}
+    }">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+      <div>
+        <div class="ticket-name">{{ tt.name }}</div>
+        {% if tt.description %}<div class="ticket-desc">{{ tt.description }}</div>{% endif %}
+        {% if tt.quantity is not none and (tt.quantity_sold + tt.quantity_reserved) >= tt.quantity %}
+        <div style="font-size:12px; color:#D0021B; font-weight:500; margin-top:3px;">Sold out</div>
+        {% endif %}
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        <div class="ticket-price">{% if tt.price == 0 %}Free{% else %}{{ tt.currency }} {{ "{:,.0f}".format(tt.price) }}{% endif %}</div>
+        {% if tt.quantity is none or (tt.quantity_sold + tt.quantity_reserved) < tt.quantity %}
+        <div class="qty-control" style="margin-top:8px; justify-content:flex-end;">
+          <button class="qty-btn" type="button" @click="dec('{{ tt.id }}')" :disabled="getQty('{{ tt.id }}') <= 0">−</button>
+          <span style="font-size:14px; font-weight:600; min-width:16px; text-align:center;" x-text="getQty('{{ tt.id }}')">0</span>
+          <button class="qty-btn" type="button" @click="inc('{{ tt.id }}', {{ tt.max_per_order }})" :disabled="getQty('{{ tt.id }}') >= {{ tt.max_per_order }}">+</button>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- Total -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin:14px 0; font-size:15px; font-weight:700;">
+    <span style="font-size:13px; color:#666;" x-text="totalTickets > 0 ? totalTickets + ' ticket(s) selected' : 'No tickets selected'"></span>
+    <span x-text="formatAmount(rawTotal)"></span>
+  </div>
+
+  <button class="btn-primary" @click="goToDetails()" :disabled="!hasSelection">Continue</button>
+
+  {% endif %}
+</div>
+
+<!-- Step 2: Details -->
+<div x-show="step === 2 && !done" x-cloak>
+  <button class="btn-back" type="button" @click="step=1">← Back</button>
+  <h2>Your details</h2>
+
+  <form @submit.prevent="submit">
+    <div class="form-group">
+      <label>Full name *</label>
+      <input type="text" x-model="buyer.name" required placeholder="Full name">
+    </div>
+    <div class="form-group">
+      <label>Email *</label>
+      <input type="email" x-model="buyer.email" required placeholder="you@example.com">
+    </div>
+    <div class="form-group">
+      <label>Phone</label>
+      <input type="tel" x-model="buyer.phone" placeholder="+234...">
+    </div>
+
+    {% if form_fields %}
+    {% for ff in form_fields %}
+    <div class="form-group">
+      <label>{{ ff.label }}{% if ff.is_required %} *{% endif %}</label>
+      {% if ff.field_type == 'long_text' %}
+      <textarea x-model="answers['{{ ff.id }}']" rows="3" {% if ff.is_required %}required{% endif %}></textarea>
+      {% elif ff.field_type == 'dropdown' %}
+      <select x-model="answers['{{ ff.id }}']" {% if ff.is_required %}required{% endif %}>
+        <option value="">— Select —</option>
+        {% for opt in (ff.options or []) %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
+      </select>
+      {% else %}
+      <input type="text" x-model="answers['{{ ff.id }}']" {% if ff.is_required %}required{% endif %} placeholder="{{ ff.label }}">
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="summary">
+      <template x-for="[ttId, qty] in Object.entries(quantities).filter(([,q])=>q>0)" :key="ttId">
+        <div class="summary-row">
+          <span x-text="getTicketName(ttId) + ' × ' + qty"></span>
+          <span x-text="formatAmount(getTicketPrice(ttId) * qty)"></span>
+        </div>
+      </template>
+      <div class="summary-total">
+        <span>Total</span>
+        <span x-text="rawTotal === 0 ? 'Free' : formatAmount(rawTotal)"></span>
+      </div>
+    </div>
+
+    <div x-show="error" x-text="error" class="alert-error" style="display:none;"></div>
+
+    <button type="submit" class="btn-primary" :disabled="submitting">
+      <span x-text="submitting ? 'Processing...' : (rawTotal === 0 ? 'Complete registration' : 'Proceed to payment')"></span>
+    </button>
+  </form>
+</div>
+
+<!-- Success screen -->
+<div x-show="done" x-cloak class="success-screen">
+  <div class="success-icon">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  </div>
+  <h2 style="margin-bottom:8px;">You're in!</h2>
+  <p style="font-size:13px; color:#666; margin-bottom:16px;">Ticket confirmed. Check your email for details.</p>
+  <a :href="confirmUrl" style="font-size:13px; color:#0A0A0A; text-decoration:underline;" target="_blank">View full confirmation →</a>
+</div>
+
+<div style="text-align:center; margin-top:16px; padding-top:12px; border-top:1px solid #f3f4f6;">
+  <a href="https://heelo.io" target="_blank" style="font-size:11px; color:#9ca3af; text-decoration:none;">Powered by <strong style="color:#0A0A0A;">heelo</strong></a>
+</div>
+
+<script>
+const _ticketTypes = {{ ticket_types_json | safe }};
+const _eventSlug = {{ event.slug | tojson }};
+const _currency = {{ (ticket_types[0].currency if ticket_types else 'NGN') | tojson }};
+
+function widgetForm() {
+  return {
+    step: 1,
+    done: false,
+    confirmUrl: '',
+    quantities: {},
+    buyer: { name: '', email: '', phone: '' },
+    answers: {},
+    submitting: false,
+    error: '',
+
+    get hasSelection() {
+      return Object.values(this.quantities).some(q => parseInt(q) > 0);
+    },
+
+    get totalTickets() {
+      return Object.values(this.quantities).reduce((a, b) => a + (parseInt(b) || 0), 0);
+    },
+
+    get rawTotal() {
+      let s = 0;
+      for (const [id, qty] of Object.entries(this.quantities)) {
+        if (!qty) continue;
+        const tt = _ticketTypes.find(t => t.id === id);
+        if (tt) s += parseFloat(tt.price) * parseInt(qty);
+      }
+      return s;
+    },
+
+    getQty(id) { return this.quantities[id] || 0; },
+
+    inc(id, max) {
+      const c = parseInt(this.quantities[id] || 0);
+      if (!max || c < max) this.quantities[id] = c + 1;
+    },
+
+    dec(id) {
+      const c = parseInt(this.quantities[id] || 0);
+      if (c > 0) this.quantities[id] = c - 1;
+    },
+
+    getTicketName(id) {
+      const tt = _ticketTypes.find(t => t.id === id);
+      return tt ? tt.name : id;
+    },
+
+    getTicketPrice(id) {
+      const tt = _ticketTypes.find(t => t.id === id);
+      return tt ? parseFloat(tt.price) : 0;
+    },
+
+    formatAmount(n) {
+      if (n === 0) return 'Free';
+      return _currency + ' ' + parseFloat(n).toLocaleString('en', { minimumFractionDigits: 0 });
+    },
+
+    goToDetails() {
+      if (!this.hasSelection) return;
+      this.step = 2;
+    },
+
+    async submit() {
+      this.submitting = true;
+      this.error = '';
+      try {
+        const items = Object.entries(this.quantities)
+          .filter(([, q]) => parseInt(q) > 0)
+          .map(([id, qty]) => ({ ticket_type_id: id, quantity: parseInt(qty) }));
+
+        const res = await fetch(`/api/v1/events/${_eventSlug}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            buyer_name: this.buyer.name,
+            buyer_email: this.buyer.email,
+            buyer_phone: this.buyer.phone || null,
+            items,
+            form_answers: this.answers,
+          }),
+          credentials: 'include',
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          this.error = data.error?.message || 'Registration failed.';
+          return;
+        }
+
+        const order = data.data;
+        this.confirmUrl = `/orders/${order.id}/confirmation`;
+
+        if (order.payment_url) {
+          // Paid: open payment in new tab, show pending
+          window.open(order.payment_url, '_blank');
+        }
+
+        this.done = true;
+        // Notify parent page
+        window.parent.postMessage({
+          type: 'heelo:registered',
+          orderId: order.id,
+          paymentStatus: order.payment_status,
+          confirmUrl: this.confirmUrl,
+        }, '*');
+      } catch {
+        this.error = 'A network error occurred. Please try again.';
+      } finally {
+        this.submitting = false;
+      }
+    },
+  };
+}
+</script>
+</body>
+</html>

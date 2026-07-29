@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Choose organization — Heelo{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+{% endblock %}
+
+{% block body %}
+<!-- Minimal nav -->
+<header class="dash-topnav">
+  <a href="/" class="dash-topnav-logo">heelo</a>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <span class="small text-muted">{{ user.email }}</span>
+    <div class="dash-topnav-divider"></div>
+    <button
+      class="user-menu-item small danger"
+      onclick="fetch('/api/v1/auth/logout',{method:'POST',credentials:'include'}).then(()=>window.location.href='/login')"
+      type="button"
+      style="padding:6px 10px; border-radius:6px; border:1px solid var(--border-light);"
+    >
+      Sign out
+    </button>
+  </div>
+</header>
+
+<div style="min-height:calc(100vh - 56px); background:var(--bg-secondary); padding:48px 24px;">
+  <div style="max-width:800px; margin:0 auto;">
+
+    <h1 class="h1 animate-in" style="margin-bottom:6px;">Choose an organization</h1>
+    <p class="text-secondary animate-in animate-in-delay-1" style="margin-bottom:0;">
+      You belong to {{ orgs | length }} organization{{ 's' if orgs | length != 1 }}.
+    </p>
+
+    <div class="org-picker-grid animate-in animate-in-delay-2">
+      {% for entry in orgs %}
+      <a href="/org/{{ entry.org.slug }}" class="org-picker-card">
+        <div class="org-picker-logo">
+          {% if entry.org.logo_url %}
+          <img src="{{ entry.org.logo_url }}" alt="{{ entry.org.name }}">
+          {% else %}
+          {{ entry.org.name[:2].upper() }}
+          {% endif %}
+        </div>
+        <div class="org-picker-info">
+          <div class="org-picker-name">{{ entry.org.name }}</div>
+          <div class="org-picker-meta">
+            {{ entry.org.plan | capitalize }} plan
+            {% if entry.org.country %} · {{ entry.org.country }}{% endif %}
+          </div>
+        </div>
+        <span class="org-picker-role">{{ 'Owner' if entry.is_owner else entry.role | replace('_', ' ') }}</span>
+      </a>
+      {% endfor %}
+
+      <!-- Create new org card -->
+      <a href="/org/new" class="org-picker-new-card">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Create new organization
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

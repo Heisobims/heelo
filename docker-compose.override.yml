@@ -1,0 +1,40 @@
+# Development overrides — automatically loaded by `docker compose up`.
+# In production, use only docker-compose.yml:
+#   docker compose -f docker-compose.yml up -d
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      target: runtime
+    # Hot-reload in dev: override entrypoint to skip gunicorn
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    environment:
+      APP_ENV: development
+      LOG_LEVEL: DEBUG
+    volumes:
+      # Mount source so changes are reflected without rebuild
+      - .:/app
+    ports:
+      - "8000:8000"
+
+  worker:
+    environment:
+      APP_ENV: development
+
+  beat:
+    environment:
+      APP_ENV: development
+
+  flower:
+    # Expose Flower directly in dev (no nginx in front)
+    ports:
+      - "5555:5555"
+
+  # In dev, skip nginx (app is accessed directly on port 8000)
+  nginx:
+    profiles: ["nginx"]
+
+  certbot:
+    profiles: ["nginx"]

@@ -1,0 +1,148 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Events — {{ org.name }} — Heelo{% endblock %}
+{% set active_page = active_page %}
+
+{% block main_content %}
+<div class="dash-content">
+
+  <!-- Header -->
+  <div class="dash-page-header">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h1 class="dash-greeting">Events</h1>
+        <p class="dash-subheading">{{ total }} total · {{ org.name }}</p>
+      </div>
+      <a href="/org/{{ org.slug }}/events/new" class="btn btn-primary" style="white-space:nowrap;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New event
+      </a>
+    </div>
+  </div>
+
+  <!-- Status tabs -->
+  <div style="display:flex; gap:4px; margin-bottom:20px; border-bottom:1px solid var(--border-light); overflow-x:auto;">
+    {% for tab_status, tab_label in [('', 'All'), ('draft', 'Drafts'), ('published', 'Published'), ('live', 'Live'), ('ended', 'Ended'), ('cancelled', 'Cancelled')] %}
+    <a
+      href="/org/{{ org.slug }}/events{% if tab_status %}?status={{ tab_status }}{% endif %}"
+      style="padding:8px 16px; font-size:14px; font-weight:500; text-decoration:none; border-bottom:2px solid {% if status_filter == tab_status or (not status_filter and not tab_status) %}var(--cyan){% else %}transparent{% endif %}; color:{% if status_filter == tab_status or (not status_filter and not tab_status) %}var(--text-primary){% else %}var(--text-muted){% endif %}; white-space:nowrap;"
+    >{{ tab_label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if not events %}
+  <!-- Empty state -->
+  <div class="empty-state-card" style="margin-top:32px;">
+    <div class="empty-state-icon">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    </div>
+    <h2 class="empty-state-title">
+      {% if status_filter %}No {{ status_filter }} events{% else %}No events yet{% endif %}
+    </h2>
+    <p class="empty-state-body">
+      {% if status_filter %}
+      You don't have any {{ status_filter }} events right now.
+      {% else %}
+      Create your first event and start selling tickets.
+      {% endif %}
+    </p>
+    {% if not status_filter %}
+    <a href="/org/{{ org.slug }}/events/new" class="btn btn-primary">Create first event</a>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <!-- Events list -->
+  <div class="section-card animate-in">
+    {% for entry in events %}
+    {% set ev = entry.event %}
+    <div style="display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--border-light); transition:background 0.12s;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+
+      <!-- Thumb -->
+      <a href="/org/{{ org.slug }}/events/{{ ev.id }}" style="flex-shrink:0;">
+        <div style="width:56px; height:40px; border-radius:6px; background:var(--bg-secondary); overflow:hidden;">
+          {% if ev.cover_image_url %}
+          <img src="{{ ev.cover_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+          {% else %}
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a1a,#0A0A0A);display:flex;align-items:center;justify-content:center;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          {% endif %}
+        </div>
+      </a>
+
+      <!-- Info -->
+      <div style="flex:1; min-width:0;">
+        <a href="/org/{{ org.slug }}/events/{{ ev.id }}" style="font-size:14px; font-weight:500; color:var(--text-primary); text-decoration:none; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ ev.title }}</a>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+          {{ ev.start_datetime.strftime('%d %b %Y · %H:%M') if ev.start_datetime else 'Date TBD' }}
+          {% if ev.venue_city %} · {{ ev.venue_city }}{% endif %}
+          · {{ ev.format | replace('_', ' ') | title }}
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div style="text-align:right; flex-shrink:0; margin-right:8px;">
+        <div style="font-size:14px; font-weight:600;">{{ entry.registration_count }}</div>
+        <div style="font-size:11px; color:var(--text-muted);">registrations</div>
+      </div>
+
+      {% if ev.max_capacity %}
+      <div style="text-align:right; flex-shrink:0; margin-right:8px;">
+        <div style="font-size:13px; font-weight:500; color:var(--text-secondary);">
+          {{ ((entry.registration_count / ev.max_capacity) * 100) | int }}%
+        </div>
+        <div style="font-size:11px; color:var(--text-muted);">capacity</div>
+      </div>
+      {% endif %}
+
+      <!-- Status -->
+      <span class="status-badge {{ ev.status }}" style="flex-shrink:0;">{{ ev.status | capitalize }}</span>
+
+      <!-- Actions -->
+      <div style="display:flex; gap:4px; flex-shrink:0;" x-data="{ open: false }">
+        <button @click="open = !open" style="width:32px;height:32px;border:1px solid var(--border-light);border-radius:6px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+        </button>
+        <div x-show="open" x-transition @click.away="open=false" style="position:absolute;right:24px;background:#fff;border:1px solid var(--border-light);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.1);min-width:160px;z-index:20;overflow:hidden;display:none;">
+          <a href="/org/{{ org.slug }}/events/{{ ev.id }}" class="user-menu-item">View dashboard</a>
+          <a href="/org/{{ org.slug }}/events/{{ ev.id }}/edit" class="user-menu-item">Edit</a>
+          {% if ev.status in ('published', 'live', 'ended') %}
+          <a href="/e/{{ ev.slug }}" target="_blank" class="user-menu-item">Public page ↗</a>
+          {% endif %}
+          <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
+          <button
+            class="user-menu-item"
+            hx-post="/api/v1/organizations/{{ org.slug }}/events/{{ ev.id }}/duplicate"
+            hx-headers='{"Content-Type":"application/json"}'
+            hx-on::after-request="if(event.detail.successful){window.location.href='/org/{{ org.slug }}/events/'+JSON.parse(event.detail.xhr.responseText).data.id+'/edit'}"
+            type="button"
+          >Duplicate</button>
+          {% if ev.status != 'cancelled' %}
+          <button
+            class="user-menu-item danger"
+            onclick="if(confirm('Cancel this event?')){fetch('/api/v1/organizations/{{ org.slug }}/events/{{ ev.id }}/cancel',{method:'POST',credentials:'include'}).then(()=>location.reload())}"
+            type="button"
+          >Cancel event</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if total > per_page %}
+  <div style="display:flex; justify-content:center; gap:8px; margin-top:20px;">
+    {% if page > 1 %}
+    <a href="?{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page - 1 }}" class="btn btn-secondary btn-sm">← Previous</a>
+    {% endif %}
+    <span style="line-height:36px; font-size:14px; color:var(--text-muted);">Page {{ page }} of {{ ((total / per_page) | round(0, 'ceil')) | int }}</span>
+    {% if page * per_page < total %}
+    <a href="?{% if status_filter %}status={{ status_filter }}&{% endif %}page={{ page + 1 }}" class="btn btn-secondary btn-sm">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

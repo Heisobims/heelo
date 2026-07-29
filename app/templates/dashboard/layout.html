@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+{% endblock %}
+
+{% block body %}
+<div
+  class="dash-root"
+  x-data="{
+    sidebarOpen: false,
+    userMenuOpen: false,
+    orgSwitcherOpen: false,
+    currentSlug: '{{ org.slug if org else "" }}',
+    orgs: {{ orgs_json | safe if orgs_json else '[]' }},
+    switchOrg(slug) {
+      window.location.href = '/org/' + slug;
+    }
+  }"
+  @click.away="userMenuOpen = false; orgSwitcherOpen = false"
+>
+
+  <!-- ── Top navigation ──────────────────────────────────────────────────── -->
+  <header class="dash-topnav">
+    <!-- Hamburger (mobile) -->
+    <button
+      class="topnav-icon-btn"
+      style="display:none;"
+      @click="sidebarOpen = !sidebarOpen"
+      aria-label="Toggle sidebar"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="6" x2="21" y2="6"/>
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
+    <a href="/" class="dash-topnav-logo">heelo</a>
+
+    {% if org %}
+    <div class="dash-topnav-divider"></div>
+
+    <!-- Org switcher -->
+    <div class="org-switcher" x-data="{ open: false }">
+      <button
+        class="org-switcher-btn"
+        @click="open = !open"
+        type="button"
+        aria-haspopup="listbox"
+      >
+        <div class="org-switcher-logo">
+          {% if org.logo_url %}
+          <img src="{{ org.logo_url }}" alt="{{ org.name }}">
+          {% else %}
+          {{ org.name[:2].upper() }}
+          {% endif %}
+        </div>
+        <span class="org-switcher-name">{{ org.name }}</span>
+        <svg class="org-switcher-chevron" :class="{ 'open': open }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+
+      <div x-show="open" x-transition class="org-switcher-dropdown" style="display:none;" role="listbox">
+        {% for entry in orgs %}
+        <a
+          href="/org/{{ entry.org.slug }}"
+          class="org-switcher-item {% if org and entry.org.slug == org.slug %}active{% endif %}"
+          role="option"
+        >
+          <div class="org-switcher-logo" style="width:20px;height:20px;font-size:9px;border-radius:4px;">
+            {% if entry.org.logo_url %}<img src="{{ entry.org.logo_url }}" alt="">{% else %}{{ entry.org.name[:2].upper() }}{% endif %}
+          </div>
+          <span>{{ entry.org.name }}</span>
+          {% if org and entry.org.slug == org.slug %}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:auto;color:var(--cyan);"><polyline points="20 6 9 17 4 12"/></svg>
+          {% else %}
+          <span class="org-switcher-item-role">{{ entry.role }}</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+        <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
+        <a href="/org/new" class="org-switcher-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span>New organization</span>
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Right actions -->
+    <div class="dash-topnav-actions">
+      <!-- Notifications -->
+      <div style="position:relative;" x-data="notifCenter()">
+        <button class="topnav-icon-btn" title="Notifications" @click="toggle()" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <div class="topnav-notif-badge" x-show="unread > 0" x-text="unread > 9 ? '9+' : unread" style="display:none;"></div>
+        </button>
+        <div x-show="open" x-cloak @click.outside="open = false" class="notif-dropdown" x-transition>
+          <div class="notif-header">
+            <span>Notifications</span>
+            <button class="notif-mark-read" @click="markAllRead()" x-show="unread > 0" type="button">Mark all read</button>
+          </div>
+          <div x-show="loading" class="notif-loading"><span class="material-symbols-outlined">progress_activity</span></div>
+          <div x-show="!loading && items.length === 0" class="notif-empty">
+            <span class="material-symbols-outlined">notifications_off</span>
+            <p>No notifications yet</p>
+          </div>
+          <template x-for="n in items" :key="n.ts + n.title">
+            <a :href="n.url || '#'" class="notif-item" :class="{ unread: isUnread(n.ts) }">
+              <div class="notif-icon"><span class="material-symbols-outlined" x-text="n.icon"></span></div>
+              <div class="notif-body">
+                <div class="notif-title" x-text="n.title"></div>
+                <div class="notif-sub" x-text="n.body"></div>
+                <div class="notif-time" x-text="timeAgo(n.ts)"></div>
+              </div>
+            </a>
+          </template>
+        </div>
+      </div>
+
+      <!-- User menu -->
+      <div style="position:relative;" x-data="{ open: false }">
+        <button
+          class="user-avatar-btn"
+          @click="open = !open"
+          type="button"
+          title="{{ user.full_name }}"
+        >
+          {% if user.avatar_url %}
+          <img src="{{ user.avatar_url }}" alt="{{ user.full_name }}">
+          {% else %}
+          {{ user.full_name[0].upper() }}
+          {% endif %}
+        </button>
+
+        <div x-show="open" x-transition class="user-menu-dropdown" style="display:none;">
+          <div class="user-menu-header">
+            <div class="user-menu-name">{{ user.full_name }}</div>
+            <div class="user-menu-email">{{ user.email }}</div>
+          </div>
+          <a href="/profile" class="user-menu-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Your profile
+          </a>
+          {% if org %}
+          <a href="/org/{{ org.slug }}/settings" class="user-menu-item">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </a>
+          {% endif %}
+          {% if user.role == 'admin' %}
+          <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
+          <a href="/admin" class="user-menu-item" style="color:#ff6b35;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Admin Panel
+          </a>
+          {% endif %}
+          <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
+          <button
+            class="user-menu-item danger"
+            @click="fetch('/api/v1/auth/logout', {method:'POST',credentials:'include'}).then(()=>window.location.href='/login')"
+            type="button"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Body ────────────────────────────────────────────────────────────── -->
+  <div class="dash-body">
+
+    <!-- Sidebar overlay (mobile) -->
+    <div
+      x-show="sidebarOpen"
+      @click="sidebarOpen = false"
+      style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:29;display:none;"
+      x-transition:enter="transition-opacity ease"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+    ></div>
+
+    <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+    <aside class="dash-sidebar" :class="{ 'open': sidebarOpen }">
+      {% if org %}
+      {% set active = active_page | default('') %}
+
+      <!-- Overview -->
+      <a href="/org/{{ org.slug }}" class="sidebar-link {% if active == 'overview' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Overview
+      </a>
+
+      <!-- Events (always visible) -->
+      <a href="/org/{{ org.slug }}/events" class="sidebar-link {% if active == 'events' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Events
+      </a>
+
+      {% if sidebar_state and sidebar_state.has_events %}
+      <!-- Registrations — shown after first event -->
+      <a href="/org/{{ org.slug }}/registrations" class="sidebar-link {% if active == 'registrations' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Registrations
+      </a>
+      <!-- Contacts -->
+      <a href="/org/{{ org.slug }}/contacts" class="sidebar-link {% if active == 'contacts' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Contacts
+      </a>
+
+      <!-- Campaigns -->
+      <a href="/org/{{ org.slug }}/campaigns" class="sidebar-link {% if active == 'campaigns' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l1.27-.9a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Campaigns
+      </a>
+      {% endif %}
+
+      {% if sidebar_state and sidebar_state.has_revenue %}
+      <!-- Finance -->
+      <a href="/org/{{ org.slug }}/finance" class="sidebar-link {% if active == 'finance' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Finance
+      </a>
+      {% endif %}
+
+      {% if sidebar_state and sidebar_state.whatsapp_connected %}
+      <!-- WhatsApp Inbox -->
+      <a href="/org/{{ org.slug }}/inbox" class="sidebar-link {% if active == 'inbox' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Inbox
+      </a>
+      {% endif %}
+
+      <div style="border-top:1px solid var(--border-light);margin:8px 0;"></div>
+
+      <!-- Team -->
+      <a href="/org/{{ org.slug }}/team" class="sidebar-link {% if active == 'team' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Team
+      </a>
+
+      <!-- Settings -->
+      <a href="/org/{{ org.slug }}/settings" class="sidebar-link {% if active == 'settings' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9z"/></svg>
+        Settings
+      </a>
+
+      <!-- Plan -->
+      <a href="/org/{{ org.slug }}/plan" class="sidebar-link {% if active == 'plan' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Plan
+      </a>
+
+      <!-- Developer -->
+      <a href="/org/{{ org.slug }}/settings/developer" class="sidebar-link {% if active == 'developer' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Developer
+      </a>
+      {% endif %}
+
+      <!-- Discover -->
+      <div style="border-top:1px solid var(--border-light);margin:8px 12px 4px;"></div>
+      <a href="/my-tickets" class="sidebar-link {% if active == 'my_tickets' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/></svg>
+        My Tickets
+      </a>
+      <a href="/vendors" class="sidebar-link {% if active == 'vendors' %}active{% endif %}">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Find Vendors
+      </a>
+    </aside>
+
+    <!-- ── Main content ───────────────────────────────────────────────────── -->
+    <main class="dash-main" id="main-content">
+      {% block main_content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- ── Onboarding checklist widget ──────────────────────────────────────── -->
+  {% if org and onboarding and not onboarding.is_complete %}
+  <div
+    class="onboarding-widget"
+    x-data="{ collapsed: false }"
+    x-show="!collapsed"
+    x-transition
+  >
+    <div class="onboarding-widget-header" @click="collapsed = !collapsed">
+      <div class="onboarding-widget-title">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Getting started
+        <span class="onboarding-progress-pill">{{ onboarding.completed_count }}/{{ onboarding.total }}</span>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :style="collapsed ? 'transform:rotate(180deg)' : ''"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+
+    <div class="onboarding-progress-bar">
+      <div class="onboarding-progress-fill" style="width: {{ (onboarding.completed_count / onboarding.total * 100) | int }}%"></div>
+    </div>
+
+    <div class="onboarding-widget-body">
+      <a href="/org/{{ org.slug }}/events/new" class="onboarding-item {% if onboarding.has_event %}done{% endif %}">
+        <div class="onboarding-item-check">
+          {% if onboarding.has_event %}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          {% endif %}
+        </div>
+        <div class="onboarding-item-text">
+          <div class="onboarding-item-title">Create your first event</div>
+          <div class="onboarding-item-subtitle">Add name, date, and tickets</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+
+      <a href="/org/{{ org.slug }}/settings#payments" class="onboarding-item {% if onboarding.has_payment_account %}done{% endif %}">
+        <div class="onboarding-item-check">
+          {% if onboarding.has_payment_account %}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          {% endif %}
+        </div>
+        <div class="onboarding-item-text">
+          <div class="onboarding-item-title">Set up payouts</div>
+          <div class="onboarding-item-subtitle">Connect Paystack or Flutterwave</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+
+      <a href="/org/{{ org.slug }}/team" class="onboarding-item {% if onboarding.has_team_member %}done{% endif %}">
+        <div class="onboarding-item-check">
+          {% if onboarding.has_team_member %}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          {% endif %}
+        </div>
+        <div class="onboarding-item-text">
+          <div class="onboarding-item-title">Invite a team member</div>
+          <div class="onboarding-item-subtitle">Collaborators get their own login</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+
+      <a href="/org/{{ org.slug }}/settings#whatsapp" class="onboarding-item {% if onboarding.has_whatsapp %}done{% endif %}">
+        <div class="onboarding-item-check">
+          {% if onboarding.has_whatsapp %}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          {% endif %}
+        </div>
+        <div class="onboarding-item-text">
+          <div class="onboarding-item-title">Connect WhatsApp</div>
+          <div class="onboarding-item-subtitle">Send tickets and reminders on WhatsApp</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<style>[x-cloak]{display:none!important}</style>
+<script>
+function notifCenter() {
+  const LS_KEY = 'notif_last_read';
+  return {
+    open: false,
+    loading: false,
+    items: [],
+    unread: 0,
+    lastRead: localStorage.getItem(LS_KEY) || null,
+
+    toggle() {
+      this.open = !this.open;
+      if (this.open && this.items.length === 0) this.load();
+    },
+    async load() {
+      this.loading = true;
+      try {
+        const r = await fetch('/api/v1/auth/me/notifications', { credentials: 'include' });
+        if (r.ok) {
+          const d = await r.json();
+          this.items = d.notifications || [];
+          this.calcUnread();
+        }
+      } catch(_) {}
+      this.loading = false;
+    },
+    calcUnread() {
+      if (!this.lastRead) { this.unread = Math.min(this.items.length, 9); return; }
+      this.unread = this.items.filter(n => n.ts && n.ts > this.lastRead).length;
+    },
+    isUnread(ts) {
+      return ts && (!this.lastRead || ts > this.lastRead);
+    },
+    markAllRead() {
+      const now = new Date().toISOString();
+      localStorage.setItem('notif_last_read', now);
+      this.lastRead = now;
+      this.unread = 0;
+    },
+    timeAgo(ts) {
+      if (!ts) return '';
+      const secs = Math.floor((Date.now() - new Date(ts)) / 1000);
+      if (secs < 60) return 'just now';
+      if (secs < 3600) return Math.floor(secs/60) + 'm ago';
+      if (secs < 86400) return Math.floor(secs/3600) + 'h ago';
+      return Math.floor(secs/86400) + 'd ago';
+    },
+    init() {
+      // Pre-load count on page mount so badge shows without opening
+      this.load();
+    }
+  };
+}
+</script>
+{% endblock %}

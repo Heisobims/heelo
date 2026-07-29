@@ -1,0 +1,222 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Registrations · {{ org.name }} — Heelo{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .crm-wrap { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+  .crm-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .crm-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.2rem; }
+  .crm-sub { font-size: 0.875rem; color: var(--text-secondary); margin: 0; }
+
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5625rem 1.125rem; border-radius: 9px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: opacity 150ms; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--text-secondary); }
+
+  /* ── Filters ─────────────────────────────────────────────────────────────── */
+  .crm-filters {
+    display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 0.875rem 1rem; margin-bottom: 1rem;
+  }
+  .filter-search {
+    flex: 1; min-width: 200px; display: flex; align-items: center; gap: 0.5rem;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0 0.75rem;
+  }
+  .filter-search svg { color: var(--text-secondary); flex-shrink: 0; }
+  .filter-search input {
+    flex: 1; border: none; background: transparent; padding: 0.5rem 0; font-size: 0.875rem;
+    color: var(--text); outline: none;
+  }
+  .filter-search input::placeholder { color: var(--text-secondary); }
+  .filter-select {
+    padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg); color: var(--text); font-size: 0.875rem; cursor: pointer;
+  }
+  .filter-select:focus { outline: none; border-color: var(--cyan); }
+
+  /* ── Table ───────────────────────────────────────────────────────────────── */
+  .crm-table-wrap {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    overflow: hidden; overflow-x: auto;
+  }
+  .crm-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .crm-table thead tr { border-bottom: 1px solid var(--border); }
+  .crm-table th {
+    text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .crm-table td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .crm-table tbody tr:last-child td { border-bottom: none; }
+  .crm-table tbody tr:hover { background: var(--surface-alt, rgba(0,0,0,0.02)); }
+
+  .att-name { font-weight: 600; }
+  .att-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem; }
+  .checked-in { color: var(--cyan-dark, #00b3a9) !important; }
+  .cell-main { font-weight: 500; }
+  .cell-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .cell-free { color: var(--text-secondary); font-size: 0.8rem; }
+  .act-link { font-size: 0.8rem; font-weight: 600; color: var(--cyan-dark, #00b3a9); text-decoration: none; white-space: nowrap; }
+  .act-link:hover { text-decoration: underline; }
+
+  /* ── Status badges ───────────────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+  .badge-confirmed   { background: rgba(34,197,94,0.1);   color: #16a34a; }
+  .badge-checked_in  { background: rgba(0,255,243,0.1);   color: var(--cyan-dark,#00b3a9); }
+  .badge-pending     { background: rgba(245,158,11,0.1);  color: #b45309; }
+  .badge-cancelled   { background: var(--surface-alt,#f0f0f0); color: var(--text-secondary); }
+  .badge-refunded    { background: rgba(239,68,68,0.1);   color: #dc2626; }
+  .badge-transferred { background: rgba(168,85,247,0.1);  color: #9333ea; }
+
+  /* ── Pagination / count ──────────────────────────────────────────────────── */
+  .crm-pagination { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+  .page-btn { display: inline-flex; align-items: center; padding: 0.4375rem 0.875rem; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.8125rem; font-weight: 600; text-decoration: none; color: var(--text); transition: border-color 150ms; }
+  .page-btn:hover { border-color: var(--text-secondary); }
+  .page-info { font-size: 0.8125rem; color: var(--text-secondary); }
+  .crm-count { text-align: center; font-size: 0.8125rem; color: var(--text-secondary); margin-top: 1rem; }
+
+  /* ── Empty state ─────────────────────────────────────────────────────────── */
+  .crm-empty { text-align: center; padding: 4rem 1.5rem; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+  .crm-empty p { margin: 1rem 0 0.5rem; font-size: 0.9375rem; }
+  .clear-link { font-size: 0.875rem; color: var(--cyan-dark,#00b3a9); text-decoration: none; font-weight: 600; }
+  .clear-link:hover { text-decoration: underline; }
+
+  /* ── HTMX loading state ──────────────────────────────────────────────────── */
+  #crm-results.htmx-request { opacity: 0.5; transition: opacity 200ms; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="crm-wrap">
+
+  <div class="crm-header">
+    <div>
+      <h1 class="crm-title">Registrations</h1>
+      <p class="crm-sub">All attendees across your events — search, filter, and export</p>
+    </div>
+    <div style="display:flex;gap:8px;" x-data="csvImport('{{ org.slug }}')">
+      <button @click="open=true" class="btn btn-outline" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import CSV
+      </button>
+      <a
+        href="/api/v1/organizations/{{ org.slug }}/registrations/export.csv?q={{ q }}&event_id={{ selected_event }}&status={{ selected_status }}"
+        class="btn btn-outline"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </a>
+
+      <!-- Import Modal -->
+      <div x-show="open" x-cloak style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;" @click.self="open=false">
+        <div style="background:#fff;border-radius:14px;padding:28px;width:420px;max-width:90vw;" @click.stop>
+          <h3 style="font-family:'STK Bureau Serif',Georgia,serif;font-size:18px;margin:0 0 6px;">Import Contacts</h3>
+          <p style="font-size:13px;color:var(--text-secondary);margin:0 0 18px;">Upload a CSV with columns: <code>name</code>, <code>email</code>, <code>phone</code>, <code>whatsapp_number</code></p>
+          <input type="file" accept=".csv" @change="fileSelected($event)" style="width:100%;margin-bottom:12px;font-size:13px;">
+          <div x-show="result" style="padding:10px 14px;border-radius:8px;background:#e6faf5;font-size:13px;color:#0a7a5a;margin-bottom:12px;" x-text="result"></div>
+          <div x-show="error" style="padding:10px 14px;border-radius:8px;background:#fff0f0;font-size:13px;color:#dc2626;margin-bottom:12px;" x-text="error"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button @click="open=false" type="button" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:13px;">Cancel</button>
+            <button @click="upload()" :disabled="!file || uploading" type="button" style="padding:8px 16px;border-radius:8px;border:none;background:var(--cyan);color:#000;cursor:pointer;font-size:13px;font-weight:600;" :style="(!file||uploading)?'opacity:.5':''">
+              <span x-text="uploading ? 'Importing…' : 'Import'"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <form
+    id="crm-filter-form"
+    hx-get="/org/{{ org.slug }}/registrations"
+    hx-target="#crm-results"
+    hx-swap="outerHTML"
+    hx-push-url="true"
+    hx-trigger="input delay:400ms from:#q-input, change from:.filter-select"
+  >
+    <div class="crm-filters">
+      <div class="filter-search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input
+          id="q-input"
+          type="text"
+          name="q"
+          value="{{ q }}"
+          placeholder="Search by name or email…"
+          autocomplete="off"
+        >
+      </div>
+
+      <select name="event_id" class="filter-select">
+        <option value="">All events</option>
+        {% for ev in events %}
+        <option value="{{ ev.id }}" {% if selected_event == ev.id|string %}selected{% endif %}>
+          {{ ev.title | truncate(45) }}
+        </option>
+        {% endfor %}
+      </select>
+
+      <select name="status" class="filter-select">
+        <option value="">All statuses</option>
+        <option value="confirmed"   {% if selected_status == 'confirmed'   %}selected{% endif %}>Confirmed</option>
+        <option value="checked_in"  {% if selected_status == 'checked_in'  %}selected{% endif %}>Checked In</option>
+        <option value="pending"     {% if selected_status == 'pending'     %}selected{% endif %}>Pending</option>
+        <option value="cancelled"   {% if selected_status == 'cancelled'   %}selected{% endif %}>Cancelled</option>
+        <option value="refunded"    {% if selected_status == 'refunded'    %}selected{% endif %}>Refunded</option>
+        <option value="transferred" {% if selected_status == 'transferred' %}selected{% endif %}>Transferred</option>
+      </select>
+
+      <!-- Hidden page reset when filters change -->
+      <input type="hidden" name="page" value="1">
+    </div>
+  </form>
+
+  <!-- Results (HTMX target) -->
+  {% include "crm/_table.html" %}
+
+</div>
+
+<style>[x-cloak]{display:none!important}</style>
+<script>
+function csvImport(orgSlug) {
+  return {
+    open: false,
+    file: null,
+    uploading: false,
+    result: '',
+    error: '',
+    fileSelected(e) {
+      this.file = e.target.files[0] || null;
+      this.result = ''; this.error = '';
+    },
+    async upload() {
+      if (!this.file || this.uploading) return;
+      this.uploading = true; this.result = ''; this.error = '';
+      try {
+        const fd = new FormData();
+        fd.append('file', this.file);
+        const r = await fetch(`/api/v1/organizations/${orgSlug}/contacts/import`, {
+          method: 'POST',
+          credentials: 'include',
+          body: fd,
+        });
+        const d = await r.json();
+        if (r.ok) {
+          const { imported, skipped } = d.data;
+          this.result = `Imported ${imported} contact${imported !== 1 ? 's' : ''}${skipped ? `, ${skipped} skipped (duplicates)` : ''}.`;
+        } else {
+          this.error = d.detail || 'Import failed.';
+        }
+      } catch(e) {
+        this.error = 'Network error — please try again.';
+      }
+      this.uploading = false;
+    },
+  };
+}
+</script>
+{% endblock %}

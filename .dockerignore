@@ -1,0 +1,55 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Secrets — never in the image
+.env
+.env.*
+*.env
+secrets/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Test artifacts
+tests/
+conftest.py
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+pytest.ini
+
+# Code quality / editor
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Docs / CI config
+*.md
+LICENSE
+.github/
+Makefile
+
+# Docker / deployment (not needed inside the container)
+docker-compose*.yml
+Dockerfile*
+nginx.conf
+
+# Node (if any tooling is ever added)
+node_modules/

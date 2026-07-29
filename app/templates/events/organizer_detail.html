@@ -1,0 +1,714 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}{{ event.title }} — {{ org.name }} — Heelo{% endblock %}
+{% set active_page = 'events' %}
+
+{% block main_content %}
+<div class="dash-content">
+
+  <!-- Breadcrumb -->
+  <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px; display:flex; align-items:center; gap:6px;">
+    <a href="/org/{{ org.slug }}/events" style="color:var(--text-muted); text-decoration:none;">Events</a>
+    <span>›</span>
+    <span style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ event.title }}</span>
+  </div>
+
+  <!-- ── Event header ──────────────────────────────────────────────────────── -->
+  <div style="display:flex; align-items:flex-start; gap:16px; margin-bottom:24px; flex-wrap:wrap;">
+
+    <!-- Cover thumb -->
+    <div style="width:80px; height:56px; border-radius:8px; background:var(--bg-secondary); flex-shrink:0; overflow:hidden;">
+      {% if event.cover_image_url %}
+      <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" style="width:100%;height:100%;object-fit:cover;">
+      {% else %}
+      <div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a1a,#0A0A0A);display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="flex:1; min-width:0;">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+        <h1 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin:0;">{{ event.title }}</h1>
+        <span class="status-badge {{ event.status }}">{{ event.status | capitalize }}</span>
+      </div>
+      <div style="font-size:13px; color:var(--text-muted);">
+        {{ event.start_datetime.strftime('%A, %d %B %Y · %H:%M') if event.start_datetime else 'Date TBD' }}
+        {% if event.timezone %} {{ event.timezone }}{% endif %}
+        {% if event.venue_city %} · {{ event.venue_city }}{% endif %}
+        · {{ event.format | replace('_', ' ') | title }}
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex; gap:8px; flex-shrink:0; flex-wrap:wrap;" x-data="eventActions('{{ event.id }}', '{{ event.slug }}', '{{ event.status }}', '{{ org.slug }}')">
+
+      {% if event.status in ('published', 'live', 'ended') %}
+      <a href="/e/{{ event.slug }}" target="_blank" class="btn btn-secondary btn-sm">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Public page
+      </a>
+      {% endif %}
+
+      {% if event.status != 'cancelled' %}
+      <a href="/org/{{ org.slug }}/events/{{ event.id }}/edit" class="btn btn-secondary btn-sm">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </a>
+      {% endif %}
+
+      {% if event.status == 'draft' %}
+      <button class="btn btn-primary btn-sm" :class="{'btn-loading': loading}" :disabled="loading" @click="publish()" type="button">
+        <span class="btn-label">Publish</span>
+      </button>
+      {% elif event.status == 'published' %}
+      <button class="btn btn-primary btn-sm" :class="{'btn-loading': loading}" :disabled="loading" @click="goLive()" type="button">
+        <span class="btn-label">Go live</span>
+      </button>
+      {% elif event.status == 'live' %}
+      <button class="btn btn-secondary btn-sm" :class="{'btn-loading': loading}" :disabled="loading" @click="endEvent()" type="button">
+        <span class="btn-label">End event</span>
+      </button>
+      {% endif %}
+
+      <!-- More menu -->
+      <div style="position:relative;" x-data="{ open: false }">
+        <button @click="open = !open" class="btn btn-secondary btn-sm" type="button" style="padding:0 10px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+        </button>
+        <div x-show="open" @click.away="open=false" x-transition style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--border-light);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.1);min-width:160px;z-index:20;overflow:hidden;">
+          <button class="user-menu-item" @click="duplicate(); open=false" type="button">Duplicate</button>
+          <a href="/org/{{ org.slug }}/events/{{ event.id }}/edit" class="user-menu-item">Edit details</a>
+          {% if event.status not in ('cancelled', 'ended') %}
+          <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
+          <button class="user-menu-item danger" @click="cancel(); open=false" type="button">Cancel event</button>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Feedback message -->
+      <div x-show="message" x-text="message" class="alert alert-success" style="display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:100; white-space:nowrap;"></div>
+      <div x-show="error" x-text="error" class="alert alert-danger" style="display:none; position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:100; white-space:nowrap;"></div>
+    </div>
+  </div>
+
+  <!-- ── Stats ─────────────────────────────────────────────────────────────── -->
+  <div class="metrics-grid" style="margin-bottom:24px;">
+    <div class="metric-card">
+      <div class="metric-label">Registrations</div>
+      <div class="metric-value">{{ stats.registration_count }}</div>
+      <div class="metric-change">
+        {% if event.max_capacity %}of {{ event.max_capacity }} capacity{% else %}no capacity limit{% endif %}
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Check-ins</div>
+      <div class="metric-value">{{ stats.checkin_count }}</div>
+      <div class="metric-change">
+        {% if stats.registration_count > 0 %}
+        {{ ((stats.checkin_count / stats.registration_count) * 100) | int }}% attendance rate
+        {% else %}no registrations yet{% endif %}
+      </div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Revenue</div>
+      <div class="metric-value">
+        {% if stats.total_revenue > 0 %}
+        {{ org.currency }} {{ "{:,.0f}".format(stats.total_revenue) }}
+        {% else %}—{% endif %}
+      </div>
+      <div class="metric-change">net after fees</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Capacity</div>
+      <div class="metric-value">
+        {% if event.max_capacity %}
+        {{ (((stats.registration_count / event.max_capacity) * 100) | int) }}%
+        {% else %}∞{% endif %}
+      </div>
+      <div class="metric-change">{% if event.max_capacity %}{{ event.max_capacity - stats.registration_count }} spots left{% else %}unlimited{% endif %}</div>
+    </div>
+  </div>
+
+  <!-- ── Tab navigation ────────────────────────────────────────────────────── -->
+  <div x-data="{ tab: 'overview' }">
+    <div style="display:flex; gap:0; border-bottom:1px solid var(--border-light); margin-bottom:20px;">
+      {% for tab_id, tab_label in [('overview', 'Overview'), ('tickets', 'Tickets'), ('registrations', 'Registrations'), ('analytics', 'Analytics')] %}
+      <button
+        @click="tab = '{{ tab_id }}'; $dispatch('heelo:tab', { tab: '{{ tab_id }}' })"
+        style="padding:10px 18px; font-size:14px; font-weight:500; border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; color:var(--text-muted); transition:all 0.12s;"
+        :style="tab === '{{ tab_id }}' ? 'border-bottom-color:var(--cyan);color:var(--text-primary);font-weight:600;' : ''"
+        type="button"
+      >{{ tab_label }}</button>
+      {% endfor %}
+    </div>
+
+    <!-- Overview -->
+    <div x-show="tab === 'overview'" style="display:block;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start;">
+
+        <!-- Event details card -->
+        <div class="section-card" style="padding:20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Event details</div>
+          <dl style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; gap:12px;">
+              <dt style="font-size:12px; color:var(--text-muted); width:80px; flex-shrink:0; padding-top:1px;">Format</dt>
+              <dd style="font-size:13px;">{{ event.format | replace('_', ' ') | title }}</dd>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <dt style="font-size:12px; color:var(--text-muted); width:80px; flex-shrink:0; padding-top:1px;">Starts</dt>
+              <dd style="font-size:13px;">{{ event.start_datetime.strftime('%d %b %Y, %H:%M') if event.start_datetime else '—' }}</dd>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <dt style="font-size:12px; color:var(--text-muted); width:80px; flex-shrink:0; padding-top:1px;">Ends</dt>
+              <dd style="font-size:13px;">{{ event.end_datetime.strftime('%d %b %Y, %H:%M') if event.end_datetime else '—' }}</dd>
+            </div>
+            <div style="display:flex; gap:12px;">
+              <dt style="font-size:12px; color:var(--text-muted); width:80px; flex-shrink:0; padding-top:1px;">Timezone</dt>
+              <dd style="font-size:13px;">{{ event.timezone or 'UTC' }}</dd>
+            </div>
+            {% if event.venue_name or event.venue_city %}
+            <div style="display:flex; gap:12px;">
+              <dt style="font-size:12px; color:var(--text-muted); width:80px; flex-shrink:0; padding-top:1px;">Venue</dt>
+              <dd style="font-size:13px;">
+                {% if event.venue_name %}{{ event.venue_name }}<br>{% endif %}
+                {% if event.venue_address %}{{ event.venue_address }}<br>{% endif %}
+                {% if event.venue_city %}{{ event.venue_city }}{% if event.venue_country %}, {{ event.venue_country }}{% endif %}{% endif %}
+              </dd>
+            </div>
+            {% endif %}
+            {% if event.virtual_url %}
+            <div style="display:flex; gap:12px;">
+              <dt style="font-size:12px; color:var(--text-muted); width:80px; flex-shrink:0; padding-top:1px;">Stream</dt>
+              <dd style="font-size:13px;"><a href="{{ event.virtual_url }}" target="_blank" style="color:var(--cyan); text-decoration:none; word-break:break-all;">{{ event.virtual_url }}</a></dd>
+            </div>
+            {% endif %}
+            {% if event.categories %}
+            <div style="display:flex; gap:12px;">
+              <dt style="font-size:12px; color:var(--text-muted); width:80px; flex-shrink:0; padding-top:1px;">Categories</dt>
+              <dd>
+                <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                  {% for cat in event.categories %}
+                  <span style="font-size:11px; padding:2px 8px; border-radius:100px; background:var(--bg-secondary); color:var(--text-secondary);">{{ cat.name }}</span>
+                  {% endfor %}
+                </div>
+              </dd>
+            </div>
+            {% endif %}
+          </dl>
+        </div>
+
+        <!-- Description card -->
+        <div class="section-card" style="padding:20px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Description</div>
+          {% if event.description %}
+          <div style="font-size:14px; line-height:1.7; color:var(--text-secondary); white-space:pre-wrap;">{{ event.description }}</div>
+          {% else %}
+          <div style="font-size:14px; color:var(--text-muted); font-style:italic;">No description added yet.</div>
+          {% endif %}
+          <a href="/org/{{ org.slug }}/events/{{ event.id }}/edit" style="display:inline-block; margin-top:14px; font-size:13px; color:var(--text-muted); text-decoration:underline; text-underline-offset:2px;">Edit details →</a>
+        </div>
+
+      </div>
+
+      <!-- Shareable link -->
+      {% if event.status in ('published', 'live') %}
+      <div class="section-card" style="padding:18px 20px; margin-top:16px; display:flex; align-items:center; gap:12px;" x-data="{ copied: false }">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <div style="flex:1; font-family:var(--font-mono); font-size:13px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          {{ request.base_url }}e/{{ event.slug }}
+        </div>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          @click="navigator.clipboard.writeText('{{ request.base_url }}e/{{ event.slug }}').then(() => { copied = true; setTimeout(() => copied = false, 2000); })"
+        >
+          <span x-show="!copied">Copy link</span>
+          <span x-show="copied" style="color:#007A33;">Copied!</span>
+        </button>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Tickets tab ──────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'tickets'" style="display:none;" x-data="ticketManager()">
+
+      <!-- Header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <h2 style="font-size:16px; font-weight:600; margin:0;">Ticket types</h2>
+        <button type="button" class="btn btn-primary btn-sm" @click="showAddForm = !showAddForm">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add ticket type
+        </button>
+      </div>
+
+      <!-- Add ticket type form -->
+      <div x-show="showAddForm" x-transition style="display:none; background:#fff; border:1px solid var(--cyan); border-radius:14px; padding:20px; margin-bottom:20px;">
+        <div style="font-size:14px; font-weight:600; margin-bottom:16px;">New ticket type</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+          <div>
+            <label class="form-label">Name *</label>
+            <input type="text" class="form-input" x-model="newTt.name" placeholder="e.g. General Admission">
+          </div>
+          <div>
+            <label class="form-label">Price (0 = free)</label>
+            <div style="display:flex; gap:6px;">
+              <select class="form-input" x-model="newTt.currency" style="width:80px; flex-shrink:0;">
+                <option>NGN</option><option>GHS</option><option>KES</option><option>ZAR</option><option>USD</option><option>GBP</option><option>EUR</option>
+              </select>
+              <input type="number" class="form-input" x-model="newTt.price" placeholder="0" min="0" step="0.01">
+            </div>
+          </div>
+          <div>
+            <label class="form-label">Capacity (blank = unlimited)</label>
+            <input type="number" class="form-input" x-model="newTt.quantity" placeholder="Unlimited" min="1">
+          </div>
+          <div>
+            <label class="form-label">Max per order</label>
+            <input type="number" class="form-input" x-model="newTt.max_per_order" value="10" min="1" max="100">
+          </div>
+          <div style="grid-column:1/-1;">
+            <label class="form-label">Description (optional)</label>
+            <input type="text" class="form-input" x-model="newTt.description" placeholder="What's included?">
+          </div>
+        </div>
+        <div x-show="addError" x-text="addError" class="alert alert-danger" style="display:none; margin-bottom:12px;"></div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn btn-primary btn-sm" @click="addTicketType()" :class="{'btn-loading': saving}" :disabled="saving">
+            <span class="btn-label">Create ticket type</span>
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="showAddForm=false; resetForm()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Ticket types list -->
+      {% if ticket_types %}
+      <div class="section-card">
+        {% for tt in ticket_types %}
+        <div style="display:flex; align-items:center; gap:14px; padding:16px 20px; border-bottom:1px solid var(--border-light);" x-bind:id="'tt-{{ tt.id }}'">
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:3px;">
+              <span style="font-size:14px; font-weight:600;">{{ tt.name }}</span>
+              {% if tt.tier == 'vip' %}
+              <span style="font-size:11px; font-weight:600; padding:2px 7px; border-radius:100px; background:#FF3ECB22; color:#FF3ECB;">VIP</span>
+              {% elif tt.tier == 'early_bird' %}
+              <span style="font-size:11px; font-weight:600; padding:2px 7px; border-radius:100px; background:#00FFF322; color:#007A33;">Early Bird</span>
+              {% endif %}
+              {% if not tt.is_visible %}
+              <span style="font-size:11px; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted);">Hidden</span>
+              {% endif %}
+            </div>
+            {% if tt.description %}
+            <div style="font-size:13px; color:var(--text-muted); margin-bottom:6px;">{{ tt.description }}</div>
+            {% endif %}
+            <!-- Capacity bar -->
+            {% if tt.quantity %}
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="flex:1; height:4px; background:var(--bg-secondary); border-radius:2px; overflow:hidden; max-width:120px;">
+                <div style="height:100%; width:{{ [((tt.quantity_sold / tt.quantity) * 100) | int, 100] | min }}%; background:var(--cyan); border-radius:2px; transition:width 0.3s;"></div>
+              </div>
+              <span style="font-size:12px; color:var(--text-muted);">{{ tt.quantity_sold }}/{{ tt.quantity }} sold</span>
+            </div>
+            {% else %}
+            <div style="font-size:12px; color:var(--text-muted);">{{ tt.quantity_sold }} sold · unlimited capacity</div>
+            {% endif %}
+          </div>
+
+          <div style="text-align:right; flex-shrink:0; margin-right:8px;">
+            <div style="font-size:16px; font-weight:700;">
+              {% if tt.price == 0 %}Free{% else %}{{ tt.currency }} {{ "{:,.0f}".format(tt.price) }}{% endif %}
+            </div>
+          </div>
+
+          <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              style="padding:0 10px;"
+              title="{{ 'Hide' if tt.is_visible else 'Show' }}"
+              @click="toggleVisibility('{{ tt.id }}', {{ 'true' if tt.is_visible else 'false' }}, this)"
+            >
+              {% if tt.is_visible %}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              {% else %}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              {% endif %}
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              style="padding:0 10px; color:#D0021B;"
+              title="Delete"
+              @click="deleteTicketType('{{ tt.id }}', '{{ tt.name }}', {{ tt.quantity_sold }})"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% else %}
+      <div class="empty-state-card" style="max-width:400px; margin:0 auto;" x-show="!showAddForm">
+        <div class="empty-state-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"/></svg>
+        </div>
+        <h2 class="empty-state-title">No ticket types yet</h2>
+        <p class="empty-state-body">Add ticket types to start accepting registrations — free, paid, early bird, or VIP.</p>
+        <button type="button" class="btn btn-primary btn-sm" @click="showAddForm=true">Add first ticket type</button>
+      </div>
+      {% endif %}
+
+      <!-- Promo codes -->
+      <div style="margin-top:32px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+          <h2 style="font-size:16px; font-weight:600; margin:0;">Promo codes</h2>
+          <button type="button" class="btn btn-secondary btn-sm" @click="showPromoForm = !showPromoForm">Add promo code</button>
+        </div>
+
+        <!-- Add promo form -->
+        <div x-show="showPromoForm" x-transition style="display:none; background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:20px; margin-bottom:16px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label class="form-label">Code *</label>
+              <input type="text" class="form-input" x-model="newPromo.code" placeholder="EARLYBIRD20" style="text-transform:uppercase;">
+            </div>
+            <div>
+              <label class="form-label">Discount type</label>
+              <select class="form-input" x-model="newPromo.discount_type">
+                <option value="percent">Percentage (%)</option>
+                <option value="fixed">Fixed amount</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Discount value *</label>
+              <input type="number" class="form-input" x-model="newPromo.discount_value" placeholder="20" min="0.01" step="0.01">
+            </div>
+            <div>
+              <label class="form-label">Max uses (blank = unlimited)</label>
+              <input type="number" class="form-input" x-model="newPromo.max_uses" placeholder="Unlimited" min="1">
+            </div>
+          </div>
+          <div x-show="promoError" x-text="promoError" class="alert alert-danger" style="display:none; margin-bottom:12px;"></div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" class="btn btn-primary btn-sm" @click="addPromo()" :class="{'btn-loading': savingPromo}" :disabled="savingPromo">
+              <span class="btn-label">Create promo code</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" @click="showPromoForm=false">Cancel</button>
+          </div>
+        </div>
+
+        {% if promo_codes %}
+        <div class="section-card">
+          {% for pc in promo_codes %}
+          <div style="display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--border-light);" id="pc-{{ pc.id }}">
+            <div style="flex:1;">
+              <span style="font-family:var(--font-mono); font-size:14px; font-weight:600; letter-spacing:0.05em;">{{ pc.code }}</span>
+              <span style="font-size:13px; color:var(--text-muted); margin-left:10px;">
+                {% if pc.discount_type == 'percent' %}{{ pc.discount_value | int }}% off{% else %}{{ org.currency }} {{ "{:,.0f}".format(pc.discount_value) }} off{% endif %}
+                · {{ pc.used_count }}/{% if pc.max_uses %}{{ pc.max_uses }}{% else %}∞{% endif %} uses
+              </span>
+              {% if not pc.is_active %}<span style="font-size:11px; color:var(--text-muted); margin-left:6px;">(inactive)</span>{% endif %}
+            </div>
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              style="padding:0 10px; color:#D0021B;"
+              @click="deletePromo('{{ pc.id }}')"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div x-show="!showPromoForm" style="font-size:14px; color:var(--text-muted); padding:12px 0;">No promo codes yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── Registrations tab ─────────────────────────────────────────────────── -->
+    <div x-show="tab === 'registrations'" style="display:none;" x-data="registrationsTab()"
+         @heelo:tab.window="if ($event.detail.tab === 'registrations' && !loaded) loadRegistrations()">
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <h2 style="font-size:16px; font-weight:600; margin:0;">Registrations <span x-text="total > 0 ? '(' + total + ')' : ''" style="font-weight:400; color:var(--text-muted);"></span></h2>
+        <div style="display:flex; gap:6px;">
+          <select class="form-input" style="height:34px; font-size:13px; padding:0 10px;" x-model="statusFilter" @change="loadRegistrations()">
+            <option value="">All statuses</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending payment</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div x-show="loading" style="display:flex; align-items:center; gap:10px; color:var(--text-muted); padding:24px 0;">
+        <div style="width:16px; height:16px; border:2px solid var(--border-light); border-top-color:var(--cyan); border-radius:50%; animation:spin 0.6s linear infinite;"></div>
+        Loading registrations...
+      </div>
+
+      <!-- Empty -->
+      <div x-show="!loading && registrations.length === 0" class="empty-state-card" style="max-width:400px; margin:0 auto;">
+        <div class="empty-state-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h2 class="empty-state-title">No registrations yet</h2>
+        <p class="empty-state-body">When attendees register for your event, they'll appear here.</p>
+      </div>
+
+      <!-- Table -->
+      <div x-show="!loading && registrations.length > 0" style="display:none;">
+        <div class="section-card">
+          <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border-light);">
+                  <th style="text-align:left; padding:10px 20px; font-size:12px; color:var(--text-muted); font-weight:500;">Attendee</th>
+                  <th style="text-align:left; padding:10px 12px; font-size:12px; color:var(--text-muted); font-weight:500;">Ticket</th>
+                  <th style="text-align:left; padding:10px 12px; font-size:12px; color:var(--text-muted); font-weight:500;">Status</th>
+                  <th style="text-align:left; padding:10px 12px; font-size:12px; color:var(--text-muted); font-weight:500;">Registered</th>
+                  <th style="text-align:left; padding:10px 20px 10px 12px; font-size:12px; color:var(--text-muted); font-weight:500;">Check-in</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="reg in registrations" :key="reg.id">
+                  <tr style="border-bottom:1px solid var(--border-light);">
+                    <td style="padding:12px 20px;">
+                      <div style="font-weight:500;" x-text="reg.attendee_name"></div>
+                      <div style="font-size:12px; color:var(--text-muted);" x-text="reg.attendee_email"></div>
+                    </td>
+                    <td style="padding:12px;" x-text="reg.ticket_type || '—'"></td>
+                    <td style="padding:12px;">
+                      <span
+                        style="font-size:12px; font-weight:500; padding:2px 8px; border-radius:100px;"
+                        :style="reg.status === 'confirmed' ? 'background:#d1fae5;color:#065f46;' : reg.status === 'checked_in' ? 'background:#dbeafe;color:#1e40af;' : reg.status === 'pending' ? 'background:#fef3c7;color:#92400e;' : 'background:var(--bg-secondary);color:var(--text-muted);'"
+                        x-text="reg.status.charAt(0).toUpperCase() + reg.status.slice(1).replace('_', ' ')"
+                      ></span>
+                    </td>
+                    <td style="padding:12px; color:var(--text-muted);" x-text="reg.created_at ? new Date(reg.created_at).toLocaleDateString() : '—'"></td>
+                    <td style="padding:12px 20px 12px 12px; color:var(--text-muted);" x-text="reg.checked_in_at ? new Date(reg.checked_in_at).toLocaleString() : '—'"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div x-show="total > 50" style="display:flex; justify-content:center; gap:8px; margin-top:16px;">
+          <button class="btn btn-secondary btn-sm" @click="page--; loadRegistrations()" :disabled="page <= 1">← Previous</button>
+          <span style="line-height:34px; font-size:13px; color:var(--text-muted);" x-text="'Page ' + page + ' of ' + Math.ceil(total / 50)"></span>
+          <button class="btn btn-secondary btn-sm" @click="page++; loadRegistrations()" :disabled="page * 50 >= total">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics tab -->
+    <div x-show="tab === 'analytics'" style="display:none;padding:2rem 0 1rem;">
+      <div style="text-align:center;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="1.5" style="margin-bottom:1rem;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <h3 style="font-family:'STK Bureau Serif',Georgia,serif;font-size:1.25rem;margin:0 0 0.5rem;">Full Analytics Dashboard</h3>
+        <p style="color:var(--text-secondary);font-size:0.9rem;margin:0 0 1.5rem;max-width:360px;margin-inline:auto;">
+          Registrations over time, revenue breakdown, traffic sources, check-in rates, and promo code usage — all live.
+        </p>
+        <a href="/org/{{ org.slug }}/events/{{ event.id }}/analytics"
+           style="display:inline-flex;align-items:center;gap:0.5rem;background:var(--cyan);color:#000;padding:0.625rem 1.25rem;border-radius:9px;font-weight:700;font-size:0.9rem;text-decoration:none;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Open Analytics
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function eventActions(eventId, eventSlug, currentStatus, orgSlug) {
+  return {
+    loading: false,
+    message: null,
+    error: null,
+
+    async _action(path, successMsg) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/${path}`, {
+          method: 'POST', credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.error = data.error?.message || 'Action failed.';
+        } else {
+          this.message = successMsg;
+          setTimeout(() => window.location.reload(), 1200);
+        }
+      } catch {
+        this.error = 'Network error.';
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    publish() { this._action('publish', 'Event published!'); },
+    goLive()  { this._action('go-live', 'Event is now live!'); },
+    endEvent(){ this._action('end', 'Event ended.'); },
+    cancel()  {
+      if (!confirm('Cancel this event? This cannot be undone.')) return;
+      this._action('cancel', 'Event cancelled.');
+    },
+    async duplicate() {
+      this.loading = true;
+      try {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/duplicate`, {
+          method: 'POST', credentials: 'include',
+        });
+        const data = await res.json();
+        if (data.success) window.location.href = `/org/${orgSlug}/events/${data.data.id}/edit`;
+        else this.error = data.error?.message || 'Duplication failed.';
+      } catch { this.error = 'Network error.'; }
+      finally { this.loading = false; }
+    },
+  };
+}
+
+const _orgSlug = {{ org.slug | tojson }};
+const _eventId = {{ event.id | string | tojson }};
+
+function ticketManager() {
+  return {
+    showAddForm: false,
+    showPromoForm: false,
+    saving: false,
+    savingPromo: false,
+    addError: '',
+    promoError: '',
+    newTt: { name: '', price: 0, currency: '{{ org.currency or "NGN" }}', quantity: '', description: '', max_per_order: 10 },
+    newPromo: { code: '', discount_type: 'percent', discount_value: '', max_uses: '' },
+
+    resetForm() {
+      this.newTt = { name: '', price: 0, currency: '{{ org.currency or "NGN" }}', quantity: '', description: '', max_per_order: 10 };
+      this.addError = '';
+    },
+
+    async addTicketType() {
+      this.saving = true;
+      this.addError = '';
+      try {
+        const body = {
+          name: this.newTt.name,
+          price: parseFloat(this.newTt.price) || 0,
+          currency: this.newTt.currency,
+          quantity: this.newTt.quantity ? parseInt(this.newTt.quantity) : null,
+          description: this.newTt.description || null,
+          max_per_order: parseInt(this.newTt.max_per_order) || 10,
+        };
+        const res = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/ticket-types`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), credentials: 'include' }
+        );
+        const data = await res.json();
+        if (!res.ok) { this.addError = data.error?.message || 'Failed to create ticket type.'; return; }
+        this.showAddForm = false;
+        this.resetForm();
+        window.location.reload();
+      } catch { this.addError = 'Network error.'; }
+      finally { this.saving = false; }
+    },
+
+    async toggleVisibility(ttId, currentlyVisible, btn) {
+      const res = await fetch(
+        `/api/v1/organizations/${_orgSlug}/events/${_eventId}/ticket-types/${ttId}/toggle-visibility`,
+        { method: 'POST', credentials: 'include' }
+      );
+      if (res.ok) window.location.reload();
+    },
+
+    async deleteTicketType(ttId, name, soldCount) {
+      if (soldCount > 0) { alert(`Cannot delete '${name}' — it has ${soldCount} sold ticket(s).`); return; }
+      if (!confirm(`Delete ticket type '${name}'?`)) return;
+      const res = await fetch(
+        `/api/v1/organizations/${_orgSlug}/events/${_eventId}/ticket-types/${ttId}`,
+        { method: 'DELETE', credentials: 'include' }
+      );
+      if (res.ok) window.location.reload();
+    },
+
+    async addPromo() {
+      this.savingPromo = true;
+      this.promoError = '';
+      try {
+        const body = {
+          code: this.newPromo.code.trim().toUpperCase(),
+          discount_type: this.newPromo.discount_type,
+          discount_value: parseFloat(this.newPromo.discount_value),
+          max_uses: this.newPromo.max_uses ? parseInt(this.newPromo.max_uses) : null,
+        };
+        const res = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/promo-codes`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), credentials: 'include' }
+        );
+        const data = await res.json();
+        if (!res.ok) { this.promoError = data.error?.message || 'Failed to create promo code.'; return; }
+        this.showPromoForm = false;
+        window.location.reload();
+      } catch { this.promoError = 'Network error.'; }
+      finally { this.savingPromo = false; }
+    },
+
+    async deletePromo(pcId) {
+      if (!confirm('Delete this promo code?')) return;
+      const res = await fetch(
+        `/api/v1/organizations/${_orgSlug}/events/${_eventId}/promo-codes/${pcId}`,
+        { method: 'DELETE', credentials: 'include' }
+      );
+      if (res.ok) window.location.reload();
+    },
+  };
+}
+
+function registrationsTab() {
+  return {
+    registrations: [],
+    total: 0,
+    page: 1,
+    loading: false,
+    loaded: false,
+    statusFilter: '',
+
+    init() {
+      this.$watch('$el.closest("[x-data]")', () => {});
+    },
+
+    async loadRegistrations() {
+      this.loading = true;
+      try {
+        const params = new URLSearchParams({ page: this.page });
+        if (this.statusFilter) params.set('status', this.statusFilter);
+        const res = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/registrations?${params}`,
+          { credentials: 'include' }
+        );
+        const data = await res.json();
+        if (data.success) {
+          this.registrations = data.data.items;
+          this.total = data.data.total;
+          this.loaded = true;
+        }
+      } catch {}
+      finally { this.loading = false; }
+    },
+  };
+}
+
+// Auto-load registrations when tab switches
+document.addEventListener('alpine:init', () => {
+  Alpine.effect(() => {});
+});
+</script>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+{% endblock %}

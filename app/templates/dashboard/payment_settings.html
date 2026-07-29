@@ -1,0 +1,334 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Payment Settings — {{ org.name }} — Heelo{% endblock %}
+{% set active_page = 'settings' %}
+
+{% block head %}
+{{ super() }}
+<style>
+  /* ── Account list ────────────────────────────────────────────────────────── */
+  .account-row { display:flex; align-items:center; justify-content:space-between; padding:14px; border:1px solid var(--border-light); border-radius:10px; gap:1rem; }
+  .account-row + .account-row { margin-top:10px; }
+  .account-info { display:flex; align-items:center; gap:14px; }
+  .account-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.125rem; flex-shrink:0; }
+  .account-icon.paystack { background:rgba(0,114,64,0.12); }
+  .account-icon.flutterwave { background:rgba(242,130,29,0.12); }
+  .account-icon.stripe { background:rgba(99,91,255,0.12); }
+  .account-name { font-weight:600; font-size:15px; }
+  .account-meta { font-size:13px; color:var(--text-muted); }
+  .account-actions { display:flex; align-items:center; gap:8px; flex-shrink:0; }
+
+  /* ── Resolve result ──────────────────────────────────────────────────────── */
+  .resolve-box { border:1.5px solid var(--cyan); border-radius:10px; padding:14px 16px; background:rgba(0,255,243,0.06); }
+  .resolve-name { font-size:1rem; font-weight:700; letter-spacing:0.02em; }
+  .resolve-hint { font-size:13px; color:var(--text-muted); margin-top:2px; }
+
+  /* ── Error box ──────────────────────────────────────────────────────────── */
+  .error-box { border:1.5px solid #f87171; border-radius:10px; padding:12px 16px; background:rgba(248,113,113,0.08); color:#dc2626; font-size:14px; margin-top:12px; }
+
+  /* ── Provider tabs ───────────────────────────────────────────────────────── */
+  .provider-tabs { display:flex; gap:8px; margin-bottom:20px; }
+  .provider-tab { display:flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px; cursor:pointer; border:1.5px solid var(--border-light); background:#fff; font-size:14px; font-weight:500; transition:border-color 120ms, background 120ms; }
+  .provider-tab.active { border-color:var(--cyan); background:rgba(0,255,243,0.08); color:#009e95; }
+
+  /* ── Step indicators ─────────────────────────────────────────────────────── */
+  .connect-steps { display:flex; align-items:center; gap:8px; margin-bottom:20px; font-size:13px; color:var(--text-muted); }
+  .step-dot { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0; }
+  .step-dot.done { background:var(--cyan); color:#000; }
+  .step-dot.active { background:var(--text-primary); color:#fff; }
+  .step-dot.idle { background:var(--border-light); color:var(--text-muted); }
+  .step-line { flex:1; height:2px; background:var(--border-light); }
+  .step-line.done { background:var(--cyan); }
+
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="dash-content" style="max-width:800px; padding-bottom:48px;">
+
+  <div style="margin-bottom:8px; font-size:13px; color:var(--text-muted);">Organization</div>
+  <div class="dash-greeting" style="margin-bottom:8px;">Payment settings</div>
+  <p style="font-size:14px; color:var(--text-muted); margin-bottom:28px;">
+    Connect a bank account to receive payouts after each paid event.
+  </p>
+
+  <!-- ── Connected accounts ──────────────────────────────────────────────── -->
+  <div style="background:#fff; border:1px solid var(--border-light); border-radius:12px; padding:28px; margin-bottom:12px;">
+    <p style="font-size:14px; font-weight:600; margin-bottom:6px;">Connected accounts</p>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">Payouts are sent to the default account after each event ends.</p>
+
+    {% if accounts %}
+      {% for acct in accounts %}
+      <div class="account-row" id="account-{{ acct.id }}">
+        <div class="account-info">
+          <div class="account-icon {{ acct.provider }}">
+            {% if acct.provider == "paystack" %}<span class="material-symbols-outlined" style="color:#007240;">eco</span>
+            {% elif acct.provider == "flutterwave" %}<span class="material-symbols-outlined" style="color:#f2821d;">bolt</span>
+            {% else %}<span class="material-symbols-outlined" style="color:#635bff;">credit_card</span>{% endif %}
+          </div>
+          <div>
+            <div class="account-name">{{ acct.account_name or acct.provider_account_id }}</div>
+            <div class="account-meta">
+              {{ acct.bank_name or acct.provider | capitalize }}
+              {% if acct.account_number %} · ****{{ acct.account_number[-4:] }}{% endif %}
+              · {{ acct.currency }}
+            </div>
+          </div>
+        </div>
+        <div class="account-actions">
+          {% if acct.is_verified %}
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600;background:rgba(34,197,94,0.12);color:#16a34a;">
+              <span class="material-symbols-outlined">check</span> Verified
+            </span>
+          {% endif %}
+          {% if acct.is_default %}
+            <span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600;background:rgba(0,255,243,0.12);color:#009e95;">Default</span>
+          {% else %}
+            {% if is_owner or user_role == "admin" %}
+            <button class="btn btn-secondary btn-sm"
+              hx-patch="/api/v1/organizations/{{ org.slug }}/payment-accounts/{{ acct.id }}/set-default"
+              hx-target="#accounts-list" hx-swap="outerHTML"
+              hx-headers='{"Content-Type": "application/json"}'
+            >Set default</button>
+            {% endif %}
+          {% endif %}
+          {% if is_owner or user_role == "admin" %}
+          <button class="btn btn-secondary btn-sm" style="color:#dc2626;border-color:#dc2626;" onclick="deleteAccount('{{ acct.id }}')">
+            <span class="material-symbols-outlined" style="font-size:11px;">delete</span>
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center; padding:2.5rem 1rem; color:var(--text-muted);">
+        <span class="material-symbols-outlined" style="font-size:2rem; opacity:.3; margin-bottom:.75rem; display:block;">account_balance</span>
+        <p style="font-size:.9375rem; margin:0;">No payment accounts connected yet.</p>
+        <p style="font-size:.8125rem; margin-top:.25rem;">Connect a bank account below to receive payouts.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Connect form ─────────────────────────────────────────────────────── -->
+  {% if is_owner or user_role == "admin" %}
+  <div style="background:#fff; border:1px solid var(--border-light); border-radius:12px; padding:28px; margin-bottom:12px;" x-data="connectPayment()">
+    <p style="font-size:14px; font-weight:600; margin-bottom:6px;">Connect a payout account</p>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">Heelo deducts a 3% platform fee. You receive the rest within 24 hours after your event ends.</p>
+
+    <!-- Provider tabs -->
+    <div class="provider-tabs">
+      <button type="button" class="provider-tab" :class="{ active: provider === 'paystack' }" @click="provider = 'paystack'; reset()">
+        <span class="material-symbols-outlined" style="color:#007240;">eco</span> Paystack
+      </button>
+      <button type="button" class="provider-tab" :class="{ active: provider === 'flutterwave' }" @click="provider = 'flutterwave'; reset()">
+        <span class="material-symbols-outlined" style="color:#f2821d;">bolt</span> Flutterwave
+      </button>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="connect-steps">
+      <div class="step-dot" :class="step >= 1 ? 'active' : 'idle'">1</div>
+      <span>Bank details</span>
+      <div class="step-line" :class="step >= 2 ? 'done' : ''"></div>
+      <div class="step-dot" :class="step >= 2 ? 'done' : 'idle'">
+        <span class="material-symbols-outlined" x-show="step >= 2" style="font-size:14px; display:none;">check</span>
+        <span x-show="step < 2">2</span>
+      </div>
+      <span>Verify account</span>
+      <div class="step-line" :class="step >= 3 ? 'done' : ''"></div>
+      <div class="step-dot" :class="step >= 3 ? 'active' : 'idle'">3</div>
+      <span>Confirm</span>
+    </div>
+
+    <!-- Step 1 -->
+    <template x-if="step === 1">
+      <div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Bank</label>
+          <select class="form-input" x-model="bankCode" @change="resolvedName = ''; resolveError = ''" style="appearance:auto;">
+            <option value="">— Select your bank —</option>
+            <template x-for="bank in banks" :key="bank.code">
+              <option :value="bank.code" x-text="bank.name"></option>
+            </template>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Account number</label>
+          <input type="text" class="form-input" placeholder="0123456789" maxlength="10" inputmode="numeric"
+            x-model="accountNumber" @input="resolvedName = ''; resolveError = ''" />
+          <p style="font-size:.8125rem;color:var(--text-muted);margin-top:.375rem;">Enter your 10-digit NUBAN account number.</p>
+        </div>
+
+        <div x-show="resolveError" class="error-box" x-text="resolveError" style="display:none;"></div>
+
+        <button type="button" class="btn btn-primary" :disabled="!bankCode || accountNumber.length < 10 || resolving" @click="resolveAccount()">
+          <span class="material-symbols-outlined" x-show="resolving" style="display:none; animation:spin .6s linear infinite;">progress_activity</span>
+          <span x-show="!resolving">Verify account →</span>
+        </button>
+      </div>
+    </template>
+
+    <!-- Step 2 -->
+    <template x-if="step === 2">
+      <div>
+        <p style="font-size:.875rem;margin:0 0 .875rem;color:var(--text-muted);">We found this account. Confirm it's correct before connecting.</p>
+        <div class="resolve-box">
+          <div class="resolve-name" x-text="resolvedName"></div>
+          <div class="resolve-hint" x-text="selectedBankName + ' · ****' + accountNumber.slice(-4)"></div>
+        </div>
+        <div class="form-group" style="margin-top:1.25rem;margin-bottom:16px;">
+          <label class="form-label">Business name <span style="font-size:11px;font-weight:400;color:var(--text-muted);">(optional)</span></label>
+          <input type="text" class="form-input" placeholder="{{ org.name }}" x-model="businessName" />
+          <p style="font-size:.8125rem;color:var(--text-muted);margin-top:.375rem;">Defaults to your organization name if blank.</p>
+        </div>
+        <div style="display:flex;gap:.75rem;">
+          <button type="button" class="btn btn-secondary" @click="step = 1">← Change</button>
+          <button type="button" class="btn btn-primary" :disabled="saving" @click="save()">
+            <span class="material-symbols-outlined" x-show="saving" style="display:none; animation:spin .6s linear infinite;">progress_activity</span>
+            <span x-show="!saving">Connect account</span>
+          </button>
+        </div>
+        <div x-show="saveError" class="error-box" style="margin-top:.75rem;display:none;" x-text="saveError"></div>
+      </div>
+    </template>
+
+    <!-- Step 3 -->
+    <template x-if="step === 3">
+      <div style="text-align:center;padding:1.5rem 1rem;">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--cyan);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+          <span class="material-symbols-outlined" style="color:#000;font-size:1.25rem;">check</span>
+        </div>
+        <h3 style="font-family:var(--font-serif);margin:0 0 .5rem;">Account connected!</h3>
+        <p style="font-size:.9375rem;color:var(--text-muted);margin:0 0 1.5rem;">
+          Payouts will be sent to <strong x-text="resolvedName"></strong>.
+        </p>
+        <button type="button" class="btn btn-secondary" @click="window.location.reload()">Done</button>
+      </div>
+    </template>
+  </div>
+  {% endif %}
+
+  <!-- ── Info card ─────────────────────────────────────────────────────────── -->
+  <div style="background:rgba(0,255,243,0.04);border:1px solid rgba(0,255,243,0.2);border-radius:12px;padding:20px 24px;display:flex;align-items:flex-start;gap:14px;">
+    <span class="material-symbols-outlined" style="color:var(--cyan);margin-top:2px;flex-shrink:0;">info</span>
+    <div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px;">How payouts work</div>
+      <ul style="margin:0;padding-left:1.25rem;font-size:13px;color:var(--text-muted);line-height:1.7;">
+        <li>Payments from attendees are collected by Heelo via Paystack or Flutterwave.</li>
+        <li>Heelo deducts a 3% platform fee from each transaction.</li>
+        <li>The remainder is settled to your connected bank account, typically within 24 hours after your event ends.</li>
+        <li>Free events have no platform fee.</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const _orgSlug = {{ org.slug | tojson }};
+const _banksData = {{ banks_json | safe }};
+
+function connectPayment() {
+  return {
+    provider: 'paystack',
+    step: 1,
+    banks: _banksData,
+    bankCode: '',
+    accountNumber: '',
+    businessName: '',
+    resolvedName: '',
+    resolveError: '',
+    saveError: '',
+    resolving: false,
+    saving: false,
+
+    get selectedBankName() {
+      const b = this.banks.find(b => b.code === this.bankCode);
+      return b ? b.name : '';
+    },
+
+    reset() {
+      this.step = 1;
+      this.bankCode = '';
+      this.accountNumber = '';
+      this.businessName = '';
+      this.resolvedName = '';
+      this.resolveError = '';
+      this.saveError = '';
+    },
+
+    async resolveAccount() {
+      this.resolving = true;
+      this.resolveError = '';
+      try {
+        const params = new URLSearchParams({ account_number: this.accountNumber, bank_code: this.bankCode });
+        const resp = await fetch(
+          `/api/v1/organizations/${_orgSlug}/payment-accounts/paystack/resolve?${params}`,
+          { credentials: 'include' }
+        );
+        const json = await resp.json();
+        if (json.success) {
+          this.resolvedName = json.data.account_name;
+          this.step = 2;
+        } else {
+          this.resolveError = json.error?.message || 'Could not resolve account. Check the details and try again.';
+        }
+      } catch {
+        this.resolveError = 'Network error. Please try again.';
+      } finally {
+        this.resolving = false;
+      }
+    },
+
+    async save() {
+      this.saving = true;
+      this.saveError = '';
+      const endpoint = `/api/v1/organizations/${_orgSlug}/payment-accounts/${this.provider}`;
+      const body = {
+        account_number: this.accountNumber,
+        bank_code: this.bankCode,
+        business_name: this.businessName || null,
+      };
+      try {
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const json = await resp.json();
+        if (resp.ok) {
+          this.step = 3;
+        } else {
+          this.saveError = json.error?.message || 'Failed to connect account.';
+        }
+      } catch {
+        this.saveError = 'Network error. Please try again.';
+      } finally {
+        this.saving = false;
+      }
+    },
+  };
+}
+
+async function deleteAccount(accountId) {
+  if (!confirm('Remove this payment account? This cannot be undone.')) return;
+  try {
+    const resp = await fetch(
+      `/api/v1/organizations/${_orgSlug}/payment-accounts/${accountId}`,
+      { method: 'DELETE', credentials: 'include' }
+    );
+    if (resp.ok || resp.status === 204) {
+      const el = document.getElementById(`account-${accountId}`);
+      if (el) el.remove();
+    } else {
+      const json = await resp.json();
+      alert(json.error?.message || 'Could not remove account.');
+    }
+  } catch {
+    alert('Network error. Please try again.');
+  }
+}
+</script>
+{% endblock %}

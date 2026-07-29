@@ -1,0 +1,83 @@
+{# HTMX partial — replaces #crm-results on search/filter change #}
+<div id="crm-results">
+  {% if registrations %}
+  <div class="crm-table-wrap">
+    <table class="crm-table">
+      <thead>
+        <tr>
+          <th>Attendee</th>
+          <th>Event</th>
+          <th>Ticket</th>
+          <th>Status</th>
+          <th>Amount</th>
+          <th>Registered</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in registrations %}
+        <tr>
+          <td>
+            <div class="att-name">{{ r.attendee_name }}</div>
+            <div class="att-sub">{{ r.attendee_email }}</div>
+            {% if r.attendee_phone %}<div class="att-sub">{{ r.attendee_phone }}</div>{% endif %}
+          </td>
+          <td>
+            <div class="cell-main">{{ r.event_title | truncate(40) }}</div>
+          </td>
+          <td>
+            <div class="cell-main">{{ r.ticket_name }}</div>
+          </td>
+          <td>
+            <span class="badge badge-{{ r.status }}">
+              {{ r.status | replace('_', ' ') | title }}
+            </span>
+          </td>
+          <td>
+            {% if r.price > 0 %}
+            <span class="cell-amount">{{ r.currency }} {{ "{:,.0f}".format(r.price) }}</span>
+            {% else %}
+            <span class="cell-free">Free</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="cell-main">{{ r.created_at.strftime('%b %d, %Y') if r.created_at else '—' }}</div>
+            {% if r.checked_in_at %}
+            <div class="att-sub checked-in"><span class="material-symbols-outlined">check</span> Checked in {{ r.checked_in_at.strftime('%H:%M') }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <a href="/org/{{ org.slug }}/registrations/attendee/{{ r.attendee_email }}" class="act-link">Profile →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% set total_pages = ((total / per_page) | round(0, 'ceil') | int) %}
+  {% if total_pages > 1 %}
+  <div class="crm-pagination">
+    {% if page > 1 %}
+    <a href="?q={{ q }}&event_id={{ selected_event }}&status={{ selected_status }}&page={{ page - 1 }}" class="page-btn">← Prev</a>
+    {% endif %}
+    <span class="page-info">Page {{ page }} of {{ total_pages }} &nbsp;·&nbsp; {{ total }} total</span>
+    {% if page < total_pages %}
+    <a href="?q={{ q }}&event_id={{ selected_event }}&status={{ selected_status }}&page={{ page + 1 }}" class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="crm-count">{{ total }} registration{{ 's' if total != 1 else '' }}</div>
+  {% endif %}
+
+  {% else %}
+  <div class="crm-empty">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <p>No registrations found{% if q or selected_event or selected_status %} for the current filters{% endif %}.</p>
+    {% if q or selected_event or selected_status %}
+    <a href="/org/{{ org.slug }}/registrations" class="clear-link">Clear filters</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

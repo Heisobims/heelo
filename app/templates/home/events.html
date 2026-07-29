@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Discover Events — Heelo{% endblock %}
+{% block meta_description %}Find and register for events happening near you and across Africa.{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<style>
+  body { background: var(--bg-secondary); }
+
+  .ev-nav {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
+  }
+  .ev-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
+  .ev-nav-logo span { color: var(--cyan-dark, #00b3a9); }
+  .ev-nav-links { display: flex; gap: 4px; margin-left: 16px; }
+  .ev-nav-links a { font-size: 13.5px; font-weight: 500; padding: 5px 12px; border-radius: 7px; text-decoration: none; color: var(--text-muted); transition: background 0.12s, color 0.12s; }
+  .ev-nav-links a:hover, .ev-nav-links a.active { background: var(--bg-secondary); color: var(--text-primary); }
+  .ev-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .ev-btn-ghost { padding: 6px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; text-decoration: none; color: var(--text-primary); border: 1px solid var(--border-light); }
+  .ev-btn-primary { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--text-primary); color: #fff; }
+
+  .ev-hero { padding: 60px 24px 48px; text-align: center; max-width: 660px; margin: 0 auto; }
+  .ev-hero h1 { font-family: var(--font-serif); font-size: clamp(28px, 5vw, 44px); font-weight: 700; margin-bottom: 12px; line-height: 1.15; }
+  .ev-hero p { color: var(--text-muted); font-size: 16px; line-height: 1.6; }
+
+  .ev-search-bar {
+    max-width: 860px; margin: 0 auto 32px; padding: 0 24px;
+    display: flex; gap: 10px; flex-wrap: wrap;
+  }
+  .ev-search-input {
+    flex: 1; min-width: 200px; position: relative;
+  }
+  .ev-search-input input {
+    width: 100%; padding: 10px 14px 10px 40px;
+    border: 1.5px solid var(--border-light); border-radius: 10px;
+    background: #fff; font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color 0.15s; color: var(--text-primary);
+  }
+  .ev-search-input input:focus { border-color: var(--cyan); }
+  .ev-search-input .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .ev-filter-select {
+    padding: 10px 12px; border: 1.5px solid var(--border-light); border-radius: 10px;
+    background: #fff; font-size: 13.5px; font-family: inherit; color: var(--text-primary);
+    outline: none; cursor: pointer; transition: border-color 0.15s;
+  }
+  .ev-filter-select:focus { border-color: var(--cyan); }
+  .ev-search-btn {
+    padding: 10px 22px; background: var(--text-primary); color: #fff;
+    border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+  }
+  .ev-search-btn:hover { opacity: 0.85; }
+
+  .ev-active-filters { max-width: 860px; margin: 0 auto 20px; padding: 0 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .ev-filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(0,255,243,0.08); border: 1px solid rgba(0,255,243,0.3); border-radius: 100px; font-size: 12.5px; font-weight: 600; color: var(--cyan-dark, #00b3a9); }
+  .ev-filter-chip a { color: inherit; text-decoration: none; font-size: 13px; opacity: 0.7; }
+
+  .ev-results-header { max-width: 1100px; margin: 0 auto 20px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .ev-results-count { font-size: 13.5px; color: var(--text-muted); }
+
+  .ev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  .ev-card {
+    background: #fff; border: 1px solid var(--border-light); border-radius: 14px;
+    text-decoration: none; color: inherit; overflow: hidden; display: block;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .ev-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.09); transform: translateY(-2px); }
+  .ev-card-img { width: 100%; aspect-ratio: 16/7; background: linear-gradient(135deg,#0A0A0A,#1a1a1a); position: relative; overflow: hidden; }
+  .ev-card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .ev-card-img-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-size: 32px; font-weight: 700; color: rgba(255,255,255,0.06); }
+  .ev-card-badge { position: absolute; top: 10px; left: 10px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; background: rgba(0,0,0,0.6); color: #fff; backdrop-filter: blur(4px); letter-spacing: 0.03em; text-transform: uppercase; }
+  .ev-card-body { padding: 16px; }
+  .ev-card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev-card-meta { font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+  .ev-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .ev-card-location { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+
+  .ev-empty { max-width: 420px; margin: 48px auto; text-align: center; padding: 0 24px; }
+  .ev-empty-icon { width: 56px; height: 56px; background: var(--bg-secondary); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .ev-empty h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .ev-empty p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+
+  .ev-pagination { display: flex; gap: 8px; align-items: center; justify-content: center; padding: 40px 24px; }
+  .ev-pagination a { padding: 7px 14px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 13.5px; text-decoration: none; color: var(--text-muted); transition: all 0.12s; background: #fff; }
+  .ev-pagination a:hover { border-color: var(--text-primary); color: var(--text-primary); }
+  .ev-pagination .current { background: var(--text-primary); color: #fff; border-color: var(--text-primary); padding: 7px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Nav -->
+<nav class="ev-nav">
+  <a href="/" class="ev-nav-logo">heelo<span>.</span></a>
+  <div class="ev-nav-links">
+    <a href="/events" class="active">Events</a>
+    <a href="/vendors">Vendors</a>
+  </div>
+  <div class="ev-nav-right">
+    {% if user %}
+    <a href="/home" class="ev-btn-ghost">Dashboard</a>
+    {% else %}
+    <a href="/login" class="ev-btn-ghost">Sign in</a>
+    <a href="/register" class="ev-btn-primary">Sign up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="ev-hero">
+  <h1>Discover events near you</h1>
+  <p>Browse thousands of events across Africa and beyond — concerts, tech meetups, workshops, and more.</p>
+</div>
+
+<!-- Search & filters -->
+<form method="GET" action="/events" class="ev-search-bar">
+  <div class="ev-search-input">
+    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" name="q" placeholder="Search events, cities, categories…" value="{{ q or '' }}">
+  </div>
+  <select name="city" class="ev-filter-select">
+    <option value="">All cities</option>
+    {% for c in cities %}
+    <option value="{{ c }}" {% if city == c %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <select name="format" class="ev-filter-select">
+    <option value="">All formats</option>
+    <option value="in_person" {% if format == 'in_person' %}selected{% endif %}>In person</option>
+    <option value="virtual" {% if format == 'virtual' %}selected{% endif %}>Virtual</option>
+    <option value="hybrid" {% if format == 'hybrid' %}selected{% endif %}>Hybrid</option>
+  </select>
+  <button type="submit" class="ev-search-btn">Search</button>
+</form>
+
+<!-- Active filters -->
+{% if q or city or format %}
+<div class="ev-active-filters">
+  {% if q %}<span class="ev-filter-chip">{{ q }} <a href="?{{ query_string_without('q') }}">×</a></span>{% endif %}
+  {% if city %}<span class="ev-filter-chip">{{ city }} <a href="?{{ query_string_without('city') }}">×</a></span>{% endif %}
+  {% if format %}<span class="ev-filter-chip">{{ format | replace('_', ' ') | title }} <a href="?{{ query_string_without('format') }}">×</a></span>{% endif %}
+</div>
+{% endif %}
+
+<!-- Results -->
+<div class="ev-results-header">
+  <span class="ev-results-count">{{ total }} event{{ 's' if total != 1 }} found</span>
+</div>
+
+{% if events %}
+<div class="ev-grid">
+  {% for event in events %}
+  <a href="/e/{{ event.slug }}" class="ev-card">
+    <div class="ev-card-img">
+      {% if event.cover_image_url %}
+      <img src="{{ event.cover_image_url }}" alt="{{ event.title }}">
+      {% else %}
+      <div class="ev-card-img-placeholder">{{ event.title[0] }}</div>
+      {% endif %}
+      <span class="ev-card-badge">{{ event.format | replace('_', ' ') }}</span>
+    </div>
+    <div class="ev-card-body">
+      <div class="ev-card-title">{{ event.title }}</div>
+      <div class="ev-card-meta">
+        {% if event.start_datetime %}{{ event.start_datetime.strftime('%a, %d %b %Y · %H:%M') }}{% endif %}
+      </div>
+      <div class="ev-card-footer">
+        <div class="ev-card-location">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ event.venue_city or ('Online' if event.format == 'virtual' else 'TBA') }}
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if total_pages > 1 %}
+<div class="ev-pagination">
+  {% if page > 1 %}
+  <a href="?{{ query_string_with_page(page - 1) }}">← Prev</a>
+  {% endif %}
+  {% for p in range(1, total_pages + 1) %}
+    {% if p == page %}
+    <span class="current">{{ p }}</span>
+    {% elif (p - page)|abs <= 2 %}
+    <a href="?{{ query_string_with_page(p) }}">{{ p }}</a>
+    {% endif %}
+  {% endfor %}
+  {% if page < total_pages %}
+  <a href="?{{ query_string_with_page(page + 1) }}">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="ev-empty">
+  <div class="ev-empty-icon">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+  </div>
+  <h2>No events found</h2>
+  <p>Try adjusting your search or filters. New events are added every day.</p>
+</div>
+{% endif %}
+
+<div style="height: 60px;"></div>
+{% endblock %}

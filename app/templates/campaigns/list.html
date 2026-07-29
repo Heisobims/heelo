@@ -1,0 +1,170 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Campaigns · {{ org.name }} — Heelo{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .cl-wrap { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+  .cl-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .cl-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem; }
+  .cl-sub { font-size: 0.875rem; color: var(--text-secondary); }
+
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5625rem 1.125rem; border-radius: 9px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: opacity 150ms; }
+  .btn-primary { background: var(--cyan); color: #000; }
+  .btn-primary:hover { opacity: 0.85; }
+
+  /* ── Campaign grid ──────────────────────────────────────────────────────── */
+  .camp-grid { display: grid; gap: 1rem; }
+  .camp-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.375rem; display: flex; align-items: center; gap: 1.25rem; transition: border-color 150ms; }
+  .camp-card:hover { border-color: var(--border-dark, #ccc); }
+  .camp-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .camp-icon.email { background: rgba(0,255,243,0.1); color: var(--cyan-dark, #00b3a9); }
+  .camp-icon.whatsapp { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .camp-icon.sms { background: rgba(168,85,247,0.1); color: #9333ea; }
+  .camp-info { flex: 1; min-width: 0; }
+  .camp-name { font-weight: 700; font-size: 0.9375rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .camp-meta { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem; display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .camp-stats { display: flex; gap: 1.25rem; flex-shrink: 0; }
+  .camp-stat { text-align: center; }
+  .camp-stat-val { font-size: 1.125rem; font-weight: 700; }
+  .camp-stat-lbl { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .camp-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+  /* ── Badges ─────────────────────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; }
+  .badge-draft { background: var(--surface-alt, #f0f0f0); color: var(--text-secondary); }
+  .badge-scheduled { background: rgba(245,158,11,0.1); color: #b45309; }
+  .badge-sending { background: rgba(0,255,243,0.1); color: var(--cyan-dark, #00b3a9); }
+  .badge-sent { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .badge-failed { background: rgba(239,68,68,0.1); color: #dc2626; }
+
+  .act-btn { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.4rem 0.75rem; border-radius: 7px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: transparent; color: var(--text); text-decoration: none; transition: border-color 150ms; }
+  .act-btn:hover { border-color: var(--text-secondary); }
+  .act-btn.danger { color: #dc2626; border-color: rgba(220,38,38,0.3); }
+  .act-btn.danger:hover { border-color: #dc2626; }
+
+  .empty-state { text-align: center; padding: 4rem 1.5rem; }
+  .empty-icon { margin: 0 auto 1rem; width: 52px; height: 52px; background: var(--surface-alt, #f5f5f5); border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+  .empty-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.25rem; font-weight: 700; margin: 0 0 0.5rem; }
+  .empty-sub { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 1.5rem; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="cl-wrap">
+
+  <div class="cl-header">
+    <div>
+      <h1 class="cl-title">Campaigns</h1>
+      <div class="cl-sub">Email, WhatsApp, and SMS broadcasts to your attendees</div>
+    </div>
+    <a href="/org/{{ org.slug }}/campaigns/new" class="btn btn-primary">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New campaign
+    </a>
+  </div>
+
+  {% if campaigns %}
+  <div class="camp-grid">
+    {% for c in campaigns %}
+    <div class="camp-card">
+      <!-- Channel icon -->
+      <div class="camp-icon {{ c.type }}">
+        {% if c.type == 'email' %}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        {% elif c.type == 'whatsapp' %}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        {% else %}
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        {% endif %}
+      </div>
+
+      <!-- Info -->
+      <div class="camp-info">
+        <div class="camp-name">{{ c.name }}</div>
+        <div class="camp-meta">
+          <span class="badge badge-{{ c.status }}">{{ c.status | title }}</span>
+          <span>{{ c.type | title }}</span>
+          {% if c._event_name %}<span>{{ c._event_name | truncate(30) }}</span>{% endif %}
+          <span>{{ c.created_at.strftime('%b %d, %Y') }}</span>
+        </div>
+      </div>
+
+      <!-- Stats (only for sent/sending) -->
+      {% if c.status in ('sent', 'sending', 'failed') %}
+      <div class="camp-stats">
+        <div class="camp-stat">
+          <div class="camp-stat-val">{{ c.recipient_count }}</div>
+          <div class="camp-stat-lbl">Recipients</div>
+        </div>
+        <div class="camp-stat">
+          <div class="camp-stat-val">{{ c.sent_count }}</div>
+          <div class="camp-stat-lbl">Sent</div>
+        </div>
+        {% if c.failed_count > 0 %}
+        <div class="camp-stat">
+          <div class="camp-stat-val" style="color:#dc2626;">{{ c.failed_count }}</div>
+          <div class="camp-stat-lbl">Failed</div>
+        </div>
+        {% endif %}
+      </div>
+      {% elif c.status == 'scheduled' %}
+      <div class="camp-stats">
+        <div class="camp-stat">
+          <div class="camp-stat-val">{{ c.recipient_count }}</div>
+          <div class="camp-stat-lbl">Recipients</div>
+        </div>
+        <div class="camp-stat">
+          <div class="camp-stat-val" style="font-size:0.8rem;font-weight:600;color:#b45309;">
+            {{ c.scheduled_at.strftime('%b %d %H:%M') if c.scheduled_at else '—' }}
+          </div>
+          <div class="camp-stat-lbl">Scheduled</div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="camp-actions">
+        <a href="/org/{{ org.slug }}/campaigns/{{ c.id }}" class="act-btn">
+          {% if c.status == 'draft' %}Edit{% else %}View{% endif %}
+        </a>
+        {% if c.status == 'draft' %}
+        <button
+          class="act-btn danger"
+          hx-delete="/api/v1/organizations/{{ org.slug }}/campaigns/{{ c.id }}"
+          hx-confirm="Delete '{{ c.name }}'? This cannot be undone."
+          hx-target="closest .camp-card"
+          hx-swap="outerHTML swap:300ms"
+        >Delete</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if total > per_page %}
+  <div style="display:flex;justify-content:center;gap:0.5rem;margin-top:1.5rem;">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}" class="act-btn">← Prev</a>
+    {% endif %}
+    <span style="align-self:center;font-size:0.875rem;color:var(--text-secondary);">Page {{ page }} of {{ ((total / per_page)|round(0,'ceil'))|int }}</span>
+    {% if page * per_page < total %}
+    <a href="?page={{ page + 1 }}" class="act-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </div>
+    <h2 class="empty-title">No campaigns yet</h2>
+    <p class="empty-sub">Send targeted email or WhatsApp messages to your event attendees.</p>
+    <a href="/org/{{ org.slug }}/campaigns/new" class="btn btn-primary">Create your first campaign</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,169 @@
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from decimal import Decimal
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class CategoryOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    slug: str
+    icon: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class EventCreateRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=500)
+    description: str | None = None
+    format: Literal["in_person", "virtual", "hybrid"] = "in_person"
+    start_datetime: datetime
+    end_datetime: datetime
+    timezone: str = Field("Africa/Lagos", max_length=100)
+    # Venue
+    venue_name: str | None = Field(None, max_length=500)
+    venue_address: str | None = None
+    venue_city: str | None = Field(None, max_length=255)
+    venue_country: str | None = Field(None, max_length=2)
+    venue_lat: float | None = None
+    venue_lng: float | None = None
+    # Virtual
+    virtual_url: str | None = None
+    virtual_platform: str | None = Field(None, max_length=50)
+    # Settings
+    max_capacity: int | None = Field(None, gt=0)
+    is_private: bool = False
+    password: str | None = None
+    category_ids: list[uuid.UUID] = Field(default_factory=list)
+    extras: dict | None = None
+
+    @field_validator("title")
+    @classmethod
+    def strip_title(cls, v: str) -> str:
+        return v.strip()
+
+    @field_validator("end_datetime")
+    @classmethod
+    def end_after_start(cls, end: datetime, info) -> datetime:
+        start = info.data.get("start_datetime")
+        if start and end <= start:
+            raise ValueError("end_datetime must be after start_datetime.")
+        return end
+
+
+class EventUpdateRequest(BaseModel):
+    title: str | None = Field(None, min_length=1, max_length=500)
+    description: str | None = None
+    format: Literal["in_person", "virtual", "hybrid"] | None = None
+    start_datetime: datetime | None = None
+    end_datetime: datetime | None = None
+    timezone: str | None = Field(None, max_length=100)
+    venue_name: str | None = None
+    venue_address: str | None = None
+    venue_city: str | None = None
+    venue_country: str | None = None
+    venue_lat: float | None = None
+    venue_lng: float | None = None
+    virtual_url: str | None = None
+    virtual_platform: str | None = None
+    max_capacity: int | None = Field(None, gt=0)
+    is_private: bool | None = None
+    password: str | None = None
+    category_ids: list[uuid.UUID] | None = None
+    extras: dict | None = None
+
+
+class EventOut(BaseModel):
+    id: uuid.UUID
+    org_id: uuid.UUID
+    title: str
+    slug: str
+    description: str | None = None
+    cover_image_url: str | None = None
+    gallery_1_url: str | None = None
+    gallery_2_url: str | None = None
+    og_image_url: str | None = None
+    status: str
+    format: str
+    start_datetime: datetime
+    end_datetime: datetime
+    timezone: str
+    venue_name: str | None = None
+    venue_address: str | None = None
+    venue_city: str | None = None
+    venue_country: str | None = None
+    venue_lat: float | None = None
+    venue_lng: float | None = None
+    virtual_url: str | None = None
+    virtual_platform: str | None = None
+    max_capacity: int | None = None
+    is_private: bool
+    is_featured: bool
+    is_template: bool
+    created_at: datetime
+    categories: list[CategoryOut] = Field(default_factory=list)
+    extras: dict | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class EventListItem(BaseModel):
+    id: uuid.UUID
+    title: str
+    slug: str
+    cover_image_url: str | None = None
+    status: str
+    format: str
+    start_datetime: datetime
+    end_datetime: datetime
+    venue_city: str | None = None
+    max_capacity: int | None = None
+    is_private: bool
+    created_at: datetime
+    registration_count: int = 0
+    total_revenue: Decimal = Decimal("0")
+
+    model_config = {"from_attributes": True}
+
+
+class PublicEventOut(BaseModel):
+    """Stripped event schema for unauthenticated public access."""
+    id: uuid.UUID
+    title: str
+    slug: str
+    description: str | None = None
+    cover_image_url: str | None = None
+    og_image_url: str | None = None
+    status: str
+    format: str
+    start_datetime: datetime
+    end_datetime: datetime
+    timezone: str
+    venue_name: str | None = None
+    venue_address: str | None = None
+    venue_city: str | None = None
+    venue_country: str | None = None
+    venue_lat: float | None = None
+    venue_lng: float | None = None
+    virtual_platform: str | None = None
+    max_capacity: int | None = None
+    is_private: bool
+    categories: list[CategoryOut] = Field(default_factory=list)
+
+    model_config = {"from_attributes": True}
+
+
+class EventSearchQuery(BaseModel):
+    q: str | None = None
+    format: str | None = None
+    city: str | None = None
+    country: str | None = None
+    category: str | None = None
+    from_date: datetime | None = None
+    to_date: datetime | None = None
+    page: int = Field(1, ge=1)
+    per_page: int = Field(20, ge=1, le=50)

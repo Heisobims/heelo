@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block subject %}A spot opened up for {{ event.title if event else 'the event' }}!{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:900;color:#000000;line-height:1.2;">
+  Great news, {{ name }}! 🎟️
+</h1>
+<p style="margin:0 0 28px;font-family:system-ui,-apple-system,sans-serif;font-size:16px;color:#555555;line-height:1.5;">
+  A <strong style="color:#000;">{{ ticket_type_name }}</strong> spot just opened up for
+  <strong style="color:#000;">{{ event.title if event else 'the event' }}</strong>. Claim it before it's gone.
+</p>
+
+{% if event %}
+<!-- Event card -->
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background:#f9f9f9;border-radius:12px;margin-bottom:28px;">
+  <tr>
+    <td style="padding:20px 24px;">
+      <p style="margin:0 0 4px;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#000000;">{{ event.title }}</p>
+      {% if event.start_datetime %}
+      <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#777777;">
+        {{ event.start_datetime.strftime('%A, %B %-d, %Y') }}{% if event.location %} &middot; {{ event.location }}{% endif %}
+      </p>
+      {% endif %}
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+{% if offer_expires_at %}
+<!-- Urgency notice -->
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background:#fffbeb;border:2px solid #fbbf24;border-radius:12px;margin-bottom:28px;">
+  <tr>
+    <td style="padding:16px 20px;">
+      <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#92400e;">
+        ⏳ <strong>This spot expires at {{ offer_expires_at.strftime('%-I:%M %p on %b %-d') }}</strong>. After that, it goes to the next person on the waitlist.
+      </p>
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<!-- CTA -->
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tr>
+    <td align="center" style="padding-bottom:16px;">
+      <a href="{{ register_url }}"
+         style="display:inline-block;background-color:#00FFF3;color:#000000;font-family:system-ui,-apple-system,sans-serif;font-size:16px;font-weight:800;text-decoration:none;padding:16px 36px;border-radius:10px;">
+        Claim My Spot →
+      </a>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:24px 0 0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#999999;text-align:center;line-height:1.6;">
+  If you no longer want this spot, simply ignore this email.
+</p>
+{% endblock %}

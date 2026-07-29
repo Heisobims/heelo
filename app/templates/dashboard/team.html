@@ -1,0 +1,338 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Team — {{ org.name }} — Heelo{% endblock %}
+{% set active_page = 'team' %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .team-card {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 12px;
+  }
+  .team-card-title {
+    font-size: 14px; font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+  }
+  .member-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .member-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .member-row:first-child { padding-top: 0; }
+  .member-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--cyan); color: #000;
+    font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; overflow: hidden;
+  }
+  .member-avatar img { width:100%; height:100%; object-fit:cover; }
+  .role-badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 9px; border-radius: 100px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: capitalize;
+  }
+  .role-badge.admin { background: rgba(0,255,243,0.12); color: #009e95; }
+  .role-badge.organizer { background: rgba(99,102,241,0.1); color: #4f46e5; }
+  .role-badge.finance { background: rgba(34,197,94,0.1); color: #15803d; }
+  .role-badge.checkin_staff { background: rgba(249,115,22,0.1); color: #c2410c; }
+  .role-badge.invite_pending { background: var(--bg-secondary); color: var(--text-muted); }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  }
+  .status-dot.active { background: #22c55e; }
+  .status-dot.invite_pending { background: #f59e0b; }
+
+  /* Invite modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px;
+    width: 100%; max-width: 460px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-title { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+
+  /* Role desc table */
+  .role-desc-row {
+    display: grid; grid-template-columns: 120px 1fr;
+    gap: 8px; padding: 10px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+  }
+  .role-desc-row:last-child { border-bottom: none; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="dash-content" style="max-width:760px; padding-bottom:48px;">
+
+  <div style="margin-bottom:8px; font-size:13px; color:var(--text-muted);">Organization</div>
+
+  <div x-data="teamManager()" @keydown.escape.window="inviteOpen = false">
+
+    <!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
+      <div class="dash-greeting" style="margin:0;">Team</div>
+      {% if user_role == 'admin' or is_owner %}
+      <button type="button" class="btn btn-primary btn-sm" @click="inviteOpen = true">
+        <span class="material-symbols-outlined" style="margin-right:6px;">add</span> Invite member
+      </button>
+      {% endif %}
+    </div>
+
+    <!-- Feedback -->
+    <div x-show="feedback.msg" :class="feedback.type === 'error' ? 'alert alert-danger' : 'alert'" style="display:none; margin-bottom:16px; background:rgba(0,255,243,0.08); border:1px solid var(--cyan); color:#009e95; border-radius:8px; padding:12px 16px; font-size:13px;">
+      <span class="material-symbols-outlined" x-text="feedback.type === 'error' ? 'cancel' : 'check_circle'"></span>
+      <span x-text="feedback.msg" style="margin-left:6px;"></span>
+    </div>
+
+    <!-- ── Members list ──────────────────────────────────── -->
+    <div class="team-card">
+      <p class="team-card-title">
+        Members
+        <span style="font-size:12px; font-weight:400; color:var(--text-muted);" x-text="`(${members.length})`"></span>
+      </p>
+
+      <template x-if="members.length === 0">
+        <div style="text-align:center; padding:32px; color:var(--text-muted);">
+          <span class="material-symbols-outlined" style="font-size:28px; opacity:.3; margin-bottom:10px; display:block;">group</span>
+          <p style="font-size:14px;">No team members yet.</p>
+          {% if user_role == 'admin' or is_owner %}
+          <button type="button" class="btn btn-primary btn-sm" style="margin-top:12px;" @click="inviteOpen = true">Invite your first team member</button>
+          {% endif %}
+        </div>
+      </template>
+
+      <template x-for="m in members" :key="m.id">
+        <div class="member-row">
+          <!-- Avatar -->
+          <div class="member-avatar">
+            <template x-if="m.avatar">
+              <img :src="m.avatar" :alt="m.name">
+            </template>
+            <template x-if="!m.avatar">
+              <span x-text="(m.name || m.email || '?')[0].toUpperCase()"></span>
+            </template>
+          </div>
+
+          <!-- Info -->
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span style="font-size:13px; font-weight:600;" x-text="m.name || m.email"></span>
+              <span class="role-badge" :class="m.role" x-text="m.role.replace('_',' ')"></span>
+              <template x-if="m.status === 'invite_pending'">
+                <span class="role-badge invite_pending">Pending invite</span>
+              </template>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:1px;" x-text="m.name ? m.email : ''"></div>
+          </div>
+
+          <!-- Status dot -->
+          <div class="status-dot" :class="m.status"></div>
+
+          <!-- Actions (admins only, and can't remove yourself) -->
+          {% if user_role == 'admin' or is_owner %}
+          <div x-show="m.user_id !== currentUserId" style="display:flex; gap:6px;">
+            <!-- Role picker -->
+            <select
+              class="form-input"
+              style="font-size:12px; padding:4px 8px; height:auto; min-width:120px; appearance:auto;"
+              :value="m.role"
+              @change="changeRole(m, $event.target.value)"
+              :disabled="m.updating"
+            >
+              <option value="admin">Admin</option>
+              <option value="organizer">Organizer</option>
+              <option value="finance">Finance</option>
+              <option value="checkin_staff">Check-in staff</option>
+            </select>
+            <!-- Remove -->
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              style="color:#dc2626; border-color:#dc2626; flex-shrink:0;"
+              :disabled="m.updating"
+              @click="removeMember(m)"
+              title="Remove member"
+            >
+              <span class="material-symbols-outlined" style="font-size:11px;">delete</span>
+            </button>
+          </div>
+          {% endif %}
+        </div>
+      </template>
+    </div>
+
+    <!-- ── Role descriptions ─────────────────────────────── -->
+    <div class="team-card">
+      <p class="team-card-title">Role permissions</p>
+      <div class="role-desc-row">
+        <div><span class="role-badge admin">Admin</span></div>
+        <div>Full access — manage events, team, settings, finance, and payouts.</div>
+      </div>
+      <div class="role-desc-row">
+        <div><span class="role-badge organizer">Organizer</span></div>
+        <div>Create and manage events, view registrations and analytics.</div>
+      </div>
+      <div class="role-desc-row">
+        <div><span class="role-badge finance">Finance</span></div>
+        <div>View revenue, process payouts, and access financial reports.</div>
+      </div>
+      <div class="role-desc-row">
+        <div><span class="role-badge checkin_staff" style="white-space:nowrap;">Check-in staff</span></div>
+        <div>Scan tickets and manage check-in at the event venue only.</div>
+      </div>
+    </div>
+
+    <!-- ── Invite modal ──────────────────────────────────── -->
+    <div class="modal-overlay" x-show="inviteOpen" style="display:none;" @click.self="inviteOpen = false" x-transition>
+      <div class="modal-box" @click.stop>
+        <p class="modal-title">Invite team member</p>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Email address</label>
+            <input
+              type="email"
+              class="form-input"
+              x-model="inviteEmail"
+              placeholder="colleague@example.com"
+              @keydown.enter="sendInvite()"
+              x-ref="inviteEmailInput"
+            >
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Role</label>
+            <select class="form-input" x-model="inviteRole" style="appearance:auto;">
+              <option value="organizer">Organizer — can create and manage events</option>
+              <option value="admin">Admin — full access</option>
+              <option value="finance">Finance — revenue and payouts</option>
+              <option value="checkin_staff">Check-in staff — ticket scanning only</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+          <button type="button" class="btn btn-secondary" @click="inviteOpen = false">Cancel</button>
+          <button type="button" class="btn btn-primary" :class="{'btn-loading': inviting}" :disabled="inviting || !inviteEmail" @click="sendInvite()">
+            Send invite
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /x-data -->
+</div>
+
+<script>
+function teamManager() {
+  const membersData = {{ members_json | safe }};
+  const orgSlug = '{{ org.slug }}';
+  const currentUserId = '{{ current_user_id }}';
+
+  return {
+    members: membersData,
+    inviteOpen: false,
+    inviteEmail: '',
+    inviteRole: 'organizer',
+    inviting: false,
+    feedback: { msg: '', type: 'success' },
+    currentUserId,
+
+    showFeedback(msg, type = 'success') {
+      this.feedback = { msg, type };
+      setTimeout(() => this.feedback = { msg: '', type: 'success' }, 4000);
+    },
+
+    async sendInvite() {
+      if (!this.inviteEmail.trim()) return;
+      this.inviting = true;
+      try {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/members/invite`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ email: this.inviteEmail.trim(), role: this.inviteRole }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.showFeedback(data.error?.message || 'Invite failed.', 'error');
+          return;
+        }
+        this.inviteOpen = false;
+        this.inviteEmail = '';
+        this.inviteRole = 'organizer';
+        this.showFeedback('Invitation sent!');
+        /* Add pending member to list */
+        this.members.push({
+          id: Math.random().toString(),
+          user_id: null,
+          role: this.inviteRole,
+          status: 'invite_pending',
+          name: this.inviteEmail,
+          email: this.inviteEmail,
+          avatar: null,
+          invited_at: new Date().toISOString(),
+          accepted_at: null,
+          updating: false,
+        });
+      } catch { this.showFeedback('Network error.', 'error'); }
+      finally { this.inviting = false; }
+    },
+
+    async changeRole(member, newRole) {
+      if (!member.user_id) return;
+      member.updating = true;
+      try {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/members/${member.user_id}/role`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ role: newRole }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.showFeedback(data.error?.message || 'Role update failed.', 'error');
+          return;
+        }
+        member.role = newRole;
+        this.showFeedback('Role updated.');
+      } catch { this.showFeedback('Network error.', 'error'); }
+      finally { member.updating = false; }
+    },
+
+    async removeMember(member) {
+      if (!member.user_id) return;
+      if (!confirm(`Remove ${member.name || member.email} from the team?`)) return;
+      member.updating = true;
+      try {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/members/${member.user_id}`, {
+          method: 'DELETE', credentials: 'include',
+        });
+        if (!res.ok && res.status !== 204) {
+          this.showFeedback('Remove failed.', 'error');
+          return;
+        }
+        this.members = this.members.filter(m => m.id !== member.id);
+        this.showFeedback('Member removed.');
+      } catch { this.showFeedback('Network error.', 'error'); }
+      finally { member.updating = false; }
+    },
+  };
+}
+</script>
+{% endblock %}

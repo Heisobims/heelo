@@ -1,0 +1,984 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} — Heelo{% endblock %}
+{% block meta_description %}{{ event.description[:160] if event.description else 'Join us at ' + event.title }}{% endblock %}
+{% block og_title %}{{ event.title }}{% endblock %}
+{% block og_description %}{{ event.description[:200] if event.description else '' }}{% endblock %}
+{% block og_image %}{{ event.og_image_url or '/api/v1/events/' + event.slug + '/og.png' }}{% endblock %}
+
+{% block head %}
+<meta property="og:type" content="website">
+<style>
+[x-cloak]{display:none!important}
+body { background: var(--bg-secondary); }
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+.ev-nav {
+  position: sticky; top: 0; z-index: 40;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-light);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 24px; height: 54px;
+}
+.ev-nav-logo {
+  font-family: var(--font-serif); font-size: 18px; font-weight: 700;
+  color: var(--text-primary); text-decoration: none; flex-shrink: 0;
+}
+.ev-nav-title {
+  font-size: 14px; color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────── */
+.ev-hero {
+  position: relative; width: 100%;
+  aspect-ratio: 2.6 / 1; max-height: 460px;
+  background: #0a0a0a; overflow: hidden;
+}
+.ev-hero-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.72; }
+.ev-hero-grad {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.72) 100%);
+}
+.ev-hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 32px 40px; }
+.ev-hero-placeholder {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #0f0f0f 0%, #1c1c1c 50%, #0a0a0a 100%);
+}
+
+/* ── Layout ───────────────────────────────────────────────────── */
+.ev-layout {
+  display: grid; grid-template-columns: 1fr 340px; gap: 24px;
+  max-width: 1060px; margin: 0 auto; padding: 28px 24px 60px;
+  align-items: start;
+}
+
+/* ── Content cards ────────────────────────────────────────────── */
+.ev-card {
+  background: #fff; border: 1px solid var(--border-light);
+  border-radius: 14px; margin-bottom: 16px; overflow: hidden;
+}
+.ev-card-body { padding: 22px 24px; }
+.ev-card-title {
+  font-size: 15px; font-weight: 600; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px; color: var(--text-primary);
+}
+.ev-card-title i { color: var(--cyan); font-size: 13px; }
+
+/* ── Detail info rows ─────────────────────────────────────────── */
+.detail-rows { padding: 4px 20px; }
+.d-row {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid var(--border-light);
+}
+.d-row:last-child { border-bottom: none; }
+.d-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: var(--bg-secondary);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--text-muted); font-size: 14px;
+}
+.d-main { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.d-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Agenda ───────────────────────────────────────────────────── */
+.agenda-row {
+  display: flex; gap: 16px; padding: 11px 0;
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.12s;
+}
+.agenda-row:last-child { border-bottom: none; }
+.agenda-row:hover { background: var(--bg-secondary); margin: 0 -24px; padding: 11px 24px; border-radius: 8px; }
+.agenda-time {
+  font-size: 12px; font-weight: 600; color: var(--text-muted);
+  white-space: nowrap; min-width: 100px; padding-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.agenda-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  display: inline-block; margin-top: 5px; margin-right: 6px;
+}
+
+/* ── People grid ──────────────────────────────────────────────── */
+.people-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px;
+}
+.person-tile { text-align: center; }
+.person-pic {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--bg-secondary); margin: 0 auto 10px; overflow: hidden;
+  border: 2px solid var(--border-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; color: var(--text-muted);
+  transition: border-color 0.15s;
+}
+.person-pic:hover { border-color: var(--cyan); }
+.person-pic img { width: 100%; height: 100%; object-fit: cover; }
+.person-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.person-role { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Sidebar ──────────────────────────────────────────────────── */
+.ev-sidebar {
+  background: #fff; border: 1px solid var(--border-light);
+  border-radius: 16px; overflow: hidden;
+  position: sticky; top: 70px;
+}
+.sidebar-tickets { padding: 18px 20px 20px; }
+.sidebar-section-label {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.ticket-card {
+  border: 1px solid var(--border-light); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 8px;
+  transition: border-color 0.12s;
+}
+.ticket-card:last-child { margin-bottom: 0; }
+.ticket-tier-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10px; font-weight: 700; padding: 2px 7px;
+  border-radius: 100px; text-transform: uppercase; letter-spacing: 0.04em;
+}
+
+/* ── Gallery ──────────────────────────────────────────────────── */
+.gallery-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;
+}
+.gallery-item {
+  aspect-ratio: 4/3; border-radius: 10px; overflow: hidden;
+  cursor: zoom-in; position: relative;
+}
+.gallery-item img {
+  width: 100%; height: 100%; object-fit: cover;
+  transition: transform 0.35s ease;
+}
+.gallery-item:hover img { transform: scale(1.06); }
+
+/* ── Discussion ───────────────────────────────────────────────── */
+.disc-comment-row {
+  display: flex; gap: 10px; padding: 12px 0;
+  border-top: 1px solid var(--border-light);
+  animation: fadeInUp 0.2s ease;
+}
+.disc-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--bg-secondary); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--text-secondary);
+  overflow: hidden;
+}
+
+/* ── Share strip ──────────────────────────────────────────────── */
+.share-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border: 1px solid var(--border-light);
+  border-radius: 9px; font-size: 13px; text-decoration: none;
+  color: var(--text-primary); background: transparent; cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.share-btn:hover { background: var(--bg-secondary); border-color: rgba(0,0,0,0.12); }
+
+/* ── Animations ───────────────────────────────────────────────── */
+@keyframes fadeInUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+.animate-in { animation: fadeInUp 0.3s ease both; }
+.animate-in-d1 { animation-delay: 0.06s; }
+.animate-in-d2 { animation-delay: 0.12s; }
+
+/* ── Responsive ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ev-layout { grid-template-columns: 1fr; padding: 16px 16px 40px; }
+  .ev-sidebar { position: static; }
+  .ev-hero { max-height: 240px; }
+  .ev-hero-content { padding: 18px 20px; }
+}
+</style>
+{% endblock %}
+
+{% block body %}
+
+<!-- ── Nav ─────────────────────────────────────────────────────── -->
+<nav class="ev-nav">
+  <a href="/" class="ev-nav-logo">heelo</a>
+  <span class="material-symbols-outlined" style="color:var(--border-color); font-size:11px; flex-shrink:0;">chevron_right</span>
+  <span class="ev-nav-title">{{ event.title }}</span>
+  {% if user %}
+  <div style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
+    {% if event.status in ('published', 'live') %}
+    <button type="button" class="btn btn-secondary btn-sm"
+      onclick="navigator.share ? navigator.share({title:'{{ event.title }}',url:window.location.href}) : navigator.clipboard.writeText(window.location.href)">
+      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">share</span>Share
+    </button>
+    {% endif %}
+    <a href="/dashboard" class="btn btn-secondary btn-sm">
+      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">speed</span>Dashboard
+    </a>
+  </div>
+  {% else %}
+  <div style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
+    <a href="/login" style="font-size:14px; color:var(--text-secondary); text-decoration:none;">Sign in</a>
+    <a href="/register" class="btn btn-primary btn-sm">Sign up free</a>
+  </div>
+  {% endif %}
+</nav>
+
+<!-- ── No-tickets notice (shown when redirected from register page) ─── -->
+<div id="no-tickets-notice" style="display:none; background:#fff8e6; border-bottom:1px solid #f0c040; padding:10px 24px; font-size:13px; color:#7a5500; text-align:center;">
+  <span class="material-symbols-outlined" style="margin-right:6px;">info</span>This event has no tickets available for registration yet. Check back soon.
+</div>
+<script>
+if (new URLSearchParams(window.location.search).get('no_tickets') === '1') {
+  document.getElementById('no-tickets-notice').style.display = 'block';
+}
+</script>
+
+<!-- ── Hero ─────────────────────────────────────────────────────── -->
+<div class="ev-hero">
+  {% if event.cover_image_url %}
+  <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" class="ev-hero-img">
+  {% endif %}
+  {% if not event.cover_image_url %}
+  <div class="ev-hero-placeholder">
+    <span style="font-family:var(--font-serif); font-size:clamp(40px,10vw,90px); font-weight:700; color:rgba(255,255,255,0.06); letter-spacing:-3px;">{{ event.title[0] }}</span>
+  </div>
+  {% endif %}
+  <div class="ev-hero-grad"></div>
+  <div class="ev-hero-content">
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
+      <span style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; background:rgba(0,255,243,0.18); color:#00FFF3; backdrop-filter:blur(4px); letter-spacing:0.06em;">
+        <span class="material-symbols-outlined" style="margin-right:5px; font-size:12px;">{% if event.format == 'virtual' %}videocam{% elif event.format == 'hybrid' %}shuffle{% else %}location_on{% endif %}</span>
+        {{ event.format | replace('_', ' ') | upper }}
+      </span>
+      {% if event.status == 'live' %}
+      <span style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; background:#D0021B; color:#fff; display:inline-flex; align-items:center; gap:5px;">
+        <span style="width:6px;height:6px;background:#fff;border-radius:50%;animation:pulse 1.2s ease infinite;"></span>
+        LIVE NOW
+      </span>
+      {% endif %}
+    </div>
+    <h1 style="font-family:var(--font-serif); font-size:clamp(22px,4vw,42px); font-weight:700; color:#fff; margin:0 0 8px; text-shadow:0 2px 12px rgba(0,0,0,0.5); line-height:1.15;">
+      {{ event.title }}
+    </h1>
+    {% if org %}
+    <div style="font-size:14px; color:rgba(255,255,255,0.65);">
+      by <strong style="color:rgba(255,255,255,0.9);">{{ org.name }}</strong>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ── Main layout ───────────────────────────────────────────────── -->
+<div class="ev-layout">
+
+  <!-- ── LEFT column ─────────────────────────────────────────────── -->
+  <div>
+
+    <!-- Status banners -->
+    {% if event.status == 'cancelled' %}
+    <div class="alert alert-danger animate-in" style="margin-bottom:16px;">
+      <span class="material-symbols-outlined" style="margin-right:7px;">cancel</span>
+      <strong>This event has been cancelled.</strong> Ticket holders will be contacted about refunds.
+    </div>
+    {% endif %}
+    {% if event.status == 'ended' %}
+    <div class="ev-card animate-in" style="margin-bottom:16px;">
+      <div class="ev-card-body" style="display:flex; align-items:center; gap:12px; padding:14px 18px;">
+        <span class="material-symbols-outlined" style="font-size:20px; color:var(--text-muted);">sports_score</span>
+        <div>
+          <div style="font-size:14px; font-weight:600;">This event has ended</div>
+          <div style="font-size:13px; color:var(--text-muted); margin-top:1px;">Thank you to everyone who attended!</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Key details card ─────────────────────────────────────── -->
+    <div class="ev-card animate-in">
+      <div class="detail-rows">
+
+        <!-- Date & time -->
+        <div class="d-row">
+          <div class="d-icon"><span class="material-symbols-outlined">calendar_month</span></div>
+          <div>
+            <div class="d-main">
+              {% if event.start_datetime %}{{ event.start_datetime.strftime('%A, %d %B %Y') }}{% else %}Date TBD{% endif %}
+            </div>
+            <div class="d-sub">
+              {% if event.start_datetime %}
+              <span class="material-symbols-outlined" style="margin-right:4px;">schedule</span>
+              {{ event.start_datetime.strftime('%H:%M') }}{% if event.end_datetime %} – {{ event.end_datetime.strftime('%H:%M') }}{% endif %}
+              · {{ event.timezone or 'UTC' }}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Venue -->
+        {% if event.format != 'virtual' and (event.venue_name or event.venue_city) %}
+        <div class="d-row">
+          <div class="d-icon"><span class="material-symbols-outlined">location_on</span></div>
+          <div>
+            <div class="d-main">{{ event.venue_name or event.venue_city }}</div>
+            <div class="d-sub">
+              {% if event.venue_address %}{{ event.venue_address }}{% if event.venue_city %},{% endif %} {% endif %}
+              {% if event.venue_city %}{{ event.venue_city }}{% if event.venue_country %}, {{ event.venue_country }}{% endif %}{% endif %}
+            </div>
+            {% if event.venue_lat and event.venue_lng %}
+            <a href="https://maps.google.com/?q={{ event.venue_lat }},{{ event.venue_lng }}" target="_blank"
+              style="font-size:12px; color:var(--cyan); text-decoration:none; margin-top:5px; display:inline-flex; align-items:center; gap:4px;">
+              <span class="material-symbols-outlined" style="font-size:10px;">map</span> Open in Maps
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Virtual -->
+        {% if event.format != 'in_person' %}
+        <div class="d-row">
+          <div class="d-icon"><span class="material-symbols-outlined">videocam</span></div>
+          <div>
+            <div class="d-main">
+              {% if event.virtual_platform %}{{ event.virtual_platform | title }}{% else %}Online{% endif %} event
+            </div>
+            <div class="d-sub">
+              <span class="material-symbols-outlined" style="font-size:10px; margin-right:3px;">lock</span>Stream link sent after registration
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Organizer -->
+        {% if org %}
+        <div class="d-row">
+          <div class="d-icon" style="{% if org.logo_url %}padding:0; overflow:hidden;{% endif %}">
+            {% if org.logo_url %}
+            <img src="{{ org.logo_url }}" alt="{{ org.name }}" style="width:100%;height:100%;object-fit:cover;">
+            {% else %}
+            <span class="material-symbols-outlined">business</span>
+            {% endif %}
+          </div>
+          <div>
+            <div class="d-main">{{ org.name }}</div>
+            <div class="d-sub">Organizer</div>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    {% set extras = event.extras or {} %}
+
+    <!-- ── About ──────────────────────────────────────────────────── -->
+    {% if event.description %}
+    <div class="ev-card animate-in animate-in-d1">
+      <div class="ev-card-body">
+        <div class="ev-card-title">
+          <span class="material-symbols-outlined">info</span> About this event
+        </div>
+        <div style="font-size:15px; line-height:1.78; color:var(--text-secondary); white-space:pre-wrap;">{{ event.description }}</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Agenda ─────────────────────────────────────────────────── -->
+    {% if extras.agenda %}
+    <div class="ev-card animate-in animate-in-d1">
+      <div class="ev-card-body">
+        <div class="ev-card-title">
+          <span class="material-symbols-outlined">checklist</span> Agenda
+          <span style="font-size:12px; font-weight:500; color:var(--text-muted); margin-left:auto;">{{ extras.agenda | length }} session{{ 's' if extras.agenda | length != 1 }}</span>
+        </div>
+        {% for item in extras.agenda %}
+        <div class="agenda-row">
+          <div class="agenda-time">
+            {{ item.time or '–' }}{% if item.end_time %}<br><span style="opacity:0.6;">{{ item.end_time }}</span>{% endif %}
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:flex-start; gap:0; flex-wrap:wrap;">
+              <span class="agenda-dot" style="background:
+                {%- if item.type == 'panel' %}#9333ea
+                {%- elif item.type == 'workshop' %}#3b82f6
+                {%- elif item.type == 'networking' %}#22c55e
+                {%- elif item.type == 'break' %}#f59e0b
+                {%- elif item.type == 'ceremony' %}#ec4899
+                {%- else %}#009e95{%- endif %};"></span>
+              <span style="font-size:14px; font-weight:600; flex:1; min-width:0;">{{ item.title }}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px; margin-top:4px; flex-wrap:wrap;">
+              <span style="font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted); text-transform:capitalize;">
+                {{ (item.type or 'talk').replace('_',' ') }}
+              </span>
+              {% if item.speaker %}
+              <span style="font-size:12px; color:var(--text-muted);">
+                <span class="material-symbols-outlined" style="font-size:9px; margin-right:3px;">mic</span>{{ item.speaker }}
+              </span>
+              {% endif %}
+              {% if item.track %}
+              <span style="font-size:11px; color:#009e95;">
+                <span class="material-symbols-outlined" style="font-size:9px; margin-right:3px;">sell</span>{{ item.track }}
+              </span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── People (speakers, panelists, moderators, judges, organizers) ── -->
+    {% set people_sections = [
+      ('speakers',   'Speakers & Guests',  'mic',              extras.people.speakers   if extras.people is defined else []),
+      ('panelists',  'Panelists',          'forum',            extras.people.panelists  if extras.people is defined else []),
+      ('moderators', 'Moderators',         'gavel',            extras.people.moderators if extras.people is defined else []),
+      ('judges',     'Judges',             'balance',          extras.people.judges     if extras.people is defined else []),
+      ('organizers', 'Organizers',         'business',         extras.people.organizers if extras.people is defined else []),
+    ] %}
+    {% for section_id, section_label, section_icon, people_list in people_sections %}
+    {% if people_list %}
+    <div class="ev-card animate-in animate-in-d2">
+      <div class="ev-card-body">
+        <div class="ev-card-title">
+          <span class="material-symbols-outlined" style="font-size:14px;">{{ section_icon }}</span> {{ section_label }}
+        </div>
+        <div class="people-grid">
+          {% for person in people_list %}
+          <div class="person-tile">
+            <div class="person-pic">
+              {% if person.photo_url %}
+              <img src="{{ person.photo_url }}" alt="{{ person.name }}">
+              {% else %}
+              <span class="material-symbols-outlined">person</span>
+              {% endif %}
+            </div>
+            <div class="person-name">{{ person.name }}</div>
+            {% if person.title %}
+            <div class="person-role">{{ person.title }}{% if person.company %} · {{ person.company }}{% endif %}</div>
+            {% elif person.company %}
+            <div class="person-role">{{ person.company }}</div>
+            {% endif %}
+            {% if person.bio %}
+            <div style="font-size:11px; color:var(--text-muted); margin-top:3px; line-height:1.4;">{{ person.bio }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <!-- ── Partners & Sponsors ────────────────────────────────────── -->
+    {% set partners = extras.partners if extras.partners else [] %}
+    {% if partners %}
+    {% set tier_meta = [
+      ('platinum', 'Platinum',      '#9333ea'),
+      ('gold',     'Gold',          '#d97706'),
+      ('silver',   'Silver',        '#64748b'),
+      ('bronze',   'Bronze',        '#92400e'),
+      ('partner',  'Partners',      '#2563eb'),
+      ('media',    'Media Partners','#059669'),
+    ] %}
+    <div class="ev-card animate-in animate-in-d2">
+      <div class="ev-card-body">
+        <div class="ev-card-title">
+          <span class="material-symbols-outlined">handshake</span> Partners &amp; Sponsors
+        </div>
+        {% for tier_id, tier_label, tier_color in tier_meta %}
+        {% set tier_items = partners | selectattr('tier', 'equalto', tier_id) | list %}
+        {% if tier_items %}
+        <div style="margin-bottom:16px;">
+          <div style="font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.08em; color:{{ tier_color }}; margin-bottom:8px;">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:{{ tier_color }}; margin-right:5px; vertical-align:middle;"></span>
+            {{ tier_label }}
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            {% for partner in tier_items %}
+            <div style="display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--border-light); border-radius:10px; background:#fff; transition:border-color 0.12s, box-shadow 0.12s;"
+              onmouseover="this.style.borderColor='rgba(0,255,243,0.4)'; this.style.boxShadow='0 2px 10px rgba(0,0,0,0.06)'"
+              onmouseout="this.style.borderColor=''; this.style.boxShadow=''">
+              {% if partner.logo_url %}
+              <img src="{{ partner.logo_url }}" alt="{{ partner.name }}" style="width:26px; height:26px; object-fit:contain; border-radius:5px;">
+              {% else %}
+              <div style="width:26px; height:26px; background:var(--bg-secondary); border-radius:5px; display:flex; align-items:center; justify-content:center;">
+                <span class="material-symbols-outlined" style="font-size:11px; color:var(--text-muted);">business</span>
+              </div>
+              {% endif %}
+              {% if partner.website %}
+              <a href="{{ partner.website }}" target="_blank" rel="noopener noreferrer"
+                style="font-size:13px; font-weight:600; color:var(--text-primary); text-decoration:none;">{{ partner.name }}</a>
+              {% else %}
+              <span style="font-size:13px; font-weight:600; color:var(--text-primary);">{{ partner.name }}</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Gallery ────────────────────────────────────────────────── -->
+    {% if event.gallery_1_url or event.gallery_2_url %}
+    <div class="ev-card animate-in animate-in-d2">
+      <div class="ev-card-body">
+        <div class="ev-card-title">
+          <span class="material-symbols-outlined">photo_library</span> Gallery
+        </div>
+        <div class="gallery-grid">
+          {% if event.cover_image_url %}
+          <div class="gallery-item">
+            <img src="{{ event.cover_image_url }}" alt="{{ event.title }}">
+          </div>
+          {% endif %}
+          {% if event.gallery_1_url %}
+          <div class="gallery-item">
+            <img src="{{ event.gallery_1_url }}" alt="{{ event.title }}">
+          </div>
+          {% endif %}
+          {% if event.gallery_2_url %}
+          <div class="gallery-item">
+            <img src="{{ event.gallery_2_url }}" alt="{{ event.title }}">
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Discussion ─────────────────────────────────────────────── -->
+    <div class="ev-card animate-in animate-in-d2" x-data="discussion()">
+      <div class="ev-card-body">
+        <div class="ev-card-title">
+          <span class="material-symbols-outlined">forum</span> Discussion
+        </div>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px; margin-top:-8px;">Questions, comments and thoughts about this event.</p>
+
+        {% if user %}
+        <div style="display:flex; gap:10px; margin-bottom:4px;">
+          <div class="disc-avatar">
+            {% if user.avatar_url %}
+            <img src="{{ user.avatar_url }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+            {% else %}{{ user.full_name[0].upper() }}{% endif %}
+          </div>
+          <div style="flex:1;">
+            <textarea x-model="msg" rows="1"
+              placeholder="Ask a question or start a conversation…"
+              @focus="expanded=true"
+              @blur="if(!msg.trim()) expanded=false"
+              style="width:100%; box-sizing:border-box; border:1.5px solid var(--border-light); border-radius:10px; padding:8px 12px; font-size:13px; resize:none; font-family:inherit; outline:none; transition:border-color 0.14s, height 0.2s; overflow:hidden;"
+              :style="expanded ? 'height:70px; border-color:rgba(0,255,243,0.45);' : 'height:36px;'"
+            ></textarea>
+            <div x-show="expanded" x-transition style="display:flex; justify-content:flex-end; margin-top:7px; gap:6px;">
+              <button type="button" @click="expanded=false; msg=''"
+                style="padding:5px 13px; border:1px solid var(--border-light); border-radius:8px; font-size:12px; font-weight:500; cursor:pointer; background:transparent; color:var(--text-muted);">
+                Cancel
+              </button>
+              <button type="button" @click="post()" :disabled="!msg.trim() || posting"
+                style="padding:5px 14px; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; background:#00FFF3; color:#000; transition:opacity 0.15s;"
+                :style="(!msg.trim() || posting) ? 'opacity:0.35; cursor:not-allowed;' : 'opacity:1;'">
+                <span class="material-symbols-outlined" x-text="posting ? 'progress_activity' : 'send'" style="font-size:13px; margin-right:4px;"></span>
+                <span x-text="posting ? 'Posting…' : 'Post'"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div style="padding:13px 16px; background:var(--bg-secondary); border-radius:10px; font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+          <span class="material-symbols-outlined" style="margin-right:6px;">login</span>
+          <a href="/login?next={{ request.url }}" style="color:var(--cyan); font-weight:600; text-decoration:none;">Sign in</a> to join the discussion.
+        </div>
+        {% endif %}
+
+        <!-- Comment list -->
+        <div x-show="loading" style="text-align:center;padding:20px;color:var(--text-muted);">
+          <span class="material-symbols-outlined">progress_activity</span>
+        </div>
+        <div x-show="!loading && comments.length > 0">
+          <template x-for="c in comments" :key="c.id">
+            <div class="disc-comment-row">
+              <div class="disc-avatar" x-text="(c.author_name || '?')[0].toUpperCase()"></div>
+              <div style="flex:1;">
+                <div style="font-size:12px; font-weight:600;" x-text="c.author_name"></div>
+                <div style="font-size:13px; color:var(--text-secondary); margin-top:2px; line-height:1.5;" x-text="c.body"></div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:3px;">
+                  <span style="font-size:11px; color:var(--text-muted);" x-text="timeAgo(c.created_at)"></span>
+                  {% if user %}
+                  <button @click="remove(c.id)" style="font-size:10px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;" title="Delete">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <div x-show="!loading && comments.length === 0" style="text-align:center; padding:24px 0 8px;">
+          <span class="material-symbols-outlined" style="font-size:28px; color:var(--border-color); display:block; margin-bottom:8px;">forum</span>
+          <div style="font-size:13px; color:var(--text-muted);">No comments yet — be the first!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Share ───────────────────────────────────────────────────── -->
+    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" x-data="{ copied: false }">
+      <span style="font-size:13px; color:var(--text-muted); font-weight:500; margin-right:2px;">
+        <span class="material-symbols-outlined" style="margin-right:5px;">share</span>Share
+      </span>
+      <a href="https://twitter.com/intent/tweet?text={{ event.title | urlencode }}&url={{ request.url | urlencode }}"
+        target="_blank" class="share-btn">
+        <span class="material-symbols-outlined">share</span> Twitter
+      </a>
+      <a href="https://api.whatsapp.com/send?text={{ (event.title + ' ' + request.url | string) | urlencode }}"
+        target="_blank" class="share-btn">
+        <span class="material-symbols-outlined" style="color:#25D366;">chat</span> WhatsApp
+      </a>
+      <button type="button" class="share-btn"
+        @click="navigator.clipboard.writeText(window.location.href); copied=true; setTimeout(()=>copied=false,2500)">
+        <span class="material-symbols-outlined" x-text="copied ? 'check' : 'link'" :style="copied ? 'color:#22c55e;' : ''"></span>
+        <span x-text="copied ? 'Copied!' : 'Copy link'"></span>
+      </button>
+    </div>
+
+  </div><!-- /left -->
+
+  <!-- ── RIGHT sidebar ────────────────────────────────────────────── -->
+  <div>
+    <div class="ev-sidebar">
+
+      <!-- Availability bar -->
+      {% if ticket_types %}
+      {% set total_cap = namespace(val=0, limited=false) %}
+      {% set total_sold = namespace(val=0) %}
+      {% for tt in ticket_types %}
+        {% if tt.quantity is not none %}{% set total_cap.limited = true %}{% set total_cap.val = total_cap.val + tt.quantity %}{% endif %}
+        {% set total_sold.val = total_sold.val + tt.quantity_sold + tt.quantity_reserved %}
+      {% endfor %}
+      {% if total_cap.limited and total_cap.val > 0 %}
+      {% set pct = [((total_sold.val / total_cap.val) * 100) | int, 100] | min %}
+      <div style="padding:14px 20px; border-bottom:1px solid var(--border-light); background:var(--bg-secondary);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:12px; color:var(--text-muted);">
+            <span class="material-symbols-outlined" style="margin-right:4px; font-size:10px;">group</span>Availability
+          </span>
+          <span style="font-size:12px; color:var(--text-muted);">{{ total_cap.val - total_sold.val }} left</span>
+        </div>
+        <div style="height:5px; background:var(--border-light); border-radius:3px; overflow:hidden;">
+          <div style="height:100%; width:{{ pct }}%; background:{% if pct > 80 %}#e53e3e{% elif pct > 50 %}#f59e0b{% else %}var(--cyan){% endif %}; border-radius:3px; transition:width 0.5s ease;"></div>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">{{ total_cap.val - total_sold.val }} of {{ total_cap.val }} spots available</div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+      <div class="sidebar-tickets" x-data="ticketSelector('{{ event.slug }}')">
+        <div class="sidebar-section-label">
+          <span class="material-symbols-outlined">confirmation_number</span> Tickets
+        </div>
+
+        {% if event.status in ('published', 'live') %}
+
+          {% if not ticket_types %}
+          <div style="padding:16px 0; text-align:center;">
+            <span class="material-symbols-outlined" style="font-size:22px; color:var(--border-color); display:block; margin-bottom:8px;">event_available</span>
+            <div style="font-size:13px; color:var(--text-muted);">Registration details coming soon.</div>
+          </div>
+
+          {% else %}
+          {% for tt in ticket_types %}
+          {% set avail = (tt.quantity - tt.quantity_sold - tt.quantity_reserved) if tt.quantity is not none else none %}
+          {% set sold_out = tt.quantity is not none and (tt.quantity_sold + tt.quantity_reserved) >= tt.quantity %}
+          <div class="ticket-card" style="{% if sold_out %}opacity:0.55;{% endif %}">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:14px; font-weight:600; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  {{ tt.name }}
+                  {% if tt.tier == 'vip' %}
+                  <span class="ticket-tier-tag" style="background:#9333ea1a; color:#9333ea;">
+                    <span class="material-symbols-outlined" style="font-size:8px;">workspace_premium</span> VIP
+                  </span>
+                  {% elif tt.tier == 'early_bird' %}
+                  <span class="ticket-tier-tag" style="background:#f59e0b1a; color:#d97706;">
+                    <span class="material-symbols-outlined" style="font-size:8px;">bolt</span> Early Bird
+                  </span>
+                  {% elif tt.tier == 'group' %}
+                  <span class="ticket-tier-tag" style="background:#3b82f61a; color:#2563eb;">
+                    <span class="material-symbols-outlined" style="font-size:8px;">group</span> Group
+                  </span>
+                  {% endif %}
+                </div>
+                {% if tt.description %}
+                <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">{{ tt.description }}</div>
+                {% endif %}
+                {% if sold_out %}
+                <div style="font-size:12px; color:#e53e3e; font-weight:600; margin-top:4px;">
+                  <span class="material-symbols-outlined" style="font-size:10px; margin-right:3px;">block</span>Sold out
+                </div>
+                <div x-data="waitlistForm('{{ event.slug }}', '{{ tt.id }}')" style="margin-top:8px;">
+                  <button x-show="!open && !done" @click="open=true" type="button"
+                    style="font-size:12px;font-weight:600;color:var(--cyan-dark,#00b3a9);background:transparent;border:none;cursor:pointer;padding:0;text-decoration:underline;">
+                    Join waitlist
+                  </button>
+                  <div x-show="open && !done" x-cloak style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+                    <input x-model="name" type="text" placeholder="Your name" maxlength="255"
+                      style="width:100%;padding:6px 10px;border:1px solid var(--border-light);border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
+                    <input x-model="email" type="email" placeholder="Email address" maxlength="255"
+                      style="width:100%;padding:6px 10px;border:1px solid var(--border-light);border-radius:7px;font-size:12px;font-family:inherit;outline:none;">
+                    <div x-show="err" x-text="err" style="font-size:11px;color:#e53e3e;"></div>
+                    <div style="display:flex;gap:6px;">
+                      <button @click="submit()" :disabled="submitting" type="button"
+                        style="flex:1;padding:6px;border-radius:7px;border:none;background:var(--cyan);color:#000;font-size:12px;font-weight:700;cursor:pointer;"
+                        :style="submitting?'opacity:.6':''">
+                        <span x-text="submitting?'Joining…':'Notify me'"></span>
+                      </button>
+                      <button @click="open=false" type="button"
+                        style="padding:6px 10px;border-radius:7px;border:1px solid var(--border-light);background:transparent;font-size:12px;cursor:pointer;">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                  <div x-show="done" x-cloak style="font-size:12px;color:#16a34a;font-weight:600;margin-top:4px;">
+                    <span class="material-symbols-outlined" style="margin-right:4px;">check_circle</span>You're on the waitlist!
+                  </div>
+                </div>
+                {% elif avail is not none and avail <= 10 %}
+                <div style="font-size:12px; color:#d97706; font-weight:500; margin-top:4px;">
+                  <span class="material-symbols-outlined" style="font-size:10px; margin-right:3px;">local_fire_department</span>Only {{ avail }} left!
+                </div>
+                {% endif %}
+              </div>
+              <div style="flex-shrink:0; text-align:right;">
+                <div style="font-size:16px; font-weight:700; margin-bottom:6px;">
+                  {% if tt.price == 0 %}
+                  <span style="color:#22c55e;">Free</span>
+                  {% else %}
+                  <div style="font-size:11px; color:var(--text-muted); font-weight:500; margin-bottom:1px;">{{ tt.currency }}</div>
+                  {{ "{:,.0f}".format(tt.price) }}
+                  {% endif %}
+                </div>
+                {% if not sold_out %}
+                <div style="display:flex; align-items:center; gap:0; border:1.5px solid var(--border-light); border-radius:8px; overflow:hidden;">
+                  <button type="button"
+                    @click="dec('{{ tt.id }}')"
+                    :disabled="(qty['{{ tt.id }}'] || 0) <= 0"
+                    style="width:28px; height:28px; border:none; background:var(--bg-secondary); cursor:pointer; font-size:14px; font-weight:700; color:var(--text-secondary); display:flex; align-items:center; justify-content:center; transition:background 0.1s;"
+                    :style="(qty['{{ tt.id }}'] || 0) <= 0 ? 'opacity:0.4;cursor:default;' : ''"
+                  >−</button>
+                  <span style="width:28px; text-align:center; font-size:13px; font-weight:700; color:var(--text-primary);" x-text="qty['{{ tt.id }}'] || 0">0</span>
+                  <button type="button"
+                    @click="inc('{{ tt.id }}', {{ tt.max_per_order | tojson }})"
+                    :disabled="{{ tt.max_per_order | tojson }} !== null && (qty['{{ tt.id }}'] || 0) >= {{ tt.max_per_order | tojson }}"
+                    style="width:28px; height:28px; border:none; background:var(--bg-secondary); cursor:pointer; font-size:14px; font-weight:700; color:var(--text-secondary); display:flex; align-items:center; justify-content:center; transition:background 0.1s;"
+                  >+</button>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          {% endif %}
+
+          <!-- CTA -->
+          <button type="button" @click="goRegister()" class="btn btn-primary btn-full"
+            style="margin-top:12px;">
+            <span class="material-symbols-outlined" style="margin-right:6px; font-size:13px;">confirmation_number</span>
+            <span x-text="total > 0 ? 'Register now · ' + total + ' ticket' + (total > 1 ? 's' : '') : 'Register now'">Register now</span>
+          </button>
+
+          <div style="margin-top:10px; text-align:center;">
+            <a href="/e/{{ event.slug }}/widget" target="_blank"
+              style="font-size:12px; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:4px;"
+              onmouseover="this.style.color='var(--text-secondary)'" onmouseout="this.style.color='var(--text-muted)'">
+              <span class="material-symbols-outlined" style="font-size:10px;">code</span> Embed this event
+            </a>
+          </div>
+
+        {% elif event.status == 'ended' %}
+        <div style="text-align:center; padding:20px 0;">
+          <span class="material-symbols-outlined" style="font-size:28px; color:var(--border-color); display:block; margin-bottom:8px;">sports_score</span>
+          <div style="font-size:14px; font-weight:500; color:var(--text-secondary);">Event ended</div>
+          <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">Registration is closed.</div>
+        </div>
+
+        {% elif event.status == 'cancelled' %}
+        <div style="text-align:center; padding:20px 0;">
+          <span class="material-symbols-outlined" style="font-size:28px; color:#e53e3e; display:block; margin-bottom:8px;">cancel</span>
+          <div style="font-size:14px; font-weight:600; color:#e53e3e;">Event cancelled</div>
+          <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">Registration is closed.</div>
+        </div>
+        {% endif %}
+
+        <!-- Follow organizer -->
+        {% if org and user %}
+        <div style="margin-top:14px;" x-data="followOrg()">
+          <button @click="toggle()" :disabled="loading"
+            style="width:100%; padding:9px; border-radius:9px; border:1.5px solid var(--border-light); background:transparent; color:var(--text-secondary); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; justify-content:center; gap:7px;"
+            :style="following ? 'border-color:var(--cyan); color:#009e95; background:rgba(0,255,243,0.06);' : ''">
+            <span class="material-symbols-outlined" x-text="following ? 'check' : 'notifications'"></span>
+            <span x-text="following ? 'Following' : 'Follow ' + '{{ org.name }}'"></span>
+            <span x-show="followerCount > 0"
+              x-text="'· ' + followerCount + (followerCount !== 1 ? ' followers' : ' follower')"
+              style="font-weight:400; opacity:0.6; font-size:12px;"></span>
+          </button>
+        </div>
+        {% endif %}
+
+        <!-- Add to calendar -->
+        {% if event.status in ('published', 'live') and event.start_datetime %}
+        <div style="margin-top:12px; text-align:center;">
+          <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ event.title | urlencode }}&dates={{ event.start_datetime.strftime('%Y%m%dT%H%M%S') }}/{{ event.end_datetime.strftime('%Y%m%dT%H%M%S') }}&details={{ event.description[:200] | urlencode if event.description else '' }}&location={{ (event.venue_name + ', ' + event.venue_city) | urlencode if event.venue_city else '' }}"
+            target="_blank"
+            style="font-size:12px; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:5px;"
+            onmouseover="this.style.color='var(--text-secondary)'" onmouseout="this.style.color='var(--text-muted)'">
+            <span class="material-symbols-outlined" style="font-size:11px;">event</span> Add to Google Calendar
+          </a>
+        </div>
+        {% endif %}
+
+      </div><!-- /sidebar-tickets -->
+    </div><!-- /ev-sidebar -->
+  </div><!-- /right -->
+
+</div><!-- /ev-layout -->
+
+<style>
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function discussion() {
+  return {
+    msg: '', expanded: false, loading: false, posting: false,
+    comments: [], total: 0, page: 1,
+
+    async init() {
+      await this.load();
+    },
+    async load() {
+      this.loading = true;
+      try {
+        const r = await fetch(`/api/v1/events/{{ event.slug }}/comments?page=${this.page}`, { credentials: 'include' });
+        if (r.ok) {
+          const d = await r.json();
+          this.comments = d.comments || [];
+          this.total = d.total || 0;
+        }
+      } catch(_) {}
+      this.loading = false;
+    },
+    async post() {
+      if (!this.msg.trim() || this.posting) return;
+      this.posting = true;
+      try {
+        const r = await fetch('/api/v1/events/{{ event.slug }}/comments', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body: this.msg.trim(), author_name: '{{ user.full_name if user else "Guest" }}' }),
+        });
+        if (r.status === 401) { window.location.href = '/login?next=/e/{{ event.slug }}'; return; }
+        if (r.ok) {
+          const d = await r.json();
+          this.comments.unshift(d.comment);
+          this.total++;
+          this.msg = ''; this.expanded = false;
+        }
+      } catch(_) {}
+      this.posting = false;
+    },
+    async remove(id) {
+      const r = await fetch(`/api/v1/events/{{ event.slug }}/comments/${id}`, {
+        method: 'DELETE', credentials: 'include',
+      });
+      if (r.ok || r.status === 204) {
+        this.comments = this.comments.filter(c => c.id !== id);
+        this.total--;
+      }
+    },
+    timeAgo(ts) {
+      if (!ts) return '';
+      const secs = Math.floor((Date.now() - new Date(ts)) / 1000);
+      if (secs < 60) return 'just now';
+      if (secs < 3600) return Math.floor(secs/60) + 'm ago';
+      if (secs < 86400) return Math.floor(secs/3600) + 'h ago';
+      return Math.floor(secs/86400) + 'd ago';
+    },
+  };
+}
+
+function ticketSelector(eventSlug) {
+  return {
+    qty: {},
+    get total() {
+      return Object.values(this.qty).reduce((a, b) => a + (parseInt(b) || 0), 0);
+    },
+    inc(id, max) {
+      const cur = parseInt(this.qty[id] || 0);
+      if (max === null || cur < max) this.qty[id] = cur + 1;
+    },
+    dec(id) {
+      const cur = parseInt(this.qty[id] || 0);
+      if (cur > 0) this.qty[id] = cur - 1;
+    },
+    goRegister() {
+      const entries = Object.entries(this.qty).filter(([, v]) => parseInt(v) > 0);
+      if (entries.length === 0) {
+        window.location.href = `/e/${eventSlug}/register`;
+      } else {
+        const params = entries.map(([id, v]) => `t_${id}=${encodeURIComponent(v)}`).join('&');
+        window.location.href = `/e/${eventSlug}/register?${params}`;
+      }
+    },
+  };
+}
+
+function waitlistForm(eventSlug, ticketTypeId) {
+  return {
+    open: false, done: false, submitting: false,
+    name: '', email: '', err: '',
+    async submit() {
+      if (!this.name.trim() || !this.email.trim()) { this.err = 'Name and email are required.'; return; }
+      this.submitting = true; this.err = '';
+      try {
+        const res = await fetch(`/api/v1/events/${eventSlug}/waitlist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ticket_type_id: ticketTypeId, name: this.name.trim(), email: this.email.trim() }),
+        });
+        const d = await res.json();
+        if (res.ok) { this.done = true; this.open = false; }
+        else { this.err = d.detail || 'Could not join waitlist.'; }
+      } catch { this.err = 'Network error — try again.'; }
+      this.submitting = false;
+    },
+  };
+}
+
+function followOrg() {
+  return {
+    following: {{ 'true' if is_following else 'false' }},
+    followerCount: {{ follower_count or 0 }},
+    loading: false,
+    async toggle() {
+      this.loading = true;
+      try {
+        const res = await fetch('/api/v1/organizations/{{ org.slug }}/follow', { method:'POST', credentials:'include' });
+        if (res.status === 401) { window.location.href = '/login?next=/e/{{ event.slug }}'; return; }
+        const j = await res.json();
+        if (j.success) { this.following = j.data.following; this.followerCount = j.data.follower_count; }
+      } catch {}
+      finally { this.loading = false; }
+    },
+  };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}List your business — Heelo Vendors{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<style>
+  body { background: var(--bg-secondary); }
+
+  .vs-nav {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
+  }
+  .vs-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
+  .vs-nav-logo span { color: var(--cyan-dark, #00b3a9); }
+  .vs-nav-right { margin-left: auto; display: flex; gap: 10px; }
+  .vs-btn { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; font-family: inherit; }
+  .vs-btn-outline { border: 1px solid var(--border-light); background: #fff; color: var(--text-primary); }
+
+  .vs-wrap { max-width: 680px; margin: 0 auto; padding: 48px 24px 80px; }
+  .vs-header { margin-bottom: 36px; }
+  .vs-tag { display: inline-block; padding: 4px 12px; background: rgba(0,255,243,0.08); border: 1px solid rgba(0,255,243,0.25); border-radius: 100px; font-size: 11px; font-weight: 700; color: var(--cyan-dark, #00b3a9); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; }
+  .vs-title { font-family: var(--font-serif); font-size: clamp(24px, 5vw, 36px); font-weight: 700; margin-bottom: 10px; line-height: 1.2; }
+  .vs-sub { color: var(--text-muted); font-size: 15px; line-height: 1.6; }
+
+  .vs-card { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: 28px; }
+  .vs-section-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-light); }
+  .vs-group { margin-bottom: 28px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 5px; }
+  .field .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 10px 13px; border: 1.5px solid var(--border-light);
+    border-radius: 9px; font-size: 14px; font-family: inherit; background: #fff;
+    color: var(--text-primary); outline: none; transition: border-color 0.15s; box-sizing: border-box;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--cyan); }
+  .field textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media(max-width:480px) { .field-row { grid-template-columns: 1fr; } }
+
+  .vs-submit-btn {
+    width: 100%; padding: 14px; background: var(--text-primary); color: #fff;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: opacity 0.15s; margin-top: 8px;
+  }
+  .vs-submit-btn:hover { opacity: 0.85; }
+  .vs-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .vs-error { font-size: 13px; color: #dc2626; margin-top: 10px; }
+  .vs-login-notice { font-size: 13.5px; color: var(--text-muted); margin-bottom: 20px; padding: 12px 16px; background: rgba(0,255,243,0.04); border: 1px solid rgba(0,255,243,0.2); border-radius: 10px; }
+  .vs-login-notice a { color: var(--cyan-dark, #00b3a9); text-decoration: none; font-weight: 600; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="vs-nav">
+  <a href="/" class="vs-nav-logo">heelo<span>.</span></a>
+  <div class="vs-nav-right">
+    <a href="/vendors" class="vs-btn vs-btn-outline">Browse vendors</a>
+  </div>
+</nav>
+
+<div class="vs-wrap" x-data="vendorSignup()">
+  <div class="vs-header">
+    <div class="vs-tag">Vendor Marketplace</div>
+    <h1 class="vs-title">List your business on Heelo</h1>
+    <p class="vs-sub">Connect with event organizers across Africa. Create your vendor profile in 2 minutes and start receiving enquiries.</p>
+  </div>
+
+  {% if not user %}
+  <div class="vs-login-notice">
+    You'll need a Heelo account to list your business. <a href="/register?next=/vendor-signup">Create a free account</a> or <a href="/login?next=/vendor-signup">sign in</a>.
+  </div>
+  {% endif %}
+
+  <div class="vs-card">
+    <div class="vs-group">
+      <div class="vs-section-label">Business details</div>
+
+      <div class="field">
+        <label>Business / Brand name <span style="color:#dc2626;">*</span></label>
+        <input type="text" x-model="form.business_name" placeholder="e.g. Lagos Lens Co." required>
+      </div>
+
+      <div class="field">
+        <label>Category <span style="color:#dc2626;">*</span></label>
+        <select x-model="form.category" required>
+          <option value="">Select your primary service…</option>
+          <option value="photography">Photography</option>
+          <option value="videography">Videography</option>
+          <option value="catering">Catering</option>
+          <option value="decorations">Decorations</option>
+          <option value="security">Security</option>
+          <option value="entertainment">Entertainment / DJ</option>
+          <option value="mc">MC / Event Host</option>
+          <option value="venue">Venue</option>
+          <option value="sound_lighting">Sound &amp; Lighting</option>
+          <option value="branding">Branding &amp; Print</option>
+          <option value="logistics">Logistics / Transport</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Tagline</label>
+        <input type="text" x-model="form.tagline" placeholder="e.g. Capturing moments that last forever" maxlength="255">
+        <div class="hint">A short one-liner that appears on your listing card</div>
+      </div>
+
+      <div class="field">
+        <label>Description</label>
+        <textarea x-model="form.description" placeholder="Tell event organizers what you offer, your experience, and why they should choose you…"></textarea>
+      </div>
+    </div>
+
+    <div class="vs-group">
+      <div class="vs-section-label">Location</div>
+      <div class="field-row">
+        <div class="field">
+          <label>City</label>
+          <input type="text" x-model="form.location_city" placeholder="Lagos">
+        </div>
+        <div class="field">
+          <label>Country code</label>
+          <input type="text" x-model="form.location_country" placeholder="NG" maxlength="2" style="text-transform:uppercase;">
+          <div class="hint">2-letter ISO code (NG, GH, KE…)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vs-group">
+      <div class="vs-section-label">Contact &amp; pricing</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Contact email</label>
+          <input type="email" x-model="form.contact_email" placeholder="hello@myvendor.com">
+        </div>
+        <div class="field">
+          <label>Contact phone</label>
+          <input type="tel" x-model="form.contact_phone" placeholder="+234 800 000 0000">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Website</label>
+          <input type="url" x-model="form.website_url" placeholder="https://…">
+        </div>
+        <div class="field">
+          <label>Price range</label>
+          <select x-model="form.price_range">
+            <option value="">Not specified</option>
+            <option value="budget">Budget-friendly</option>
+            <option value="mid">Mid-range</option>
+            <option value="premium">Premium</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div x-show="errorMsg" class="vs-error" x-text="errorMsg"></div>
+
+    <button
+      class="vs-submit-btn"
+      @click="submit()"
+      :disabled="loading || !user"
+      type="button"
+    >
+      <span x-text="loading ? 'Creating profile…' : 'Create vendor profile →'"></span>
+    </button>
+
+    {% if not user %}
+    <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted);">Sign in or create an account first</p>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+const _isLoggedIn = {{ 'true' if user else 'false' }};
+function vendorSignup() {
+  return {
+    user: _isLoggedIn,
+    loading: false,
+    errorMsg: '',
+    form: {
+      business_name: '',
+      category: '',
+      tagline: '',
+      description: '',
+      location_city: '',
+      location_country: '',
+      contact_email: '{{ user.email if user else '' }}',
+      contact_phone: '',
+      website_url: '',
+      price_range: '',
+    },
+    async submit() {
+      if (!this.user) { window.location.href = '/login?next=/vendor-signup'; return; }
+      if (!this.form.business_name || !this.form.category) {
+        this.errorMsg = 'Business name and category are required.'; return;
+      }
+      this.loading = true; this.errorMsg = '';
+      try {
+        const res = await fetch('/api/v1/vendors', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            business_name: this.form.business_name,
+            category: this.form.category,
+            tagline: this.form.tagline || null,
+            description: this.form.description || null,
+            location_city: this.form.location_city || null,
+            location_country: this.form.location_country ? this.form.location_country.toUpperCase() : null,
+            contact_email: this.form.contact_email || null,
+            contact_phone: this.form.contact_phone || null,
+            website_url: this.form.website_url || null,
+            price_range: this.form.price_range || null,
+          }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.error?.message || 'Failed to create profile.');
+        window.location.href = `/vendors/${j.data.slug}`;
+      } catch (e) {
+        this.errorMsg = e.message;
+      } finally {
+        this.loading = false;
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

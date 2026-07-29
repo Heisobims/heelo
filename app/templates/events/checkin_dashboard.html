@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Check-in · {{ event.title }} — Heelo{% endblock %}
+
+{% block head_extra %}
+<style>
+  .ci-layout { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+  .ci-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .ci-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem; }
+  .ci-sub { font-size: 0.875rem; color: var(--text-secondary); }
+  .ci-actions { display: flex; gap: 0.75rem; align-items: center; flex-shrink: 0; }
+
+  /* ── Stat cards ──────────────────────────────────────────────────────────── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  @media (max-width: 700px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; }
+  .stat-label { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.375rem; font-weight: 500; }
+  .stat-value { font-size: 2rem; font-weight: 800; line-height: 1; }
+  .stat-sub { font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.25rem; }
+  .stat-card.highlight { border-color: var(--cyan); background: rgba(0,255,243,0.04); }
+  .stat-card.highlight .stat-value { color: var(--cyan); }
+
+  /* ── Progress bar ────────────────────────────────────────────────────────── */
+  .progress-wrap { background: var(--surface-alt, #f3f3f3); border-radius: 100px; height: 8px; overflow: hidden; margin-top: 0.75rem; }
+  .progress-bar { height: 100%; background: var(--cyan); border-radius: 100px; transition: width 600ms ease; }
+
+  /* ── Table ───────────────────────────────────────────────────────────────── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.25rem; border-bottom: 1px solid var(--border); gap: 1rem; flex-wrap: wrap; }
+  .card-title { font-weight: 600; font-size: 1rem; margin: 0; }
+
+  .ci-table { width: 100%; border-collapse: collapse; }
+  .ci-table th { padding: 0.625rem 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-weight: 600; }
+  .ci-table td { padding: 0.875rem 1rem; font-size: 0.9rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .ci-table tr:last-child td { border-bottom: none; }
+  .ci-table tr:hover td { background: var(--surface-alt, rgba(0,0,0,0.02)); }
+  .ci-table .name { font-weight: 600; }
+  .ci-table .meta { font-size: 0.8125rem; color: var(--text-secondary); }
+  .empty-row td { text-align: center; padding: 2.5rem; color: var(--text-secondary); font-size: 0.9375rem; }
+
+  /* ── Badges ──────────────────────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600; }
+  .badge-in { background: rgba(0,255,243,0.12); color: var(--cyan); }
+  .badge-conf { background: rgba(34,197,94,0.12); color: #16a34a; }
+  .badge-pend { background: var(--surface-alt, #f5f5f5); color: var(--text-secondary); }
+
+  /* ── Search bar ──────────────────────────────────────────────────────────── */
+  .search-wrap { position: relative; }
+  .search-input { padding: 0.5rem 0.875rem 0.5rem 2.125rem; border-radius: 8px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.9rem; width: 220px; outline: none; transition: border-color 150ms; }
+  .search-input:focus { border-color: var(--cyan); }
+  .search-icon { position: absolute; left: 0.625rem; top: 50%; transform: translateY(-50%); opacity: 0.4; }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────────── */
+  .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5625rem 1rem; border-radius: 9px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; text-decoration: none; transition: opacity 150ms; }
+  .btn-primary { background: var(--cyan); color: #000; }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--text-secondary); }
+  .btn-ghost { background: transparent; color: var(--text-secondary); font-size: 0.8125rem; border: none; cursor: pointer; }
+  .btn-ghost:hover { color: var(--text); }
+
+  /* ── Loading spinner ─────────────────────────────────────────────────────── */
+  .spinner { width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Undo action ─────────────────────────────────────────────────────────── */
+  .undo-btn { padding: 0.25rem 0.625rem; border-radius: 6px; border: 1px solid var(--border); background: transparent; font-size: 0.75rem; color: var(--text-secondary); cursor: pointer; }
+  .undo-btn:hover { border-color: var(--text-secondary); color: var(--text); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ci-layout" x-data="checkInDashboard()">
+  <!-- Header -->
+  <div class="ci-header">
+    <div>
+      <h1 class="ci-title">Check-in</h1>
+      <p class="ci-sub">{{ event.title }} · <a href="/org/{{ org.slug }}/events/{{ event.id }}" style="color:var(--text-secondary);">Back to event</a></p>
+    </div>
+    <div class="ci-actions">
+      <a href="/org/{{ org.slug }}/events/{{ event.id }}/kiosk" target="_blank" class="btn btn-primary">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Open Kiosk
+      </a>
+    </div>
+  </div>
+
+  <!-- Stat cards — live updated via Alpine polling -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Tickets</div>
+      <div class="stat-value" x-text="stats.total ?? '—'"></div>
+      <div class="stat-sub">all registrations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Confirmed</div>
+      <div class="stat-value" x-text="stats.confirmed ?? '—'"></div>
+      <div class="stat-sub">awaiting check-in</div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-label">Checked In</div>
+      <div class="stat-value" x-text="stats.checked_in ?? '—'"></div>
+      <div class="stat-sub">already arrived</div>
+      <div class="progress-wrap" style="margin-top: 0.625rem;">
+        <div class="progress-bar" :style="{ width: (stats.percent_checked_in || 0) + '%' }"></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Arrival Rate</div>
+      <div class="stat-value" x-text="(stats.percent_checked_in ?? '—') + (stats.percent_checked_in != null ? '%' : '')"></div>
+      <div class="stat-sub">of all tickets</div>
+    </div>
+  </div>
+
+  <!-- Recent check-ins -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Recent Check-ins</h2>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <span x-show="statsLoading" class="spinner" style="opacity:0.4;"></span>
+        <div class="search-wrap">
+          <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input
+            type="search"
+            class="search-input"
+            placeholder="Search…"
+            x-model="searchQuery"
+            @input.debounce.350ms="runSearch()"
+          />
+        </div>
+      </div>
+    </div>
+    <div style="overflow-x: auto;">
+      <table class="ci-table">
+        <thead>
+          <tr>
+            <th>Attendee</th>
+            <th>Ticket</th>
+            <th>Status</th>
+            <th>Time</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-if="displayRows.length === 0">
+            <tr class="empty-row"><td colspan="5" x-text="searchQuery ? 'No matches.' : 'No check-ins yet. Open the kiosk to start scanning.'"></td></tr>
+          </template>
+          <template x-for="r in displayRows" :key="r.registration_id">
+            <tr>
+              <td>
+                <div class="name" x-text="r.attendee_name"></div>
+                <div class="meta" x-text="r.attendee_email"></div>
+              </td>
+              <td x-text="r.ticket_type || '—'"></td>
+              <td>
+                <span
+                  class="badge"
+                  :class="r.status === 'checked_in' ? 'badge-in' : r.status === 'confirmed' ? 'badge-conf' : 'badge-pend'"
+                  x-text="r.status === 'checked_in' ? '✓ Checked In' : r.status === 'confirmed' ? 'Confirmed' : r.status"
+                ></span>
+              </td>
+              <td x-text="r.checked_in_at ? fmtTime(r.checked_in_at) : '—'"></td>
+              <td>
+                <template x-if="r.status === 'confirmed'">
+                  <button class="btn btn-outline" style="font-size:0.8125rem;padding:0.3rem 0.75rem;" @click="manualCheckIn(r)">Check in</button>
+                </template>
+                <template x-if="r.status === 'checked_in'">
+                  <button class="undo-btn" @click="undoCheckIn(r)">Undo</button>
+                </template>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const _orgSlug = {{ org.slug | tojson }};
+const _eventId = {{ event.id | string | tojson }};
+
+function checkInDashboard() {
+  return {
+    stats: {},
+    recentRows: [],
+    searchRows: [],
+    searchQuery: '',
+    statsLoading: false,
+
+    get displayRows() {
+      return this.searchQuery.trim().length >= 2 ? this.searchRows : this.recentRows;
+    },
+
+    async init() {
+      await this.refreshStats();
+      await this.refreshRecent();
+      setInterval(() => { this.refreshStats(); this.refreshRecent(); }, 10000);
+    },
+
+    async refreshStats() {
+      this.statsLoading = true;
+      try {
+        const r = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/check-in/stats`,
+          { credentials: 'include' }
+        );
+        const j = await r.json();
+        if (j.success) this.stats = j.data;
+      } catch {}
+      this.statsLoading = false;
+    },
+
+    async refreshRecent() {
+      try {
+        const r = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/check-in/recent`,
+          { credentials: 'include' }
+        );
+        const j = await r.json();
+        if (j.success) this.recentRows = j.data;
+      } catch {}
+    },
+
+    async runSearch() {
+      const q = this.searchQuery.trim();
+      if (q.length < 2) { this.searchRows = []; return; }
+      try {
+        const r = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/check-in/search?q=${encodeURIComponent(q)}`,
+          { credentials: 'include' }
+        );
+        const j = await r.json();
+        if (j.success) this.searchRows = j.data;
+      } catch {}
+    },
+
+    async manualCheckIn(row) {
+      try {
+        const r = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/check-in`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ registration_id: row.registration_id }),
+          }
+        );
+        const j = await r.json();
+        if (r.ok && j.success) {
+          row.status = 'checked_in';
+          row.checked_in_at = j.data.checked_in_at;
+          this.stats.checked_in = (this.stats.checked_in || 0) + 1;
+          this.stats.confirmed = Math.max((this.stats.confirmed || 1) - 1, 0);
+          this.stats.percent_checked_in = this.stats.total
+            ? parseFloat(((this.stats.checked_in / this.stats.total) * 100).toFixed(1))
+            : 0;
+          await this.refreshRecent();
+        } else if (r.status === 409) {
+          row.status = 'checked_in';
+        } else {
+          alert(j.error?.message || 'Check-in failed.');
+        }
+      } catch {
+        alert('Network error.');
+      }
+    },
+
+    async undoCheckIn(row) {
+      if (!confirm(`Undo check-in for ${row.attendee_name}?`)) return;
+      try {
+        const r = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/check-in/${row.registration_id}/undo`,
+          { method: 'POST', credentials: 'include' }
+        );
+        const j = await r.json();
+        if (r.ok && j.success) {
+          row.status = 'confirmed';
+          row.checked_in_at = null;
+          this.stats.checked_in = Math.max((this.stats.checked_in || 1) - 1, 0);
+          this.stats.confirmed = (this.stats.confirmed || 0) + 1;
+          this.stats.percent_checked_in = this.stats.total
+            ? parseFloat(((this.stats.checked_in / this.stats.total) * 100).toFixed(1))
+            : 0;
+        } else {
+          alert(j.error?.message || 'Failed to undo.');
+        }
+      } catch {
+        alert('Network error.');
+      }
+    },
+
+    fmtTime(iso) {
+      try {
+        return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch { return '—'; }
+    },
+  };
+}
+</script>
+{% endblock %}

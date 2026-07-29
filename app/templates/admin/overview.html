@@ -1,0 +1,80 @@
+{% extends "admin/layout.html" %}
+{% block title %}Overview{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:1.4rem;font-weight:700;">Platform Overview</h1>
+  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">Live snapshot of the Heelo platform.</p>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Users</div>
+    <div class="stat-value">{{ "{:,}".format(stats.total_users) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Organizations</div>
+    <div class="stat-value">{{ "{:,}".format(stats.total_orgs) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Events</div>
+    <div class="stat-value">{{ "{:,}".format(stats.total_events) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Platform Net Revenue</div>
+    <div class="stat-value" style="color:var(--admin-accent);">₦{{ "{:,.0f}".format(stats.total_net_revenue) }}</div>
+  </div>
+</div>
+
+<div class="section-card">
+  <div class="section-header">
+    <span class="section-title">Recent Organizations</span>
+    <a href="/admin/organizations" style="color:var(--admin-accent);font-size:0.8rem;text-decoration:none;">View all &rarr;</a>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th><th>Owner</th><th>Plan</th><th>Events</th><th>Revenue</th><th>Status</th><th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in recent_orgs %}
+      <tr>
+        <td><a href="/admin/organizations/{{ o.id }}">{{ o.name }}</a><br><span style="color:var(--text-muted,#71717a);font-size:0.72rem;">{{ o.slug }}</span></td>
+        <td>{{ o.owner_email }}</td>
+        <td><span class="badge badge-plan-{{ o.plan }}">{{ o.plan }}</span></td>
+        <td>{{ o.event_count }}</td>
+        <td>₦{{ "{:,.0f}".format(o.net_revenue) }}</td>
+        <td><span class="badge {{ 'badge-active' if o.is_active else 'badge-suspended' }}">{{ 'Active' if o.is_active else 'Suspended' }}</span></td>
+        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">{{ o.created_at[:10] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section-card">
+  <div class="section-header">
+    <span class="section-title">Recent Users</span>
+    <a href="/admin/users" style="color:var(--admin-accent);font-size:0.8rem;text-decoration:none;">View all &rarr;</a>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Name</th><th>Email</th><th>Role</th><th>Verified</th><th>Joined</th></tr>
+    </thead>
+    <tbody>
+      {% for u in recent_users %}
+      <tr>
+        <td><a href="/admin/users/{{ u.id }}">{{ u.full_name }}</a></td>
+        <td>{{ u.email }}</td>
+        <td>
+          {% if u.role == 'admin' %}<span class="badge badge-admin">admin</span>{% else %}<span style="color:var(--text-muted,#71717a);">{{ u.role }}</span>{% endif %}
+        </td>
+        <td>{% if u.is_verified %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>{% else %}—{% endif %}</td>
+        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,532 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Analytics · {{ event.title }} — Heelo{% endblock %}
+
+{% block head %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  .an-wrap { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+  /* ── Header ───────────────────────────────────────────────────────────────── */
+  .an-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+  .an-breadcrumb { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.375rem; display: flex; align-items: center; gap: 0.375rem; }
+  .an-breadcrumb a { color: var(--text-secondary); text-decoration: none; }
+  .an-breadcrumb a:hover { color: var(--text); }
+  .an-breadcrumb-sep { opacity: 0.4; }
+  .an-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.5rem; font-weight: 700; margin: 0; line-height: 1.2; }
+  .an-subtitle { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+  .an-live-badge { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600; background: rgba(34,197,94,0.1); color: #16a34a; border: 1px solid rgba(34,197,94,0.2); }
+  .an-live-badge.disconnected { background: rgba(239,68,68,0.1); color: #dc2626; border-color: rgba(239,68,68,0.2); }
+  .an-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #16a34a; animation: pulse-dot 2s ease-in-out infinite; }
+  .an-live-badge.disconnected .an-live-dot { background: #dc2626; animation: none; }
+  @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* ── Stat cards ───────────────────────────────────────────────────────────── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 500px) { .stat-grid { grid-template-columns: 1fr; } }
+
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; position: relative; overflow: hidden; }
+  .stat-label { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 0.375rem; letter-spacing: 0.02em; }
+  .stat-value { font-size: 2rem; font-weight: 800; line-height: 1.1; transition: color 300ms; }
+  .stat-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+  .stat-card.highlight { border-color: var(--cyan); background: rgba(0,255,243,0.03); }
+  .stat-card.highlight .stat-value { color: var(--cyan); }
+  .stat-updating .stat-value { color: var(--cyan); }
+
+  /* ── Section cards ────────────────────────────────────────────────────────── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 1.125rem 1.25rem; border-bottom: 1px solid var(--border); }
+  .card-title { font-weight: 700; font-size: 0.9375rem; margin: 0; }
+  .card-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.125rem; }
+  .card-body { padding: 1.25rem; }
+
+  /* ── Chart container ──────────────────────────────────────────────────────── */
+  .chart-wrap { position: relative; height: 280px; }
+
+  /* ── Two column layout ────────────────────────────────────────────────────── */
+  .an-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 800px) { .an-cols { grid-template-columns: 1fr; } }
+
+  /* ── Ticket breakdown ─────────────────────────────────────────────────────── */
+  .tt-row { margin-bottom: 1.125rem; }
+  .tt-row:last-child { margin-bottom: 0; }
+  .tt-row-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; gap: 0.5rem; }
+  .tt-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tt-meta { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; flex-shrink: 0; }
+  .tt-bar-wrap { background: var(--surface-alt, #f0f0f0); border-radius: 100px; height: 8px; overflow: hidden; }
+  .tt-bar { height: 100%; border-radius: 100px; background: var(--cyan); transition: width 600ms ease; }
+  .tt-bar.vip { background: #a855f7; }
+  .tt-bar.free { background: #22c55e; }
+  .tt-bar.early-bird { background: #f59e0b; }
+  .tt-stats { display: flex; gap: 1rem; margin-top: 0.375rem; font-size: 0.75rem; color: var(--text-secondary); }
+
+  /* ── Tables ───────────────────────────────────────────────────────────────── */
+  .an-table { width: 100%; border-collapse: collapse; }
+  .an-table th { padding: 0.625rem 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-weight: 600; }
+  .an-table td { padding: 0.875rem 1rem; font-size: 0.875rem; border-bottom: 1px solid var(--border); }
+  .an-table tr:last-child td { border-bottom: none; }
+  .an-table tr:hover td { background: var(--surface-alt, rgba(0,0,0,0.015)); }
+  .td-mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem; }
+  .td-source { font-weight: 600; }
+  .td-dim { color: var(--text-secondary); }
+
+  /* ── Badges ───────────────────────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; padding: 0.175rem 0.5rem; border-radius: 100px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; }
+  .badge-vip { background: rgba(168,85,247,0.1); color: #9333ea; }
+  .badge-free { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .badge-general { background: rgba(0,255,243,0.1); color: var(--cyan-dark, #00b3a9); }
+  .badge-early { background: rgba(245,158,11,0.1); color: #b45309; }
+  .badge-active { background: rgba(34,197,94,0.1); color: #16a34a; }
+  .badge-inactive { background: var(--surface-alt, #f0f0f0); color: var(--text-secondary); }
+
+  /* ── Empty state ──────────────────────────────────────────────────────────── */
+  .empty-state { text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary); }
+  .empty-state p { font-size: 0.9rem; margin: 0; }
+
+  /* ── Last updated ─────────────────────────────────────────────────────────── */
+  .an-updated { font-size: 0.75rem; color: var(--text-secondary); }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="an-wrap">
+
+  <!-- ── Header ────────────────────────────────────────────────────────────── -->
+  <div class="an-header">
+    <div>
+      <div class="an-breadcrumb">
+        <a href="/org/{{ org.slug }}">{{ org.name }}</a>
+        <span class="an-breadcrumb-sep">›</span>
+        <a href="/org/{{ org.slug }}/events">Events</a>
+        <span class="an-breadcrumb-sep">›</span>
+        <a href="/org/{{ org.slug }}/events/{{ event.id }}">{{ event.title | truncate(40) }}</a>
+        <span class="an-breadcrumb-sep">›</span>
+        <span>Analytics</span>
+      </div>
+      <h1 class="an-title">Analytics</h1>
+      <div class="an-subtitle">{{ event.title }}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem;flex-shrink:0;padding-top:1.5rem;flex-wrap:wrap;">
+      <span class="an-live-badge" id="liveBadge">
+        <span class="an-live-dot"></span>
+        <span id="liveBadgeText">Live</span>
+      </span>
+      <span class="an-updated" id="lastUpdated"></span>
+      <button id="aiInsightsBtn" onclick="loadAiInsights()" style="display:inline-flex;align-items:center;gap:0.375rem;padding:0.375rem 0.875rem;border-radius:8px;border:1.5px solid var(--cyan);background:rgba(0,255,243,0.06);color:var(--cyan-dark,#00b3a9);font-size:0.8125rem;font-weight:600;cursor:pointer;">
+        <span class="material-symbols-outlined">auto_awesome</span> AI Insights
+      </button>
+    </div>
+  </div>
+
+  <!-- ── AI Insights panel ─────────────────────────────────────────────────── -->
+  <div id="aiInsightsPanel" style="display:none;background:linear-gradient(135deg,rgba(0,255,243,0.04) 0%,rgba(124,58,237,0.04) 100%);border:1px solid var(--cyan);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.875rem;">
+      <span class="material-symbols-outlined" style="color:var(--cyan-dark,#00b3a9);">auto_awesome</span>
+      <span style="font-weight:700;font-size:0.9375rem;">AI Insights</span>
+      <span style="font-size:0.75rem;color:var(--text-secondary);margin-left:auto;">Powered by Claude</span>
+    </div>
+    <div id="aiInsightsContent" style="font-size:0.9rem;line-height:1.7;color:var(--text);white-space:pre-line;"></div>
+  </div>
+
+  <!-- ── Stat cards ────────────────────────────────────────────────────────── -->
+  <div class="stat-grid">
+    <div class="stat-card highlight">
+      <div class="stat-label">Total Registrations</div>
+      <div class="stat-value" id="statRegistrations">{{ summary.total_registrations }}</div>
+      <div class="stat-sub">
+        {% if summary.pending_registrations > 0 %}
+          {{ summary.pending_registrations }} pending payment
+        {% elif summary.total_registrations == 0 %}
+          No registrations yet
+        {% else %}
+          {{ summary.total_confirmed }} confirmed · {{ summary.total_checked_in }} checked in
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Net Revenue</div>
+      <div class="stat-value" id="statRevenue">{{ currency }} {{ "{:,.0f}".format(summary.net_revenue) }}</div>
+      <div class="stat-sub">
+        {% if summary.total_orders > 0 %}
+          {{ summary.total_orders }} paid order{{ 's' if summary.total_orders != 1 else '' }}
+        {% else %}
+          No paid orders yet
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Check-in Rate</div>
+      <div class="stat-value" id="statCheckinRate">{{ summary.checkin_rate }}%</div>
+      <div class="stat-sub">
+        {{ summary.total_checked_in }} of {{ summary.total_registrations }} attendees
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Avg Order Value</div>
+      <div class="stat-value" id="statAvgOrder">{{ currency }} {{ "{:,.0f}".format(summary.avg_order_value) }}</div>
+      <div class="stat-sub">
+        {% if summary.total_discounts > 0 %}
+          {{ currency }} {{ "{:,.0f}".format(summary.total_discounts) }} saved via promos
+        {% else %}
+          Across all paid orders
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sales / Registrations over time chart ─────────────────────────────── -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Registrations Over Time</div>
+        <div class="card-sub">Daily confirmed registrations and revenue</div>
+      </div>
+      <div style="display:flex;gap:0.75rem;font-size:0.8rem;color:var(--text-secondary);align-items:center;">
+        <span style="display:flex;align-items:center;gap:0.3rem;">
+          <span style="width:10px;height:3px;background:var(--cyan);border-radius:2px;display:inline-block;"></span>
+          Registrations
+        </span>
+        <span style="display:flex;align-items:center;gap:0.3rem;">
+          <span style="width:10px;height:3px;background:#a855f7;border-radius:2px;display:inline-block;"></span>
+          Revenue
+        </span>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrap">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Two column: tickets + UTM ─────────────────────────────────────────── -->
+  <div class="an-cols">
+
+    <!-- Ticket breakdown -->
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Ticket Breakdown</div>
+          <div class="card-sub">Sales per ticket type</div>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if ticket_breakdown %}
+          {% for tt in ticket_breakdown %}
+          <div class="tt-row">
+            <div class="tt-row-header">
+              <span class="tt-name">
+                {{ tt.name }}
+                {% if tt.tier == 'vip' %}<span class="badge badge-vip" style="margin-left:0.375rem;">VIP</span>
+                {% elif tt.tier == 'free' or tt.is_free %}<span class="badge badge-free" style="margin-left:0.375rem;">Free</span>
+                {% elif tt.tier == 'early_bird' %}<span class="badge badge-early" style="margin-left:0.375rem;">Early Bird</span>
+                {% endif %}
+              </span>
+              <span class="tt-meta">
+                {{ tt.quantity_sold }}{% if tt.capacity %}/{{ tt.capacity }}{% endif %}
+                {% if tt.sold_pct is not none %} · {{ tt.sold_pct }}%{% endif %}
+              </span>
+            </div>
+            <div class="tt-bar-wrap">
+              <div class="tt-bar {% if tt.tier == 'vip' %}vip{% elif tt.is_free %}free{% elif tt.tier == 'early_bird' %}early-bird{% endif %}"
+                   style="width: {{ tt.sold_pct if tt.sold_pct is not none else (0 if tt.quantity_sold == 0 else 100) }}%;"></div>
+            </div>
+            <div class="tt-stats">
+              <span>{{ tt.quantity_sold }} sold</span>
+              {% if tt.quantity_reserved > 0 %}<span>{{ tt.quantity_reserved }} reserved</span>{% endif %}
+              {% if not tt.is_free %}<span>{{ tt.currency }} {{ "{:,.0f}".format(tt.revenue) }} revenue</span>{% endif %}
+              {% if tt.available is not none %}<span>{{ tt.available }} remaining</span>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state"><p>No ticket types created yet.</p></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Traffic sources -->
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Traffic Sources</div>
+          <div class="card-sub">UTM source breakdown for paid orders</div>
+        </div>
+      </div>
+      {% if utm_breakdown %}
+      <table class="an-table">
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Medium</th>
+            <th style="text-align:right;">Orders</th>
+            <th style="text-align:right;">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in utm_breakdown %}
+          <tr>
+            <td class="td-source">{{ row.source }}</td>
+            <td class="td-dim td-mono">{{ row.medium }}</td>
+            <td style="text-align:right;">{{ row.orders }}</td>
+            <td style="text-align:right;" class="td-mono">
+              {% if row.revenue > 0 %}{{ currency }} {{ "{:,.0f}".format(row.revenue) }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <div class="empty-state"><p>No paid orders with UTM data yet.</p></div>
+      {% endif %}
+    </div>
+
+  </div><!-- /.an-cols -->
+
+  <!-- ── Promo codes ────────────────────────────────────────────────────────── -->
+  {% if promos %}
+  <div class="card" style="margin-top:1.5rem;">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Promo Codes</div>
+        <div class="card-sub">Usage stats for this event's discount codes</div>
+      </div>
+    </div>
+    <table class="an-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Type</th>
+          <th>Value</th>
+          <th style="text-align:right;">Used</th>
+          <th style="text-align:right;">Limit</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in promos %}
+        <tr>
+          <td class="td-mono" style="font-weight:600;">{{ p.code }}</td>
+          <td class="td-dim">{{ 'Percent' if p.discount_type == 'percent' else 'Fixed' }}</td>
+          <td class="td-mono">
+            {% if p.discount_type == 'percent' %}{{ p.discount_value | int }}%
+            {% else %}{{ currency }} {{ "{:,.0f}".format(p.discount_value) }}
+            {% endif %}
+          </td>
+          <td style="text-align:right;font-weight:600;">{{ p.used_count }}</td>
+          <td style="text-align:right;" class="td-dim">{{ p.max_uses if p.max_uses else '∞' }}</td>
+          <td>
+            <span class="badge {% if p.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+              {{ 'Active' if p.is_active else 'Inactive' }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+</div><!-- /.an-wrap -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  // ── Config ──────────────────────────────────────────────────────────────────
+  const SLUG      = {{ org.slug | tojson }};
+  const EVENT_ID  = {{ event.id | string | tojson }};
+  const CURRENCY  = {{ currency | tojson }};
+  const STREAM_URL = `/api/v1/organizations/${SLUG}/events/${EVENT_ID}/analytics/stream`;
+
+  // ── Number helpers ──────────────────────────────────────────────────────────
+  const numFmt = new Intl.NumberFormat('en-NG', { maximumFractionDigits: 0 });
+  function fmtRevenue(v) { return `${CURRENCY} ${numFmt.format(v)}`; }
+  function fmtPct(v) { return `${v}%`; }
+
+  // ── Live SSE ────────────────────────────────────────────────────────────────
+  const badge      = document.getElementById('liveBadge');
+  const badgeText  = document.getElementById('liveBadgeText');
+  const lastUpd    = document.getElementById('lastUpdated');
+  const statReg    = document.getElementById('statRegistrations');
+  const statRev    = document.getElementById('statRevenue');
+  const statCI     = document.getElementById('statCheckinRate');
+
+  function setLive(connected) {
+    if (connected) {
+      badge.classList.remove('disconnected');
+      badgeText.textContent = 'Live';
+    } else {
+      badge.classList.add('disconnected');
+      badgeText.textContent = 'Disconnected';
+    }
+  }
+
+  function flashUpdate(el) {
+    el.closest('.stat-card').classList.add('stat-updating');
+    setTimeout(() => el.closest('.stat-card').classList.remove('stat-updating'), 800);
+  }
+
+  let es;
+  function connectSSE() {
+    es = new EventSource(STREAM_URL);
+
+    es.onopen = () => setLive(true);
+
+    es.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        statReg.textContent = numFmt.format(d.total_registrations);
+        statRev.textContent = fmtRevenue(d.net_revenue);
+        statCI.textContent  = fmtPct(d.checkin_rate);
+        flashUpdate(statReg);
+        const t = new Date(d.ts);
+        lastUpd.textContent = `Updated ${t.toLocaleTimeString()}`;
+      } catch {}
+    };
+
+    es.onerror = () => {
+      setLive(false);
+      es.close();
+      // Reconnect after 15 s
+      setTimeout(connectSSE, 15000);
+    };
+  }
+
+  connectSSE();
+
+  // ── Chart.js — Sales over time ──────────────────────────────────────────────
+  const salesRaw = {{ sales_json | safe }};
+  const regRaw   = {{ reg_over_time_json | safe }};
+
+  // Merge all dates from both datasets
+  const allDates = [...new Set([
+    ...salesRaw.map(d => d.date),
+    ...regRaw.map(d => d.date),
+  ])].sort();
+
+  const salesMap = Object.fromEntries(salesRaw.map(d => [d.date, d]));
+  const regMap   = Object.fromEntries(regRaw.map(d => [d.date, d]));
+
+  const labels      = allDates;
+  const regCounts   = allDates.map(d => regMap[d]?.count   ?? 0);
+  const revenues    = allDates.map(d => salesMap[d]?.revenue ?? 0);
+
+  const ctx = document.getElementById('salesChart');
+  if (ctx && allDates.length > 0) {
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Registrations',
+            data: regCounts,
+            borderColor: '#00FFF3',
+            backgroundColor: 'rgba(0,255,243,0.07)',
+            borderWidth: 2.5,
+            pointRadius: allDates.length > 30 ? 0 : 3,
+            pointHoverRadius: 5,
+            fill: true,
+            tension: 0.4,
+            yAxisID: 'yLeft',
+          },
+          {
+            label: 'Revenue',
+            data: revenues,
+            borderColor: '#a855f7',
+            backgroundColor: 'rgba(168,85,247,0.06)',
+            borderWidth: 2,
+            pointRadius: allDates.length > 30 ? 0 : 3,
+            pointHoverRadius: 5,
+            fill: true,
+            tension: 0.4,
+            yAxisID: 'yRight',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                if (ctx.datasetIndex === 1) {
+                  return ` Revenue: ${fmtRevenue(ctx.raw)}`;
+                }
+                return ` Registrations: ${ctx.raw}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11 }, maxTicksLimit: 10, color: '#888' },
+          },
+          yLeft: {
+            position: 'left',
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { font: { size: 11 }, precision: 0, color: '#888' },
+          },
+          yRight: {
+            position: 'right',
+            beginAtZero: true,
+            grid: { drawOnChartArea: false },
+            ticks: {
+              font: { size: 11 },
+              color: '#888',
+              callback: (v) => fmtRevenue(v),
+            },
+          },
+        },
+      },
+    });
+  } else if (ctx) {
+    ctx.closest('.chart-wrap').innerHTML =
+      '<div class="empty-state" style="padding:4rem 1rem;"><p>No data yet — registrations will appear here once your event goes live.</p></div>';
+  }
+})();
+
+// ── AI Insights ──────────────────────────────────────────────────────────────
+async function loadAiInsights() {
+  const btn = document.getElementById('aiInsightsBtn');
+  const panel = document.getElementById('aiInsightsPanel');
+  const content = document.getElementById('aiInsightsContent');
+  if (!btn || !panel || !content) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="material-symbols-outlined">progress_activity</span> Analyzing…';
+  panel.style.display = 'block';
+  content.textContent = 'Generating insights…';
+
+  try {
+    const res = await fetch(
+      '/api/v1/organizations/{{ org.slug }}/events/{{ event.id }}/ai/insights',
+      { method: 'POST', credentials: 'include' }
+    );
+    const j = await res.json();
+    if (j.success && j.data.insights) {
+      content.textContent = j.data.insights;
+      btn.innerHTML = '<span class="material-symbols-outlined">auto_awesome</span> Refresh Insights';
+    } else {
+      content.textContent = 'Could not generate insights. Please try again.';
+      btn.innerHTML = '<span class="material-symbols-outlined">auto_awesome</span> AI Insights';
+    }
+  } catch {
+    content.textContent = 'Network error. Please try again.';
+    btn.innerHTML = '<span class="material-symbols-outlined">auto_awesome</span> AI Insights';
+  }
+  btn.disabled = false;
+}
+</script>
+{% endblock %}

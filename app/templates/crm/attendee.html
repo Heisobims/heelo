@@ -1,0 +1,202 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}{{ summary.name }} · Attendee — Heelo{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .att-wrap { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+  .back-link { display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.875rem; color: var(--text-secondary); text-decoration: none; margin-bottom: 1.5rem; transition: color 150ms; }
+  .back-link:hover { color: var(--text); }
+
+  /* ── Profile card ────────────────────────────────────────────────────────── */
+  .profile-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 1.5rem; margin-bottom: 1.5rem;
+    display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap;
+  }
+  .profile-avatar {
+    width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--cyan) 0%, #7c3aed 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.375rem; font-weight: 800; color: #000;
+  }
+  .profile-info { flex: 1; min-width: 0; }
+  .profile-name { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.375rem; font-weight: 700; margin: 0 0 0.25rem; }
+  .profile-meta { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; font-size: 0.875rem; color: var(--text-secondary); }
+  .profile-meta span { display: flex; align-items: center; gap: 0.375rem; }
+
+  /* ── Stat chips ──────────────────────────────────────────────────────────── */
+  .stat-chips { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .stat-chip {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem 1.25rem; flex: 1; min-width: 140px;
+  }
+  .chip-val { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
+  .chip-lbl { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-top: 0.25rem; }
+
+  /* ── History table ───────────────────────────────────────────────────────── */
+  .section-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.125rem; font-weight: 700; margin: 0 0 1rem; }
+  .hist-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; overflow-x: auto; }
+  .hist-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .hist-table th {
+    text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .hist-table td { padding: 0.875rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .hist-table tbody tr:last-child td { border-bottom: none; }
+  .hist-table tbody tr:hover { background: var(--surface-alt, rgba(0,0,0,0.02)); }
+
+  .ev-title { font-weight: 600; }
+  .ev-date { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem; }
+  .checkin-time { font-size: 0.8rem; color: var(--cyan-dark,#00b3a9); margin-top: 0.15rem; }
+  .amount-cell { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .free-label { color: var(--text-secondary); font-size: 0.8rem; }
+
+  /* ── Badges ──────────────────────────────────────────────────────────────── */
+  .badge { display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+  .badge-confirmed   { background: rgba(34,197,94,0.1);   color: #16a34a; }
+  .badge-checked_in  { background: rgba(0,255,243,0.1);   color: var(--cyan-dark,#00b3a9); }
+  .badge-pending     { background: rgba(245,158,11,0.1);  color: #b45309; }
+  .badge-cancelled   { background: var(--surface-alt,#f0f0f0); color: var(--text-secondary); }
+  .badge-refunded    { background: rgba(239,68,68,0.1);   color: #dc2626; }
+  .badge-transferred { background: rgba(168,85,247,0.1);  color: #9333ea; }
+
+  /* ── Action strip ────────────────────────────────────────────────────────── */
+  .action-strip { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+  .act-btn { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.5rem 1rem; border: 1.5px solid var(--border); border-radius: 9px; font-size: 0.8125rem; font-weight: 600; text-decoration: none; color: var(--text); background: transparent; cursor: pointer; transition: border-color 150ms; }
+  .act-btn:hover { border-color: var(--text-secondary); }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="att-wrap">
+
+  <a href="/org/{{ org.slug }}/registrations" class="back-link">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to Registrations
+  </a>
+
+  <!-- Profile card -->
+  <div class="profile-card">
+    <div class="profile-avatar">{{ summary.name[0] | upper }}</div>
+    <div class="profile-info">
+      <h1 class="profile-name">{{ summary.name }}</h1>
+      <div class="profile-meta">
+        <span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          {{ summary.email }}
+        </span>
+        {% if summary.phone %}
+        <span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l1.27-.9a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          {{ summary.phone }}
+        </span>
+        {% endif %}
+        {% if summary.first_seen %}
+        <span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          First seen {{ summary.first_seen.strftime('%b %d, %Y') }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="action-strip">
+      <a
+        href="mailto:{{ summary.email }}"
+        class="act-btn"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Email
+      </a>
+      <a
+        href="/org/{{ org.slug }}/campaigns/new?prefill_email={{ summary.email }}"
+        class="act-btn"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send Campaign
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stat-chips">
+    <div class="stat-chip">
+      <div class="chip-val">{{ summary.events_attended }}</div>
+      <div class="chip-lbl">Events Attended</div>
+    </div>
+    <div class="stat-chip">
+      <div class="chip-val">{{ summary.total_registrations }}</div>
+      <div class="chip-lbl">Total Registrations</div>
+    </div>
+    <div class="stat-chip">
+      {% if summary.total_spend > 0 %}
+      <div class="chip-val">{{ summary.currency }} {{ "{:,.0f}".format(summary.total_spend) }}</div>
+      {% else %}
+      <div class="chip-val">—</div>
+      {% endif %}
+      <div class="chip-lbl">Total Spend</div>
+    </div>
+    <div class="stat-chip">
+      <div class="chip-val">{{ summary.last_seen.strftime('%b %d') if summary.last_seen else '—' }}</div>
+      <div class="chip-lbl">Last Activity</div>
+    </div>
+  </div>
+
+  <!-- Registration history -->
+  <h2 class="section-title">Registration History</h2>
+  {% if registrations %}
+  <div class="hist-table-wrap">
+    <table class="hist-table">
+      <thead>
+        <tr>
+          <th>Event</th>
+          <th>Ticket</th>
+          <th>Status</th>
+          <th>Amount</th>
+          <th>Check-in</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in registrations %}
+        <tr>
+          <td>
+            <div class="ev-title">{{ r.event_title }}</div>
+            {% if r.event_start %}
+            <div class="ev-date">{{ r.event_start.strftime('%b %d, %Y') }}</div>
+            {% endif %}
+          </td>
+          <td>{{ r.ticket_name }}</td>
+          <td><span class="badge badge-{{ r.status }}">{{ r.status | replace('_', ' ') | title }}</span></td>
+          <td>
+            {% if r.price > 0 %}
+            <span class="amount-cell">{{ r.currency }} {{ "{:,.0f}".format(r.price) }}</span>
+            {% else %}
+            <span class="free-label">Free</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.checked_in_at %}
+            <span class="checkin-time"><span class="material-symbols-outlined">check</span> {{ r.checked_in_at.strftime('%b %d %H:%M') }}</span>
+            {% else %}
+            <span style="color:var(--text-secondary)">—</span>
+            {% endif %}
+          </td>
+          <td>{{ r.created_at.strftime('%b %d, %Y') if r.created_at else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:3rem;color:var(--text-secondary);background:var(--surface);border:1px solid var(--border);border-radius:14px;">
+    No registrations found.
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

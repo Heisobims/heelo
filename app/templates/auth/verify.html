@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Verify your email — Heelo{% endblock %}
+
+{% block body %}
+<div class="auth-centered">
+  <div class="auth-centered-inner" x-data="otpInput('/api/v1/auth/verify-otp', '{{ email }}')">
+
+    <!-- Logo -->
+    <a href="/" style="font-family:var(--font-serif); font-size:22px; font-weight:700; color:var(--text-primary); display:block; margin-bottom:40px;">heelo</a>
+
+    <!-- Step indicator -->
+    <div class="step-indicator" style="justify-content:center; margin-bottom:32px;">
+      <div class="step-dot done"></div>
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+    </div>
+
+    <h1 class="h1" style="margin-bottom:10px;">Check your inbox.</h1>
+    <p class="text-secondary" style="font-size:15px; margin-bottom:36px;">
+      We sent a 6-digit code to
+      <strong style="color:var(--text-primary);">{{ email }}</strong>
+    </p>
+
+    <!-- OTP boxes -->
+    <div class="otp-group" style="margin-bottom:20px;">
+      {% for i in range(6) %}
+      <input
+        type="text"
+        inputmode="numeric"
+        pattern="\d"
+        maxlength="1"
+        class="otp-input"
+        :class="{ filled: digits[{{ i }}], error: error }"
+        x-ref="d{{ i }}"
+        x-model="digits[{{ i }}]"
+        @input="onInput({{ i }}, $event)"
+        @keydown="onKeydown({{ i }}, $event)"
+        @paste="{{ 'onPaste($event)' if i == 0 else 'false' }}"
+        autocomplete="{{ 'one-time-code' if i == 0 else 'off' }}"
+        aria-label="Digit {{ i + 1 }} of 6"
+      >
+      {% endfor %}
+    </div>
+
+    <!-- Error -->
+    <p class="inline-error" x-show="error" x-text="error" style="display:none; text-align:center; margin-bottom:16px;"></p>
+
+    <!-- Loading indicator -->
+    <div x-show="loading" style="display:none; margin-bottom:16px; justify-content:center;">
+      <div class="pulse-dots">
+        <div class="pulse-dot"></div>
+        <div class="pulse-dot"></div>
+        <div class="pulse-dot"></div>
+      </div>
+    </div>
+
+    <!-- Resend -->
+    <p class="small text-muted" style="margin-bottom:8px;">
+      <span x-show="!canResend">Resend code in <span x-text="resendCountdown"></span>s</span>
+      <button
+        x-show="canResend"
+        @click="resend()"
+        class="btn-ghost"
+        style="font-size:14px; padding:0; color:var(--text-primary); text-decoration:underline; text-underline-offset:3px;"
+      >Resend code</button>
+    </p>
+
+    <!-- Wrong email -->
+    <a href="/register" class="small text-muted" style="text-decoration:underline; text-underline-offset:3px;">Wrong email? Go back</a>
+
+  </div>
+</div>
+{% endblock %}

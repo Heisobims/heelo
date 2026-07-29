@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Registration Confirmed — {{ event.title }}{% endblock %}
+
+{% block head %}
+<style>
+  body { background: var(--bg-secondary); }
+
+  .conf-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 24px;
+    height: 52px;
+  }
+
+  .conf-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  .ticket-stub {
+    background: #fff;
+    border: 1.5px solid var(--border-light);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .ticket-stub-header {
+    background: linear-gradient(135deg, #0A0A0A 0%, #1a1a1a 100%);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ticket-stub-body {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .qr-wrap {
+    flex-shrink: 0;
+    width: 100px;
+    height: 100px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+  }
+
+  @media print {
+    .conf-nav { display: none; }
+    .no-print { display: none; }
+    .ticket-stub { break-inside: avoid; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="conf-nav">
+  <a href="/" style="font-family:var(--font-serif); font-size:18px; font-weight:700; color:var(--text-primary); text-decoration:none;">heelo</a>
+  <span style="color:var(--border-color);">›</span>
+  <a href="/e/{{ event.slug }}" style="font-size:13px; color:var(--text-muted); text-decoration:none;">{{ event.title }}</a>
+  {% if user %}
+  <div style="margin-left:auto;">
+    <a href="/dashboard" style="font-size:13px; color:var(--text-muted); text-decoration:none;">Dashboard →</a>
+  </div>
+  {% endif %}
+</nav>
+
+<div class="conf-container">
+
+  {% if cancelled %}
+  <!-- Payment cancelled state -->
+  <div style="text-align:center; margin-bottom:32px;">
+    <div style="width:64px; height:64px; background:#fff5f5; border:2px solid #fecaca; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <h1 style="font-family:var(--font-serif); font-size:28px; font-weight:700; margin-bottom:8px;">Payment cancelled</h1>
+    <p style="font-size:15px; color:var(--text-muted);">You cancelled the payment. Your spot has not been reserved.</p>
+    <a href="/e/{{ event.slug }}" style="display:inline-block; margin-top:16px; padding:11px 24px; background:#00FFF3; border-radius:8px; font-size:14px; font-weight:700; color:#000; text-decoration:none;">
+      Try again
+    </a>
+  </div>
+  {% elif pending %}
+  <!-- Payment pending state -->
+  <div style="text-align:center; margin-bottom:32px;">
+    <div style="width:64px; height:64px; background:var(--bg-secondary); border:2px solid var(--border-light); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <h1 style="font-family:var(--font-serif); font-size:28px; font-weight:700; margin-bottom:8px;">Payment pending</h1>
+    <p style="font-size:15px; color:var(--text-muted);">Your order has been created. Complete payment to confirm your spot.</p>
+    {% if request.query_params.get('error') %}
+    <p style="font-size:13px; color:#dc2626; margin-bottom:12px;">Payment could not be initialised. Please try again or contact support.</p>
+    {% endif %}
+    <a href="/orders/{{ order.id }}/pay" style="display:inline-block; margin-top:12px; padding:12px 28px; background:#00FFF3; border-radius:8px; font-size:14px; font-weight:700; color:#000; text-decoration:none;">
+      Complete payment →
+    </a>
+  </div>
+  {% else %}
+  <!-- Success state -->
+  <div style="text-align:center; margin-bottom:32px;">
+    <div style="width:64px; height:64px; background:#00FFF3; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; box-shadow:0 0 0 8px rgba(0,255,243,0.15);">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <h1 style="font-family:var(--font-serif); font-size:28px; font-weight:700; margin-bottom:8px;">You're in!</h1>
+    <p style="font-size:15px; color:var(--text-muted);">
+      Your registration is confirmed. Tickets sent to <strong>{{ order.buyer_email }}</strong>.
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- Order reference -->
+  <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">Order reference</div>
+      <div style="font-family:var(--font-mono); font-size:14px; font-weight:600; letter-spacing:0.05em;">{{ order.id | string | upper }}{{ '...' if (order.id | string | length) > 8 else '' }}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">Total paid</div>
+      <div style="font-size:16px; font-weight:700;">
+        {% if order.total_amount == 0 %}Free{% else %}{{ order.currency }} {{ "{:,.0f}".format(order.total_amount) }}{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Event summary -->
+  <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:16px 20px; margin-bottom:20px;">
+    <div style="font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:12px;">Event</div>
+    <div style="font-size:15px; font-weight:600; margin-bottom:4px;">{{ event.title }}</div>
+    <div style="font-size:13px; color:var(--text-muted);">
+      {{ event.start_datetime.strftime('%A, %d %B %Y') if event.start_datetime else 'Date TBD' }}
+      {% if event.start_datetime %} · {{ event.start_datetime.strftime('%H:%M') }} {{ event.timezone or 'UTC' }}{% endif %}
+      {% if event.venue_name %}<br>{{ event.venue_name }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}{% elif event.venue_city %}<br>{{ event.venue_city }}{% endif %}
+    </div>
+  </div>
+
+  <!-- Tickets / QR codes -->
+  {% if not pending and not cancelled %}
+  <div style="font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:12px;">Your tickets</div>
+
+  {% for reg in order.registrations %}
+  {% if reg.status == 'confirmed' %}
+  <div class="ticket-stub">
+    <div class="ticket-stub-header">
+      <div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">{{ reg.ticket_type.name if reg.ticket_type else 'Ticket' }}</div>
+        <div style="font-size:15px; font-weight:600; color:#fff;">{{ reg.attendee_name }}</div>
+        <div style="font-size:12px; color:rgba(255,255,255,0.6);">{{ reg.attendee_email }}</div>
+      </div>
+      <span style="font-size:11px; font-weight:600; padding:4px 10px; border-radius:100px; background:rgba(0,255,243,0.15); color:#00FFF3;">CONFIRMED</span>
+    </div>
+    <div class="ticket-stub-body">
+      <div class="qr-wrap">
+        <img
+          src="/api/v1/registrations/{{ reg.id }}/qr.png"
+          alt="QR Code"
+          style="width:100%; height:100%; display:block;"
+          loading="lazy"
+        >
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Scan this code at the venue entrance</div>
+        <div style="font-size:12px; color:var(--text-muted);">
+          {{ event.start_datetime.strftime('%d %b %Y, %H:%M') if event.start_datetime else '' }}
+          {% if event.venue_city %}<br>{{ event.venue_city }}{% endif %}
+        </div>
+      </div>
+    </div>
+    <!-- Perforation line -->
+    <div style="border-top:2px dashed var(--border-light); margin:0 20px;"></div>
+    <div style="padding:12px 20px; display:flex; justify-content:space-between; align-items:center;">
+      <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); letter-spacing:0.05em;">
+        {{ reg.id | string | upper | truncate(8, True, '') }}
+      </div>
+      <div style="font-size:11px; color:var(--text-muted);">heelo.io</div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% endif %}
+
+  <!-- Actions -->
+  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:24px;" class="no-print">
+
+    {% if event.status in ('published', 'live') and event.start_datetime %}
+    <a
+      href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ event.title | urlencode }}&dates={{ event.start_datetime.strftime('%Y%m%dT%H%M%S') }}/{{ (event.end_datetime or event.start_datetime).strftime('%Y%m%dT%H%M%S') }}&details={{ (event.description or '') | truncate(200) | urlencode }}&location={{ ((event.venue_name or '') + (', ' + event.venue_city if event.venue_city else '')) | urlencode }}"
+      target="_blank"
+      class="btn btn-secondary"
+      style="flex:1; min-width:200px; text-align:center;"
+    >Add to Google Calendar</a>
+    {% endif %}
+
+    <button
+      type="button"
+      class="btn btn-secondary"
+      style="flex:1; min-width:140px;"
+      onclick="window.print()"
+    >Print tickets</button>
+
+    <a href="/e/{{ event.slug }}" class="btn btn-secondary" style="flex:1; min-width:140px; text-align:center;">View event →</a>
+  </div>
+
+  <!-- Share -->
+  <div style="margin-top:24px; text-align:center; color:var(--text-muted); font-size:13px;" class="no-print">
+    Share the event:
+    <a href="https://api.whatsapp.com/send?text={{ ('I just registered for ' + event.title + '! ' + request.url_for('public_event_page', event_slug=event.slug) | string) | urlencode }}" target="_blank" style="color:var(--text-muted); margin-left:8px;">WhatsApp</a>
+    ·
+    <a href="https://twitter.com/intent/tweet?text={{ ('Just registered for ' + event.title) | urlencode }}&url={{ request.url_for('public_event_page', event_slug=event.slug) | urlencode }}" target="_blank" style="color:var(--text-muted);">Twitter</a>
+  </div>
+
+</div>
+{% endblock %}

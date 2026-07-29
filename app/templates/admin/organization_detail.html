@@ -1,0 +1,150 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ detail.org.name }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:8px;">
+  <a href="/admin/organizations" style="color:var(--text-muted,#71717a);font-size:0.82rem;text-decoration:none;">&larr; Organizations</a>
+</div>
+
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;">
+  <div>
+    <h1 style="font-size:1.4rem;font-weight:700;">{{ detail.org.name }}</h1>
+    <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">
+      /{{ detail.org.slug }} &middot;
+      <span class="badge badge-plan-{{ detail.org.plan }}">{{ detail.org.plan }}</span> &middot;
+      <span class="badge {{ 'badge-active' if detail.org.is_active else 'badge-suspended' }}" id="org-status-badge">
+        {{ 'Active' if detail.org.is_active else 'Suspended' }}
+      </span>
+    </p>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/org/{{ detail.org.slug }}" target="_blank" class="btn btn-ghost">View as org &rarr;</a>
+    {% if detail.org.is_active %}
+    <button class="btn btn-danger" id="suspend-btn" onclick="suspendOrg('{{ detail.org.id }}')">Suspend Org</button>
+    {% else %}
+    <button class="btn btn-accent" id="suspend-btn" onclick="reinstateOrg('{{ detail.org.id }}')">Reinstate Org</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-label">Total Events</div>
+    <div class="stat-value">{{ detail.events|length }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Net Revenue</div>
+    <div class="stat-value" style="color:var(--admin-accent);">₦{{ "{:,.0f}".format(detail.net_revenue) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Paid Orders</div>
+    <div class="stat-value">{{ detail.total_orders }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+  <div class="section-card">
+    <div class="section-header"><span class="section-title">Owner</span></div>
+    {% if detail.org.owner %}
+    <p style="font-size:0.9rem;font-weight:600;">{{ detail.org.owner.full_name }}</p>
+    <p style="color:var(--text-muted,#71717a);font-size:0.82rem;margin-top:4px;">{{ detail.org.owner.email }}</p>
+    <p style="color:var(--text-muted,#71717a);font-size:0.78rem;margin-top:4px;">Role: {{ detail.org.owner.role }}</p>
+    <div style="margin-top:12px;">
+      <a href="/admin/users/{{ detail.org.owner.id }}" class="btn btn-ghost btn-sm">View user profile</a>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--admin-border);">
+      <p style="font-size:0.8rem;font-weight:600;margin-bottom:10px;">Change Plan</p>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <select id="plan-sel" style="background:var(--admin-surface-raised);border:1px solid var(--admin-border);color:var(--text,#e4e4e7);border-radius:6px;padding:6px 10px;font-size:0.8rem;">
+          {% for p in ['starter','growth','pro','enterprise'] %}
+          <option value="{{ p }}" {% if detail.org.plan == p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-accent btn-sm" onclick="updatePlan()">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-header"><span class="section-title">Team Members ({{ detail.members|length }})</span></div>
+    {% for m in detail.members[:10] %}
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--admin-border)50;">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--admin-accent)30;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--admin-accent);">
+        {{ m.user.full_name[0].upper() if m.user else '?' }}
+      </div>
+      <div>
+        <p style="font-size:0.82rem;font-weight:500;">{{ m.user.full_name if m.user else 'Unknown' }}</p>
+        <p style="color:var(--text-muted,#71717a);font-size:0.72rem;">{{ m.user.email if m.user else '' }} &middot; {{ m.role }}</p>
+      </div>
+    </div>
+    {% endfor %}
+    {% if detail.members|length == 0 %}
+    <p style="color:var(--text-muted,#71717a);font-size:0.82rem;">No team members.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="section-card" style="margin-top:24px;">
+  <div class="section-header"><span class="section-title">Events</span></div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Title</th><th>Status</th><th>Date</th><th>Location</th></tr>
+    </thead>
+    <tbody>
+      {% for ev in detail.events %}
+      <tr>
+        <td><a href="/e/{{ ev.slug }}" target="_blank">{{ ev.title }}</a></td>
+        <td><span class="badge badge-{{ 'active' if ev.status == 'published' else 'suspended' }}">{{ ev.status }}</span></td>
+        <td style="font-size:0.78rem;color:var(--text-muted,#71717a);">{{ ev.start_datetime.strftime('%Y-%m-%d') if ev.start_datetime else '—' }}</td>
+        <td style="font-size:0.78rem;color:var(--text-muted,#71717a);">{{ ev.location_name or ('Virtual' if ev.is_virtual else '—') }}</td>
+      </tr>
+      {% endfor %}
+      {% if not detail.events %}
+      <tr><td colspan="4" style="text-align:center;color:var(--text-muted,#71717a);padding:20px;">No events.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const _orgId = "{{ detail.org.id }}";
+
+async function suspendOrg(id) {
+  if (!confirm("Suspend this organization?")) return;
+  const r = await fetch(`/api/v1/admin/organizations/${id}/suspend`, { method: 'POST' });
+  if (r.ok) {
+    document.getElementById('org-status-badge').className = 'badge badge-suspended';
+    document.getElementById('org-status-badge').textContent = 'Suspended';
+    document.getElementById('suspend-btn').textContent = 'Reinstate Org';
+    document.getElementById('suspend-btn').className = 'btn btn-accent';
+    document.getElementById('suspend-btn').setAttribute('onclick', `reinstateOrg('${id}')`);
+  } else { alert('Failed to suspend.'); }
+}
+
+async function reinstateOrg(id) {
+  if (!confirm("Reinstate this organization?")) return;
+  const r = await fetch(`/api/v1/admin/organizations/${id}/reinstate`, { method: 'POST' });
+  if (r.ok) {
+    document.getElementById('org-status-badge').className = 'badge badge-active';
+    document.getElementById('org-status-badge').textContent = 'Active';
+    document.getElementById('suspend-btn').textContent = 'Suspend Org';
+    document.getElementById('suspend-btn').className = 'btn btn-danger';
+    document.getElementById('suspend-btn').setAttribute('onclick', `suspendOrg('${id}')`);
+  } else { alert('Failed to reinstate.'); }
+}
+
+async function updatePlan() {
+  const plan = document.getElementById('plan-sel').value;
+  const r = await fetch(`/api/v1/admin/organizations/${_orgId}/plan`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ plan }),
+  });
+  if (r.ok) { alert(`Plan updated to ${plan}.`); } else { alert('Failed to update plan.'); }
+}
+</script>
+{% endblock %}
