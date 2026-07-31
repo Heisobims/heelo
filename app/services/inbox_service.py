@@ -2,10 +2,10 @@
 WhatsApp inbox service — thread listing, message history, reply sending.
 All functions are async (FastAPI). Sync helpers live in tasks/whatsapp.py.
 """
+
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
 
 import httpx
 from sqlalchemy import desc, func, select, update
@@ -69,13 +69,15 @@ async def list_threads(db: AsyncSession, org_id: uuid.UUID) -> list[dict]:
         if msg.from_number in seen:
             continue
         seen.add(msg.from_number)
-        threads.append({
-            "phone": msg.from_number,
-            "last_body": (msg.body or "")[:80],
-            "last_at": msg.created_at,
-            "direction": msg.direction,
-            "unread": row[1] or 0,
-        })
+        threads.append(
+            {
+                "phone": msg.from_number,
+                "last_body": (msg.body or "")[:80],
+                "last_at": msg.created_at,
+                "direction": msg.direction,
+                "unread": row[1] or 0,
+            }
+        )
     return threads
 
 
@@ -181,18 +183,16 @@ async def store_inbound(
 
 async def get_follower_count(db: AsyncSession, org_id: uuid.UUID) -> int:
     from app.models.community import OrganizerFollower
-    count = await db.scalar(
-        select(func.count()).where(OrganizerFollower.org_id == org_id)
-    )
+
+    count = await db.scalar(select(func.count()).where(OrganizerFollower.org_id == org_id))
     return count or 0
 
 
-async def toggle_follow(
-    db: AsyncSession, *, org_id: uuid.UUID, user_id: uuid.UUID
-) -> bool:
+async def toggle_follow(db: AsyncSession, *, org_id: uuid.UUID, user_id: uuid.UUID) -> bool:
     """Returns True if now following, False if unfollowed."""
-    from app.models.community import OrganizerFollower
     from sqlalchemy import delete
+
+    from app.models.community import OrganizerFollower
 
     existing = await db.scalar(
         select(OrganizerFollower).where(
@@ -215,10 +215,9 @@ async def toggle_follow(
         return True
 
 
-async def is_following(
-    db: AsyncSession, *, org_id: uuid.UUID, user_id: uuid.UUID
-) -> bool:
+async def is_following(db: AsyncSession, *, org_id: uuid.UUID, user_id: uuid.UUID) -> bool:
     from app.models.community import OrganizerFollower
+
     row = await db.scalar(
         select(OrganizerFollower).where(
             OrganizerFollower.org_id == org_id,

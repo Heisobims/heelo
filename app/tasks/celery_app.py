@@ -14,6 +14,8 @@ celery_app = Celery(
         "app.tasks.campaign",
         "app.tasks.ai_tasks",
         "app.tasks.webhooks",
+        "app.tasks.admin_broadcast",
+        "app.tasks.ticketing",
     ],
 )
 
@@ -31,10 +33,15 @@ celery_app.conf.update(
         "app.tasks.whatsapp.*": {"queue": "whatsapp"},
         "app.tasks.webhooks.*": {"queue": "webhooks"},
         "app.tasks.notifications.*": {"queue": "notifications"},
+        "app.tasks.admin_broadcast.*": {"queue": "email"},
     },
     beat_schedule={
         "email-reminders-hourly": {
             "task": "app.tasks.email.send_event_reminders",
+            "schedule": 3600.0,
+        },
+        "email-interest-nudges-hourly": {
+            "task": "app.tasks.email.send_interest_nudges",
             "schedule": 3600.0,
         },
         "whatsapp-reminders-hourly": {
@@ -48,6 +55,10 @@ celery_app.conf.update(
         "webhook-retries-every-minute": {
             "task": "app.tasks.webhooks.retry_failed_webhooks",
             "schedule": 60.0,
+        },
+        "release-stale-reservations-every-5-min": {
+            "task": "app.tasks.ticketing.release_stale_reservations",
+            "schedule": 300.0,
         },
     },
 )

@@ -40,7 +40,7 @@ services:
     image: heelo:latest
     container_name: heelo_worker
     restart: unless-stopped
-    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2
+    command: scripts/worker.sh
     env_file: .env
     environment:
       DATABASE_URL: postgresql+asyncpg://heelo:${POSTGRES_PASSWORD:-heelo}@db:5432/heelo
@@ -48,6 +48,10 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
+      # Must cover every queue in task_routes (app/tasks/celery_app.py) — routed
+      # tasks are otherwise published but never consumed by this worker.
+      CELERY_QUEUES: celery,email,whatsapp,webhooks,notifications
+      CELERY_CONCURRENCY: "2"
     depends_on:
       app:
         condition: service_healthy

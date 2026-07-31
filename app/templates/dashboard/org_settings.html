@@ -100,6 +100,7 @@
     <div class="sett-tabs">
       <div class="sett-tab" :class="{ active: tab === 'general' }" @click="tab = 'general'">General</div>
       <div class="sett-tab" :class="{ active: tab === 'appearance' }" @click="tab = 'appearance'">Appearance</div>
+      <div class="sett-tab" :class="{ active: tab === 'branding' }" @click="tab = 'branding'">Branding</div>
       <div class="sett-tab" :class="{ active: tab === 'links' }" @click="tab = 'links'">Other settings</div>
     </div>
 
@@ -197,6 +198,48 @@
       </div>
     </div>
 
+    <!-- ── Branding ────────────────────────────────────────── -->
+    <div x-show="tab === 'branding'" style="display:none;">
+      <div class="sett-card">
+        <p class="sett-card-title">Email footer</p>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:-8px; margin-bottom:16px;">
+          Shown in the footer of every campaign email you send from Heelo — your logo already appears in the header.
+        </p>
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Contact email <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(public — shown to your audience)</span></label>
+            <input type="email" class="form-input" x-model="form.contact_email" placeholder="hello@yourbrand.com">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Instagram</label>
+              <input type="url" class="form-input" x-model="form.instagram_url" placeholder="https://instagram.com/yourbrand">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">X / Twitter</label>
+              <input type="url" class="form-input" x-model="form.twitter_url" placeholder="https://x.com/yourbrand">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">Facebook</label>
+              <input type="url" class="form-input" x-model="form.facebook_url" placeholder="https://facebook.com/yourbrand">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">LinkedIn</label>
+              <input type="url" class="form-input" x-model="form.linkedin_url" placeholder="https://linkedin.com/company/yourbrand">
+            </div>
+          </div>
+
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+          <button type="button" class="btn btn-primary" :class="{'btn-loading': saving}" :disabled="saving" @click="save()">
+            Save changes
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Other settings ─────────────────────────────────── -->
     <div x-show="tab === 'links'" style="display:none;">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
@@ -273,6 +316,11 @@ function orgSettings() {
       website: {{ (org.website or '') | tojson }},
       country: {{ (org.country or '') | tojson }},
       currency: {{ org.currency | tojson }},
+      contact_email: {{ (org.contact_email or '') | tojson }},
+      instagram_url: {{ (org.instagram_url or '') | tojson }},
+      twitter_url: {{ (org.twitter_url or '') | tojson }},
+      facebook_url: {{ (org.facebook_url or '') | tojson }},
+      linkedin_url: {{ (org.linkedin_url or '') | tojson }},
     },
     saving: false,
     success: '',
@@ -291,6 +339,11 @@ function orgSettings() {
           website: this.form.website.trim() || null,
           country: this.form.country || null,
           currency: this.form.currency,
+          contact_email: this.form.contact_email.trim() || null,
+          instagram_url: this.form.instagram_url.trim() || null,
+          twitter_url: this.form.twitter_url.trim() || null,
+          facebook_url: this.form.facebook_url.trim() || null,
+          linkedin_url: this.form.linkedin_url.trim() || null,
         };
         const res = await fetch('/api/v1/organizations/{{ org.slug }}', {
           method: 'PATCH',

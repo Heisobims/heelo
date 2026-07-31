@@ -11,6 +11,24 @@ from app.models.event import Event
 from app.models.ticketing import Registration, TicketType
 
 
+async def unsubscribe_contact(db: AsyncSession, org_id: uuid.UUID, email: str) -> None:
+    """Mark an email as unsubscribed from this org's campaigns — creates a
+    Contact row if one doesn't already exist, so future audience builds skip it."""
+    from app.models.crm import Contact
+
+    email = email.lower()
+    contact = await db.scalar(
+        select(Contact).where(Contact.org_id == org_id, Contact.email == email)
+    )
+    if contact:
+        contact.is_unsubscribed = True
+    else:
+        db.add(
+            Contact(org_id=org_id, name=email, email=email, source="manual", is_unsubscribed=True)
+        )
+    await db.commit()
+
+
 async def list_registrations(
     db: AsyncSession,
     org_id: uuid.UUID,
@@ -51,29 +69,29 @@ async def list_registrations(
     total: int = await db.scalar(count_stmt) or 0
 
     result = await db.execute(
-        stmt.order_by(Registration.created_at.desc())
-        .limit(per_page)
-        .offset((page - 1) * per_page)
+        stmt.order_by(Registration.created_at.desc()).limit(per_page).offset((page - 1) * per_page)
     )
     rows = result.all()
 
     out = []
     for r in rows:
         reg: Registration = r[0]
-        out.append({
-            "id": str(reg.id),
-            "attendee_name": reg.attendee_name,
-            "attendee_email": reg.attendee_email,
-            "attendee_phone": reg.attendee_phone or "",
-            "status": reg.status,
-            "event_id": str(r.ev_id),
-            "event_title": r.ev_title,
-            "ticket_name": r.tt_name,
-            "currency": r.tt_currency,
-            "price": float(r.tt_price),
-            "checked_in_at": reg.checked_in_at,
-            "created_at": reg.created_at,
-        })
+        out.append(
+            {
+                "id": str(reg.id),
+                "attendee_name": reg.attendee_name,
+                "attendee_email": reg.attendee_email,
+                "attendee_phone": reg.attendee_phone or "",
+                "status": reg.status,
+                "event_id": str(r.ev_id),
+                "event_title": r.ev_title,
+                "ticket_name": r.tt_name,
+                "currency": r.tt_currency,
+                "price": float(r.tt_price),
+                "checked_in_at": reg.checked_in_at,
+                "created_at": reg.created_at,
+            }
+        )
     return out, total
 
 
@@ -119,18 +137,20 @@ async def get_attendee_history(
             total_spend += float(r.tt_price)
             attended_event_ids.add(str(r.ev_id))
         currency = r.tt_currency
-        regs.append({
-            "id": str(reg.id),
-            "event_id": str(r.ev_id),
-            "event_title": r.ev_title,
-            "event_start": r.ev_start,
-            "ticket_name": r.tt_name,
-            "currency": r.tt_currency,
-            "price": float(r.tt_price),
-            "status": reg.status,
-            "checked_in_at": reg.checked_in_at,
-            "created_at": reg.created_at,
-        })
+        regs.append(
+            {
+                "id": str(reg.id),
+                "event_id": str(r.ev_id),
+                "event_title": r.ev_title,
+                "event_start": r.ev_start,
+                "ticket_name": r.tt_name,
+                "currency": r.tt_currency,
+                "price": float(r.tt_price),
+                "status": reg.status,
+                "checked_in_at": reg.checked_in_at,
+                "created_at": reg.created_at,
+            }
+        )
 
     first_seen = regs[-1]["created_at"] if regs else None
     last_seen = regs[0]["created_at"] if regs else None
@@ -158,25 +178,43 @@ async def export_csv_string(
     search: str | None = None,
 ) -> str:
     rows, _ = await list_registrations(
-        db, org_id,
-        event_id=event_id, status=status, search=search,
-        page=1, per_page=10_000,
+        db,
+        org_id,
+        event_id=event_id,
+        status=status,
+        search=search,
+        page=1,
+        per_page=10_000,
     )
     buf = io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow(["Name", "Email", "Phone", "Event", "Ticket", "Status",
-                     "Amount", "Currency", "Checked In", "Registered At"])
+    writer.writerow(
+        [
+            "Name",
+            "Email",
+            "Phone",
+            "Event",
+            "Ticket",
+            "Status",
+            "Amount",
+            "Currency",
+            "Checked In",
+            "Registered At",
+        ]
+    )
     for r in rows:
-        writer.writerow([
-            r["attendee_name"],
-            r["attendee_email"],
-            r["attendee_phone"],
-            r["event_title"],
-            r["ticket_name"],
-            r["status"],
-            r["price"],
-            r["currency"],
-            r["checked_in_at"].strftime("%Y-%m-%d %H:%M") if r["checked_in_at"] else "",
-            r["created_at"].strftime("%Y-%m-%d %H:%M") if r["created_at"] else "",
-        ])
+        writer.writerow(
+            [
+                r["attendee_name"],
+                r["attendee_email"],
+                r["attendee_phone"],
+                r["event_title"],
+                r["ticket_name"],
+                r["status"],
+                r["price"],
+                r["currency"],
+                r["checked_in_at"].strftime("%Y-%m-%d %H:%M") if r["checked_in_at"] else "",
+                r["created_at"].strftime("%Y-%m-%d %H:%M") if r["created_at"] else "",
+            ]
+        )
     return buf.getvalue()

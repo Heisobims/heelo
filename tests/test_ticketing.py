@@ -1,7 +1,7 @@
 """Ticket types, registration, promo codes."""
+
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -50,8 +50,10 @@ async def test_register_exceeding_capacity_returns_400(
     client: AsyncClient, db: AsyncSession, published_event, ticket_type
 ):
     # Set capacity to 0
-    from app.models.ticketing import TicketType
     from sqlalchemy import select
+
+    from app.models.ticketing import TicketType
+
     tt = await db.scalar(select(TicketType).where(TicketType.id == ticket_type.id))
     tt.quantity_sold = tt.quantity_total
     await db.flush()
@@ -67,7 +69,9 @@ async def test_register_exceeding_capacity_returns_400(
     assert resp.status_code == 400
 
 
-async def test_create_promo_code(client: AsyncClient, org, published_event, ticket_type, user_headers):
+async def test_create_promo_code(
+    client: AsyncClient, org, published_event, ticket_type, user_headers
+):
     resp = await client.post(
         f"/api/v1/organizations/{org.slug}/events/{published_event.id}/promo-codes",
         json={
@@ -82,7 +86,9 @@ async def test_create_promo_code(client: AsyncClient, org, published_event, tick
     assert resp.json()["data"]["code"] == "SAVE20"
 
 
-async def test_apply_valid_promo_code(client: AsyncClient, org, published_event, ticket_type, user_headers):
+async def test_apply_valid_promo_code(
+    client: AsyncClient, org, published_event, ticket_type, user_headers
+):
     # Create promo code first
     await client.post(
         f"/api/v1/organizations/{org.slug}/events/{published_event.id}/promo-codes",

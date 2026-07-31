@@ -1,23 +1,85 @@
 {% extends "admin/layout.html" %}
 {% block title %}Users{% endblock %}
 
+{% block head %}
+<style>
+  .cat-tabs { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .cat-tab {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 16px; border-radius: 9px; font-size: 0.85rem; font-weight: 600;
+    text-decoration: none; color: var(--text-muted, #71717a);
+    background: var(--surface, #18181b); border: 1px solid var(--border, rgba(255,255,255,0.08));
+  }
+  .cat-tab:hover { color: var(--text, #f5f5f5); }
+  .cat-tab.active { color: #000; background: var(--cyan, #00FFF3); border-color: var(--cyan, #00FFF3); }
+  .cat-tab .count {
+    font-size: 0.75rem; padding: 1px 7px; border-radius: 100px;
+    background: rgba(255,255,255,0.1); color: inherit;
+  }
+  .cat-tab.active .count { background: rgba(0,0,0,0.15); }
+  .vendor-badge {
+    display: inline-flex; align-items: center; gap: 3px; font-size: 0.7rem; font-weight: 600;
+    padding: 1px 7px; border-radius: 100px; background: rgba(168,85,247,0.15); color: #a855f7;
+    margin-left: 6px;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <div style="margin-bottom:24px;">
   <h1 style="font-size:1.4rem;font-weight:700;">Users</h1>
-  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">{{ total }} total users</p>
+  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">{{ counts.all }} total users on the platform</p>
+</div>
+
+{% set carry_qs = '' %}
+{% if q %}{% set carry_qs = carry_qs ~ '&q=' ~ q %}{% endif %}
+{% if selected_country %}{% set carry_qs = carry_qs ~ '&country=' ~ selected_country %}{% endif %}
+{% if selected_age_bracket %}{% set carry_qs = carry_qs ~ '&age_bracket=' ~ selected_age_bracket %}{% endif %}
+{% if selected_interest %}{% set carry_qs = carry_qs ~ '&interest=' ~ selected_interest %}{% endif %}
+{% if selected_vibe %}{% set carry_qs = carry_qs ~ '&vibe=' ~ selected_vibe %}{% endif %}
+
+<div class="cat-tabs">
+  {% for cat_id, cat_label in [('all','All'), ('organizer','Organizers'), ('attendee','Attendees'), ('vendor','Vendors'), ('admin','Admins')] %}
+  <a class="cat-tab {% if selected_category == cat_id %}active{% endif %}"
+     href="?category={{ cat_id }}{{ carry_qs }}">
+    {{ cat_label }} <span class="count">{{ counts[cat_id] }}</span>
+  </a>
+  {% endfor %}
 </div>
 
 <div class="section-card">
   <form method="get" action="/admin/users">
+    <input type="hidden" name="category" value="{{ selected_category }}">
     <div class="search-bar">
       <input name="q" value="{{ q }}" placeholder="Search by name or email..." />
-      <select name="role">
-        <option value="">All roles</option>
-        {% for r in ['attendee','organizer','both','admin'] %}
-        <option value="{{ r }}" {% if selected_role == r %}selected{% endif %}>{{ r }}</option>
+      <select name="country">
+        <option value="">All countries</option>
+        {% for code, name in country_names.items() %}
+        <option value="{{ code }}" {% if selected_country == code %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+      <select name="age_bracket">
+        <option value="">All ages</option>
+        {% for label in age_brackets %}
+        <option value="{{ label }}" {% if selected_age_bracket == label %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="interest">
+        <option value="">All interests</option>
+        {% for i in filter_interests %}
+        <option value="{{ i }}" {% if selected_interest == i %}selected{% endif %}>{{ i }}</option>
+        {% endfor %}
+      </select>
+      <select name="vibe">
+        <option value="">All event vibes</option>
+        {% for v in filter_vibes %}
+        <option value="{{ v }}" {% if selected_vibe == v %}selected{% endif %}>{{ v }}</option>
         {% endfor %}
       </select>
       <button type="submit" class="btn btn-accent">Filter</button>
+      {% if selected_country or selected_age_bracket or selected_interest or selected_vibe or q %}
+      <a href="?category={{ selected_category }}" class="btn btn-ghost">Clear</a>
+      {% endif %}
     </div>
   </form>
 
@@ -28,7 +90,10 @@
     <tbody>
       {% for u in users %}
       <tr id="user-row-{{ u.id }}">
-        <td><a href="/admin/users/{{ u.id }}">{{ u.full_name }}</a></td>
+        <td>
+          <a href="/admin/users/{{ u.id }}">{{ u.full_name }}</a>
+          {% if u.id in vendor_user_ids %}<span class="vendor-badge">Vendor</span>{% endif %}
+        </td>
         <td style="font-size:0.8rem;">{{ u.email }}</td>
         <td>
           {% if u.role == 'admin' %}<span class="badge badge-admin">admin</span>
@@ -55,16 +120,19 @@
         </td>
       </tr>
       {% endfor %}
+      {% if not users %}
+      <tr><td colspan="7" style="text-align:center; color:var(--text-muted,#71717a); padding:32px;">No users in this category yet.</td></tr>
+      {% endif %}
     </tbody>
   </table>
 
   <div class="pagination">
     {% if page > 1 %}
-    <a href="?q={{ q }}&role={{ selected_role }}&page={{ page - 1 }}">&larr; Prev</a>
+    <a href="?category={{ selected_category }}{{ carry_qs }}&page={{ page - 1 }}">&larr; Prev</a>
     {% endif %}
     <span class="current">{{ page }}</span>
     {% if page * per_page < total %}
-    <a href="?q={{ q }}&role={{ selected_role }}&page={{ page + 1 }}">Next &rarr;</a>
+    <a href="?category={{ selected_category }}{{ carry_qs }}&page={{ page + 1 }}">Next &rarr;</a>
     {% endif %}
     <span class="info">{{ total }} results</span>
   </div>

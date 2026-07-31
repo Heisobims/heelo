@@ -10,8 +10,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.organization import Organization
     from app.models.event import Event
+    from app.models.organization import Organization
 
 
 class Speaker(Base, TimestampMixin):
@@ -20,9 +20,7 @@ class Speaker(Base, TimestampMixin):
     __tablename__ = "speakers"
     __table_args__ = (Index("ix_speakers_org", "org_id"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
@@ -57,9 +55,7 @@ class Sponsor(Base, TimestampMixin):
     __tablename__ = "sponsors"
     __table_args__ = (Index("ix_sponsors_event", "event_id"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("events.id", ondelete="CASCADE"),

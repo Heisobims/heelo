@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
+    Column,
     DateTime,
     Float,
     ForeignKey,
@@ -14,7 +15,6 @@ from sqlalchemy import (
     String,
     Table,
     Text,
-    Column,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,20 +22,29 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base, SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.organization import Organization
-    from app.models.user import User
-    from app.models.ticketing import TicketType, Registration, PromoCode, Waitlist
-    from app.models.speaker import Speaker, Sponsor
     from app.models.campaign import Campaign
-    from app.models.checkin import Checkin
+    from app.models.organization import Organization
+    from app.models.speaker import Sponsor
+    from app.models.ticketing import PromoCode, Registration, TicketType, Waitlist
+    from app.models.user import User
 
 
 # ── Many-to-many: events ↔ categories ─────────────────────────────────────────
 event_category_link = Table(
     "event_category_links",
     Base.metadata,
-    Column("event_id", UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), primary_key=True),
-    Column("category_id", UUID(as_uuid=True), ForeignKey("event_categories.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "event_id",
+        UUID(as_uuid=True),
+        ForeignKey("events.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "category_id",
+        UUID(as_uuid=True),
+        ForeignKey("event_categories.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 
@@ -44,9 +53,7 @@ class EventCategory(Base, TimestampMixin):
 
     __tablename__ = "event_categories"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     icon: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -68,9 +75,7 @@ class Event(Base, SoftDeleteMixin):
         Index("ix_events_is_featured", "is_featured"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
@@ -91,6 +96,8 @@ class Event(Base, SoftDeleteMixin):
     og_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Flexible JSONB blob: agenda, people (speakers/panelists/etc), partners/sponsors
     extras: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    # Free-form organizer-typed vibe tags e.g. ["chill", "networking-heavy", "dress to impress"]
+    vibe_tags: Mapped[list[str]] = mapped_column(ARRAY(String(50)), nullable=False, default=list)
 
     # draft | published | live | ended | cancelled
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
@@ -123,7 +130,9 @@ class Event(Base, SoftDeleteMixin):
     is_recurring: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # daily | weekly | monthly | null
     recurrence_rule: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    recurrence_end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    recurrence_end_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     parent_event_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("events.id", ondelete="SET NULL"), nullable=True
     )
@@ -135,44 +144,36 @@ class Event(Base, SoftDeleteMixin):
     is_template: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # ── Relationships ─────────────────────────────────────────────────────────
-    organization: Mapped[Organization] = relationship(
-        "Organization", back_populates="events"
-    )
-    creator: Mapped[User | None] = relationship(
-        "User", foreign_keys=[created_by]
-    )
+    organization: Mapped[Organization] = relationship("Organization", back_populates="events")
+    creator: Mapped[User | None] = relationship("User", foreign_keys=[created_by])
     sessions: Mapped[list[EventSession]] = relationship(
-        "EventSession", back_populates="event", cascade="all, delete-orphan",
-        order_by="EventSession.start_datetime"
+        "EventSession",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="EventSession.start_datetime",
     )
     ticket_types: Mapped[list[TicketType]] = relationship(
         "TicketType", back_populates="event", cascade="all, delete-orphan"
     )
-    registrations: Mapped[list[Registration]] = relationship(
-        "Registration", back_populates="event"
-    )
+    registrations: Mapped[list[Registration]] = relationship("Registration", back_populates="event")
     promo_codes: Mapped[list[PromoCode]] = relationship(
         "PromoCode", back_populates="event", cascade="all, delete-orphan"
     )
-    waitlists: Mapped[list[Waitlist]] = relationship(
-        "Waitlist", back_populates="event"
-    )
+    waitlists: Mapped[list[Waitlist]] = relationship("Waitlist", back_populates="event")
     sponsors: Mapped[list[Sponsor]] = relationship(
         "Sponsor", back_populates="event", cascade="all, delete-orphan"
     )
-    campaigns: Mapped[list[Campaign]] = relationship(
-        "Campaign", back_populates="event"
-    )
+    campaigns: Mapped[list[Campaign]] = relationship("Campaign", back_populates="event")
     categories: Mapped[list[EventCategory]] = relationship(
         "EventCategory", secondary=event_category_link, back_populates="events"
     )
-    children: Mapped[list["Event"]] = relationship(
+    children: Mapped[list[Event]] = relationship(
         "Event", foreign_keys=[parent_event_id], back_populates="parent"
     )
-    parent: Mapped["Event | None"] = relationship(
+    parent: Mapped[Event | None] = relationship(
         "Event", foreign_keys=[parent_event_id], back_populates="children", remote_side="Event.id"
     )
-    comments: Mapped[list["EventComment"]] = relationship(
+    comments: Mapped[list[EventComment]] = relationship(
         "EventComment", back_populates="event", cascade="all, delete-orphan"
     )
 
@@ -186,9 +187,7 @@ class EventSession(Base, TimestampMixin):
     __tablename__ = "event_sessions"
     __table_args__ = (Index("ix_event_sessions_event_start", "event_id", "start_datetime"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("events.id", ondelete="CASCADE"),
@@ -219,13 +218,9 @@ class EventComment(Base, TimestampMixin):
     """Public discussion comment on an event."""
 
     __tablename__ = "event_comments"
-    __table_args__ = (
-        Index("ix_event_comments_event", "event_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_event_comments_event", "event_id", "created_at"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("events.id", ondelete="CASCADE"),

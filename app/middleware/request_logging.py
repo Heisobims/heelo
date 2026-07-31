@@ -1,4 +1,5 @@
 """Structured request/response logging middleware."""
+
 from __future__ import annotations
 
 import time
@@ -28,7 +29,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             path=request.url.path,
             status=response.status_code,
             duration_ms=duration_ms,
-            ip=request.headers.get("X-Forwarded-For", request.client.host if request.client else "-"),
+            ip=request.headers.get(
+                "X-Forwarded-For", request.client.host if request.client else "-"
+            ),
         )
 
         if response.status_code >= 500:

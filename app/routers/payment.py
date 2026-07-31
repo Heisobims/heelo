@@ -31,8 +31,8 @@ async def paystack_webhook(request: Request, db: DBSession):
 
     try:
         payload = json.loads(body)
-    except json.JSONDecodeError:
-        raise HTTPException(400, "Invalid JSON payload.")
+    except json.JSONDecodeError as err:
+        raise HTTPException(400, "Invalid JSON payload.") from err
 
     event = payload.get("event", "")
     data = payload.get("data", {})
@@ -55,8 +55,8 @@ async def flutterwave_webhook(request: Request, db: DBSession):
 
     try:
         payload = json.loads(body)
-    except json.JSONDecodeError:
-        raise HTTPException(400, "Invalid JSON payload.")
+    except json.JSONDecodeError as err:
+        raise HTTPException(400, "Invalid JSON payload.") from err
 
     if payload.get("status") == "successful":
         tx_data = payload.get("data", {})
@@ -71,6 +71,7 @@ async def flutterwave_webhook(request: Request, db: DBSession):
 @router_webhooks.post("/stripe", status_code=200)
 async def stripe_webhook(request: Request, db: DBSession):
     import asyncio
+
     import stripe  # type: ignore
 
     from app.config import settings
@@ -88,10 +89,10 @@ async def stripe_webhook(request: Request, db: DBSession):
             sig,
             settings.STRIPE_WEBHOOK_SECRET,
         )
-    except stripe.error.SignatureVerificationError:
-        raise HTTPException(400, "Invalid Stripe signature.")
-    except Exception:
-        raise HTTPException(400, "Invalid Stripe payload.")
+    except stripe.error.SignatureVerificationError as err:
+        raise HTTPException(400, "Invalid Stripe signature.") from err
+    except Exception as err:
+        raise HTTPException(400, "Invalid Stripe payload.") from err
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
@@ -102,6 +103,7 @@ async def stripe_webhook(request: Request, db: DBSession):
             except ValueError:
                 return {"status": "ok"}
             from app.services.ticketing_service import get_order
+
             order = await get_order(db, oid)
             if order and order.payment_status != "paid":
                 order.payment_reference = session.get("payment_intent") or session["id"]
@@ -155,7 +157,9 @@ async def connect_paystack(
 ):
     org, role, is_owner = org_access
     if not is_owner and role != "admin":
-        raise HTTPException(403, "Only the organization owner or admin can manage payment accounts.")
+        raise HTTPException(
+            403, "Only the organization owner or admin can manage payment accounts."
+        )
 
     account = await acc_svc.create_paystack_subaccount(db, org.id, data, org)
     return account
@@ -170,7 +174,9 @@ async def connect_flutterwave(
 ):
     org, role, is_owner = org_access
     if not is_owner and role != "admin":
-        raise HTTPException(403, "Only the organization owner or admin can manage payment accounts.")
+        raise HTTPException(
+            403, "Only the organization owner or admin can manage payment accounts."
+        )
 
     account = await acc_svc.create_flutterwave_subaccount(db, org.id, data, org)
     return account
@@ -189,8 +195,8 @@ async def set_default_account(
 
     try:
         aid = uuid.UUID(account_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid account ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid account ID.") from err
 
     account = await db.scalar(
         select(PaymentAccount).where(
@@ -202,6 +208,7 @@ async def set_default_account(
         raise HTTPException(404, "Payment account not found.")
 
     from sqlalchemy import update as sqla_update
+
     await db.execute(
         sqla_update(PaymentAccount)
         .where(
@@ -229,8 +236,8 @@ async def delete_account(
 
     try:
         aid = uuid.UUID(account_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid account ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid account ID.") from err
 
     account = await db.scalar(
         select(PaymentAccount).where(

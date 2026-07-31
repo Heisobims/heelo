@@ -1,7 +1,7 @@
 """Organization CRUD, team management, invite flow."""
+
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 

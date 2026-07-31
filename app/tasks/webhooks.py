@@ -2,6 +2,7 @@
 Webhook delivery tasks.
 Uses exponential backoff: 1 min, 5 min, 30 min, 2 h, 8 h (max 5 attempts).
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -29,7 +30,10 @@ def _db():
     if _engine is None:
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
-        _engine = create_engine(settings.DATABASE_URL_SYNC, pool_pre_ping=True, pool_size=2, max_overflow=4)
+
+        _engine = create_engine(
+            settings.DATABASE_URL_SYNC, pool_pre_ping=True, pool_size=2, max_overflow=4
+        )
         _SyncSession = sessionmaker(bind=_engine)
     return _SyncSession()
 
@@ -45,18 +49,21 @@ def _sign(secret: str, payload: dict) -> str:
 @shared_task(name="app.tasks.webhooks.deliver_webhook", max_retries=0)
 def deliver_webhook(delivery_id: str) -> None:
     import uuid as _uuid
+
     from app.models.api import WebhookDelivery, WebhookSubscription
 
     with _db() as db:
-        delivery = db.query(WebhookDelivery).filter(
-            WebhookDelivery.id == _uuid.UUID(delivery_id)
-        ).first()
+        delivery = (
+            db.query(WebhookDelivery).filter(WebhookDelivery.id == _uuid.UUID(delivery_id)).first()
+        )
         if not delivery:
             return
 
-        sub = db.query(WebhookSubscription).filter(
-            WebhookSubscription.id == delivery.subscription_id
-        ).first()
+        sub = (
+            db.query(WebhookSubscription)
+            .filter(WebhookSubscription.id == delivery.subscription_id)
+            .first()
+        )
         if not sub or not sub.is_active:
             delivery.status = "failed"
             db.commit()

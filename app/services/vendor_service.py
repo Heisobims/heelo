@@ -6,9 +6,8 @@ import uuid
 from fastapi import HTTPException
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from app.models.vendor import Vendor, VendorLead, VENDOR_CATEGORIES
+from app.models.vendor import VENDOR_CATEGORIES, Vendor, VendorLead
 
 
 def _slugify(text: str) -> str:
@@ -31,7 +30,11 @@ async def get_vendor_by_user(db: AsyncSession, user_id: uuid.UUID) -> Vendor | N
 
 
 async def get_vendor_by_slug(db: AsyncSession, slug: str) -> Vendor | None:
-    return await db.scalar(select(Vendor).where(Vendor.slug == slug))
+    from sqlalchemy.orm import selectinload
+
+    return await db.scalar(
+        select(Vendor).where(Vendor.slug == slug).options(selectinload(Vendor.user))
+    )
 
 
 async def create_vendor(
@@ -47,6 +50,8 @@ async def create_vendor(
     contact_phone: str | None,
     website_url: str | None,
     price_range: str | None,
+    address: str | None = None,
+    capacity: int | None = None,
 ) -> Vendor:
     if category not in VENDOR_CATEGORIES:
         raise HTTPException(400, f"Invalid category. Choose from: {', '.join(VENDOR_CATEGORIES)}")
@@ -67,6 +72,8 @@ async def create_vendor(
         tagline=tagline,
         location_city=location_city,
         location_country=location_country,
+        address=address,
+        capacity=capacity,
         contact_email=contact_email,
         contact_phone=contact_phone,
         website_url=website_url,
@@ -100,6 +107,7 @@ async def list_vendors(
     city: str | None = None,
     country: str | None = None,
     price_range: str | None = None,
+    min_capacity: int | None = None,
     page: int = 1,
     per_page: int = 24,
 ) -> tuple[list[Vendor], int]:
@@ -121,6 +129,8 @@ async def list_vendors(
         stmt = stmt.where(Vendor.location_country == country.upper())
     if price_range:
         stmt = stmt.where(Vendor.price_range == price_range)
+    if min_capacity:
+        stmt = stmt.where(Vendor.capacity.is_not(None), Vendor.capacity >= min_capacity)
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     result = await db.scalars(
@@ -168,8 +178,6 @@ async def get_vendor_leads(
     stmt = select(VendorLead).where(VendorLead.vendor_id == vendor_id)
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     result = await db.scalars(
-        stmt.order_by(VendorLead.created_at.desc())
-        .offset((page - 1) * per_page)
-        .limit(per_page)
+        stmt.order_by(VendorLead.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
     )
     return list(result.all()), total

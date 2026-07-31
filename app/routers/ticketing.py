@@ -5,28 +5,27 @@ from decimal import Decimal
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
+from pydantic import BaseModel
 from sqlalchemy import select
 
-from app.database import get_db
-from app.dependencies import DBSession, OrgAccess
-from app.models.ticketing import PromoCode, Registration, TicketType
+from app.dependencies import CurrentUser, DBSession, OrgAccess
+from app.models.ticketing import PromoCode, TicketType
 from app.schemas.ticketing import (
     FormFieldCreateRequest,
     FormFieldOut,
-    OrderItemRequest,
     OrderOut,
     PromoCodeCreateRequest,
     PromoCodeOut,
     PromoValidateRequest,
     PromoValidateResponse,
     RegisterRequest,
-    RegistrationOut,
     TicketTypeCreateRequest,
     TicketTypeOut,
     TicketTypeUpdateRequest,
     WaitlistJoinRequest,
 )
 from app.services import ticketing_service as tk_svc
+from app.utils.calendar_file import build_ics
 from app.utils.qr_code import generate_qr_png
 
 # ── Organizer API (under org/event scope) ─────────────────────────────────────
@@ -39,10 +38,11 @@ router_org = APIRouter(
 
 async def _get_event_for_org(db, event_id: str, org_id: uuid.UUID):
     from app.models.event import Event
+
     try:
         eid = uuid.UUID(event_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid event ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid event ID.") from err
     event = await db.scalar(select(Event).where(Event.id == eid, Event.org_id == org_id))
     if not event:
         raise HTTPException(404, "Event not found.")
@@ -70,8 +70,12 @@ async def create_ticket_type(
 
 @router_org.patch("/ticket-types/{tt_id}", response_model=TicketTypeOut)
 async def update_ticket_type(
-    slug: str, event_id: str, tt_id: str, data: TicketTypeUpdateRequest,
-    db: DBSession, org_access: OrgAccess,
+    slug: str,
+    event_id: str,
+    tt_id: str,
+    data: TicketTypeUpdateRequest,
+    db: DBSession,
+    org_access: OrgAccess,
 ):
     org, role, is_owner = org_access
     if role not in ("admin", "organizer") and not is_owner:
@@ -79,8 +83,8 @@ async def update_ticket_type(
     event = await _get_event_for_org(db, event_id, org.id)
     try:
         tid = uuid.UUID(tt_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid ticket type ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid ticket type ID.") from err
     tt = await db.scalar(
         select(TicketType).where(TicketType.id == tid, TicketType.event_id == event.id)
     )
@@ -99,8 +103,8 @@ async def delete_ticket_type(
     event = await _get_event_for_org(db, event_id, org.id)
     try:
         tid = uuid.UUID(tt_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid ticket type ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid ticket type ID.") from err
     tt = await db.scalar(
         select(TicketType).where(TicketType.id == tid, TicketType.event_id == event.id)
     )
@@ -119,8 +123,8 @@ async def toggle_visibility(
     event = await _get_event_for_org(db, event_id, org.id)
     try:
         tid = uuid.UUID(tt_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid ticket type ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid ticket type ID.") from err
     tt = await db.scalar(
         select(TicketType).where(TicketType.id == tid, TicketType.event_id == event.id)
     )
@@ -156,6 +160,7 @@ async def delete_form_field(
     slug: str, event_id: str, ff_id: str, db: DBSession, org_access: OrgAccess
 ):
     from app.models.ticketing import RegistrationFormField
+
     org, role, is_owner = org_access
     event = await _get_event_for_org(db, event_id, org.id)
     ff = await db.scalar(
@@ -195,9 +200,7 @@ async def delete_promo_code(
     org, role, is_owner = org_access
     event = await _get_event_for_org(db, event_id, org.id)
     pc = await db.scalar(
-        select(PromoCode).where(
-            PromoCode.id == uuid.UUID(pc_id), PromoCode.event_id == event.id
-        )
+        select(PromoCode).where(PromoCode.id == uuid.UUID(pc_id), PromoCode.event_id == event.id)
     )
     if not pc:
         raise HTTPException(404, "Promo code not found.")
@@ -239,6 +242,38 @@ async def list_registrations(
     }
 
 
+class CancelRegistrationRequest(BaseModel):
+    refund: bool = True
+
+
+@router_org.post("/registrations/{reg_id}/cancel")
+async def cancel_registration(
+    slug: str,
+    event_id: str,
+    reg_id: str,
+    body: CancelRegistrationRequest,
+    db: DBSession,
+    org_access: OrgAccess,
+):
+    org, role, is_owner = org_access
+    if role not in ("admin", "organizer") and not is_owner:
+        raise HTTPException(403, "Insufficient permissions.")
+
+    event = await _get_event_for_org(db, event_id, org.id)
+
+    try:
+        rid = uuid.UUID(reg_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await tk_svc.get_registration_by_id(db, rid)
+    if not reg or reg.event_id != event.id:
+        raise HTTPException(404, "Registration not found.")
+
+    reg = await tk_svc.cancel_registration(db, reg, refund=body.refund, cancelled_by="organizer")
+    return {"success": True, "data": {"id": str(reg.id), "status": reg.status}}
+
+
 # ── Public API ────────────────────────────────────────────────────────────────
 
 router_public = APIRouter(prefix="/api/v1/events", tags=["ticketing-public"])
@@ -246,6 +281,7 @@ router_public = APIRouter(prefix="/api/v1/events", tags=["ticketing-public"])
 
 async def _get_public_event(db, event_slug: str):
     from app.models.event import Event
+
     event = await db.scalar(
         select(Event).where(Event.slug == event_slug, Event.deleted_at.is_(None))
     )
@@ -267,8 +303,9 @@ async def register_for_event(
     db: DBSession,
     request: Request,
 ):
-    from app.utils.auth import decode_access_token
     from jose import JWTError
+
+    from app.utils.auth import decode_access_token
 
     user_id: uuid.UUID | None = None
     token = request.cookies.get("heelo_access")
@@ -289,10 +326,11 @@ async def register_for_event(
     if order.payment_status == "pending":
         from app.models.organization import Organization
         from app.services import payment_service as pay_svc
+
         org = await db.scalar(select(Organization).where(Organization.id == event.org_id))
         try:
             order_out.payment_url = await pay_svc.initialize_payment(db, order, event, org)
-        except HTTPException as exc:
+        except HTTPException:
             # Surface payment init failures as a field on the response, not a 5xx —
             # the order is already created; the attendee can retry via confirmation page.
             order_out.payment_url = None
@@ -339,8 +377,8 @@ router_registrations = APIRouter(prefix="/api/v1/registrations", tags=["registra
 async def registration_qr_image(registration_id: str, db: DBSession):
     try:
         reg_id = uuid.UUID(registration_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid registration ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
 
     reg = await tk_svc.get_registration_by_id(db, reg_id)
     if not reg:
@@ -354,3 +392,52 @@ async def registration_qr_image(registration_id: str, db: DBSession):
         media_type="image/png",
         headers={"Cache-Control": "public, max-age=86400, immutable"},
     )
+
+
+@router_registrations.get("/{registration_id}/calendar.ics")
+async def registration_calendar_ics(registration_id: str, db: DBSession):
+    try:
+        reg_id = uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await tk_svc.get_registration_by_id(db, reg_id)
+    if not reg:
+        raise HTTPException(404, "Registration not found.")
+    if reg.status not in ("confirmed", "checked_in"):
+        raise HTTPException(403, "Ticket is not confirmed.")
+    if not reg.event:
+        raise HTTPException(404, "Event not found.")
+
+    ics_bytes = build_ics(reg.event, uid=reg.id)
+    return Response(
+        content=ics_bytes,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f'attachment; filename="{reg.event.slug}.ics"'},
+    )
+
+
+@router_registrations.post("/{registration_id}/cancel")
+async def cancel_my_registration(
+    registration_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    """Attendee self-service cancellation of their own ticket."""
+    try:
+        reg_id = uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await tk_svc.get_registration_by_id(db, reg_id)
+    if not reg:
+        raise HTTPException(404, "Registration not found.")
+
+    owns_ticket = str(reg.user_id) == str(current_user.id) or (
+        reg.attendee_email and reg.attendee_email.lower() == current_user.email.lower()
+    )
+    if not owns_ticket:
+        raise HTTPException(403, "This isn't your ticket.")
+
+    reg = await tk_svc.cancel_registration(db, reg, refund=True, cancelled_by="attendee")
+    return {"success": True, "data": {"id": str(reg.id), "status": reg.status}}

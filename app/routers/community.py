@@ -14,6 +14,7 @@ router_community = APIRouter(
 
 # ── WhatsApp inbox API ────────────────────────────────────────────────────────
 
+
 class ReplyRequest(BaseModel):
     body: str
 
@@ -66,6 +67,7 @@ async def mark_thread_read(
 
 # ── Follow / Unfollow ─────────────────────────────────────────────────────────
 
+
 @router_community.post("/follow")
 async def follow_org(
     slug: str,
@@ -91,8 +93,9 @@ class CommentRequest(BaseModel):
 
 @router_comments.get("/{slug}/comments")
 async def list_comments(slug: str, db: DBSession, page: int = 1):
-    import uuid as _uuid
-    from sqlalchemy import select, func, desc
+
+    from sqlalchemy import desc, func, select
+
     from app.models.event import Event, EventComment
 
     event = await db.scalar(select(Event).where(Event.slug == slug))
@@ -109,12 +112,15 @@ async def list_comments(slug: str, db: DBSession, page: int = 1):
     )
     rows = await db.scalars(stmt)
     comments = rows.all()
-    total = await db.scalar(
-        select(func.count()).where(
-            EventComment.event_id == event.id,
-            EventComment.is_hidden.is_(False),
+    total = (
+        await db.scalar(
+            select(func.count()).where(
+                EventComment.event_id == event.id,
+                EventComment.is_hidden.is_(False),
+            )
         )
-    ) or 0
+        or 0
+    )
 
     return {
         "comments": [
@@ -133,9 +139,13 @@ async def list_comments(slug: str, db: DBSession, page: int = 1):
 
 
 @router_comments.post("/{slug}/comments", status_code=201)
-async def post_comment(slug: str, body: CommentRequest, db: DBSession, current_user_id: CurrentUserID):
+async def post_comment(
+    slug: str, body: CommentRequest, db: DBSession, current_user_id: CurrentUserID
+):
     import uuid as _uuid
+
     from sqlalchemy import select
+
     from app.models.event import Event, EventComment
     from app.models.user import User
 
@@ -172,7 +182,9 @@ async def post_comment(slug: str, body: CommentRequest, db: DBSession, current_u
 @router_comments.delete("/{slug}/comments/{comment_id}", status_code=204)
 async def delete_comment(slug: str, comment_id: str, db: DBSession, current_user_id: CurrentUserID):
     import uuid as _uuid
+
     from sqlalchemy import select
+
     from app.models.event import Event, EventComment
 
     event = await db.scalar(select(Event).where(Event.slug == slug))
@@ -181,8 +193,8 @@ async def delete_comment(slug: str, comment_id: str, db: DBSession, current_user
 
     try:
         cid = _uuid.UUID(comment_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid comment ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid comment ID.") from err
 
     comment = await db.scalar(
         select(EventComment).where(

@@ -8,7 +8,7 @@ import time
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.api import WebhookDelivery, WebhookSubscription
@@ -55,9 +55,7 @@ async def create_subscription(
     return sub
 
 
-async def list_subscriptions(
-    db: AsyncSession, org_id: uuid.UUID
-) -> list[WebhookSubscription]:
+async def list_subscriptions(db: AsyncSession, org_id: uuid.UUID) -> list[WebhookSubscription]:
     rows = await db.scalars(
         select(WebhookSubscription)
         .where(WebhookSubscription.org_id == org_id)
@@ -133,6 +131,7 @@ async def fire_event(
             WebhookSubscription.is_active.is_(True),
         )
     )
+    deliveries: list[WebhookDelivery] = []
     for sub in subs.all():
         if event_type not in (sub.events or []):
             continue
@@ -143,16 +142,35 @@ async def fire_event(
             status="pending",
         )
         db.add(delivery)
-        await db.flush()  # get delivery.id before dispatching
+        deliveries.append(delivery)
 
+    if not deliveries:
+        return
+
+    # Commit before dispatching — the Celery worker queries this row from a
+    # separate DB connection, which can't see it until this transaction
+    # commits. Dispatching first is a race: a fast worker finds nothing,
+    # returns silently, and (since next_retry_at is still unset) the retry
+    # beat task never picks it up either — the delivery is stuck forever.
+    await db.commit()
+
+    from app.tasks.webhooks import deliver_webhook
+
+    failed_ids = []
+    for delivery in deliveries:
         try:
-            from app.tasks.webhooks import deliver_webhook
             deliver_webhook.delay(str(delivery.id))
         except Exception:
-            # Celery unavailable — beat task will retry once next_retry_at passes
-            delivery.next_retry_at = datetime.now(UTC) + timedelta(seconds=60)
+            failed_ids.append(delivery.id)
 
-    await db.commit()
+    if failed_ids:
+        # Celery unavailable — set next_retry_at so the beat task picks these up.
+        await db.execute(
+            update(WebhookDelivery)
+            .where(WebhookDelivery.id.in_(failed_ids))
+            .values(next_retry_at=datetime.now(UTC) + timedelta(seconds=60))
+        )
+        await db.commit()
 
 
 def fire_event_sync(
@@ -163,13 +181,11 @@ def fire_event_sync(
     payload: dict,
 ) -> None:
     """Sync version for Celery tasks."""
-    from app.models.api import WebhookSubscription as WS, WebhookDelivery as WD
+    from app.models.api import WebhookDelivery as WD
+    from app.models.api import WebhookSubscription as WS
 
-    subs = (
-        db.query(WS)
-        .filter(WS.org_id == org_id, WS.is_active.is_(True))
-        .all()
-    )
+    subs = db.query(WS).filter(WS.org_id == org_id, WS.is_active.is_(True)).all()
+    deliveries = []
     for sub in subs:
         if event_type not in (sub.events or []):
             continue
@@ -180,10 +196,24 @@ def fire_event_sync(
             status="pending",
         )
         db.add(delivery)
-        db.flush()
+        deliveries.append(delivery)
+
+    if not deliveries:
+        return
+
+    # Commit before dispatching — see the comment in fire_event() above.
+    db.commit()
+
+    from app.tasks.webhooks import deliver_webhook
+
+    failed = []
+    for delivery in deliveries:
         try:
-            from app.tasks.webhooks import deliver_webhook
             deliver_webhook.delay(str(delivery.id))
         except Exception:
+            failed.append(delivery)
+
+    if failed:
+        for delivery in failed:
             delivery.next_retry_at = datetime.now(UTC) + timedelta(seconds=60)
-    db.commit()
+        db.commit()

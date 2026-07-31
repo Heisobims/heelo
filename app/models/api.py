@@ -20,9 +20,7 @@ class ApiKey(Base, TimestampMixin):
     __tablename__ = "api_keys"
     __table_args__ = (Index("ix_api_keys_org_active", "org_id", "is_active"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
@@ -53,9 +51,7 @@ class WebhookSubscription(Base, TimestampMixin):
     __tablename__ = "webhook_subscriptions"
     __table_args__ = (Index("ix_webhook_subscriptions_org_active", "org_id", "is_active"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
@@ -90,9 +86,7 @@ class WebhookDelivery(Base, TimestampMixin):
         Index("ix_webhook_deliveries_next_retry", "next_retry_at"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     subscription_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("webhook_subscriptions.id", ondelete="CASCADE"),

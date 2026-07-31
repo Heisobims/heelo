@@ -18,6 +18,8 @@ class UserOut(BaseModel):
     username: str | None
     onboarding_completed: bool
     whatsapp_number: str | None
+    country: str | None = None
+    birth_year: int | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -126,11 +128,28 @@ class UpdateProfileRequest(BaseModel):
     full_name: str | None = Field(None, min_length=2, max_length=255)
     username: str | None = Field(None, min_length=2, max_length=50, pattern=r"^[a-z0-9_]+$")
     whatsapp_number: str | None = Field(None, max_length=30)
+    # Opt-in demographics — never required, used for audience insights.
+    country: str | None = Field(None, min_length=2, max_length=2)
+    birth_year: int | None = Field(None, ge=1920)
 
     @field_validator("full_name")
     @classmethod
     def strip_name(cls, v: str | None) -> str | None:
         return v.strip() if v else v
+
+    @field_validator("country")
+    @classmethod
+    def uppercase_country(cls, v: str | None) -> str | None:
+        return v.upper() if v else v
+
+    @field_validator("birth_year")
+    @classmethod
+    def sane_birth_year(cls, v: int | None) -> int | None:
+        from datetime import UTC, datetime
+
+        if v is not None and v > datetime.now(UTC).year - 5:
+            raise ValueError("Birth year seems off.")
+        return v
 
 
 class ChangePasswordRequest(BaseModel):

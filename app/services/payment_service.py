@@ -8,6 +8,7 @@ from collections import Counter
 from decimal import Decimal
 
 import httpx
+import structlog
 from fastapi import HTTPException
 from sqlalchemy import func, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,10 +16,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.ticketing import Order, Registration, TicketType
 
+logger = structlog.get_logger()
+
 PLATFORM_FEE_PERCENT = Decimal("0.03")
 
 
 # ── Payment initialization ────────────────────────────────────────────────────
+
 
 async def initialize_payment(
     db: AsyncSession,
@@ -166,7 +170,8 @@ async def _initialize_stripe(db: AsyncSession, order: Order, event, org) -> str:
                         "unit_amount": int(float(order.total_amount) * 100),
                         "product_data": {
                             "name": f"Tickets — {event.title}",
-                            "description": f"{event.title}" + (f" · {start_label}" if start_label else ""),
+                            "description": f"{event.title}"
+                            + (f" · {start_label}" if start_label else ""),
                         },
                     },
                     "quantity": 1,
@@ -176,9 +181,7 @@ async def _initialize_stripe(db: AsyncSession, order: Order, event, org) -> str:
                 f"{settings.FRONTEND_URL}/payments/stripe/return"
                 "?session_id={CHECKOUT_SESSION_ID}"
             ),
-            cancel_url=(
-                f"{settings.FRONTEND_URL}/orders/{order.id}/confirmation?cancelled=1"
-            ),
+            cancel_url=(f"{settings.FRONTEND_URL}/orders/{order.id}/confirmation?cancelled=1"),
             metadata={"order_id": str(order.id)},
         )
 
@@ -187,6 +190,7 @@ async def _initialize_stripe(db: AsyncSession, order: Order, event, org) -> str:
 
 
 # ── Verification ──────────────────────────────────────────────────────────────
+
 
 async def verify_paystack(db: AsyncSession, reference: str) -> Order | None:
     """Verify a Paystack payment by reference and confirm the order. Idempotent."""
@@ -262,6 +266,7 @@ async def verify_stripe_session(db: AsyncSession, session_id: str) -> Order | No
         return None
 
     from app.services.ticketing_service import get_order
+
     order = await get_order(db, order_id)
     if not order or order.payment_status == "paid":
         return order
@@ -281,10 +286,12 @@ async def _order_from_reference(db: AsyncSession, reference: str) -> Order | Non
         return None
 
     from app.services.ticketing_service import get_order
+
     return await get_order(db, order_id)
 
 
 # ── Confirm order ─────────────────────────────────────────────────────────────
+
 
 async def confirm_order(db: AsyncSession, order: Order) -> None:
     """Mark order as paid, update ticket quantities, confirm registrations. Idempotent."""
@@ -299,9 +306,7 @@ async def confirm_order(db: AsyncSession, order: Order) -> None:
     order.net_amount = float(total - fee)
 
     registrations: list[Registration] = order.registrations or []
-    tt_counts = Counter(
-        reg.ticket_type_id for reg in registrations if reg.status == "pending"
-    )
+    tt_counts = Counter(reg.ticket_type_id for reg in registrations if reg.status == "pending")
 
     for tt_id, count in tt_counts.items():
         await db.execute(
@@ -322,17 +327,28 @@ async def confirm_order(db: AsyncSession, order: Order) -> None:
     # Enqueue confirmation email + WhatsApp — fire-and-forget, never block on failure.
     try:
         from app.tasks.email import send_registration_confirmation as _email_conf
+
         _email_conf.delay(str(order.id))
-    except Exception:
-        pass
+    except Exception as err:
+        logger.warning(
+            "payment.confirmation_email_enqueue_failed", order_id=str(order.id), error=str(err)
+        )
     try:
         from app.tasks.whatsapp import send_registration_confirmation as _wa_conf
+
         _wa_conf.delay(str(order.id))
-    except Exception:
-        pass
+    except Exception as err:
+        logger.warning(
+            "payment.confirmation_whatsapp_enqueue_failed", order_id=str(order.id), error=str(err)
+        )
     try:
         from app.services import webhook_service as _wh_svc
-        event_obj = order.registrations[0].event if (order.registrations and order.registrations[0].event) else None
+
+        event_obj = (
+            order.registrations[0].event
+            if (order.registrations and order.registrations[0].event)
+            else None
+        )
         _org_id = event_obj.org_id if event_obj else None
         if _org_id:
             await _wh_svc.fire_event(
@@ -348,11 +364,111 @@ async def confirm_order(db: AsyncSession, order: Order) -> None:
                     "registration_count": len(registrations),
                 },
             )
-    except Exception:
-        pass
+    except Exception as err:
+        logger.warning("payment.order_paid_webhook_failed", order_id=str(order.id), error=str(err))
+
+
+# ── Refunds ───────────────────────────────────────────────────────────────────
+
+
+async def refund_order_item(order: Order, amount: Decimal) -> bool:
+    """Refund `amount` (gross, in order.currency) via the order's payment provider.
+
+    Returns True on success. A False return means nothing was refunded — the
+    caller must not treat the ticket as refunded.
+    """
+    if not order.payment_provider or order.payment_provider == "free":
+        return True  # nothing was ever charged
+
+    try:
+        if order.payment_provider == "paystack":
+            return await _refund_paystack(order, amount)
+        if order.payment_provider == "flutterwave":
+            return await _refund_flutterwave(order, amount)
+        if order.payment_provider == "stripe":
+            return await _refund_stripe(order, amount)
+    except Exception as exc:
+        logger.error(
+            "payment.refund_failed",
+            order_id=str(order.id),
+            provider=order.payment_provider,
+            error=str(exc),
+        )
+        return False
+
+    logger.warning("payment.refund_unknown_provider", provider=order.payment_provider)
+    return False
+
+
+async def _refund_paystack(order: Order, amount: Decimal) -> bool:
+    if not order.payment_reference:
+        return False
+    amount_kobo = max(int(float(amount) * 100), 100)
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            "https://api.paystack.co/refund",
+            json={"transaction": order.payment_reference, "amount": amount_kobo},
+            headers={
+                "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+                "Content-Type": "application/json",
+            },
+            timeout=15.0,
+        )
+    body = resp.json()
+    return bool(body.get("status"))
+
+
+async def _refund_flutterwave(order: Order, amount: Decimal) -> bool:
+    if not order.payment_reference:
+        return False
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"https://api.flutterwave.com/v3/transactions/{order.payment_reference}/refund",
+            json={"amount": float(amount)},
+            headers={
+                "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}",
+                "Content-Type": "application/json",
+            },
+            timeout=15.0,
+        )
+    body = resp.json()
+    return body.get("status") == "success"
+
+
+async def _refund_stripe(order: Order, amount: Decimal) -> bool:
+    import stripe  # type: ignore
+
+    payment_intent = order.payment_reference
+    if not payment_intent:
+        return False
+
+    # Older orders may have stored the checkout session ID instead of the
+    # payment intent — resolve it before attempting the refund.
+    if payment_intent.startswith("cs_"):
+        session = await asyncio.to_thread(
+            stripe.checkout.Session.retrieve, payment_intent, api_key=settings.STRIPE_SECRET_KEY
+        )
+        payment_intent = session.payment_intent
+        if not payment_intent:
+            return False
+
+    amount_cents = int(float(amount) * 100)
+
+    def _create_refund():
+        return stripe.Refund.create(
+            payment_intent=payment_intent,
+            amount=amount_cents,
+            api_key=settings.STRIPE_SECRET_KEY,
+        )
+
+    refund = await asyncio.to_thread(_create_refund)
+    return refund.status in ("succeeded", "pending")
 
 
 # ── Signature verification ────────────────────────────────────────────────────
+
 
 def verify_paystack_signature(body: bytes, signature: str) -> bool:
     expected = hmac.new(

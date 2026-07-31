@@ -26,6 +26,11 @@ class OrgUpdateRequest(BaseModel):
     currency: str | None = Field(None, pattern=r"^[A-Z]{3}$")
     logo_url: str | None = None
     cover_url: str | None = None
+    contact_email: str | None = None
+    instagram_url: str | None = None
+    twitter_url: str | None = None
+    facebook_url: str | None = None
+    linkedin_url: str | None = None
 
 
 class OrgOut(BaseModel):
@@ -41,6 +46,11 @@ class OrgOut(BaseModel):
     plan: str
     owner_id: uuid.UUID
     is_active: bool
+    contact_email: str | None = None
+    instagram_url: str | None = None
+    twitter_url: str | None = None
+    facebook_url: str | None = None
+    linkedin_url: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -97,7 +107,9 @@ class OnboardingState(BaseModel):
 
     @property
     def completed_count(self) -> int:
-        return sum([self.has_event, self.has_payment_account, self.has_team_member, self.has_whatsapp])
+        return sum(
+            [self.has_event, self.has_payment_account, self.has_team_member, self.has_whatsapp]
+        )
 
     @property
     def total(self) -> int:

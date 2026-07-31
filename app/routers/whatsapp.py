@@ -4,17 +4,22 @@ WhatsApp Business Cloud API webhook endpoints.
 GET  /api/v1/webhooks/whatsapp  — Meta verification handshake
 POST /api/v1/webhooks/whatsapp  — Incoming messages & status updates
 """
+
 from __future__ import annotations
 
+import structlog
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 
 from app.config import settings
 
+logger = structlog.get_logger()
+
 router_whatsapp = APIRouter(prefix="/api/v1/webhooks", tags=["whatsapp"])
 
 
 # ── Webhook verification ──────────────────────────────────────────────────────
+
 
 @router_whatsapp.get("/whatsapp", response_class=PlainTextResponse)
 async def whatsapp_verify(request: Request) -> str:
@@ -38,6 +43,7 @@ async def whatsapp_verify(request: Request) -> str:
 
 
 # ── Incoming messages ─────────────────────────────────────────────────────────
+
 
 @router_whatsapp.post("/whatsapp", status_code=200)
 async def whatsapp_incoming(request: Request) -> dict:
@@ -67,8 +73,10 @@ async def whatsapp_incoming(request: Request) -> dict:
                     # Dispatch to Celery — never block the 200 response
                     try:
                         from app.tasks.whatsapp import handle_incoming_message
+
                         handle_incoming_message.delay(from_phone, text)
-                    except Exception:
-                        pass  # Celery not available? Respond 200 anyway
+                    except Exception as err:
+                        # Celery not available — still respond 200 to Meta, but log the drop.
+                        logger.warning("whatsapp.incoming_message_enqueue_failed", error=str(err))
 
     return {"status": "ok"}

@@ -206,6 +206,14 @@ body { background: var(--bg-secondary); }
   {% if user %}
   <div style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
     {% if event.status in ('published', 'live') %}
+    <button type="button" class="btn btn-secondary btn-sm" id="interested-btn"
+      data-slug="{{ event.slug }}" data-interested="{{ 'true' if is_interested else 'false' }}"
+      data-logged-in="true"
+      onclick="heeloToggleInterestBtn(this)"
+      style="{% if is_interested %}background:var(--cyan); border-color:var(--cyan); color:#000;{% endif %}">
+      <span class="material-symbols-outlined" id="interested-icon" style="font-size:11px; margin-right:5px;">{{ 'favorite' if is_interested else 'favorite_border' }}</span>
+      <span id="interested-label">{{ 'Interested' if is_interested else "I'm interested" }}</span>
+    </button>
     <button type="button" class="btn btn-secondary btn-sm"
       onclick="navigator.share ? navigator.share({title:'{{ event.title }}',url:window.location.href}) : navigator.clipboard.writeText(window.location.href)">
       <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">share</span>Share
@@ -217,6 +225,12 @@ body { background: var(--bg-secondary); }
   </div>
   {% else %}
   <div style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
+    {% if event.status in ('published', 'live') %}
+    <button type="button" class="btn btn-secondary btn-sm" data-logged-in="false"
+      onclick="heeloToggleInterestBtn(this)">
+      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">favorite_border</span>I'm interested
+    </button>
+    {% endif %}
     <a href="/login" style="font-size:14px; color:var(--text-secondary); text-decoration:none;">Sign in</a>
     <a href="/register" class="btn btn-primary btn-sm">Sign up free</a>
   </div>
@@ -230,6 +244,55 @@ body { background: var(--bg-secondary); }
 <script>
 if (new URLSearchParams(window.location.search).get('no_tickets') === '1') {
   document.getElementById('no-tickets-notice').style.display = 'block';
+}
+
+async function heeloSendConnectRequest(targetUserId, btn) {
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Sending…';
+  try {
+    const res = await fetch('/api/v1/connections', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ target_user_id: targetUserId }),
+    });
+    if (!res.ok) throw new Error('failed');
+    const data = await res.json();
+    btn.textContent = data.data.status === 'accepted' ? 'Connected' : 'Request sent';
+  } catch {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+async function heeloToggleInterestBtn(btn) {
+  if (btn.dataset.loggedIn !== 'true') {
+    window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+    return;
+  }
+  const slug = btn.dataset.slug;
+  const wasInterested = btn.dataset.interested === 'true';
+  const method = wasInterested ? 'DELETE' : 'POST';
+
+  const icon = document.getElementById('interested-icon');
+  const label = document.getElementById('interested-label');
+  const applyState = (interested) => {
+    btn.dataset.interested = interested ? 'true' : 'false';
+    btn.style.background = interested ? 'var(--cyan)' : '';
+    btn.style.borderColor = interested ? 'var(--cyan)' : '';
+    btn.style.color = interested ? '#000' : '';
+    if (icon) icon.textContent = interested ? 'favorite' : 'favorite_border';
+    if (label) label.textContent = interested ? 'Interested' : "I'm interested";
+  };
+
+  applyState(!wasInterested); // optimistic
+  try {
+    const res = await fetch(`/api/v1/events/${slug}/interested`, { method, credentials: 'include' });
+    if (!res.ok) throw new Error('request failed');
+  } catch {
+    applyState(wasInterested); // revert on failure
+  }
 }
 </script>
 
@@ -263,6 +326,13 @@ if (new URLSearchParams(window.location.search).get('no_tickets') === '1') {
     {% if org %}
     <div style="font-size:14px; color:rgba(255,255,255,0.65);">
       by <strong style="color:rgba(255,255,255,0.9);">{{ org.name }}</strong>
+    </div>
+    {% endif %}
+    {% if event.vibe_tags %}
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:12px;">
+      {% for tag in event.vibe_tags %}
+      <span style="font-size:12px; font-weight:500; padding:4px 12px; border-radius:100px; background:rgba(255,255,255,0.12); color:#fff; backdrop-filter:blur(4px);">{{ tag }}</span>
+      {% endfor %}
     </div>
     {% endif %}
   </div>
@@ -519,6 +589,41 @@ if (new URLSearchParams(window.location.search).get('no_tickets') === '1') {
         </div>
         {% endif %}
         {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ── People going ──────────────────────────────────────────── -->
+    {% if user and (connectable_attendees or mutuals_going_count > 0) %}
+    <div class="ev-card animate-in animate-in-d2">
+      <div class="ev-card-body">
+        <div class="ev-card-title">
+          <span class="material-symbols-outlined">groups</span> People going
+        </div>
+        {% if mutuals_going_count > 0 %}
+        <p style="font-size:13px; color:var(--cyan-dark, #00b3a9); font-weight:600; margin:-8px 0 14px;">
+          {{ mutuals_going_count }} {{ 'person' if mutuals_going_count == 1 else 'people' }} you know {{ 'is' if mutuals_going_count == 1 else 'are' }} going
+        </p>
+        {% endif %}
+        {% if connectable_attendees %}
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          {% for att_user, att_profile in connectable_attendees %}
+          <div style="display:flex; align-items:center; gap:10px;">
+            <a href="/p/{{ att_user.username }}" style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; text-decoration:none; color:inherit;">
+              <div style="width:36px; height:36px; border-radius:50%; background:var(--cyan); color:#000; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">
+                {% if att_user.avatar_url %}<img src="{{ att_user.avatar_url }}" alt="" style="width:100%; height:100%; object-fit:cover;">{% else %}{{ att_user.full_name[0].upper() }}{% endif %}
+              </div>
+              <div style="min-width:0;">
+                <div style="font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ att_user.full_name }}</div>
+                {% if att_profile.headline %}<div style="font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ att_profile.headline }}</div>{% endif %}
+              </div>
+            </a>
+            <button type="button" class="btn btn-secondary btn-sm" style="flex-shrink:0;"
+              onclick="heeloSendConnectRequest('{{ att_user.id }}', this)">Connect</button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endif %}

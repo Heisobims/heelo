@@ -1,22 +1,50 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Admin{% endblock %} — Heelo Admin</title>
+  <script>
+    // Set theme before first paint to avoid a flash of the wrong theme.
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('heelo_admin_theme') || 'dark');
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/main.css" />
   <style>
-    :root {
+    :root, [data-theme="dark"] {
       --admin-accent: #ff6b35;
       --admin-bg: #0d0d0d;
       --admin-surface: #1a1a1a;
       --admin-surface-raised: #222;
       --admin-border: #2a2a2a;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --admin-logo-text: #fff;
+    }
+    [data-theme="light"] {
+      --admin-accent: #e85a2a;
+      --admin-bg: #f7f7f5;
+      --admin-surface: #ffffff;
+      --admin-surface-raised: #f0f0ed;
+      --admin-border: #e5e5e0;
+      --text: #0a0a0a;
+      --text-muted: #6b6b6b;
+      --admin-logo-text: #0a0a0a;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Stack Sans Headline', sans-serif; background: var(--admin-bg); color: var(--text, #e4e4e7); min-height: 100vh; display: flex; flex-direction: column; }
+    body { font-family: 'Stack Sans Headline', sans-serif; background: var(--admin-bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; transition: background 0.15s, color 0.15s; }
+
+    .theme-toggle {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      background: var(--admin-surface-raised); border: 1px solid var(--admin-border);
+      color: var(--text); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; margin-right: 4px;
+    }
+    .theme-toggle:hover { border-color: var(--admin-accent); }
+    .theme-toggle .icon-dark { display: none; }
+    [data-theme="dark"] .theme-toggle .icon-dark { display: block; }
+    [data-theme="dark"] .theme-toggle .icon-light { display: none; }
 
     .admin-header {
       background: var(--admin-surface);
@@ -31,7 +59,7 @@
       z-index: 50;
     }
     .admin-logo { font-weight: 700; font-size: 1rem; color: var(--admin-accent); letter-spacing: -0.02em; }
-    .admin-logo span { color: #fff; }
+    .admin-logo span:not(.admin-badge) { color: var(--admin-logo-text); }
     .admin-nav { display: flex; gap: 4px; margin-left: 24px; }
     .admin-nav a {
       padding: 6px 12px;
@@ -68,6 +96,7 @@
 
     .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
     .badge-active { background: #00FFF320; color: #00FFF3; }
+    [data-theme="light"] .badge-active { background: #00c85320; color: #00854a; }
     .badge-suspended { background: #ff6b6b20; color: #ff6b6b; }
     .badge-plan-starter { background: #71717a20; color: #a1a1aa; }
     .badge-plan-growth { background: #3b82f620; color: #60a5fa; }
@@ -111,10 +140,27 @@
     <a href="/admin" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
     <a href="/admin/organizations" class="{{ 'active' if active_page == 'organizations' else '' }}">Organizations</a>
     <a href="/admin/users" class="{{ 'active' if active_page == 'users' else '' }}">Users</a>
+    <a href="/admin/insights" class="{{ 'active' if active_page == 'insights' else '' }}">Insights</a>
     <a href="/admin/events" class="{{ 'active' if active_page == 'events' else '' }}">Events</a>
+    <a href="/admin/broadcasts" class="{{ 'active' if active_page == 'broadcasts' else '' }}">Broadcasts</a>
   </nav>
-  <div class="admin-user">{{ admin_user.email }} &rarr; <a href="/dashboard" style="color:var(--admin-accent);text-decoration:none;">Back to app</a></div>
+  <div class="admin-user" style="display:flex; align-items:center; gap:14px;">
+    <button class="theme-toggle" onclick="toggleAdminTheme()" aria-label="Toggle light/dark mode" type="button">
+      <svg class="icon-dark" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-light" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <span>{{ admin_user.email }} &rarr; <a href="/dashboard" style="color:var(--admin-accent);text-decoration:none;">Back to app</a></span>
+  </div>
 </header>
+
+<script>
+  function toggleAdminTheme() {
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('heelo_admin_theme', next);
+  }
+</script>
 
 <main class="admin-content">
   {% block content %}{% endblock %}

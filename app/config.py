@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import AnyHttpUrl, EmailStr, PostgresDsn, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     FACEBOOK_CLIENT_ID: str = ""
     FACEBOOK_CLIENT_SECRET: str = ""
 
+    # ── Email — Resend ────────────────────────────────────────────────────────
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "hello@heelo.io"
+    RESEND_FROM_NAME: str = "Heelo"
+
     # ── Email — SMTP ─────────────────────────────────────────────────────────
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
@@ -65,7 +70,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "hello@heelo.io"
     SMTP_FROM_NAME: str = "Heelo"
-    SMTP_TLS: bool = True   # STARTTLS (port 587)
+    SMTP_TLS: bool = True  # STARTTLS (port 587)
     SMTP_SSL: bool = False  # Direct SSL (port 465)
 
     # ── SMS ───────────────────────────────────────────────────────────────────
@@ -102,15 +107,11 @@ class Settings(BaseSettings):
     CLOUDFLARE_R2_BUCKET: str = "heelo-media"
     CLOUDFLARE_R2_PUBLIC_URL: str = "https://media.heelo.io"
 
-    # ── USSD ──────────────────────────────────────────────────────────────────
-    AFRICAS_TALKING_API_KEY: str = ""
-    AFRICAS_TALKING_USERNAME: str = "sandbox"
-
     # ── Database pool ─────────────────────────────────────────────────────────
-    DB_POOL_SIZE: int = 10      # connections per worker
-    DB_MAX_OVERFLOW: int = 20   # burst headroom
-    DB_POOL_TIMEOUT: int = 30   # seconds to wait for a connection
-    DB_POOL_RECYCLE: int = 1800 # recycle idle connections after 30 min
+    DB_POOL_SIZE: int = 10  # connections per worker
+    DB_MAX_OVERFLOW: int = 20  # burst headroom
+    DB_POOL_TIMEOUT: int = 30  # seconds to wait for a connection
+    DB_POOL_RECYCLE: int = 1800  # recycle idle connections after 30 min
 
     # ── Monitoring ────────────────────────────────────────────────────────────
     SENTRY_DSN: str = ""

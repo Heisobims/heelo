@@ -51,6 +51,7 @@
   .vs-error { font-size: 13px; color: #dc2626; margin-top: 10px; }
   .vs-login-notice { font-size: 13.5px; color: var(--text-muted); margin-bottom: 20px; padding: 12px 16px; background: rgba(0,255,243,0.04); border: 1px solid rgba(0,255,243,0.2); border-radius: 10px; }
   .vs-login-notice a { color: var(--cyan-dark, #00b3a9); text-decoration: none; font-weight: 600; }
+  [x-cloak] { display: none !important; }
 </style>
 {% endblock %}
 
@@ -128,6 +129,20 @@
           <div class="hint">2-letter ISO code (NG, GH, KE…)</div>
         </div>
       </div>
+      <div class="field" x-show="form.category === 'venue'" x-cloak>
+        <label>Full address</label>
+        <input type="text" x-model="form.address" placeholder="12 Admiralty Way, Lekki Phase 1, Lagos">
+        <div class="hint">Shown to organizers once they enquire — helps them judge the commute for guests.</div>
+      </div>
+    </div>
+
+    <div class="vs-group" x-show="form.category === 'venue'" x-cloak>
+      <div class="vs-section-label">Venue details</div>
+      <div class="field">
+        <label>Guest capacity</label>
+        <input type="number" x-model.number="form.capacity" placeholder="300" min="1">
+        <div class="hint">Maximum number of guests this venue can seat/host — helps organizers filter by event size.</div>
+      </div>
     </div>
 
     <div class="vs-group">
@@ -190,6 +205,8 @@ function vendorSignup() {
       description: '',
       location_city: '',
       location_country: '',
+      address: '',
+      capacity: null,
       contact_email: '{{ user.email if user else '' }}',
       contact_phone: '',
       website_url: '',
@@ -213,6 +230,8 @@ function vendorSignup() {
             description: this.form.description || null,
             location_city: this.form.location_city || null,
             location_country: this.form.location_country ? this.form.location_country.toUpperCase() : null,
+            address: this.form.category === 'venue' ? (this.form.address || null) : null,
+            capacity: this.form.category === 'venue' ? (this.form.capacity || null) : null,
             contact_email: this.form.contact_email || null,
             contact_phone: this.form.contact_phone || null,
             website_url: this.form.website_url || null,

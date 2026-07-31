@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,15 +23,16 @@ async def get_event_summary(db: AsyncSession, event_id: uuid.UUID) -> dict:
     cancelled = by_status.get("cancelled", 0)
     total_attendees = confirmed + checked_in
 
-    rev = (await db.execute(
-        select(
-            func.coalesce(func.sum(Order.net_amount), 0).label("net"),
-            func.coalesce(func.sum(Order.total_amount), 0).label("gross"),
-            func.coalesce(func.sum(Order.discount_amount), 0).label("discounts"),
-            func.count(Order.id).label("orders"),
+    rev = (
+        await db.execute(
+            select(
+                func.coalesce(func.sum(Order.net_amount), 0).label("net"),
+                func.coalesce(func.sum(Order.total_amount), 0).label("gross"),
+                func.coalesce(func.sum(Order.discount_amount), 0).label("discounts"),
+                func.count(Order.id).label("orders"),
+            ).where(Order.event_id == event_id, Order.payment_status == "paid")
         )
-        .where(Order.event_id == event_id, Order.payment_status == "paid")
-    )).one()
+    ).one()
 
     avg_order = float(rev.net) / rev.orders if rev.orders > 0 else 0
     checkin_rate = round(checked_in / total_attendees * 100, 1) if total_attendees > 0 else 0.0
@@ -66,20 +67,22 @@ async def get_ticket_breakdown(db: AsyncSession, event_id: uuid.UUID) -> list[di
         revenue = sold * float(tt.price)
         sold_pct = round(sold / capacity * 100) if capacity else None
 
-        result.append({
-            "id": str(tt.id),
-            "name": tt.name,
-            "tier": tt.tier,
-            "price": float(tt.price),
-            "currency": tt.currency,
-            "quantity_sold": sold,
-            "quantity_reserved": reserved,
-            "capacity": capacity,
-            "available": available,
-            "revenue": revenue,
-            "sold_pct": sold_pct,
-            "is_free": float(tt.price) == 0,
-        })
+        result.append(
+            {
+                "id": str(tt.id),
+                "name": tt.name,
+                "tier": tt.tier,
+                "price": float(tt.price),
+                "currency": tt.currency,
+                "quantity_sold": sold,
+                "quantity_reserved": reserved,
+                "capacity": capacity,
+                "available": available,
+                "revenue": revenue,
+                "sold_pct": sold_pct,
+                "is_free": float(tt.price) == 0,
+            }
+        )
     return result
 
 
@@ -116,10 +119,7 @@ async def get_registration_over_time(db: AsyncSession, event_id: uuid.UUID) -> l
         .group_by(period)
         .order_by(period)
     )
-    return [
-        {"date": row.period.date().isoformat(), "count": row.count}
-        for row in rows
-    ]
+    return [{"date": row.period.date().isoformat(), "count": row.count} for row in rows]
 
 
 async def get_utm_breakdown(db: AsyncSession, event_id: uuid.UUID) -> list[dict]:
@@ -179,10 +179,13 @@ async def get_live_stats(db: AsyncSession, event_id: uuid.UUID) -> dict:
     pending = by_status.get("pending", 0)
     total_attendees = confirmed + checked_in
 
-    net = (await db.execute(
-        select(func.coalesce(func.sum(Order.net_amount), 0).label("net"))
-        .where(Order.event_id == event_id, Order.payment_status == "paid")
-    )).scalar() or 0
+    net = (
+        await db.execute(
+            select(func.coalesce(func.sum(Order.net_amount), 0).label("net")).where(
+                Order.event_id == event_id, Order.payment_status == "paid"
+            )
+        )
+    ).scalar() or 0
 
     checkin_rate = round(checked_in / total_attendees * 100, 1) if total_attendees > 0 else 0.0
 
@@ -192,5 +195,5 @@ async def get_live_stats(db: AsyncSession, event_id: uuid.UUID) -> dict:
         "pending_registrations": pending,
         "net_revenue": float(net),
         "checkin_rate": checkin_rate,
-        "ts": datetime.now(timezone.utc).isoformat(),
+        "ts": datetime.now(UTC).isoformat(),
     }

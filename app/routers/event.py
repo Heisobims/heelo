@@ -4,15 +4,13 @@ import uuid
 from io import BytesIO
 
 from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile, status
-from fastapi.responses import StreamingResponse
 from PIL import Image
 
-from app.dependencies import CurrentUser, DBSession, OrgAccess
+from app.dependencies import CurrentUser, CurrentUserID, DBSession, OrgAccess
 from app.schemas.event import (
     EventCreateRequest,
     EventListItem,
     EventOut,
-    EventSearchQuery,
     EventUpdateRequest,
     PublicEventOut,
 )
@@ -30,6 +28,7 @@ def _ok(data) -> dict:
 
 
 # ── Org-scoped event endpoints ────────────────────────────────────────────────
+
 
 @router_org.post("", status_code=status.HTTP_201_CREATED)
 async def create_event(
@@ -60,26 +59,30 @@ async def list_events(
     data = []
     for entry in items:
         ev = entry["event"]
-        data.append(EventListItem(
-            id=ev.id,
-            title=ev.title,
-            slug=ev.slug,
-            cover_image_url=ev.cover_image_url,
-            status=ev.status,
-            format=ev.format,
-            start_datetime=ev.start_datetime,
-            end_datetime=ev.end_datetime,
-            venue_city=ev.venue_city,
-            max_capacity=ev.max_capacity,
-            is_private=ev.is_private,
-            created_at=ev.created_at,
-            registration_count=entry["registration_count"],
-            total_revenue=entry["total_revenue"],
-        ))
-    return _ok({
-        "items": [d.model_dump() for d in data],
-        "meta": {"total": total, "page": page, "per_page": per_page},
-    })
+        data.append(
+            EventListItem(
+                id=ev.id,
+                title=ev.title,
+                slug=ev.slug,
+                cover_image_url=ev.cover_image_url,
+                status=ev.status,
+                format=ev.format,
+                start_datetime=ev.start_datetime,
+                end_datetime=ev.end_datetime,
+                venue_city=ev.venue_city,
+                max_capacity=ev.max_capacity,
+                is_private=ev.is_private,
+                created_at=ev.created_at,
+                registration_count=entry["registration_count"],
+                total_revenue=entry["total_revenue"],
+            )
+        )
+    return _ok(
+        {
+            "items": [d.model_dump() for d in data],
+            "meta": {"total": total, "page": page, "per_page": per_page},
+        }
+    )
 
 
 @router_org.get("/{event_id}")
@@ -128,16 +131,19 @@ async def update_event(
         if new_val is not None:
             old_val = getattr(event, attr, None)
             if str(old_val or "") != str(new_val):
-                changes.append({
-                    "field": label,
-                    "old": str(old_val) if old_val else "—",
-                    "new": str(new_val),
-                })
+                changes.append(
+                    {
+                        "field": label,
+                        "old": str(old_val) if old_val else "—",
+                        "new": str(new_val),
+                    }
+                )
 
     updated = await svc.update_event(db, event, body)
 
     if changes and event.status in ("published", "live"):
         from app.tasks.email import send_event_update
+
         send_event_update.delay(str(event.id), changes)
 
     return _ok(EventOut.model_validate(updated))
@@ -173,7 +179,7 @@ async def publish_event(
     try:
         updated = await svc.publish_event(db, event)
     except ValueError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
     return _ok({"status": updated.status, "slug": updated.slug})
 
 
@@ -192,9 +198,10 @@ async def cancel_event(
     try:
         updated = await svc.cancel_event(db, event)
     except ValueError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
 
     from app.tasks.email import send_event_cancellation
+
     send_event_cancellation.delay(str(event.id))
 
     return _ok({"status": updated.status})
@@ -215,7 +222,7 @@ async def go_live(
     try:
         updated = await svc.go_live(db, event)
     except ValueError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
     return _ok({"status": updated.status})
 
 
@@ -232,7 +239,7 @@ async def end_event(
     try:
         updated = await svc.end_event(db, event)
     except ValueError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
     return _ok({"status": updated.status})
 
 
@@ -268,7 +275,7 @@ async def upload_cover(
         raise HTTPException(404, "Event not found.")
 
     if cover.content_type not in _ALLOWED_IMAGE_TYPES:
-        raise HTTPException(400, f"Unsupported image type. Accepted: JPEG, PNG, WebP.")
+        raise HTTPException(400, "Unsupported image type. Accepted: JPEG, PNG, WebP.")
 
     image_bytes = await cover.read()
     if len(image_bytes) > _MAX_UPLOAD_SIZE:
@@ -277,8 +284,8 @@ async def upload_cover(
     # Validate it's actually an image
     try:
         Image.open(BytesIO(image_bytes)).verify()
-    except Exception:
-        raise HTTPException(400, "File does not appear to be a valid image.")
+    except Exception as err:
+        raise HTTPException(400, "File does not appear to be a valid image.") from err
 
     updated = await svc.update_cover_image(db, event, image_bytes)
     return _ok({"cover_image_url": updated.cover_image_url})
@@ -310,8 +317,8 @@ async def upload_gallery_image(
 
     try:
         Image.open(BytesIO(image_bytes)).verify()
-    except Exception:
-        raise HTTPException(400, "File does not appear to be a valid image.")
+    except Exception as err:
+        raise HTTPException(400, "File does not appear to be a valid image.") from err
 
     updated = await svc.update_gallery_image(db, event, image_bytes, slot)
     field = "gallery_1_url" if slot == 1 else "gallery_2_url"
@@ -319,6 +326,7 @@ async def upload_gallery_image(
 
 
 # ── Public event endpoints ────────────────────────────────────────────────────
+
 
 @router_public.get("")
 async def search_events(
@@ -331,7 +339,7 @@ async def search_events(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=50),
 ):
-    from datetime import UTC, datetime
+
     events, total = await svc.search_public_events(
         db,
         q=q,
@@ -342,10 +350,38 @@ async def search_events(
         page=page,
         per_page=per_page,
     )
-    return _ok({
-        "items": [PublicEventOut.model_validate(e).model_dump() for e in events],
-        "meta": {"total": total, "page": page, "per_page": per_page},
-    })
+    return _ok(
+        {
+            "items": [PublicEventOut.model_validate(e).model_dump() for e in events],
+            "meta": {"total": total, "page": page, "per_page": per_page},
+        }
+    )
+
+
+# ── Save-and-remind ("interested") ─────────────────────────────────────────────
+
+
+async def _get_public_event_or_404(db: DBSession, slug: str):
+    event = await svc.get_event_by_slug(db, slug)
+    if not event or event.status not in ("published", "live"):
+        raise HTTPException(404, "Event not found.")
+    return event
+
+
+@router_public.post("/{slug}/interested", status_code=status.HTTP_204_NO_CONTENT)
+async def mark_interested(slug: str, db: DBSession, current_user_id: CurrentUserID):
+    from app.services import interest_service as int_svc
+
+    event = await _get_public_event_or_404(db, slug)
+    await int_svc.mark_interested(db, uuid.UUID(current_user_id), event.id)
+
+
+@router_public.delete("/{slug}/interested", status_code=status.HTTP_204_NO_CONTENT)
+async def unmark_interested(slug: str, db: DBSession, current_user_id: CurrentUserID):
+    from app.services import interest_service as int_svc
+
+    event = await _get_public_event_or_404(db, slug)
+    await int_svc.unmark_interested(db, uuid.UUID(current_user_id), event.id)
 
 
 @router_public.get("/{event_slug}/og.png", include_in_schema=False)
@@ -366,9 +402,13 @@ async def event_og_image(event_slug: str, db: DBSession):
         location_str=location_str,
         format_label=event.format,
     )
-    return Response(content=png_bytes, media_type="image/png", headers={
-        "Cache-Control": "public, max-age=3600",
-    })
+    return Response(
+        content=png_bytes,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=3600",
+        },
+    )
 
 
 @router_public.get("/{event_slug}")

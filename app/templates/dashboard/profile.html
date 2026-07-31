@@ -118,6 +118,35 @@
           <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Used for event reminders and notifications via WhatsApp.</p>
         </div>
 
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Country <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(optional)</span></label>
+          <select class="form-input" x-model="form.country" style="appearance:auto;">
+            <option value="">Select country…</option>
+            <option value="NG">Nigeria</option>
+            <option value="GH">Ghana</option>
+            <option value="KE">Kenya</option>
+            <option value="ZA">South Africa</option>
+            <option value="TZ">Tanzania</option>
+            <option value="UG">Uganda</option>
+            <option value="RW">Rwanda</option>
+            <option value="ET">Ethiopia</option>
+            <option value="CM">Cameroon</option>
+            <option value="CI">Côte d'Ivoire</option>
+            <option value="SN">Senegal</option>
+            <option value="GB">United Kingdom</option>
+            <option value="US">United States</option>
+            <option value="CA">Canada</option>
+            <option value="DE">Germany</option>
+            <option value="FR">France</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Birth year <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(optional)</span></label>
+          <input type="number" class="form-input" x-model="form.birth_year" placeholder="1995" min="1920" :max="maxBirthYear" style="max-width:160px;">
+          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Helps us tailor events and offers to your age group. Never shown on your public profile.</p>
+        </div>
+
       </div>
       <div class="save-bar">
         <button type="button" class="btn btn-primary" :class="{'btn-loading': saving}" :disabled="saving" @click="saveProfile()">
@@ -190,7 +219,10 @@ function profileForm() {
       full_name: {{ user.full_name | tojson }},
       username: {{ (user.username or '') | tojson }},
       whatsapp_number: {{ (user.whatsapp_number or '') | tojson }},
+      country: {{ (user.country or '') | tojson }},
+      birth_year: {{ (user.birth_year or '') | tojson }},
     },
+    maxBirthYear: new Date().getFullYear() - 5,
     pw: { current: '', new: '', confirm: '' },
     saving: false,
     pwSaving: false,
@@ -206,6 +238,8 @@ function profileForm() {
         if (this.form.full_name.trim()) body.full_name = this.form.full_name.trim();
         body.username = this.form.username.trim() || null;
         body.whatsapp_number = this.form.whatsapp_number.trim() || null;
+        body.country = this.form.country || null;
+        body.birth_year = this.form.birth_year ? parseInt(this.form.birth_year, 10) : null;
 
         const res = await fetch('/api/v1/auth/me', {
           method: 'PATCH',

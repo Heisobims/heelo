@@ -11,8 +11,8 @@ from app.config import settings
 from app.models.payment import PaymentAccount
 from app.schemas.payment import FlutterwaveSubaccountRequest, PaystackSubaccountRequest
 
-
 # ── Paystack ──────────────────────────────────────────────────────────────────
+
 
 async def list_paystack_banks(country: str = "nigeria") -> list[dict]:
     """Fetch the list of supported banks from Paystack."""
@@ -113,6 +113,7 @@ async def create_paystack_subaccount(
 
 # ── Flutterwave ───────────────────────────────────────────────────────────────
 
+
 async def create_flutterwave_subaccount(
     db: AsyncSession,
     org_id: uuid.UUID,
@@ -179,6 +180,7 @@ async def create_flutterwave_subaccount(
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────
+
 
 async def get_default_payment_account(
     db: AsyncSession,

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+import structlog
 from fastapi import HTTPException
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,8 +31,10 @@ from app.schemas.ticketing import (
 )
 from app.utils.auth import create_ticket_qr_token
 
+logger = structlog.get_logger()
 
 # ── Ticket Types ──────────────────────────────────────────────────────────────
+
 
 async def get_ticket_types(
     db: AsyncSession,
@@ -99,6 +102,7 @@ async def delete_ticket_type(db: AsyncSession, tt: TicketType) -> None:
 
 # ── Form Fields ───────────────────────────────────────────────────────────────
 
+
 async def get_form_fields(
     db: AsyncSession,
     event_id: uuid.UUID,
@@ -125,7 +129,8 @@ async def create_form_field(
         sort_order=data.sort_order,
         applies_to_ticket_type_ids=(
             [str(i) for i in data.applies_to_ticket_type_ids]
-            if data.applies_to_ticket_type_ids else None
+            if data.applies_to_ticket_type_ids
+            else None
         ),
     )
     db.add(ff)
@@ -140,6 +145,7 @@ async def delete_form_field(db: AsyncSession, ff: RegistrationFormField) -> None
 
 
 # ── Promo Codes ───────────────────────────────────────────────────────────────
+
 
 async def get_promo_codes(db: AsyncSession, event_id: uuid.UUID) -> list[PromoCode]:
     result = await db.scalars(
@@ -171,7 +177,8 @@ async def create_promo_code(
         is_active=True,
         applicable_ticket_type_ids=(
             [str(i) for i in data.applicable_ticket_type_ids]
-            if data.applicable_ticket_type_ids else None
+            if data.applicable_ticket_type_ids
+            else None
         ),
     )
     db.add(pc)
@@ -186,6 +193,7 @@ async def delete_promo_code(db: AsyncSession, pc: PromoCode) -> None:
 
 
 # ── Promo resolution (shared by register + validate endpoint) ─────────────────
+
 
 async def resolve_promo(
     db: AsyncSession,
@@ -207,7 +215,7 @@ async def resolve_promo(
     if not promo:
         raise HTTPException(400, "Invalid promo code.")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if promo.expires_at and now > promo.expires_at:
         raise HTTPException(400, "This promo code has expired.")
     if promo.max_uses is not None and promo.used_count >= promo.max_uses:
@@ -233,6 +241,7 @@ async def resolve_promo(
 
 # ── Registration ──────────────────────────────────────────────────────────────
 
+
 async def register(
     db: AsyncSession,
     event,
@@ -246,7 +255,7 @@ async def register(
     tts = await get_ticket_types(db, event.id, public_only=True)
     tt_map = {tt.id: tt for tt in tts}
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     for item in data.items:
         tt = tt_map.get(item.ticket_type_id)
         if not tt:
@@ -256,15 +265,18 @@ async def register(
         if tt.sale_end and tt.sale_end.tzinfo and now > tt.sale_end:
             raise HTTPException(400, f"'{tt.name}' ticket sales have ended.")
         if item.quantity < tt.min_per_order:
-            raise HTTPException(400, f"Minimum {tt.min_per_order} ticket(s) required for '{tt.name}'.")
+            raise HTTPException(
+                400, f"Minimum {tt.min_per_order} ticket(s) required for '{tt.name}'."
+            )
         if item.quantity > tt.max_per_order:
-            raise HTTPException(400, f"Maximum {tt.max_per_order} ticket(s) per order for '{tt.name}'.")
+            raise HTTPException(
+                400, f"Maximum {tt.max_per_order} ticket(s) per order for '{tt.name}'."
+            )
 
     promo, discount_amount = await resolve_promo(db, event.id, data.promo_code, data.items, tt_map)
 
     raw_total = sum(
-        Decimal(str(tt_map[item.ticket_type_id].price)) * item.quantity
-        for item in data.items
+        Decimal(str(tt_map[item.ticket_type_id].price)) * item.quantity for item in data.items
     )
     total_amount = max(Decimal("0"), raw_total - discount_amount)
     is_free = total_amount == Decimal("0")
@@ -278,6 +290,7 @@ async def register(
         buyer_name=data.buyer_name,
         buyer_email=data.buyer_email.lower(),
         buyer_phone=data.buyer_phone,
+        whatsapp_consent=data.whatsapp_consent,
         total_amount=float(total_amount),
         net_amount=float(total_amount),
         platform_fee=0.0,
@@ -295,13 +308,15 @@ async def register(
     for item in data.items:
         tt = tt_map[item.ticket_type_id]
         unit_price = float(Decimal(str(tt.price)))
-        db.add(OrderItem(
-            order_id=order_id,
-            ticket_type_id=item.ticket_type_id,
-            quantity=item.quantity,
-            unit_price=unit_price,
-            subtotal=round(unit_price * item.quantity, 2),
-        ))
+        db.add(
+            OrderItem(
+                order_id=order_id,
+                ticket_type_id=item.ticket_type_id,
+                quantity=item.quantity,
+                unit_price=unit_price,
+                subtotal=round(unit_price * item.quantity, 2),
+            )
+        )
 
     await db.flush()
 
@@ -336,7 +351,9 @@ async def register(
                 )
             if result.fetchone() is None:
                 await db.rollback()
-                raise HTTPException(409, f"Not enough capacity for '{tt.name}'. Please select fewer tickets.")
+                raise HTTPException(
+                    409, f"Not enough capacity for '{tt.name}'. Please select fewer tickets."
+                )
         else:
             if is_free:
                 tt.quantity_sold = tt.quantity_sold + item.quantity
@@ -363,6 +380,7 @@ async def register(
                 attendee_name=att_name,
                 attendee_email=att_email,
                 attendee_phone=att_phone,
+                whatsapp_consent=data.whatsapp_consent,
                 qr_code=qr_token,
                 status="confirmed" if is_free else "pending",
             )
@@ -376,11 +394,13 @@ async def register(
                 field_id = uuid.UUID(field_id_str)
             except (ValueError, AttributeError):
                 continue
-            db.add(RegistrationAnswer(
-                registration_id=registrations[0].id,
-                field_id=field_id,
-                value=str(value),
-            ))
+            db.add(
+                RegistrationAnswer(
+                    registration_id=registrations[0].id,
+                    field_id=field_id,
+                    value=str(value),
+                )
+            )
 
     if promo:
         promo.used_count += 1
@@ -388,9 +408,7 @@ async def register(
     await db.commit()
 
     loaded = await db.scalar(
-        select(Order)
-        .where(Order.id == order_id)
-        .options(selectinload(Order.registrations))
+        select(Order).where(Order.id == order_id).options(selectinload(Order.registrations))
     )
 
     # For free orders (already paid), send confirmation notifications immediately.
@@ -398,14 +416,24 @@ async def register(
     if loaded and loaded.payment_status == "paid":
         try:
             from app.tasks.email import send_registration_confirmation as _email_conf
+
             _email_conf.delay(str(loaded.id))
-        except Exception:
-            pass
+        except Exception as err:
+            logger.warning(
+                "ticketing.confirmation_email_enqueue_failed",
+                order_id=str(loaded.id),
+                error=str(err),
+            )
         try:
             from app.tasks.whatsapp import send_registration_confirmation as _wa_conf
+
             _wa_conf.delay(str(loaded.id))
-        except Exception:
-            pass
+        except Exception as err:
+            logger.warning(
+                "ticketing.confirmation_whatsapp_enqueue_failed",
+                order_id=str(loaded.id),
+                error=str(err),
+            )
 
     return loaded
 
@@ -414,9 +442,7 @@ async def get_order(db: AsyncSession, order_id: uuid.UUID) -> Order | None:
     return await db.scalar(
         select(Order)
         .where(Order.id == order_id)
-        .options(
-            selectinload(Order.registrations).selectinload(Registration.ticket_type)
-        )
+        .options(selectinload(Order.registrations).selectinload(Registration.ticket_type))
     )
 
 
@@ -424,8 +450,127 @@ async def get_registration_by_id(db: AsyncSession, reg_id: uuid.UUID) -> Registr
     return await db.scalar(
         select(Registration)
         .where(Registration.id == reg_id)
-        .options(selectinload(Registration.ticket_type))
+        .options(
+            selectinload(Registration.ticket_type),
+            selectinload(Registration.event),
+            selectinload(Registration.order).selectinload(Order.registrations),
+        )
     )
+
+
+async def cancel_registration(
+    db: AsyncSession,
+    reg: Registration,
+    *,
+    refund: bool,
+    cancelled_by: str,
+) -> Registration:
+    """
+    Cancel a confirmed/checked-in registration: optionally refund the payment,
+    release the ticket capacity it held, and offer the freed spot to the next
+    waitlisted person.
+
+    `cancelled_by` is "organizer" or "attendee" — used only for notification copy.
+    """
+    if reg.status not in ("confirmed", "checked_in"):
+        raise HTTPException(400, f"Registration is '{reg.status}' and cannot be cancelled.")
+
+    tt = reg.ticket_type
+    order = reg.order
+
+    refunded = False
+    if refund and order and order.payment_status in ("paid", "partially_refunded") and tt.price > 0:
+        from app.services import payment_service as pay_svc
+
+        refunded = await pay_svc.refund_order_item(order, Decimal(str(tt.price)))
+        if not refunded:
+            raise HTTPException(
+                502,
+                "Refund failed via the payment provider. Please try again, or refund manually "
+                "from your Paystack/Flutterwave/Stripe dashboard.",
+            )
+
+    reg.status = "refunded" if refunded else "cancelled"
+
+    if tt.quantity is not None:
+        await db.execute(
+            update(TicketType)
+            .where(TicketType.id == tt.id)
+            .values(quantity_sold=func.greatest(TicketType.quantity_sold - 1, 0))
+        )
+    else:
+        tt.quantity_sold = max(0, tt.quantity_sold - 1)
+
+    if order:
+        sibling_statuses = [r.status for r in order.registrations if r.id != reg.id]
+        if refunded:
+            order.payment_status = (
+                "refunded"
+                if all(s in ("cancelled", "refunded") for s in sibling_statuses)
+                else "partially_refunded"
+            )
+
+    await db.commit()
+    await db.refresh(reg)
+
+    try:
+        from app.tasks.email import send_registration_cancellation as _email_cancel
+
+        _email_cancel.delay(str(reg.id), cancelled_by)
+    except Exception as err:
+        logger.warning(
+            "ticketing.cancellation_email_enqueue_failed",
+            registration_id=str(reg.id),
+            error=str(err),
+        )
+    try:
+        from app.tasks.whatsapp import send_registration_cancellation as _wa_cancel
+
+        _wa_cancel.delay(str(reg.id))
+    except Exception as err:
+        logger.warning(
+            "ticketing.cancellation_whatsapp_enqueue_failed",
+            registration_id=str(reg.id),
+            error=str(err),
+        )
+
+    await _notify_waitlist_spot_opened(db, tt.id)
+
+    return reg
+
+
+async def _notify_waitlist_spot_opened(db: AsyncSession, ticket_type_id: uuid.UUID) -> None:
+    """Offer a just-freed spot to the next un-notified person on the waitlist."""
+    next_wl = await db.scalar(
+        select(Waitlist)
+        .where(Waitlist.ticket_type_id == ticket_type_id, Waitlist.notified_at.is_(None))
+        .order_by(Waitlist.position)
+        .limit(1)
+    )
+    if not next_wl:
+        return
+
+    next_wl.offer_expires_at = datetime.now(UTC) + timedelta(hours=24)
+    await db.commit()
+
+    try:
+        from app.tasks.email import send_waitlist_notification as _email_wl
+
+        _email_wl.delay(str(next_wl.id))
+    except Exception as err:
+        logger.warning(
+            "ticketing.waitlist_email_enqueue_failed", waitlist_id=str(next_wl.id), error=str(err)
+        )
+    try:
+        from app.tasks.whatsapp import send_waitlist_notification as _wa_wl
+
+        _wa_wl.delay(str(next_wl.id))
+    except Exception as err:
+        logger.warning(
+            "ticketing.waitlist_whatsapp_enqueue_failed",
+            waitlist_id=str(next_wl.id),
+            error=str(err),
+        )
 
 
 async def list_registrations(
@@ -446,9 +591,7 @@ async def list_registrations(
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     result = await db.scalars(
-        stmt.order_by(Registration.created_at.desc())
-        .offset((page - 1) * per_page)
-        .limit(per_page)
+        stmt.order_by(Registration.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
     )
     return list(result.all()), total
 
@@ -480,9 +623,7 @@ async def get_user_registrations(
     )
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     result = await db.scalars(
-        stmt.order_by(Registration.created_at.desc())
-        .offset((page - 1) * per_page)
-        .limit(per_page)
+        stmt.order_by(Registration.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
     )
     return list(result.all()), total
 
@@ -502,15 +643,15 @@ async def join_waitlist(
         raise HTTPException(409, "You are already on the waitlist for this ticket type.")
 
     position = (
-        await db.scalar(
-            select(func.count()).where(Waitlist.ticket_type_id == data.ticket_type_id)
-        ) or 0
+        await db.scalar(select(func.count()).where(Waitlist.ticket_type_id == data.ticket_type_id))
+        or 0
     ) + 1
 
     wl = Waitlist(
         event_id=event_id,
         ticket_type_id=data.ticket_type_id,
         email=data.email.lower(),
+        phone=data.phone or None,
         name=data.name,
         position=position,
     )

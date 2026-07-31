@@ -1,16 +1,12 @@
 from __future__ import annotations
 
 import uuid
-
 from io import BytesIO
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from PIL import Image
-from sqlalchemy import select
 
-from app.database import get_db
-from app.dependencies import CurrentUser, CurrentUserID, DBSession, OrgAccess
-from app.models.organization import Organization, OrganizationMember
+from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.schemas.organization import (
     InviteMemberRequest,
     OrgCreateRequest,
@@ -31,6 +27,7 @@ def _success(data) -> dict:
 
 # ── Create org ────────────────────────────────────────────────────────────────
 
+
 @router_api.post("", status_code=status.HTTP_201_CREATED)
 async def create_organization(
     body: OrgCreateRequest,
@@ -42,6 +39,7 @@ async def create_organization(
 
 
 # ── List user's orgs ──────────────────────────────────────────────────────────
+
 
 @router_api.get("")
 async def list_my_organizations(current_user: CurrentUser, db: DBSession):
@@ -65,6 +63,7 @@ async def list_my_organizations(current_user: CurrentUser, db: DBSession):
 
 # ── Get single org ────────────────────────────────────────────────────────────
 
+
 @router_api.get("/{slug}")
 async def get_organization(slug: str, access: OrgAccess, db: DBSession):
     org, role, is_owner = access
@@ -72,6 +71,7 @@ async def get_organization(slug: str, access: OrgAccess, db: DBSession):
 
 
 # ── Update org ────────────────────────────────────────────────────────────────
+
 
 @router_api.patch("/{slug}")
 async def update_organization(
@@ -88,6 +88,7 @@ async def update_organization(
 
 
 # ── Member list ───────────────────────────────────────────────────────────────
+
 
 @router_api.get("/{slug}/members")
 async def list_members(slug: str, access: OrgAccess, db: DBSession):
@@ -115,6 +116,7 @@ async def list_members(slug: str, access: OrgAccess, db: DBSession):
 
 # ── Invite member ─────────────────────────────────────────────────────────────
 
+
 @router_api.post("/{slug}/members/invite", status_code=status.HTTP_201_CREATED)
 async def invite_member(
     slug: str,
@@ -129,11 +131,12 @@ async def invite_member(
     try:
         await svc.invite_member(db, org, current_user, body.email, body.role)
     except ValueError as exc:
-        raise HTTPException(409, str(exc))
+        raise HTTPException(409, str(exc)) from exc
     return _success({"message": f"Invitation sent to {body.email}."})
 
 
 # ── Accept invite ─────────────────────────────────────────────────────────────
+
 
 @router_api.post("/accept-invite/{token}")
 async def accept_invite(
@@ -144,11 +147,12 @@ async def accept_invite(
     try:
         org = await svc.accept_invite(db, token, current_user)
     except ValueError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
     return _success({"redirect_to": f"/org/{org.slug}"})
 
 
 # ── Update member role ────────────────────────────────────────────────────────
+
 
 @router_api.patch("/{slug}/members/{user_id}/role")
 async def update_member_role(
@@ -164,11 +168,12 @@ async def update_member_role(
     try:
         member = await svc.update_member_role(db, org, user_id, body.role)
     except ValueError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
     return _success({"role": member.role})
 
 
 # ── Remove member ─────────────────────────────────────────────────────────────
+
 
 @router_api.delete("/{slug}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_member(
@@ -184,7 +189,7 @@ async def remove_member(
     try:
         await svc.remove_member(db, org, user_id, current_user.id)
     except ValueError as exc:
-        raise HTTPException(400, str(exc))
+        raise HTTPException(400, str(exc)) from exc
 
 
 # ── Logo upload ───────────────────────────────────────────────────────────────
@@ -210,10 +215,11 @@ async def upload_logo(
         raise HTTPException(413, "Logo must be under 5 MB.")
     try:
         Image.open(BytesIO(image_bytes)).verify()
-    except Exception:
-        raise HTTPException(400, "File does not appear to be a valid image.")
+    except Exception as err:
+        raise HTTPException(400, "File does not appear to be a valid image.") from err
 
     from app.utils import storage
+
     url = await storage.upload_image(
         image_bytes,
         folder=f"organizations/{org.id}/logo",
@@ -225,6 +231,7 @@ async def upload_logo(
 
 
 # ── Onboarding state ──────────────────────────────────────────────────────────
+
 
 @router_api.get("/{slug}/onboarding")
 async def get_onboarding(slug: str, access: OrgAccess, db: DBSession):

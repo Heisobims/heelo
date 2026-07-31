@@ -97,31 +97,6 @@
   .mt-empty i { font-size: 40px; margin-bottom: 14px; opacity: .4; }
   .mt-empty p { font-size: 14px; margin: 0 0 18px; }
 
-  /* QR modal */
-  .qr-modal-overlay {
-    position: fixed; inset: 0; z-index: 1000;
-    background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .qr-modal {
-    background: #fff; border-radius: 16px;
-    padding: 28px; width: 320px; text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,.25);
-  }
-  .qr-modal h3 {
-    font-size: 16px; font-weight: 700; margin: 0 0 4px;
-    font-family: 'STK Bureau Serif', Georgia, serif;
-  }
-  .qr-modal p { font-size: 12px; color: var(--text-muted); margin: 0 0 18px; }
-  .qr-modal img { width: 220px; height: 220px; margin: 0 auto 18px; display: block; }
-  .qr-modal-code {
-    font-size: 11px; font-family: monospace;
-    background: var(--bg-light); border-radius: 6px; padding: 6px 10px;
-    color: var(--text-muted); margin-bottom: 18px; word-break: break-all;
-  }
-
-  [x-cloak] { display: none !important; }
-
   @media (max-width: 640px) {
     .mt-card-body { flex-wrap: wrap; }
     .mt-actions { flex-direction: row; padding: 0 16px 16px; flex-wrap: wrap; }
@@ -131,7 +106,7 @@
 {% endblock %}
 
 {% block main_content %}
-<div style="max-width:780px; margin:0 auto; padding:28px 20px;" x-data="myTickets()">
+<div style="max-width:780px; margin:0 auto; padding:28px 20px;">
 
   <div class="mt-header">
     <h1><span class="material-symbols-outlined" style="color:var(--cyan);margin-right:8px;">confirmation_number</span>My Tickets</h1>
@@ -198,18 +173,24 @@
 
     <div class="mt-actions">
       {% if reg.qr_code %}
-      <button class="mt-btn primary" @click="openQr({{ reg.id | string | tojson }}, {{ reg.qr_code | tojson }}, {{ reg.event.title | tojson }}, {{ (reg.ticket_type.name if reg.ticket_type else 'Ticket') | tojson }})">
-        <span class="material-symbols-outlined">qr_code_2</span> View QR
-      </button>
+      <a class="mt-btn primary" href="/my-tickets/{{ reg.id }}">
+        <span class="material-symbols-outlined">confirmation_number</span> View Ticket
+      </a>
       {% endif %}
-      {% if reg.ticket_url %}
-      <a class="mt-btn" href="{{ reg.ticket_url }}" target="_blank" download>
-        <span class="material-symbols-outlined">download</span> Download
+      {% if reg.status in ('confirmed', 'checked_in') %}
+      <a class="mt-btn" href="/api/v1/registrations/{{ reg.id }}/calendar.ics" download>
+        <span class="material-symbols-outlined">calendar_add_on</span> Add to Calendar
       </a>
       {% endif %}
       <a class="mt-btn" href="/e/{{ reg.event.slug }}">
         <span class="material-symbols-outlined">open_in_new</span> Event
       </a>
+      {% if reg.status == 'confirmed' %}
+      <a href="#" class="mt-btn" style="color:#dc2626;border-color:#dc2626;"
+         onclick="event.preventDefault(); cancelMyTicket('{{ reg.id }}')">
+        <span class="material-symbols-outlined">cancel</span> Cancel Ticket
+      </a>
+      {% endif %}
     </div>
   </div>
   {% endfor %}
@@ -256,9 +237,9 @@
 
     <div class="mt-actions">
       {% if reg.qr_code %}
-      <button class="mt-btn" @click="openQr({{ reg.id | string | tojson }}, {{ reg.qr_code | tojson }}, {{ reg.event.title | tojson }}, {{ (reg.ticket_type.name if reg.ticket_type else 'Ticket') | tojson }})">
-        <span class="material-symbols-outlined">qr_code_2</span> QR Code
-      </button>
+      <a class="mt-btn" href="/my-tickets/{{ reg.id }}">
+        <span class="material-symbols-outlined">confirmation_number</span> View Ticket
+      </a>
       {% endif %}
       <a class="mt-btn" href="/e/{{ reg.event.slug }}">
         <span class="material-symbols-outlined">open_in_new</span> Event
@@ -283,35 +264,27 @@
 
   {% endif %}
 
-  {# ── QR Modal ─────────────────────────────────────────────────────────── #}
-  <div class="qr-modal-overlay" x-show="qrOpen" x-cloak @click.self="qrOpen = false">
-    <div class="qr-modal" @click.stop>
-      <h3 x-text="qrEvent"></h3>
-      <p x-text="qrTicket"></p>
-      <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrCode)}`" alt="QR Code">
-      <div class="qr-modal-code" x-text="qrCode"></div>
-      <button class="mt-btn" @click="qrOpen = false" style="width:100%;justify-content:center;">
-        <span class="material-symbols-outlined">close</span> Close
-      </button>
-    </div>
-  </div>
-
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-function myTickets() {
-  return {
-    qrOpen: false,
-    qrCode: '',
-    qrEvent: '',
-    qrTicket: '',
-    openQr(id, code, eventTitle, ticketName) {
-      this.qrCode = code;
-      this.qrEvent = eventTitle;
-      this.qrTicket = ticketName;
-      this.qrOpen = true;
-    },
-  };
+async function cancelMyTicket(regId) {
+  if (!confirm('Cancel this ticket? If it was paid, you\'ll be refunded via your original payment method.')) return;
+  try {
+    const res = await fetch(`/api/v1/registrations/${regId}/cancel`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.detail || data.error?.message || 'Could not cancel this ticket.');
+      return;
+    }
+    location.reload();
+  } catch {
+    alert('Network error — please try again.');
+  }
 }
 </script>
 {% endblock %}

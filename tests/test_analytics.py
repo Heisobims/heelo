@@ -1,7 +1,7 @@
 """Analytics — event summary, ticket breakdown, sales over time, UTM."""
+
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -53,10 +53,9 @@ async def test_analytics_requires_org_membership(
     assert resp.status_code == 403
 
 
-async def test_analytics_nonexistent_event_returns_404(
-    client: AsyncClient, org, user_headers
-):
+async def test_analytics_nonexistent_event_returns_404(client: AsyncClient, org, user_headers):
     import uuid
+
     resp = await client.get(
         f"/api/v1/organizations/{org.slug}/events/{uuid.uuid4()}/analytics/summary",
         headers=user_headers,

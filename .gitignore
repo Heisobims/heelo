@@ -42,6 +42,7 @@ migrations/versions/*.pyc
 
 # Static / media (generated or uploaded)
 app/static/fonts/*.woff2
+app/static/uploads/
 
 # Docker
 *.log

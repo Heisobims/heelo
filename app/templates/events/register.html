@@ -289,9 +289,15 @@
           <label>Email address *</label>
           <input type="email" x-model="buyer.email" required placeholder="you@example.com">
         </div>
-        <div class="form-group" style="margin-bottom:0;">
+        <div class="form-group" :style="buyer.phone ? '' : 'margin-bottom:0;'">
           <label>Phone number</label>
           <input type="tel" x-model="buyer.phone" placeholder="+234 800 000 0000">
+        </div>
+        <div class="form-group" style="margin-bottom:0;" x-show="buyer.phone" x-cloak>
+          <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;">
+            <input type="checkbox" x-model="buyer.whatsappConsent" style="width:auto;">
+            <span>Send my ticket and event reminders via WhatsApp</span>
+          </label>
         </div>
       </div>
 
@@ -454,6 +460,7 @@ function registerForm() {
       name: {{ (user.full_name if user else '') | tojson }},
       email: {{ (user.email if user else '') | tojson }},
       phone: '',
+      whatsappConsent: false,
     },
     attendees: [],
     answers: {},
@@ -568,6 +575,7 @@ function registerForm() {
           buyer_name: this.buyer.name,
           buyer_email: this.buyer.email,
           buyer_phone: this.buyer.phone || null,
+          whatsapp_consent: !!(this.buyer.phone && this.buyer.whatsappConsent),
           items,
           attendees: this.totalTickets > 1 ? this.attendees.map(a => ({
             name: a.name || this.buyer.name,

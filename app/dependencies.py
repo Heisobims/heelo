@@ -41,8 +41,10 @@ async def get_current_user_id(token: str = Depends(_resolve_token)) -> str:
         if not user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.")
         return user_id
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token.")
+    except JWTError as err:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token."
+        ) from err
 
 
 CurrentUserID = Annotated[str, Depends(get_current_user_id)]

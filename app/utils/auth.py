@@ -2,18 +2,18 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import os
 import secrets
 import string
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt as _bcrypt
-from jose import JWTError, jwt
+from jose import jwt
 
 from app.config import settings
 
 # ── Password hashing ──────────────────────────────────────────────────────────
+
 
 def hash_password(plain: str) -> str:
     return _bcrypt.hashpw(plain.encode("utf-8"), _bcrypt.gensalt(rounds=12)).decode("utf-8")
@@ -29,7 +29,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 # ── JWT ───────────────────────────────────────────────────────────────────────
 def create_access_token(user_id: str, role: str, extra: dict[str, Any] | None = None) -> str:
     """Create a short-lived JWT access token."""
-    now = datetime.now(tz=timezone.utc)
+    now = datetime.now(tz=UTC)
     payload: dict[str, Any] = {
         "sub": str(user_id),
         "role": role,
@@ -92,7 +92,7 @@ def create_ticket_qr_token(registration_id: str, event_id: str) -> str:
         "type": "ticket",
         "rid": registration_id,
         "eid": event_id,
-        "iat": datetime.now(tz=timezone.utc),
+        "iat": datetime.now(tz=UTC),
     }
     # No expiry — tickets are valid until the event ends (enforced at check-in)
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
@@ -105,3 +105,26 @@ def decode_ticket_qr_token(token: str) -> dict[str, Any]:
         algorithms=[settings.ALGORITHM],
         options={"verify_exp": False},
     )
+
+
+def create_unsubscribe_token(org_id: str, email: str) -> str:
+    """Signed, no-login-required link embedded in campaign email footers."""
+    payload = {
+        "type": "unsubscribe",
+        "org_id": org_id,
+        "email": email.lower(),
+        "iat": datetime.now(tz=UTC),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+
+def decode_unsubscribe_token(token: str) -> dict[str, Any]:
+    payload = jwt.decode(
+        token,
+        settings.SECRET_KEY,
+        algorithms=[settings.ALGORITHM],
+        options={"verify_exp": False},
+    )
+    if payload.get("type") != "unsubscribe":
+        raise ValueError("Invalid unsubscribe token.")
+    return payload

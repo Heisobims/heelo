@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Discover — Heelo{% endblock %}
+{% block meta_description %}Scroll through upcoming events near you and across Africa.{% endblock %}
+
+{% block head %}
+<style>
+  html, body { background: #0A0A0A; }
+
+  .feed-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; align-items: center; gap: 16px; padding: 14px 24px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
+  }
+  .feed-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: #fff; }
+  .feed-nav-logo span { color: var(--cyan, #00FFF3); }
+  .feed-nav-links { display: flex; gap: 4px; margin-left: 8px; }
+  .feed-nav-links a { font-size: 13.5px; font-weight: 500; padding: 5px 12px; border-radius: 7px; text-decoration: none; color: rgba(255,255,255,0.75); }
+  .feed-nav-links a:hover, .feed-nav-links a.active { background: rgba(255,255,255,0.12); color: #fff; }
+  .feed-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .feed-btn-ghost { padding: 6px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; text-decoration: none; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
+  .feed-btn-primary { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--cyan, #00FFF3); color: #000; }
+
+  /* ── Vertical scroll-snap feed — one card at a time ─────────────────────── */
+  .feed-container {
+    height: 100vh; overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+  }
+  .feed-container::-webkit-scrollbar { display: none; }
+
+  .feed-card {
+    scroll-snap-align: start; scroll-snap-stop: always;
+    height: 100vh; display: block;
+  }
+  .feed-card-link { display: block; height: 100%; text-decoration: none; color: inherit; }
+  .feed-card-img { position: relative; width: 100%; height: 100%; background: linear-gradient(135deg,#151515,#0A0A0A); overflow: hidden; }
+  .feed-card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .feed-card-img-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-size: 120px; font-weight: 700; color: rgba(255,255,255,0.06); }
+  .feed-card-scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.25) 45%, rgba(0,0,0,0.35) 100%); }
+  .feed-card-badge { position: absolute; top: 70px; left: 20px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; background: rgba(255,255,255,0.15); color: #fff; backdrop-filter: blur(6px); letter-spacing: 0.03em; text-transform: uppercase; }
+
+  .feed-card-interest {
+    position: absolute; top: 64px; right: 20px; z-index: 5;
+    width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(6px); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+  }
+  .feed-card-interest:active { transform: scale(0.9); }
+  .feed-card-interest.active { background: var(--cyan, #00FFF3); color: #000; }
+
+  .feed-card-overlay { position: absolute; left: 0; right: 0; bottom: 0; padding: 24px 24px calc(env(safe-area-inset-bottom, 0px) + 32px); }
+  .feed-card-tags { display: flex; gap: 6px; margin-bottom: 10px; }
+  .feed-card-tag { font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: rgba(0,255,243,0.15); border: 1px solid rgba(0,255,243,0.35); color: var(--cyan, #00FFF3); }
+
+  .feed-card-mutuals { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--cyan, #00FFF3); margin-bottom: 8px; }
+  .feed-card-title { font-family: var(--font-serif); font-size: clamp(22px, 4.5vw, 34px); font-weight: 700; color: #fff; line-height: 1.15; margin: 0 0 12px; max-width: 640px; }
+  .feed-card-meta { display: flex; flex-wrap: wrap; gap: 14px; }
+  .feed-card-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: rgba(255,255,255,0.85); }
+
+  .feed-sentinel { height: 40vh; display: flex; align-items: center; justify-content: center; scroll-snap-align: start; }
+  .feed-loading { color: rgba(255,255,255,0.5); font-size: 13px; }
+
+  .feed-empty { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 24px; color: #fff; }
+  .feed-empty p { color: rgba(255,255,255,0.6); font-size: 14px; margin-top: 8px; max-width: 320px; }
+
+  @media (max-width: 640px) {
+    .feed-nav-links { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="feed-nav">
+  <a href="/" class="feed-nav-logo">heelo<span>.</span></a>
+  <div class="feed-nav-links">
+    <a href="/discover" class="active">Feed</a>
+    <a href="/events">Events</a>
+    <a href="/vendors">Vendors</a>
+  </div>
+  <div class="feed-nav-right">
+    {% if user %}
+    <a href="/home" class="feed-btn-ghost">Dashboard</a>
+    {% else %}
+    <a href="/login" class="feed-btn-ghost">Sign in</a>
+    <a href="/register" class="feed-btn-primary">Sign up</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="feed-container" id="feed-container">
+  {% if items %}
+    {% include "home/_discover_cards.html" %}
+  {% else %}
+  <div class="feed-empty">
+    <h2 style="font-family:var(--font-serif); font-size:22px; font-weight:700;">No upcoming events yet</h2>
+    <p>Check back soon, or browse the full listing instead.</p>
+    <a href="/events" class="feed-btn-primary" style="margin-top:16px;">Browse events</a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+(function () {
+  // Best-effort location-proximity re-sort of the first rendered batch only.
+  // Silent no-op if permission is denied/unavailable — feed stays in the
+  // server-ranked date + popularity order.
+  if (!('geolocation' in navigator)) return;
+
+  navigator.geolocation.getCurrentPosition(function (pos) {
+    const { latitude, longitude } = pos.coords;
+    const container = document.getElementById('feed-container');
+    if (!container) return;
+
+    const haversineKm = (lat1, lng1, lat2, lng2) => {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    const cards = Array.from(container.querySelectorAll('.feed-card'));
+    const withCoords = cards.filter(c => c.dataset.lat && c.dataset.lng);
+    if (withCoords.length < 2) return; // not enough geo data to make re-sorting worthwhile
+
+    const sortedCards = withCoords
+      .map(card => ({
+        card,
+        dist: haversineKm(latitude, longitude, parseFloat(card.dataset.lat), parseFloat(card.dataset.lng)),
+      }))
+      .sort((a, b) => a.dist - b.dist)
+      .map(entry => entry.card);
+
+    // Move all geo-tagged cards to the front, in ascending-distance order, in one pass.
+    const frag = document.createDocumentFragment();
+    sortedCards.forEach(card => frag.appendChild(card)); // detaches each card from the live DOM
+    container.insertBefore(frag, container.firstChild);
+  }, function () {
+    // Permission denied or timed out — do nothing, feed stays as-is.
+  }, { timeout: 4000, maximumAge: 300000 });
+})();
+
+// Global so it works for cards rendered on load AND cards appended later via HTMX infinite scroll.
+async function heeloToggleInterest(btn) {
+  if (btn.dataset.loggedIn !== 'true') {
+    window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+    return;
+  }
+  const slug = btn.dataset.slug;
+  const wasInterested = btn.dataset.interested === 'true';
+  const method = wasInterested ? 'DELETE' : 'POST';
+
+  // Optimistic UI — flip immediately, revert on failure.
+  btn.dataset.interested = wasInterested ? 'false' : 'true';
+  btn.classList.toggle('active', !wasInterested);
+  btn.querySelector('svg').setAttribute('fill', wasInterested ? 'none' : 'currentColor');
+
+  try {
+    const res = await fetch(`/api/v1/events/${slug}/interested`, { method, credentials: 'include' });
+    if (!res.ok) throw new Error('request failed');
+  } catch {
+    btn.dataset.interested = wasInterested ? 'true' : 'false';
+    btn.classList.toggle('active', wasInterested);
+    btn.querySelector('svg').setAttribute('fill', wasInterested ? 'currentColor' : 'none');
+  }
+}
+</script>
+{% endblock %}

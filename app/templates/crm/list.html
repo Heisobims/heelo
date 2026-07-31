@@ -182,6 +182,30 @@
 
 <style>[x-cloak]{display:none!important}</style>
 <script>
+async function cancelRegistration(regId, orgSlug, eventId, isPaid) {
+  const msg = isPaid
+    ? 'Cancel this ticket and refund the payment via the original payment method?'
+    : 'Cancel this registration?';
+  if (!confirm(msg)) return;
+  const refund = isPaid;
+  try {
+    const res = await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/registrations/${regId}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ refund }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.detail || data.error?.message || 'Could not cancel this registration.');
+      return;
+    }
+    location.reload();
+  } catch {
+    alert('Network error — please try again.');
+  }
+}
+
 function csvImport(orgSlug) {
   return {
     open: false,

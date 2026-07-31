@@ -7,6 +7,7 @@ sends on behalf of all Heelo organizers.
 send_*_sync()  — blocking httpx, for Celery tasks
 send_*_async() — async httpx, for FastAPI handlers
 """
+
 from __future__ import annotations
 
 import re
@@ -20,6 +21,7 @@ _BASE_URL = "https://graph.facebook.com/v18.0"
 
 
 # ── Phone number normalization ────────────────────────────────────────────────
+
 
 def format_phone(phone: str | None) -> str | None:
     """
@@ -43,6 +45,7 @@ def format_phone(phone: str | None) -> str | None:
 
 
 # ── Low-level send helpers ────────────────────────────────────────────────────
+
 
 def _headers() -> dict[str, str]:
     return {
@@ -128,10 +131,46 @@ async def send_image_async(to: str, image_url: str, caption: str = "") -> None:
 
 # ── High-level notification helpers ──────────────────────────────────────────
 
-def _date_label(event) -> str:
+
+def date_label(event) -> str:
     if not event.start_datetime:
         return ""
     return event.start_datetime.strftime("%a, %b %-d at %-I:%M %p")
+
+
+def location_label(event) -> str:
+    """
+    Plain-text location line for WhatsApp messages.
+    Event has no single `location` field — this composes it from the venue
+    (in-person/hybrid) or virtual platform fields, matching the display
+    logic already used in app/templates/events/public.html.
+    """
+    if event.format == "virtual":
+        platform = event.virtual_platform.title() if event.virtual_platform else "Online"
+        return f"{platform} event — link shared closer to the date"
+    parts = [p for p in (event.venue_name, event.venue_city) if p]
+    return ", ".join(parts) if parts else "TBA"
+
+
+def send_registration_cancellation_sync(
+    phone: str,
+    attendee_name: str,
+    event,
+    ticket_type_name: str,
+    refunded: bool,
+) -> None:
+    wa_phone = format_phone(phone)
+    if not wa_phone:
+        return
+
+    lines = [
+        f"Hi {attendee_name},",
+        "",
+        f"Your ticket ({ticket_type_name}) for *{event.title}* has been cancelled.",
+    ]
+    if refunded:
+        lines += ["", "Your payment has been refunded — it may take a few days to reflect."]
+    send_text_sync(wa_phone, "\n".join(lines))
 
 
 def send_registration_confirmation_sync(
@@ -156,9 +195,8 @@ def send_registration_confirmation_sync(
         f"You're confirmed for *{event.title}*",
     ]
     if event.start_datetime:
-        lines.append(f"📅 {_date_label(event)}")
-    if event.location:
-        lines.append(f"📍 {event.location}")
+        lines.append(f"📅 {date_label(event)}")
+    lines.append(f"📍 {location_label(event)}")
     lines += [
         "",
         "Your QR codes are below — one per ticket.",
@@ -176,11 +214,20 @@ def send_registration_confirmation_sync(
         send_image_sync(wa_phone, qr_url, caption)
 
 
+def _reminder_headline(hours_before: float) -> str:
+    if hours_before >= 12:
+        return "is tomorrow!"
+    if hours_before >= 2:
+        return f"starts in about {round(hours_before)} hours!"
+    return "starts soon!"
+
+
 def send_event_reminder_sync(
     phone: str,
     attendee_name: str,
     event,
     registration_id: str,
+    hours_before: float = 24,
 ) -> None:
     wa_phone = format_phone(phone)
     if not wa_phone:
@@ -189,12 +236,11 @@ def send_event_reminder_sync(
     lines = [
         f"Hey {attendee_name}! ⏰",
         "",
-        f"*{event.title}* is tomorrow!",
+        f"*{event.title}* {_reminder_headline(hours_before)}",
     ]
     if event.start_datetime:
-        lines.append(f"📅 {_date_label(event)}")
-    if event.location:
-        lines.append(f"📍 {event.location}")
+        lines.append(f"📅 {date_label(event)}")
+    lines.append(f"📍 {location_label(event)}")
     lines += [
         "",
         "Here's your QR code for quick check-in:",
@@ -203,6 +249,56 @@ def send_event_reminder_sync(
 
     qr_url = f"{settings.FRONTEND_URL}/api/v1/registrations/{registration_id}/qr.png"
     send_image_sync(wa_phone, qr_url, f"QR code for {event.title}")
+
+
+def send_event_cancellation_sync(
+    phone: str,
+    attendee_name: str,
+    event,
+    cancellation_note: str = "",
+) -> None:
+    wa_phone = format_phone(phone)
+    if not wa_phone:
+        return
+
+    lines = [
+        f"Hi {attendee_name},",
+        "",
+        f"😔 *{event.title}* has been cancelled.",
+    ]
+    if cancellation_note:
+        lines += ["", cancellation_note]
+    lines += [
+        "",
+        "If you paid for a ticket, reach out to the organizer about a refund.",
+    ]
+    send_text_sync(wa_phone, "\n".join(lines))
+
+
+def send_event_update_sync(
+    phone: str,
+    attendee_name: str,
+    event,
+    changes: list[dict],
+) -> None:
+    wa_phone = format_phone(phone)
+    if not wa_phone:
+        return
+
+    lines = [
+        f"Hi {attendee_name},",
+        "",
+        f"📢 *{event.title}* has updated details:",
+        "",
+    ]
+    for c in changes:
+        lines.append(f"*{c['field']}*: {c['old']} → {c['new']}")
+    lines += [
+        "",
+        f"📅 {date_label(event)}",
+        f"📍 {location_label(event)}",
+    ]
+    send_text_sync(wa_phone, "\n".join(lines))
 
 
 def send_waitlist_notification_sync(
@@ -228,6 +324,7 @@ def send_waitlist_notification_sync(
 
 # ── Bot reply builder ─────────────────────────────────────────────────────────
 
+
 def build_ticket_status_reply(registrations: list) -> str:
     """Build a WhatsApp text reply listing the caller's current tickets."""
     if not registrations:
@@ -240,8 +337,10 @@ def build_ticket_status_reply(registrations: list) -> str:
     lines = ["Here are your tickets:\n"]
     for reg in registrations:
         tt = reg.ticket_type.name if reg.ticket_type else "General"
-        from app.models.ticketing import Registration
-        status_icon = "✓" if reg.status == "confirmed" else "☑️" if reg.status == "checked_in" else "⏳"
+
+        status_icon = (
+            "✓" if reg.status == "confirmed" else "☑️" if reg.status == "checked_in" else "⏳"
+        )
         event_title = getattr(reg, "_event_title", "Event")
         lines.append(f"  {status_icon} {event_title}\n     Ticket: {tt} — {reg.status.title()}")
 
@@ -254,5 +353,7 @@ HELP_TEXT = (
     "Commands:\n"
     "  *TICKET* — see your registered tickets\n"
     "  *HELP*   — show this message\n\n"
+    'You can also just ask things like "where is it", "what time", '
+    'or "can I bring a guest" about your most recent event.\n\n'
     "For support, visit heelo.io or contact the event organizer."
 )

@@ -12,12 +12,12 @@ from sqlalchemy.orm import selectinload
 
 from app.models.event import Event, EventCategory, event_category_link
 from app.models.organization import Organization
-from app.models.user import User
 from app.schemas.event import EventCreateRequest, EventUpdateRequest
 
 logger = structlog.get_logger()
 
 # ── Slug helpers ──────────────────────────────────────────────────────────────
+
 
 async def _unique_event_slug(db: AsyncSession, base: str) -> str:
     slug = base
@@ -29,6 +29,7 @@ async def _unique_event_slug(db: AsyncSession, base: str) -> str:
 
 
 # ── CRUD ──────────────────────────────────────────────────────────────────────
+
 
 async def create_event(
     db: AsyncSession,
@@ -60,6 +61,7 @@ async def create_event(
         max_capacity=data.max_capacity,
         is_private=data.is_private,
         password=data.password,
+        vibe_tags=data.vibe_tags,
         extras=data.extras,
         status="draft",
     )
@@ -158,7 +160,9 @@ async def duplicate_event(
     org: Organization,
     created_by: uuid.UUID,
 ) -> Event:
-    base_slug = slugify(f"copy of {source.title}", max_length=180, word_boundary=True, separator="-")
+    base_slug = slugify(
+        f"copy of {source.title}", max_length=180, word_boundary=True, separator="-"
+    )
     slug = await _unique_event_slug(db, base_slug)
 
     clone = Event(
@@ -182,6 +186,7 @@ async def duplicate_event(
         virtual_platform=source.virtual_platform,
         max_capacity=source.max_capacity,
         is_private=source.is_private,
+        vibe_tags=list(source.vibe_tags),
         status="draft",
     )
     db.add(clone)
@@ -196,6 +201,7 @@ async def duplicate_event(
 
 
 # ── Listing & search ──────────────────────────────────────────────────────────
+
 
 async def list_org_events(
     db: AsyncSession,
@@ -229,11 +235,13 @@ async def list_org_events(
 
     result = []
     for event in events:
-        result.append({
-            "event": event,
-            "registration_count": counts.get(event.id, 0),
-            "total_revenue": revenues.get(event.id, Decimal("0")),
-        })
+        result.append(
+            {
+                "event": event,
+                "registration_count": counts.get(event.id, 0),
+                "total_revenue": revenues.get(event.id, Decimal("0")),
+            }
+        )
 
     return result, total
 
@@ -276,9 +284,11 @@ async def search_public_events(
     if to_date:
         stmt = stmt.where(Event.start_datetime <= to_date)
     if category_slug:
-        stmt = stmt.join(event_category_link, Event.id == event_category_link.c.event_id).join(
-            EventCategory, EventCategory.id == event_category_link.c.category_id
-        ).where(EventCategory.slug == category_slug)
+        stmt = (
+            stmt.join(event_category_link, Event.id == event_category_link.c.event_id)
+            .join(EventCategory, EventCategory.id == event_category_link.c.category_id)
+            .where(EventCategory.slug == category_slug)
+        )
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     result = await db.scalars(
@@ -290,22 +300,72 @@ async def search_public_events(
     return list(result.all()), total
 
 
+async def get_discovery_feed(
+    db: AsyncSession,
+    *,
+    page: int = 1,
+    per_page: int = 10,
+) -> tuple[list[tuple[Event, int]], int]:
+    """
+    Feed-style ranking for the /discover page: upcoming events soonest-first,
+    with same-day events ordered by popularity (confirmed registration count).
+
+    Location proximity is intentionally not ranked server-side — there's no
+    stored user location, so the feed template re-sorts the fetched page
+    client-side using browser geolocation when available (see discover.html).
+    Returns a list of (event, registration_count) tuples.
+    """
+    now = datetime.now(UTC)
+    stmt = select(Event).where(
+        Event.status.in_(["published", "live"]),
+        Event.deleted_at.is_(None),
+        Event.is_private == False,
+        Event.start_datetime >= now,
+    )
+
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    result = await db.scalars(
+        stmt.order_by(Event.start_datetime.asc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .options(selectinload(Event.categories))
+    )
+    events = list(result.all())
+
+    counts = await _batch_registration_counts(db, [e.id for e in events])
+
+    # Secondary sort: within the same day, more popular events surface first.
+    # (Cross-page reordering is out of scope for v1 — see docstring.)
+    ranked = sorted(
+        events,
+        key=lambda e: (e.start_datetime.date(), -counts.get(e.id, 0), e.start_datetime),
+    )
+
+    return [(e, counts.get(e.id, 0)) for e in ranked], total
+
+
 async def get_event_stats(db: AsyncSession, event_id: uuid.UUID) -> dict:
     from app.models.ticketing import Order, Registration
 
-    reg_count = await db.scalar(
-        select(func.count(Registration.id)).where(
-            Registration.event_id == event_id,
-            Registration.status.in_(["confirmed", "checked_in"]),
+    reg_count = (
+        await db.scalar(
+            select(func.count(Registration.id)).where(
+                Registration.event_id == event_id,
+                Registration.status.in_(["confirmed", "checked_in"]),
+            )
         )
-    ) or 0
+        or 0
+    )
 
-    checkin_count = await db.scalar(
-        select(func.count(Registration.id)).where(
-            Registration.event_id == event_id,
-            Registration.status == "checked_in",
+    checkin_count = (
+        await db.scalar(
+            select(func.count(Registration.id)).where(
+                Registration.event_id == event_id,
+                Registration.status == "checked_in",
+            )
         )
-    ) or 0
+        or 0
+    )
 
     revenue = await db.scalar(
         select(func.coalesce(func.sum(Order.net_amount), 0)).where(
@@ -329,6 +389,7 @@ async def get_all_categories(db: AsyncSession) -> list[EventCategory]:
 
 
 # ── Cover image & OG ──────────────────────────────────────────────────────────
+
 
 async def update_cover_image(
     db: AsyncSession,
@@ -377,8 +438,9 @@ async def update_gallery_image(
 
 
 async def _generate_and_store_og_image(db: AsyncSession, event: Event) -> str:
-    from app.utils import og_image, storage
     import httpx
+
+    from app.utils import og_image, storage
 
     # Optionally fetch cover image bytes for the background
     cover_bytes: bytes | None = None
@@ -388,12 +450,16 @@ async def _generate_and_store_og_image(db: AsyncSession, event: Event) -> str:
                 r = await client.get(event.cover_image_url)
                 if r.status_code == 200:
                     cover_bytes = r.content
-        except Exception:
-            pass
+        except Exception as err:
+            logger.warning(
+                "event.og_image_cover_fetch_failed", event_id=str(event.id), error=str(err)
+            )
 
     date_str = event.start_datetime.strftime("%a %d %b %Y") if event.start_datetime else None
-    location_str = event.venue_city if event.venue_city else (
-        event.virtual_platform or "Online" if event.format == "virtual" else None
+    location_str = (
+        event.venue_city
+        if event.venue_city
+        else (event.virtual_platform or "Online" if event.format == "virtual" else None)
     )
 
     png_bytes = og_image.generate_event_og_image(
@@ -414,6 +480,7 @@ async def _generate_and_store_og_image(db: AsyncSession, event: Event) -> str:
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
+
 
 def _validate_publishable(event: Event) -> None:
     errors = []
@@ -437,9 +504,7 @@ async def _set_categories(
     if not category_ids:
         event.categories = []
         return
-    cats = await db.scalars(
-        select(EventCategory).where(EventCategory.id.in_(category_ids))
-    )
+    cats = await db.scalars(select(EventCategory).where(EventCategory.id.in_(category_ids)))
     event.categories = list(cats.all())
 
 
@@ -450,6 +515,7 @@ async def _batch_registration_counts(
     if not event_ids:
         return {}
     from app.models.ticketing import Registration
+
     rows = await db.execute(
         select(Registration.event_id, func.count(Registration.id))
         .where(
@@ -468,6 +534,7 @@ async def _batch_revenues(
     if not event_ids:
         return {}
     from app.models.ticketing import Order
+
     rows = await db.execute(
         select(Order.event_id, func.coalesce(func.sum(Order.net_amount), 0))
         .where(

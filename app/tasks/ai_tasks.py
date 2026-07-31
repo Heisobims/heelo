@@ -2,6 +2,7 @@
 AI-powered async tasks — runs via Celery worker.
 Uses the sync Anthropic client (same pattern as email/whatsapp tasks).
 """
+
 from __future__ import annotations
 
 import structlog
@@ -21,6 +22,7 @@ def _db():
     if _engine is None:
         from sqlalchemy import create_engine
         from sqlalchemy.orm import sessionmaker
+
         _engine = create_engine(
             settings.DATABASE_URL_SYNC,
             pool_pre_ping=True,
@@ -42,9 +44,9 @@ def suggest_whatsapp_reply(from_phone: str, message_text: str) -> None:
         log.info("ai.whatsapp_reply.skipped", reason="no_api_key")
         return
 
-    from app.models.ticketing import Registration
     from app.models.event import Event
     from app.models.organization import Organization
+    from app.models.ticketing import Registration
     from app.services import whatsapp_service as wa
 
     phone_digits = wa.format_phone(from_phone)
@@ -76,7 +78,8 @@ def suggest_whatsapp_reply(from_phone: str, message_text: str) -> None:
                     org_name = org.name if org else "Heelo"
                     event_context = ev.title + (
                         f" on {ev.start_datetime.strftime('%b %d, %Y')}"
-                        if ev.start_datetime else ""
+                        if ev.start_datetime
+                        else ""
                     )
 
         try:
@@ -95,5 +98,5 @@ def suggest_whatsapp_reply(from_phone: str, message_text: str) -> None:
             log.warning("ai.whatsapp_reply.failed", error=str(exc))
             try:
                 wa.send_text_sync(from_phone, wa.HELP_TEXT)
-            except Exception:
-                pass
+            except Exception as fallback_exc:
+                log.error("ai.whatsapp_fallback_reply.failed", error=str(fallback_exc))

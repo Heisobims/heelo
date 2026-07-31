@@ -11,8 +11,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.organization import Organization
     from app.models.event import Event
+    from app.models.organization import Organization
 
 
 class Campaign(Base, TimestampMixin):
@@ -21,9 +21,7 @@ class Campaign(Base, TimestampMixin):
     __tablename__ = "campaigns"
     __table_args__ = (Index("ix_campaigns_org_status", "org_id", "status"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
@@ -77,9 +75,7 @@ class CampaignRecipient(Base, TimestampMixin):
         Index("ix_campaign_recipients_email", "email"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     campaign_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("campaigns.id", ondelete="CASCADE"),

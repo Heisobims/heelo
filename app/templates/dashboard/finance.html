@@ -1,0 +1,121 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Finance — {{ org.name }}{% endblock %}
+
+{% set active_page = 'finance' %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .fin-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .fin-table thead tr { border-bottom: 1px solid var(--border-light); }
+  .fin-table th {
+    text-align: left; padding: 10px 12px; font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);
+  }
+  .fin-table td { padding: 12px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+  .fin-table tr:last-child td { border-bottom: none; }
+  .fin-table tr:hover td { background: var(--bg-secondary); }
+  .fin-table a { color: inherit; text-decoration: none; font-weight: 600; }
+  .fin-table a:hover { text-decoration: underline; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="dash-content">
+
+  <div class="dash-page-header">
+    <h1 class="dash-greeting">Finance</h1>
+    <p class="dash-subheading">{{ org.name }} · revenue collected through Heelo</p>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Net Revenue</div>
+      <div class="metric-value">{{ org.currency }} {{ "{:,.0f}".format(finance.net_amount) }}</div>
+      <div class="metric-change">after platform fees</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Gross Sales</div>
+      <div class="metric-value">{{ org.currency }} {{ "{:,.0f}".format(finance.gross_amount) }}</div>
+      <div class="metric-change">before fees</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Platform Fees</div>
+      <div class="metric-value">{{ org.currency }} {{ "{:,.0f}".format(finance.platform_fees) }}</div>
+      <div class="metric-change">total deducted</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Paid Orders</div>
+      <div class="metric-value">{{ finance.paid_order_count }}</div>
+      <div class="metric-change">completed checkouts</div>
+    </div>
+  </div>
+
+  {% if not finance.by_event %}
+  <div style="padding: 24px 0;">
+    <div class="empty-state-card">
+      <div class="empty-state-icon">
+        <span class="material-symbols-outlined" style="font-size:26px; color:var(--text-muted);">payments</span>
+      </div>
+      <h2 class="empty-state-title">No revenue yet</h2>
+      <p class="empty-state-body">Once attendees start buying paid tickets, revenue will show up here.</p>
+      <a href="/org/{{ org.slug }}/settings/payments" class="btn btn-primary">Set up payment account</a>
+    </div>
+  </div>
+  {% else %}
+
+  <div class="section-card">
+    <div class="section-card-header">
+      <span class="section-card-title">Revenue by event</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="fin-table">
+        <thead>
+          <tr><th>Event</th><th>Orders</th><th>Net Revenue</th></tr>
+        </thead>
+        <tbody>
+          {% for row in finance.by_event %}
+          <tr>
+            <td><a href="/org/{{ org.slug }}/events/{{ row.event_id }}">{{ row.title }}</a></td>
+            <td>{{ row.orders }}</td>
+            <td>{{ org.currency }} {{ "{:,.0f}".format(row.net_revenue) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <div class="section-card-header">
+      <span class="section-card-title">Recent paid orders</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="fin-table">
+        <thead>
+          <tr><th>Buyer</th><th>Event</th><th>Provider</th><th>Net Amount</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          {% for order in finance.recent_orders %}
+          <tr>
+            <td>{{ order.buyer_name or order.buyer_email }}</td>
+            <td>{{ order.event.title if order.event else '—' }}</td>
+            <td style="text-transform:capitalize;">{{ order.payment_provider or '—' }}</td>
+            <td>{{ order.currency }} {{ "{:,.0f}".format(order.net_amount) }}</td>
+            <td style="color:var(--text-muted);">{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% endif %}
+
+  <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">
+    Payouts are handled directly by your connected payment provider.
+    <a href="/org/{{ org.slug }}/settings/payments" style="color:var(--cyan-dark,#009e95); font-weight:600;">Manage payment account →</a>
+  </p>
+
+</div>
+{% endblock %}

@@ -9,7 +9,10 @@ import os
 import textwrap
 from io import BytesIO
 
+import structlog
 from PIL import Image, ImageDraw, ImageFont
+
+logger = structlog.get_logger()
 
 # ── Font resolution ───────────────────────────────────────────────────────────
 _FONT_CANDIDATES = [
@@ -40,8 +43,10 @@ def _load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageF
         if os.path.exists(path):
             try:
                 return ImageFont.truetype(path, size)
-            except Exception:
+            except Exception as err:
+                logger.warning("og_image.font_load_failed", path=path, error=str(err))
                 continue
+    logger.warning("og_image.no_font_found", bold=bold, size=size)
     return ImageFont.load_default()
 
 
@@ -85,8 +90,9 @@ def generate_event_og_image(
             overlay = Image.new("RGB", (W, H), _BLACK)
             img = Image.blend(bg, overlay, alpha=0.60)
             draw = ImageDraw.Draw(img)
-        except Exception:
-            pass  # fall back to plain black background
+        except Exception as err:
+            logger.warning("og_image.cover_image_decode_failed", title=title, error=str(err))
+            # fall back to plain black background
 
     # ── Cyan accent bar (top) ─────────────────────────────────────────────────
     draw.rectangle([(0, 0), (W, 5)], fill=_CYAN)

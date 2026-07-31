@@ -1,4 +1,5 @@
 """Structlog configuration — call configure_logging() at app startup."""
+
 from __future__ import annotations
 
 import logging
@@ -23,7 +24,8 @@ def configure_logging(log_level: str = "INFO", *, production: bool = False) -> N
         renderer = structlog.dev.ConsoleRenderer(colors=True)
 
     structlog.configure(
-        processors=shared_processors + [
+        processors=shared_processors
+        + [
             structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
         logger_factory=structlog.stdlib.LoggerFactory(),

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Unsubscribe — Heelo{% endblock %}
+
+{% block head %}
+<style>
+  .unsub-wrap { max-width: 480px; margin: 0 auto; padding: 96px 24px; text-align: center; }
+  .unsub-icon { width: 56px; height: 56px; border-radius: 50%; background: rgba(0,255,243,0.1); color: var(--cyan-dark,#00b3a9); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+  .unsub-title { font-family: var(--font-serif); font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+  .unsub-body { color: var(--text-muted); font-size: 15px; line-height: 1.6; }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="unsub-wrap">
+  <div class="unsub-icon">
+    <span class="material-symbols-outlined" style="font-size:28px;">{{ 'error' if error else 'check_circle' }}</span>
+  </div>
+  {% if error %}
+  <h1 class="unsub-title">Link not valid</h1>
+  <p class="unsub-body">{{ error }}</p>
+  {% else %}
+  <h1 class="unsub-title">You're unsubscribed</h1>
+  <p class="unsub-body">You won't receive further email campaigns from {{ org_name }}. You'll still get essential emails about tickets you've registered for.</p>
+  {% endif %}
+</div>
+{% endblock %}

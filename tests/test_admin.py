@@ -1,7 +1,7 @@
 """Admin panel — suspend org, ban user, promote to admin, list views."""
+
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -98,8 +98,11 @@ async def test_banned_user_cannot_login(client: AsyncClient, user, admin_headers
     await client.post(f"/api/v1/admin/users/{user.id}/ban", headers=admin_headers)
 
     # Try to login — should fail since deleted_at is set
-    resp = await client.post("/api/v1/auth/login", json={
-        "email": user.email,
-        "password": "password123",
-    })
+    resp = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": user.email,
+            "password": "password123",
+        },
+    )
     assert resp.status_code == 401

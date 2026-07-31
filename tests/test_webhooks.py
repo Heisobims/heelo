@@ -1,16 +1,14 @@
 """Webhook subscriptions — CRUD, signing, delivery."""
+
 from __future__ import annotations
 
 import hashlib
 import hmac
 import json
-import time
 
-import pytest
 from httpx import AsyncClient
 
 from app.services.webhook_service import WEBHOOK_EVENTS, sign_payload
-
 
 _VALID_SUB = {
     "url": "https://example.com/webhook",
@@ -44,7 +42,9 @@ async def test_create_webhook_with_invalid_event_type_returns_400(
 
 
 async def test_list_webhook_subscriptions(client: AsyncClient, org, user_headers):
-    await client.post(f"/api/v1/organizations/{org.slug}/webhooks", json=_VALID_SUB, headers=user_headers)
+    await client.post(
+        f"/api/v1/organizations/{org.slug}/webhooks", json=_VALID_SUB, headers=user_headers
+    )
     resp = await client.get(f"/api/v1/organizations/{org.slug}/webhooks", headers=user_headers)
     assert resp.status_code == 200
     assert len(resp.json()["data"]) == 1

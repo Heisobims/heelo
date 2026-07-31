@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import uuid
 
+import structlog
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field
 
 from app.dependencies import DBSession, OrgAccess
 from app.services import webhook_service as wh_svc
+
+logger = structlog.get_logger()
 
 router_webhooks_api = APIRouter(
     prefix="/api/v1/organizations/{slug}/webhooks",
@@ -96,9 +99,7 @@ async def update_subscription(
 
 
 @router_webhooks_api.delete("/{sub_id}")
-async def delete_subscription(
-    slug: str, sub_id: str, db: DBSession, org_access: OrgAccess
-):
+async def delete_subscription(slug: str, sub_id: str, db: DBSession, org_access: OrgAccess):
     org, role, is_owner = org_access
     sub = await wh_svc.get_subscription(db, uuid.UUID(sub_id), org.id)
     if not sub:
@@ -108,9 +109,7 @@ async def delete_subscription(
 
 
 @router_webhooks_api.get("/{sub_id}/deliveries")
-async def list_deliveries(
-    slug: str, sub_id: str, db: DBSession, org_access: OrgAccess
-):
+async def list_deliveries(slug: str, sub_id: str, db: DBSession, org_access: OrgAccess):
     org, role, is_owner = org_access
     sub = await wh_svc.get_subscription(db, uuid.UUID(sub_id), org.id)
     if not sub:
@@ -137,9 +136,7 @@ async def list_deliveries(
 
 
 @router_webhooks_api.post("/{sub_id}/test")
-async def test_webhook(
-    slug: str, sub_id: str, db: DBSession, org_access: OrgAccess
-):
+async def test_webhook(slug: str, sub_id: str, db: DBSession, org_access: OrgAccess):
     """Send a test ping directly to the webhook URL, bypassing event filtering."""
     from app.models.api import WebhookDelivery
 
@@ -151,17 +148,25 @@ async def test_webhook(
     delivery = WebhookDelivery(
         subscription_id=sub.id,
         event_type="webhook.test",
-        payload={"event": "webhook.test", "org_id": str(org.id), "message": "Test delivery from Heelo."},
+        payload={
+            "event": "webhook.test",
+            "org_id": str(org.id),
+            "message": "Test delivery from Heelo.",
+        },
         status="pending",
     )
     db.add(delivery)
-    await db.flush()
+    # Commit before dispatching — the Celery worker uses a separate DB
+    # connection and can't see this row until the transaction commits.
+    await db.commit()
 
     try:
         from app.tasks.webhooks import deliver_webhook
-        deliver_webhook.delay(str(delivery.id))
-    except Exception:
-        pass
 
-    await db.commit()
+        deliver_webhook.delay(str(delivery.id))
+    except Exception as err:
+        logger.warning(
+            "webhooks.test_delivery_enqueue_failed", delivery_id=str(delivery.id), error=str(err)
+        )
+
     return {"success": True, "message": "Test delivery queued."}

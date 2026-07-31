@@ -12,35 +12,43 @@ from app.config import settings
 logger = structlog.get_logger()
 
 
-def _send(to: str, subject: str, html: str) -> None:
+def send_smtp(to: str | list[str], subject: str, html: str) -> None:
+    """
+    Single SMTP sender used for every outbound email in the app (OTP, password
+    reset, welcome, team invites, and — via email_service.py — registration
+    confirmations, reminders, and waitlist notices).
+    """
+    recipients = [to] if isinstance(to, str) else list(to)
     if not settings.SMTP_HOST:
-        logger.warning("email.skipped_no_smtp_host", to=to, subject=subject)
+        logger.warning("email.skipped_no_smtp_host", to=recipients, subject=subject)
         return
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
-        msg["To"] = to
+        msg["To"] = ", ".join(recipients)
         msg.attach(MIMEText(html, "html"))
 
         context = ssl.create_default_context()
 
         if settings.SMTP_SSL:
-            with smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, context=context) as server:
+            with smtplib.SMTP_SSL(
+                settings.SMTP_HOST, settings.SMTP_PORT, context=context
+            ) as server:
                 if settings.SMTP_USER:
                     server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                server.sendmail(settings.SMTP_FROM_EMAIL, [to], msg.as_string())
+                server.sendmail(settings.SMTP_FROM_EMAIL, recipients, msg.as_string())
         else:
             with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
                 if settings.SMTP_TLS:
                     server.starttls(context=context)
                 if settings.SMTP_USER:
                     server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                server.sendmail(settings.SMTP_FROM_EMAIL, [to], msg.as_string())
+                server.sendmail(settings.SMTP_FROM_EMAIL, recipients, msg.as_string())
 
-        logger.info("email.sent", to=to, subject=subject)
+        logger.info("email.sent", to=recipients, subject=subject)
     except Exception as exc:
-        logger.error("email.send_failed", to=to, subject=subject, exc=str(exc))
+        logger.error("email.send_failed", to=recipients, subject=subject, exc=str(exc))
         raise
 
 
@@ -60,7 +68,7 @@ def send_otp_email(email: str, name: str, otp: str) -> None:
     </body>
     </html>
     """
-    _send(email, "Your Heelo verification code", html)
+    send_smtp(email, "Your Heelo verification code", html)
 
 
 def send_password_reset_email(email: str, name: str, reset_url: str) -> None:
@@ -78,7 +86,7 @@ def send_password_reset_email(email: str, name: str, reset_url: str) -> None:
     </body>
     </html>
     """
-    _send(email, "Reset your Heelo password", html)
+    send_smtp(email, "Reset your Heelo password", html)
 
 
 def send_welcome_email(email: str, name: str) -> None:
@@ -94,7 +102,37 @@ def send_welcome_email(email: str, name: str) -> None:
     </body>
     </html>
     """
-    _send(email, "Welcome to Heelo", html)
+    send_smtp(email, "Welcome to Heelo", html)
+
+
+def send_vendor_lead_email(
+    email: str,
+    business_name: str,
+    requester_name: str,
+    event_name: str | None,
+    message: str | None,
+) -> None:
+    event_line = f" for <strong>{event_name}</strong>" if event_name else ""
+    message_html = (
+        f'<p style="font-size: 15px; color: #0A0A0A; margin: 0 0 32px; padding: 16px; '
+        f'background: #F7F7F5; border-radius: 12px;">{message}</p>'
+        if message
+        else ""
+    )
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: Arial, sans-serif; background: #fff; color: #0A0A0A; max-width: 520px; margin: 0 auto; padding: 40px 24px;">
+      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">heelo</p>
+      <h1 style="font-size: 28px; font-weight: 700; margin: 32px 0 8px;">New enquiry for {business_name}</h1>
+      <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 16px;">{requester_name} reached out to you{event_line} on Heelo.</p>
+      {message_html}
+      <a href="{settings.FRONTEND_URL}/my-vendor-profile/leads" style="display: inline-block; background: #00FFF3; color: #0A0A0A; font-weight: 600; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 100px;">View enquiry</a>
+    </body>
+    </html>
+    """
+    send_smtp(email, f"New enquiry from {requester_name} — {business_name}", html)
 
 
 def send_team_invite_email(email: str, inviter_name: str, org_name: str, invite_url: str) -> None:
@@ -111,4 +149,4 @@ def send_team_invite_email(email: str, inviter_name: str, org_name: str, invite_
     </body>
     </html>
     """
-    _send(email, f"You're invited to join {org_name} on Heelo", html)
+    send_smtp(email, f"You're invited to join {org_name} on Heelo", html)

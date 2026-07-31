@@ -1,21 +1,24 @@
 from __future__ import annotations
 
 import uuid
-from collections import Counter
 from datetime import UTC, datetime
 
+import structlog
 from fastapi import HTTPException
 from jose import JWTError
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.ticketing import Registration, TicketType
+from app.models.ticketing import Registration
 from app.utils.auth import decode_ticket_qr_token
+
+logger = structlog.get_logger()
 
 
 class AlreadyCheckedInError(Exception):
     """Raised when a registration is already checked in. Carries the registration for context."""
+
     def __init__(self, reg: Registration) -> None:
         self.reg = reg
         super().__init__("Already checked in.")
@@ -29,8 +32,8 @@ async def check_in_by_qr_token(
     """Verify a QR code JWT and check in the matching registration."""
     try:
         payload = decode_ticket_qr_token(token)
-    except JWTError:
-        raise HTTPException(400, "Invalid QR code.")
+    except JWTError as err:
+        raise HTTPException(400, "Invalid QR code.") from err
 
     if payload.get("type") != "ticket":
         raise HTTPException(400, "Invalid QR code type.")
@@ -38,8 +41,8 @@ async def check_in_by_qr_token(
     try:
         reg_id = uuid.UUID(payload["rid"])
         token_event_id = uuid.UUID(payload["eid"])
-    except (KeyError, ValueError):
-        raise HTTPException(400, "Malformed QR code.")
+    except (KeyError, ValueError) as err:
+        raise HTTPException(400, "Malformed QR code.") from err
 
     if token_event_id != event_id:
         raise HTTPException(400, "QR code is for a different event.")
@@ -76,8 +79,9 @@ async def _do_check_in(db: AsyncSession, reg_id: uuid.UUID) -> Registration:
     await db.refresh(reg)
 
     try:
-        from app.services import webhook_service as _wh_svc
         from app.models.event import Event
+        from app.services import webhook_service as _wh_svc
+
         ev = await db.scalar(select(Event).where(Event.id == reg.event_id))
         if ev:
             await _wh_svc.fire_event(
@@ -93,8 +97,8 @@ async def _do_check_in(db: AsyncSession, reg_id: uuid.UUID) -> Registration:
                     "checked_in_at": reg.checked_in_at.isoformat(),
                 },
             )
-    except Exception:
-        pass
+    except Exception as err:
+        logger.warning("checkin.webhook_failed", registration_id=str(reg.id), error=str(err))
 
     return reg
 
@@ -143,6 +147,51 @@ async def get_checkin_stats(db: AsyncSession, event_id: uuid.UUID) -> dict:
     }
 
 
+async def get_live_pulse(db: AsyncSession, event) -> dict:
+    """
+    Organizer-facing mid-event glance: check-in rate, capacity fill, and which
+    ticket tiers are actually filling the room right now.
+    """
+    stats = await get_checkin_stats(db, event.id)
+
+    capacity = event.max_capacity
+    checked_in = stats["checked_in"]
+    stats["capacity"] = capacity
+    stats["percent_of_capacity"] = round(checked_in / capacity * 100, 1) if capacity else None
+
+    from app.models.ticketing import TicketType
+
+    rows = await db.execute(
+        select(
+            TicketType.id,
+            TicketType.name,
+            TicketType.quantity,
+            func.count(Registration.id).filter(Registration.status == "checked_in"),
+            func.count(Registration.id).filter(
+                Registration.status.in_(["confirmed", "checked_in"])
+            ),
+        )
+        .select_from(TicketType)
+        .outerjoin(Registration, Registration.ticket_type_id == TicketType.id)
+        .where(TicketType.event_id == event.id)
+        .group_by(TicketType.id, TicketType.name, TicketType.quantity)
+        .order_by(TicketType.sort_order)
+    )
+    stats["ticket_tiers"] = [
+        {
+            "id": str(tid),
+            "name": name,
+            "quantity": qty,
+            "checked_in": checked,
+            "sold": sold,
+            "percent_of_quantity": round(checked / qty * 100, 1) if qty else None,
+        }
+        for tid, name, qty, checked, sold in rows.all()
+    ]
+
+    return stats
+
+
 async def get_recent_check_ins(
     db: AsyncSession,
     event_id: uuid.UUID,
@@ -181,40 +230,5 @@ async def search_registrations(
         )
         .options(selectinload(Registration.ticket_type))
         .limit(20)
-    )
-    return list(result.all())
-
-
-async def find_by_phone(
-    db: AsyncSession,
-    phone_last10: str,
-    event_id: uuid.UUID | None = None,
-) -> list[Registration]:
-    """Find registrations by last 10 digits of phone number.
-
-    If event_id is given, scoped to that event. Otherwise searches across all
-    published/live events (used by USSD to find a caller's tickets platform-wide).
-    """
-    from app.models.event import Event
-
-    conditions = [
-        Registration.attendee_phone.like(f"%{phone_last10}"),
-        Registration.status.in_(["confirmed", "checked_in"]),
-    ]
-
-    if event_id is not None:
-        conditions.append(Registration.event_id == event_id)
-    else:
-        active_events_sq = select(Event.id).where(
-            Event.status.in_(["published", "live"]),
-            Event.deleted_at.is_(None),
-        )
-        conditions.append(Registration.event_id.in_(active_events_sq))
-
-    result = await db.scalars(
-        select(Registration)
-        .where(*conditions)
-        .options(selectinload(Registration.ticket_type))
-        .limit(5)
     )
     return list(result.all())

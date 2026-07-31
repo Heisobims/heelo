@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Vendor Marketplace — Heelo{% endblock %}
-{% block meta_description %}Find photographers, caterers, decorators, and more for your next event.{% endblock %}
+{% block title %}{{ 'Find a Venue' if venue_mode else 'Vendor Marketplace' }} — Heelo{% endblock %}
+{% block meta_description %}{{ 'Find event halls and venues by location and capacity.' if venue_mode else 'Find photographers, caterers, decorators, and more for your next event.' }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/dashboard.css">
@@ -105,7 +105,8 @@
   <a href="/" class="vm-nav-logo">heelo<span>.</span></a>
   <div class="vm-nav-links">
     <a href="/events">Events</a>
-    <a href="/vendors" class="active">Vendors</a>
+    <a href="/vendors" class="{{ 'active' if not venue_mode }}">Vendors</a>
+    <a href="/venues" class="{{ 'active' if venue_mode }}">Venues</a>
   </div>
   <div class="vm-nav-right">
     <a href="/vendor-signup" class="vm-btn-ghost">List your business</a>
@@ -119,35 +120,53 @@
 
 <!-- Hero -->
 <div class="vm-hero">
+  {% if venue_mode %}
+  <div class="vm-hero-tag">Venue Directory</div>
+  <h1>Find a venue for your event</h1>
+  <p>Browse halls and event spaces by location and guest capacity — reach out directly to the venue owner to check availability.</p>
+  {% else %}
   <div class="vm-hero-tag">Vendor Marketplace</div>
   <h1>Find the perfect vendor for your event</h1>
   <p>Browse vetted photographers, caterers, decorators, security, and more — all in one place. Every booking supports African event businesses.</p>
+  {% endif %}
   <div class="vm-hero-cta">
     <a href="/vendor-signup" class="vm-btn-cyan">List your business →</a>
   </div>
 </div>
 
 <!-- Search & filters -->
-<form method="GET" action="/vendors" class="vm-search-bar">
+<form method="GET" action="{{ '/venues' if venue_mode else '/vendors' }}" class="vm-search-bar">
   <div class="vm-search-input">
     <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="search" name="q" placeholder="Search vendors by name or service…" value="{{ q or '' }}">
+    <input type="search" name="q" placeholder="{{ 'Search venues by name…' if venue_mode else 'Search vendors by name or service…' }}" value="{{ q or '' }}">
   </div>
   <select name="city" class="vm-filter-select">
-    <option value="">All cities</option>
+    <option value="">{{ 'Event location — any city' if venue_mode else 'All cities' }}</option>
     {% for c in cities %}
     <option value="{{ c }}" {% if city == c %}selected{% endif %}>{{ c }}</option>
     {% endfor %}
   </select>
+  {% if venue_mode %}
+  <select name="min_capacity" class="vm-filter-select">
+    <option value="">Any capacity</option>
+    <option value="50" {% if min_capacity == 50 %}selected{% endif %}>50+ guests</option>
+    <option value="100" {% if min_capacity == 100 %}selected{% endif %}>100+ guests</option>
+    <option value="250" {% if min_capacity == 250 %}selected{% endif %}>250+ guests</option>
+    <option value="500" {% if min_capacity == 500 %}selected{% endif %}>500+ guests</option>
+    <option value="1000" {% if min_capacity == 1000 %}selected{% endif %}>1,000+ guests</option>
+  </select>
+  {% else %}
   <select name="price_range" class="vm-filter-select">
     <option value="">Any budget</option>
     <option value="budget" {% if price_range == 'budget' %}selected{% endif %}>Budget-friendly</option>
     <option value="mid" {% if price_range == 'mid' %}selected{% endif %}>Mid-range</option>
     <option value="premium" {% if price_range == 'premium' %}selected{% endif %}>Premium</option>
   </select>
+  {% endif %}
   <button type="submit" class="vm-search-btn">Search</button>
 </form>
 
+{% if not venue_mode %}
 <!-- Category pills -->
 <div class="vm-cat-pills">
   <a href="/vendors?{{ query_without_cat }}" class="vm-cat-pill {% if not category %}active{% endif %}">All</a>
@@ -159,6 +178,9 @@
   </a>
   {% endfor %}
 </div>
+{% else %}
+{% set cat_icons = {'venue': 'account_balance'} %}
+{% endif %}
 
 <!-- Results header -->
 <div class="vm-results-header">
@@ -187,7 +209,9 @@
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           {{ v.location_city or 'Nigeria' }}
         </div>
-        {% if v.price_range %}
+        {% if venue_mode and v.capacity %}
+        <span class="vm-card-price">Up to {{ "{:,}".format(v.capacity) }} guests</span>
+        {% elif v.price_range %}
         <span class="vm-card-price {{ v.price_range }}">{{ {'budget': 'Budget', 'mid': 'Mid-range', 'premium': 'Premium'}.get(v.price_range, v.price_range) }}</span>
         {% endif %}
       </div>
@@ -200,17 +224,25 @@
   <div class="vm-empty-icon">
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
   </div>
-  <h2 style="font-size:18px;font-weight:700;margin-bottom:8px;">No vendors found</h2>
+  <h2 style="font-size:18px;font-weight:700;margin-bottom:8px;">{{ 'No venues found' if venue_mode else 'No vendors found' }}</h2>
   <p style="color:var(--text-muted);font-size:14px;line-height:1.6;">Try different filters, or be the first in your area!</p>
 </div>
 {% endif %}
 
 <!-- CTA strip for vendor sign-up -->
 <div class="vm-cta-strip">
+  {% if venue_mode %}
+  <h2>Own or manage an event hall?</h2>
+  <p>List your venue on Heelo and get discovered by event organizers searching by location and capacity.</p>
+  <a href="/vendor-signup" style="display:inline-block;padding:12px 28px;background:var(--cyan);color:#000;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">
+    List your venue — it's free
+  </a>
+  {% else %}
   <h2>Are you an event vendor?</h2>
   <p>List your business on Heelo and get discovered by thousands of event organizers across Africa.</p>
   <a href="/vendor-signup" style="display:inline-block;padding:12px 28px;background:var(--cyan);color:#000;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">
     List your business — it's free
   </a>
+  {% endif %}
 </div>
 {% endblock %}

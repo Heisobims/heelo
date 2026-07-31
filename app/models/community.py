@@ -4,25 +4,16 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    ForeignKey,
-    Index,
-    Integer,
-    String,
-    Text,
-    UniqueConstraint,
-)
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.user import User
     from app.models.event import Event
     from app.models.organization import Organization
+    from app.models.user import User
 
 
 class AttendeeProfile(Base, TimestampMixin):
@@ -30,9 +21,7 @@ class AttendeeProfile(Base, TimestampMixin):
 
     __tablename__ = "attendee_profiles"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -46,12 +35,8 @@ class AttendeeProfile(Base, TimestampMixin):
     twitter_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     website_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # Text array of interest tags e.g. ["AI", "Startups", "FinTech"]
-    interests: Mapped[list[str]] = mapped_column(
-        ARRAY(String(100)), nullable=False, default=list
-    )
-    is_visible_in_directory: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=True
-    )
+    interests: Mapped[list[str]] = mapped_column(ARRAY(String(100)), nullable=False, default=list)
+    is_visible_in_directory: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     events_attended_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     user: Mapped[User] = relationship("User", back_populates="attendee_profile")
@@ -70,9 +55,7 @@ class Connection(Base, TimestampMixin):
         Index("ix_connections_connected_user", "connected_user_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -109,9 +92,7 @@ class OrganizerFollower(Base, TimestampMixin):
         Index("ix_organizer_followers_org", "org_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -122,6 +103,34 @@ class OrganizerFollower(Base, TimestampMixin):
 
     user: Mapped[User] = relationship("User")
     organization: Mapped[Organization] = relationship("Organization")
+
+
+class EventInterest(Base, TimestampMixin):
+    """
+    Lightweight non-binary RSVP — 'I'm interested' short of buying a ticket.
+    Nudges toward purchase via a single reminder before the event.
+    """
+
+    __tablename__ = "event_interests"
+    __table_args__ = (
+        UniqueConstraint("user_id", "event_id", name="uq_event_interest_user_event"),
+        Index("ix_event_interests_event", "event_id"),
+        Index("ix_event_interests_user", "user_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    user: Mapped[User] = relationship("User")
+    event: Mapped[Event] = relationship("Event")
+
+    def __repr__(self) -> str:
+        return f"<EventInterest user={self.user_id} event={self.event_id}>"
 
 
 class WhatsAppMessage(Base, TimestampMixin):
@@ -136,11 +145,12 @@ class WhatsAppMessage(Base, TimestampMixin):
         Index("ix_whatsapp_messages_wa_id", "wa_message_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     # WhatsApp phone number (with country code, no +)
     from_number: Mapped[str] = mapped_column(String(30), nullable=False)

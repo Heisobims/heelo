@@ -10,16 +10,16 @@ Database strategy:
 External services (Celery, email, WhatsApp, Anthropic) are all mocked globally
 so no real network calls happen during tests.
 """
+
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime, timedelta
-from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # ── Import all models to register them on Base before create_all ──────────────
@@ -35,8 +35,7 @@ import app.models.ticketing  # noqa: F401
 import app.models.user  # noqa: F401
 from app.database import Base, get_db
 from app.main import app
-
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from app.utils.auth import hash_password
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
@@ -45,6 +44,7 @@ TEST_DATABASE_URL = os.getenv(
 
 
 # ── Engine (session-scoped) ───────────────────────────────────────────────────
+
 
 @pytest.fixture(scope="session")
 async def engine():
@@ -59,11 +59,15 @@ async def engine():
 
 # ── Direct DB session (per test) ──────────────────────────────────────────────
 
+
 @pytest.fixture
 async def db(engine) -> AsyncGenerator[AsyncSession, None]:
     SessionLocal = async_sessionmaker(
-        engine, class_=AsyncSession, expire_on_commit=False,
-        autocommit=False, autoflush=False,
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autocommit=False,
+        autoflush=False,
     )
     async with SessionLocal() as session:
         yield session
@@ -71,12 +75,14 @@ async def db(engine) -> AsyncGenerator[AsyncSession, None]:
 
 # ── HTTP client (per test) ─────────────────────────────────────────────────────
 
+
 @pytest.fixture
 async def client(engine, db) -> AsyncGenerator[AsyncClient, None]:
     """
     Client uses the same session as `db` so fixture-inserted data is
     immediately visible to route handlers without a separate commit.
     """
+
     async def _override_get_db():
         yield db
 
@@ -93,6 +99,7 @@ async def client(engine, db) -> AsyncGenerator[AsyncClient, None]:
 
 # ── Mock all external side-effects ────────────────────────────────────────────
 
+
 @pytest.fixture(autouse=True)
 def mock_celery_tasks():
     """Prevent any Celery task from actually being enqueued."""
@@ -102,26 +109,40 @@ def mock_celery_tasks():
 
 @pytest.fixture(autouse=True)
 def mock_email():
-    with patch("resend.Emails.send", return_value={"id": "fake-email-id"}):
+    """
+    email_service.py calls the Resend REST API directly via httpx (no `resend`
+    SDK package is used or installed) — patch the actual send functions.
+    """
+    with (
+        patch("app.services.email_service.send_sync"),
+        patch("app.services.email_service.send_async", new_callable=AsyncMock),
+    ):
         yield
 
 
 @pytest.fixture(autouse=True)
 def mock_whatsapp():
-    with patch("app.services.whatsapp_service.send_text_message", new_callable=AsyncMock):
+    with (
+        patch("app.services.whatsapp_service.send_text_sync"),
+        patch("app.services.whatsapp_service.send_image_sync"),
+        patch("app.services.whatsapp_service.send_text_async", new_callable=AsyncMock),
+        patch("app.services.whatsapp_service.send_image_async", new_callable=AsyncMock),
+    ):
         yield
 
 
 # ── User fixtures ─────────────────────────────────────────────────────────────
 
-async def _make_user(db: AsyncSession, *, email: str, role: str = "organizer",
-                     full_name: str = "Test User") -> app.models.user.User:
+
+async def _make_user(
+    db: AsyncSession, *, email: str, role: str = "organizer", full_name: str = "Test User"
+) -> app.models.user.User:
     from app.models.user import User
 
     u = User(
         full_name=full_name,
         email=email,
-        password_hash=_pwd.hash("password123"),
+        password_hash=hash_password("password123"),
         role=role,
         is_verified=True,
     )
@@ -147,9 +168,12 @@ async def other_user(db):
 
 # ── Token helpers ─────────────────────────────────────────────────────────────
 
+
 def _make_token(user_id: str) -> str:
-    from app.config import settings
     from jose import jwt
+
+    from app.config import settings
+
     payload = {
         "sub": user_id,
         "exp": datetime.now(UTC) + timedelta(hours=1),
@@ -174,6 +198,7 @@ def other_headers(other_user):
 
 
 # ── Org / event / ticket fixtures ─────────────────────────────────────────────
+
 
 @pytest.fixture
 async def org(db, user):
@@ -201,8 +226,8 @@ async def event(db, org):
         slug="test-event",
         status="draft",
         format="in_person",
-        is_free=False,
-        currency="NGN",
+        start_datetime=datetime.now(UTC) + timedelta(days=7),
+        end_datetime=datetime.now(UTC) + timedelta(days=7, hours=3),
     )
     db.add(e)
     await db.flush()
@@ -211,8 +236,8 @@ async def event(db, org):
 
 @pytest.fixture
 async def published_event(db, org):
+
     from app.models.event import Event
-    from datetime import timezone
 
     e = Event(
         org_id=org.id,
@@ -220,9 +245,10 @@ async def published_event(db, org):
         slug="published-event",
         status="published",
         format="in_person",
-        is_free=False,
-        currency="NGN",
-        start_datetime=datetime.now(timezone.utc) + timedelta(days=7),
+        venue_name="Landmark Centre",
+        venue_city="Lagos",
+        start_datetime=datetime.now(UTC) + timedelta(days=7),
+        end_datetime=datetime.now(UTC) + timedelta(days=7, hours=3),
     )
     db.add(e)
     await db.flush()
@@ -238,7 +264,7 @@ async def ticket_type(db, published_event):
         name="General Admission",
         price=5000.0,
         currency="NGN",
-        quantity_total=100,
+        quantity=100,
         quantity_sold=0,
     )
     db.add(tt)
@@ -248,6 +274,8 @@ async def ticket_type(db, published_event):
 
 @pytest.fixture
 async def registration(db, published_event, ticket_type):
+    import uuid as _uuid
+
     from app.models.ticketing import Registration
 
     r = Registration(
@@ -255,6 +283,8 @@ async def registration(db, published_event, ticket_type):
         ticket_type_id=ticket_type.id,
         attendee_name="Jane Doe",
         attendee_email="jane@example.com",
+        attendee_phone="+2348012345678",
+        qr_code=f"test-qr-{_uuid.uuid4()}",
         status="confirmed",
     )
     db.add(r)

@@ -201,6 +201,15 @@
     >Add to Google Calendar</a>
     {% endif %}
 
+    {% set confirmed_regs = order.registrations | selectattr('status', 'in', ['confirmed', 'checked_in']) | list %}
+    {% if confirmed_regs %}
+    <a
+      href="/api/v1/registrations/{{ confirmed_regs[0].id }}/calendar.ics"
+      class="btn btn-secondary"
+      style="flex:1; min-width:200px; text-align:center;"
+    >Apple / Outlook (.ics)</a>
+    {% endif %}
+
     <button
       type="button"
       class="btn btn-secondary"

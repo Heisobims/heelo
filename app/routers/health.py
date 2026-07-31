@@ -15,6 +15,7 @@ router = APIRouter(tags=["Health"])
 async def _ping_redis() -> bool:
     try:
         import redis.asyncio as aioredis
+
         r = aioredis.from_url(settings.REDIS_URL, socket_connect_timeout=2)
         await r.ping()
         await r.aclose()
@@ -43,5 +44,3 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> dict:
         "service": "heelo",
         "checks": checks,
     }
-
-

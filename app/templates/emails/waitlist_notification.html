@@ -18,7 +18,7 @@
       <p style="margin:0 0 4px;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#000000;">{{ event.title }}</p>
       {% if event.start_datetime %}
       <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#777777;">
-        {{ event.start_datetime.strftime('%A, %B %-d, %Y') }}{% if event.location %} &middot; {{ event.location }}{% endif %}
+        {{ event.start_datetime.strftime('%A, %B %-d, %Y') }}{% if event.format == 'virtual' %} &middot; {{ (event.virtual_platform | title) if event.virtual_platform else 'Online' }} event{% elif event.venue_name or event.venue_city %} &middot; {{ event.venue_name or event.venue_city }}{% endif %}
       </p>
       {% endif %}
     </td>

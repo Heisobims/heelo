@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import (
-    Boolean, ForeignKey, Index, String,
-)
+from sqlalchemy import Boolean, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base, TimestampMixin
 
@@ -15,13 +13,14 @@ class Contact(Base, TimestampMixin):
     """Org-scoped contact imported via CSV or created manually."""
 
     __tablename__ = "contacts"
-    __table_args__ = (
-        Index("ix_contacts_org_email", "org_id", "email"),
-    )
+    __table_args__ = (Index("ix_contacts_org_email", "org_id", "email"),)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)

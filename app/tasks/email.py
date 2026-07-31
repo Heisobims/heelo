@@ -5,6 +5,7 @@ without the Celery app instance being initialized first.
 Synchronous SQLAlchemy (psycopg2) is used because Celery workers run
 in separate processes and cannot share the FastAPI asyncpg pool.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -40,7 +41,10 @@ def _db() -> Session:
 
 # ── Registration confirmation ─────────────────────────────────────────────────
 
-@shared_task(name="app.tasks.email.send_registration_confirmation", max_retries=3, default_retry_delay=60)
+
+@shared_task(
+    name="app.tasks.email.send_registration_confirmation", max_retries=3, default_retry_delay=60
+)
 def send_registration_confirmation(order_id: str) -> None:
     """Send ticket confirmation with per-registration QR code URLs."""
     from app.models.event import Event
@@ -84,6 +88,7 @@ def send_registration_confirmation(order_id: str) -> None:
             org_name=org_name,
             registrations=confirmed_regs,
             gcal_url=em.gcal_url(event),
+            first_registration_id=confirmed_regs[0]["registration_id"],
         )
         em.send_sync(
             to=order.buyer_email,
@@ -94,26 +99,182 @@ def send_registration_confirmation(order_id: str) -> None:
     log.info("email.registration_confirmation.sent", order_id=order_id)
 
 
-# ── Event reminder (24 h before event) ───────────────────────────────────────
+# ── Registration cancellation ─────────────────────────────────────────────────
+
+
+@shared_task(
+    name="app.tasks.email.send_registration_cancellation", max_retries=3, default_retry_delay=60
+)
+def send_registration_cancellation(registration_id: str, cancelled_by: str = "organizer") -> None:
+    from app.models.event import Event
+    from app.models.ticketing import Registration
+
+    with _db() as db:
+        reg = db.query(Registration).filter(Registration.id == uuid.UUID(registration_id)).first()
+        if not reg:
+            return
+
+        event = db.query(Event).filter(Event.id == reg.event_id).first()
+        if not event:
+            return
+
+        html = em.render(
+            "registration_cancelled.html",
+            event=event,
+            attendee_name=reg.attendee_name,
+            ticket_type_name=reg.ticket_type.name if reg.ticket_type else "General",
+            refunded=(reg.status == "refunded"),
+            cancelled_by=cancelled_by,
+        )
+        em.send_sync(
+            to=reg.attendee_email,
+            subject=f"Your ticket for {event.title} has been cancelled",
+            html=html,
+        )
+
+    log.info("email.registration_cancellation.sent", registration_id=registration_id)
+
+
+# ── Event reminders (configurable intervals) ─────────────────────────────────
+
+DEFAULT_REMINDER_HOURS = [24, 1]
+_MAX_REMINDER_HORIZON_DAYS = 14  # events further out than this are never scanned
+
+
+def _reminder_hours(event) -> list[float]:
+    """Per-event configured reminder offsets, from Event.extras['email_reminder_hours']."""
+    raw = (event.extras or {}).get("email_reminder_hours") if event.extras else None
+    if not raw:
+        return DEFAULT_REMINDER_HOURS
+    hours: list[float] = []
+    for v in raw:
+        try:
+            h = float(v)
+            if h > 0:
+                hours.append(h)
+        except (TypeError, ValueError):
+            continue
+    return hours or DEFAULT_REMINDER_HOURS
+
+
+def _reminder_headline(hours_before: float) -> str:
+    if hours_before >= 12:
+        return "is tomorrow!"
+    if hours_before >= 2:
+        return f"starts in about {round(hours_before)} hours!"
+    return "starts soon!"
+
 
 @shared_task(name="app.tasks.email.send_event_reminders")
 def send_event_reminders() -> None:
     """
-    Scan for events starting in 23–25 hours and email confirmed attendees.
-    Run this task hourly via Celery Beat.
-    Tracks sent registrations in Redis to prevent duplicates.
+    Hourly Beat task — for each upcoming event, checks its configured reminder
+    offsets (default 24h + 1h before start) and emails confirmed attendees who
+    are within +/-1h of a due offset. Uses Redis dedup per (event, offset).
     """
     from app.models.event import Event
     from app.models.organization import Organization
     from app.models.ticketing import Registration
 
     now = datetime.now(UTC)
-    window_start = now + timedelta(hours=23)
-    window_end = now + timedelta(hours=25)
 
     # Redis for dedup tracking
     try:
         from redis import Redis as _Redis
+
+        redis = _Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    except Exception:
+        redis = None
+
+    with _db() as db:
+        events = (
+            db.query(Event)
+            .filter(
+                Event.status.in_(["published", "live"]),
+                Event.start_datetime >= now,
+                Event.start_datetime <= now + timedelta(days=_MAX_REMINDER_HORIZON_DAYS),
+                Event.deleted_at.is_(None),
+            )
+            .all()
+        )
+
+        for event in events:
+            hours_until = (event.start_datetime - now).total_seconds() / 3600
+            due_offsets = [h for h in _reminder_hours(event) if abs(hours_until - h) <= 1]
+            if not due_offsets:
+                continue
+
+            org = db.query(Organization).filter(Organization.id == event.org_id).first()
+            org_name = org.name if org else "Heelo"
+
+            regs = (
+                db.query(Registration)
+                .filter(
+                    Registration.event_id == event.id,
+                    Registration.status == "confirmed",
+                )
+                .all()
+            )
+            if not regs:
+                continue
+
+            for offset in due_offsets:
+                sent_key = f"reminder:{event.id}:{offset}"
+                headline = _reminder_headline(offset)
+                for reg in regs:
+                    rid = str(reg.id)
+                    if redis and redis.sismember(sent_key, rid):
+                        continue
+                    try:
+                        html = em.render(
+                            "event_reminder.html",
+                            event=event,
+                            org_name=org_name,
+                            attendee_name=reg.attendee_name,
+                            registration_id=rid,
+                            gcal_url=em.gcal_url(event),
+                            reminder_headline=headline,
+                        )
+                        em.send_sync(
+                            to=reg.attendee_email,
+                            subject=f"Reminder: {event.title} {headline}",
+                            html=html,
+                        )
+                        if redis:
+                            redis.sadd(sent_key, rid)
+                            redis.expire(sent_key, 48 * 3600)
+                    except Exception as exc:
+                        log.warning(
+                            "email.reminder.failed", reg_id=rid, offset=offset, error=str(exc)
+                        )
+
+    log.info("email.event_reminders.done", events_scanned=len(events))
+
+
+# ── Interest nudge ("save and remind") ────────────────────────────────────────
+
+_INTEREST_NUDGE_HOURS = 48
+
+
+@shared_task(name="app.tasks.email.send_interest_nudges")
+def send_interest_nudges() -> None:
+    """
+    Hourly Beat task — nudges users who marked an event 'interested' but never
+    bought a ticket, ~48h before it starts. One nudge per event, ever (Redis dedup).
+    """
+    from app.models.community import EventInterest
+    from app.models.event import Event
+    from app.models.organization import Organization
+    from app.models.ticketing import Registration
+    from app.models.user import User
+
+    now = datetime.now(UTC)
+    window_start = now + timedelta(hours=_INTEREST_NUDGE_HOURS - 1)
+    window_end = now + timedelta(hours=_INTEREST_NUDGE_HOURS + 1)
+
+    try:
+        from redis import Redis as _Redis
+
         redis = _Redis.from_url(settings.REDIS_URL, decode_responses=True)
     except Exception:
         redis = None
@@ -133,51 +294,67 @@ def send_event_reminders() -> None:
         for event in events:
             org = db.query(Organization).filter(Organization.id == event.org_id).first()
             org_name = org.name if org else "Heelo"
-            sent_key = f"reminder:{event.id}"
+            sent_key = f"interest_nudge:{event.id}"
 
-            regs = (
-                db.query(Registration)
+            interests = db.query(EventInterest).filter(EventInterest.event_id == event.id).all()
+            if not interests:
+                continue
+
+            # Anyone in this set already has a real ticket — don't nudge them to buy one.
+            ticketed_user_ids = {
+                r.user_id
+                for r in db.query(Registration.user_id)
                 .filter(
                     Registration.event_id == event.id,
-                    Registration.status == "confirmed",
+                    Registration.status.in_(["confirmed", "checked_in"]),
+                    Registration.user_id.isnot(None),
                 )
                 .all()
-            )
+            }
 
-            for reg in regs:
-                rid = str(reg.id)
-                if redis and redis.sismember(sent_key, rid):
+            for interest in interests:
+                uid = str(interest.user_id)
+                if redis and redis.sismember(sent_key, uid):
                     continue
+                if interest.user_id in ticketed_user_ids:
+                    continue
+
+                user = db.query(User).filter(User.id == interest.user_id).first()
+                if not user or user.deleted_at is not None:
+                    continue
+
                 try:
                     html = em.render(
-                        "event_reminder.html",
+                        "interest_nudge.html",
                         event=event,
                         org_name=org_name,
-                        attendee_name=reg.attendee_name,
-                        registration_id=rid,
+                        attendee_name=user.full_name,
                         gcal_url=em.gcal_url(event),
                     )
                     em.send_sync(
-                        to=reg.attendee_email,
-                        subject=f"Reminder: {event.title} is tomorrow!",
+                        to=user.email,
+                        subject=f"{event.title} is coming up — grab your ticket",
                         html=html,
                     )
                     if redis:
-                        redis.sadd(sent_key, rid)
-                        redis.expire(sent_key, 48 * 3600)
+                        redis.sadd(sent_key, uid)
+                        redis.expire(sent_key, 7 * 24 * 3600)
                 except Exception as exc:
-                    log.warning("email.reminder.failed", reg_id=rid, error=str(exc))
+                    log.warning("email.interest_nudge.failed", user_id=uid, error=str(exc))
 
-    log.info("email.event_reminders.done", events_scanned=len(events) if "events" in dir() else 0)
+    log.info("email.interest_nudges.done", events_scanned=len(events))
 
 
 # ── Waitlist notification ─────────────────────────────────────────────────────
 
-@shared_task(name="app.tasks.email.send_waitlist_notification", max_retries=3, default_retry_delay=60)
+
+@shared_task(
+    name="app.tasks.email.send_waitlist_notification", max_retries=3, default_retry_delay=60
+)
 def send_waitlist_notification(waitlist_id: str) -> None:
     """Notify a waitlisted attendee that a spot became available."""
-    from app.models.ticketing import Event, TicketType, Waitlist
     from app.models.organization import Organization
+    from app.models.ticketing import TicketType, Waitlist
 
     with _db() as db:
         wl = db.query(Waitlist).filter(Waitlist.id == uuid.UUID(waitlist_id)).first()
@@ -185,11 +362,13 @@ def send_waitlist_notification(waitlist_id: str) -> None:
             return
 
         from app.models.event import Event as EventModel
+
         event = db.query(EventModel).filter(EventModel.id == wl.event_id).first()
         tt = db.query(TicketType).filter(TicketType.id == wl.ticket_type_id).first()
         org = (
             db.query(Organization).filter(Organization.id == event.org_id).first()
-            if event else None
+            if event
+            else None
         )
 
         html = em.render(
@@ -200,7 +379,8 @@ def send_waitlist_notification(waitlist_id: str) -> None:
             name=wl.name,
             register_url=(
                 f"{settings.FRONTEND_URL}/e/{event.slug}/register"
-                if event else settings.FRONTEND_URL
+                if event
+                else settings.FRONTEND_URL
             ),
             offer_expires_at=wl.offer_expires_at,
         )
@@ -218,6 +398,7 @@ def send_waitlist_notification(waitlist_id: str) -> None:
 
 
 # ── Event cancellation notification ──────────────────────────────────────────
+
 
 @shared_task(name="app.tasks.email.send_event_cancellation", max_retries=3, default_retry_delay=60)
 def send_event_cancellation(event_id: str, cancellation_note: str = "") -> None:
@@ -260,6 +441,7 @@ def send_event_cancellation(event_id: str, cancellation_note: str = "") -> None:
 
 
 # ── Event update notification ─────────────────────────────────────────────────
+
 
 @shared_task(name="app.tasks.email.send_event_update", max_retries=3, default_retry_delay=60)
 def send_event_update(event_id: str, changes: list[dict]) -> None:

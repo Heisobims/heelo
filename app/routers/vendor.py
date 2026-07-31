@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import uuid
 
+import structlog
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 
-from app.dependencies import DBSession, CurrentUser
+from app.dependencies import CurrentUser, DBSession
+from app.models.vendor import VENDOR_CATEGORIES
 from app.services import vendor_service as vsvc
-from app.models.vendor import VENDOR_CATEGORIES, VENDOR_PRICE_RANGES
+
+logger = structlog.get_logger()
 
 router_vendor = APIRouter(prefix="/api/v1/vendors", tags=["vendors"])
 
@@ -19,6 +22,8 @@ class VendorCreateRequest(BaseModel):
     tagline: str | None = Field(None, max_length=255)
     location_city: str | None = Field(None, max_length=255)
     location_country: str | None = Field(None, min_length=2, max_length=2)
+    address: str | None = Field(None, max_length=1000)
+    capacity: int | None = Field(None, gt=0, le=1_000_000)
     contact_email: str | None = Field(None, max_length=255)
     contact_phone: str | None = Field(None, max_length=30)
     website_url: str | None = Field(None, max_length=500)
@@ -32,6 +37,8 @@ class VendorUpdateRequest(BaseModel):
     tagline: str | None = Field(None, max_length=255)
     location_city: str | None = Field(None, max_length=255)
     location_country: str | None = Field(None, min_length=2, max_length=2)
+    address: str | None = Field(None, max_length=1000)
+    capacity: int | None = Field(None, gt=0, le=1_000_000)
     contact_email: str | None = Field(None, max_length=255)
     contact_phone: str | None = Field(None, max_length=30)
     website_url: str | None = Field(None, max_length=500)
@@ -56,6 +63,8 @@ def _vendor_dict(v) -> dict:
         "description": v.description,
         "location_city": v.location_city,
         "location_country": v.location_country,
+        "address": v.address,
+        "capacity": v.capacity,
         "contact_email": v.contact_email,
         "contact_phone": v.contact_phone,
         "website_url": v.website_url,
@@ -77,13 +86,20 @@ async def list_vendors(
     city: str | None = Query(None),
     country: str | None = Query(None),
     price_range: str | None = Query(None),
+    min_capacity: int | None = Query(None, gt=0),
     page: int = Query(1, ge=1),
     per_page: int = Query(24, ge=1, le=100),
 ):
     vendors, total = await vsvc.list_vendors(
-        db, q=q, category=category, city=city,
-        country=country, price_range=price_range,
-        page=page, per_page=per_page,
+        db,
+        q=q,
+        category=category,
+        city=city,
+        country=country,
+        price_range=price_range,
+        min_capacity=min_capacity,
+        page=page,
+        per_page=per_page,
     )
     return {
         "success": True,
@@ -120,6 +136,8 @@ async def create_vendor(
         tagline=data.tagline,
         location_city=data.location_city,
         location_country=data.location_country,
+        address=data.address,
+        capacity=data.capacity,
         contact_email=data.contact_email,
         contact_phone=data.contact_phone,
         website_url=data.website_url,
@@ -176,6 +194,20 @@ async def contact_vendor(
         event_name=data.event_name,
         message=data.message,
     )
+
+    try:
+        from app.utils.email import send_vendor_lead_email
+
+        send_vendor_lead_email(
+            vendor.contact_email or vendor.user.email,
+            vendor.business_name,
+            data.requester_name,
+            data.event_name,
+            data.message,
+        )
+    except Exception as exc:
+        logger.warning("vendor.lead_email_failed", vendor_id=str(vendor.id), error=str(exc))
+
     return {
         "success": True,
         "data": {"id": str(lead.id)},

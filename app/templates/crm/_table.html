@@ -46,8 +46,12 @@
             <div class="att-sub checked-in"><span class="material-symbols-outlined">check</span> Checked in {{ r.checked_in_at.strftime('%H:%M') }}</div>
             {% endif %}
           </td>
-          <td>
+          <td style="white-space:nowrap;">
             <a href="/org/{{ org.slug }}/registrations/attendee/{{ r.attendee_email }}" class="act-link">Profile →</a>
+            {% if r.status in ('confirmed', 'checked_in') %}
+            <a href="#" class="act-link" style="color:#dc2626;margin-left:10px;"
+               onclick="event.preventDefault(); cancelRegistration('{{ r.id }}', '{{ org.slug }}', '{{ r.event_id }}', {{ 'true' if r.price > 0 else 'false' }})">Cancel</a>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}

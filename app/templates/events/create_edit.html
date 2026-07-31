@@ -112,6 +112,17 @@
 }
 .cat-pill.selected { border-color: var(--cyan); background: rgba(0,255,243,0.1); }
 
+/* ── Vibe tag chips ────────────────────────────────────────────── */
+.vibe-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px 6px 14px; border: 1.5px solid var(--cyan); background: rgba(0,255,243,0.1);
+  border-radius: 100px; font-size: 13px; font-weight: 500;
+}
+.vibe-chip button { border: none; background: none; cursor: pointer; display: flex; padding: 2px; color: var(--text-muted); }
+.vibe-chip button:hover { color: var(--text-primary); }
+.vibe-input-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.vibe-input-row input { border: none; outline: none; font-size: 13px; font-family: inherit; min-width: 160px; padding: 6px 0; background: transparent; }
+
 /* ── Toggle ───────────────────────────────────────────────────── */
 .tog { position: relative; width: 40px; height: 22px; border-radius: 11px; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
 .tog-knob { position: absolute; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: transform 0.2s; }
@@ -468,6 +479,13 @@
                   <option value="GB">UK</option><option value="US">USA</option>
                 </select>
               </div>
+            </div>
+            <div x-show="form.venue_city && form.venue_city.trim()" x-cloak style="margin-top:-2px;">
+              <a :href="'/venues?city=' + encodeURIComponent(form.venue_city.trim())" target="_blank" rel="noopener"
+                style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--cyan-dark,#00b3a9); text-decoration:none; font-weight:600;">
+                <span class="material-symbols-outlined" style="font-size:16px;">domain</span>
+                <span x-text="'Browse venues in ' + form.venue_city.trim() + ' →'"></span>
+              </a>
             </div>
           </div>
 
@@ -1060,6 +1078,25 @@
               <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Total across all ticket types.</p>
             </div>
 
+            <!-- Reminder timing -->
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">
+                <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">notifications</span>Reminder timing
+              </label>
+              <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                <div>
+                  <input type="text" class="form-input" placeholder="24, 1"
+                    x-model="form.email_reminder_hours" style="max-width:160px;">
+                  <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">Email — hours before, comma-separated</p>
+                </div>
+                <div>
+                  <input type="text" class="form-input" placeholder="24, 1"
+                    x-model="form.whatsapp_reminder_hours" style="max-width:160px;">
+                  <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">WhatsApp — hours before, comma-separated</p>
+                </div>
+              </div>
+            </div>
+
             <!-- Private toggle -->
             <div>
               <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
@@ -1103,6 +1140,27 @@
               {% else %}
               <p style="font-size:13px; color:var(--text-muted);">No categories set up yet.</p>
               {% endif %}
+            </div>
+
+            <!-- Vibe tags -->
+            <div>
+              <label class="form-label" style="margin-bottom:8px;">
+                <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">sparkle</span>Vibe
+              </label>
+              <div class="vibe-input-row" style="border:1.5px solid var(--border-light); border-radius:10px; padding:8px 12px;">
+                <template x-for="(tag, i) in form.vibe_tags" :key="i">
+                  <span class="vibe-chip">
+                    <span x-text="tag"></span>
+                    <button type="button" @click="form.vibe_tags.splice(i, 1)" aria-label="Remove">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  </span>
+                </template>
+                <input type="text" x-model="vibeDraft" placeholder="{{ 'Add a vibe…' if categories else 'e.g. chill, dress to impress, networking-heavy' }}"
+                  @keydown.enter.prevent="addVibeTag()" @keydown.comma.prevent="addVibeTag()" @blur="addVibeTag()"
+                  :disabled="form.vibe_tags.length >= 8">
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Press Enter to add. Up to 8 — how it actually feels, not a category.</p>
             </div>
 
           </div>
@@ -1185,7 +1243,11 @@ function eventForm() {
       is_private:       ex.is_private || false,
       password:         ex.password || '',
       category_ids:     (ex.categories || []).map(c => String(c.id)),
+      vibe_tags:        ex.vibe_tags || [],
+      email_reminder_hours:    (extras.email_reminder_hours || [24, 1]).join(', '),
+      whatsapp_reminder_hours: (extras.whatsapp_reminder_hours || [24, 1]).join(', '),
     },
+    vibeDraft: '',
 
     /* ─ Section open/close ─ */
     sections: { basics:true, datetime:true, location:true, ticketing:false, agenda:false, people:false, partners:false, media:false, settings:false },
@@ -1351,6 +1413,15 @@ function eventForm() {
       finally { this.aiGenerating=false; }
     },
 
+    /* ── vibe tags ── */
+    addVibeTag() {
+      const tag = this.vibeDraft.trim().replace(/,$/, '').toLowerCase();
+      if (tag && this.form.vibe_tags.length < 8 && !this.form.vibe_tags.includes(tag)) {
+        this.form.vibe_tags.push(tag.slice(0, 50));
+      }
+      this.vibeDraft = '';
+    },
+
     /* ── validate ── */
     validate() {
       const e={};
@@ -1380,8 +1451,11 @@ function eventForm() {
       if(isPublish) this.publishing=true; else this.saving=true;
 
       const strip = obj => { const {_key,...rest}=obj; return rest; };
+      const parseHours = s => (s || '').split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x) && x > 0);
 
       const extras = {
+        email_reminder_hours:    parseHours(this.form.email_reminder_hours),
+        whatsapp_reminder_hours: parseHours(this.form.whatsapp_reminder_hours),
         agenda:   this.agenda.map(strip),
         people: {
           speakers:   this.people.speakers.map(strip),
@@ -1393,8 +1467,9 @@ function eventForm() {
         partners: this.partners.map(strip),
       };
 
+      const { email_reminder_hours, whatsapp_reminder_hours, ...formRest } = this.form;
       const payload = {
-        ...this.form,
+        ...formRest,
         max_capacity:     this.form.max_capacity ? parseInt(this.form.max_capacity) : null,
         start_datetime:   this.form.start_datetime ? new Date(this.form.start_datetime).toISOString() : null,
         end_datetime:     this.form.end_datetime   ? new Date(this.form.end_datetime).toISOString()   : null,

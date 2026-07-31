@@ -4,14 +4,9 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, Query
 
-from fastapi import Depends
-from app.dependencies import DBSession, OrgAccess, CurrentUser
+from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.models.campaign import Campaign
-from app.schemas.campaign import (
-    CampaignCreateRequest,
-    CampaignSendRequest,
-    CampaignUpdateRequest,
-)
+from app.schemas.campaign import CampaignCreateRequest, CampaignSendRequest, CampaignUpdateRequest
 from app.services import campaign_service as camp_svc
 
 router_campaigns = APIRouter(
@@ -23,8 +18,8 @@ router_campaigns = APIRouter(
 async def _get_campaign_for_org(db, campaign_id_str: str, org_id: uuid.UUID) -> Campaign:
     try:
         cid = uuid.UUID(campaign_id_str)
-    except ValueError:
-        raise HTTPException(422, "Invalid campaign ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid campaign ID.") from err
     c = await camp_svc.get_campaign(db, cid)
     if not c or c.org_id != org_id:
         raise HTTPException(404, "Campaign not found.")
@@ -32,6 +27,7 @@ async def _get_campaign_for_org(db, campaign_id_str: str, org_id: uuid.UUID) -> 
 
 
 # ── List ──────────────────────────────────────────────────────────────────────
+
 
 @router_campaigns.get("")
 async def list_campaigns(
@@ -52,6 +48,7 @@ async def list_campaigns(
 
 # ── Create ────────────────────────────────────────────────────────────────────
 
+
 @router_campaigns.post("", status_code=201)
 async def create_campaign(
     slug: str,
@@ -67,7 +64,35 @@ async def create_campaign(
     return {"success": True, "data": _campaign_dict(campaign)}
 
 
+# ── Audience count preview ────────────────────────────────────────────────────
+#
+# Must be registered before GET /{campaign_id} — FastAPI matches routes in
+# registration order, and "/_audience-count" would otherwise be captured by
+# the {campaign_id} path parameter, fail UUID parsing, and 422.
+
+
+@router_campaigns.get("/_audience-count")
+async def audience_count(
+    slug: str,
+    db: DBSession,
+    org_access: OrgAccess,
+    event_id: str | None = Query(None),
+    statuses: list[str] = Query(["confirmed", "checked_in"]),
+):
+    org, role, is_owner = org_access
+    eid: uuid.UUID | None = None
+    if event_id:
+        try:
+            eid = uuid.UUID(event_id)
+        except ValueError as err:
+            raise HTTPException(422, "Invalid event_id.") from err
+
+    count = await camp_svc.preview_audience_count(db, org.id, eid, statuses)
+    return {"success": True, "data": {"count": count}}
+
+
 # ── Detail ────────────────────────────────────────────────────────────────────
+
 
 @router_campaigns.get("/{campaign_id}")
 async def get_campaign(slug: str, campaign_id: str, db: DBSession, org_access: OrgAccess):
@@ -78,6 +103,7 @@ async def get_campaign(slug: str, campaign_id: str, db: DBSession, org_access: O
 
 
 # ── Update (draft only) ───────────────────────────────────────────────────────
+
 
 @router_campaigns.patch("/{campaign_id}")
 async def update_campaign(
@@ -97,6 +123,7 @@ async def update_campaign(
 
 # ── Delete ────────────────────────────────────────────────────────────────────
 
+
 @router_campaigns.delete("/{campaign_id}", status_code=204)
 async def delete_campaign(slug: str, campaign_id: str, db: DBSession, org_access: OrgAccess):
     org, role, is_owner = org_access
@@ -106,29 +133,8 @@ async def delete_campaign(slug: str, campaign_id: str, db: DBSession, org_access
     await camp_svc.delete_campaign(db, c)
 
 
-# ── Audience count preview ────────────────────────────────────────────────────
-
-@router_campaigns.get("/_audience-count")
-async def audience_count(
-    slug: str,
-    db: DBSession,
-    org_access: OrgAccess,
-    event_id: str | None = Query(None),
-    statuses: list[str] = Query(["confirmed", "checked_in"]),
-):
-    org, role, is_owner = org_access
-    eid: uuid.UUID | None = None
-    if event_id:
-        try:
-            eid = uuid.UUID(event_id)
-        except ValueError:
-            raise HTTPException(422, "Invalid event_id.")
-
-    count = await camp_svc.preview_audience_count(db, org.id, eid, statuses)
-    return {"success": True, "data": {"count": count}}
-
-
 # ── Send / schedule ───────────────────────────────────────────────────────────
+
 
 @router_campaigns.post("/{campaign_id}/send")
 async def send_or_schedule(
@@ -153,6 +159,7 @@ async def send_or_schedule(
 
 # ── Cancel scheduled campaign ─────────────────────────────────────────────────
 
+
 @router_campaigns.post("/{campaign_id}/cancel")
 async def cancel_campaign(slug: str, campaign_id: str, db: DBSession, org_access: OrgAccess):
     org, role, is_owner = org_access
@@ -164,6 +171,7 @@ async def cancel_campaign(slug: str, campaign_id: str, db: DBSession, org_access
 
 
 # ── Recipients ────────────────────────────────────────────────────────────────
+
 
 @router_campaigns.get("/{campaign_id}/recipients")
 async def list_recipients(slug: str, campaign_id: str, db: DBSession, org_access: OrgAccess):
@@ -188,6 +196,7 @@ async def list_recipients(slug: str, campaign_id: str, db: DBSession, org_access
 
 
 # ── Helper ────────────────────────────────────────────────────────────────────
+
 
 def _campaign_dict(c: Campaign) -> dict:
     return {

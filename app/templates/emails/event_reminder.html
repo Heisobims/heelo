@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block subject %}Reminder: {{ event.title }} is tomorrow!{% endblock %}
+{% block subject %}Reminder: {{ event.title }} {{ reminder_headline or 'is coming up' }}{% endblock %}
 
 {% block content %}
 <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:900;color:#000000;line-height:1.2;">
-  Your event is tomorrow ⏰
+  Your event {{ reminder_headline or 'is coming up' }} ⏰
 </h1>
 <p style="margin:0 0 28px;font-family:system-ui,-apple-system,sans-serif;font-size:16px;color:#555555;line-height:1.5;">
   Hey {{ attendee_name }}, just a reminder — <strong style="color:#000;">{{ event.title }}</strong> is almost here.
@@ -23,9 +23,13 @@
         📅&nbsp; <strong>{{ event.start_datetime.strftime('%A, %B %-d, %Y at %-I:%M %p') }}</strong>
       </p>
       {% endif %}
-      {% if event.location %}
+      {% if event.format == 'virtual' %}
       <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
-        📍&nbsp; <strong>{{ event.location }}</strong>
+        📍&nbsp; <strong>{{ (event.virtual_platform | title) if event.virtual_platform else 'Online' }} event</strong>
+      </p>
+      {% elif event.venue_name or event.venue_city %}
+      <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
+        📍&nbsp; <strong>{{ event.venue_name or event.venue_city }}{% if event.venue_name and event.venue_city %}, {{ event.venue_city }}{% endif %}</strong>
       </p>
       {% endif %}
       <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#777777;">

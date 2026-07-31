@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Index, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,9 +23,7 @@ class Notification(Base, TimestampMixin):
         Index("ix_notifications_user_created", "user_id", "created_at"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -62,14 +61,15 @@ class AuditLog(Base, TimestampMixin):
         Index("ix_audit_logs_entity", "entity_type", "entity_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
     org_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     # e.g. event.published, registration.cancelled, payout.requested
     action: Mapped[str] = mapped_column(String(100), nullable=False)
@@ -83,3 +83,35 @@ class AuditLog(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<AuditLog {self.action} entity={self.entity_type}:{self.entity_id}>"
+
+
+class AdminBroadcast(Base, TimestampMixin):
+    """
+    Platform-wide promotional/announcement email sent by a platform admin to a
+    category of users (all / organizers / attendees / vendors / admins).
+    Distinct from the org-scoped Campaign model — this targets any user on the
+    platform regardless of organization.
+    """
+
+    __tablename__ = "admin_broadcasts"
+    __table_args__ = (Index("ix_admin_broadcasts_created_at", "created_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    subject: Mapped[str] = mapped_column(String(500), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    # all | organizer | attendee | vendor | admin
+    audience_category: Mapped[str] = mapped_column(String(20), nullable=False)
+    # email | notification | both — where this broadcast is delivered
+    channel: Mapped[str] = mapped_column(String(20), nullable=False, default="email")
+    recipient_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sent_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    failed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # draft | sending | sent | failed
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<AdminBroadcast {self.subject!r} status={self.status}>"

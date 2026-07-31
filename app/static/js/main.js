@@ -41,49 +41,15 @@ function showInlineError(container, message) {
 }
 
 // ── Alpine.js components (global functions) ───────────────────────────────────
-// Alpine evaluates x-data="registerForm()" by calling window.registerForm(),
+// Alpine evaluates x-data="loginForm()" by calling window.loginForm(),
 // which works as long as these are defined before Alpine.start() runs.
-
-function registerForm() {
-  return {
-    fullName: '',
-    email: '',
-    password: '',
-    showPassword: false,
-    loading: false,
-    errors: {},
-
-    async submit() {
-      this.errors = {}
-      this.loading = true
-      try {
-        const res = await fetch('/api/v1/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            full_name: this.fullName,
-            email: this.email,
-            password: this.password,
-          }),
-        })
-        const data = await res.json()
-        if (!res.ok) {
-          if (data?.error?.details) {
-            this.errors = data.error.details
-          } else {
-            this.errors._global = data?.error?.message || 'Registration failed.'
-          }
-          return
-        }
-        window.location.href = `/verify?email=${encodeURIComponent(this.email)}`
-      } catch (_) {
-        this.errors._global = 'Network error. Please try again.'
-      } finally {
-        this.loading = false
-      }
-    },
-  }
-}
+//
+// Note: there is no global `registerForm()` here on purpose — the event
+// ticket-purchase page (events/register.html) defines its own page-local
+// `registerForm()` for x-data="registerForm()". A same-named stub here
+// used to silently clobber it (main.js loads after that inline script but
+// before Alpine starts), breaking ticket checkout on every event page.
+// auth/register.html itself doesn't use Alpine at all, so nothing needs it.
 
 function loginForm() {
   return {

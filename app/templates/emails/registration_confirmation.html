@@ -22,9 +22,13 @@
         at {{ event.start_datetime.strftime('%-I:%M %p') }}
       </p>
       {% endif %}
-      {% if event.location %}
+      {% if event.format == 'virtual' %}
       <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#888888;">
-        📍&nbsp; <strong style="color:#000000;">{{ event.location }}</strong>
+        📍&nbsp; <strong style="color:#000000;">{{ (event.virtual_platform | title) if event.virtual_platform else 'Online' }} event</strong>
+      </p>
+      {% elif event.venue_name or event.venue_city %}
+      <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#888888;">
+        📍&nbsp; <strong style="color:#000000;">{{ event.venue_name or event.venue_city }}{% if event.venue_name and event.venue_city %}, {{ event.venue_city }}{% endif %}</strong>
       </p>
       {% endif %}
     </td>
@@ -84,6 +88,14 @@
       <a href="{{ gcal_url }}"
          style="display:inline-block;background-color:#000000;color:#00FFF3;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;text-decoration:none;padding:14px 28px;border-radius:10px;">
         + Add to Google Calendar
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" style="padding-bottom:12px;">
+      <a href="{{ frontend_url }}/api/v1/registrations/{{ first_registration_id }}/calendar.ics"
+         style="font-family:system-ui,-apple-system,sans-serif;font-size:13px;color:#555555;text-decoration:underline;">
+        Apple / Outlook (.ics)
       </a>
     </td>
   </tr>

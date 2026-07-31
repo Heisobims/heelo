@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 
+from app.database import AsyncSessionLocal
 from app.dependencies import DBSession, OrgAccess
 from app.models.ticketing import Registration
 from app.services import checkin_service as ci_svc
@@ -35,13 +38,12 @@ def _reg_dict(reg: Registration) -> dict:
 
 async def _get_event_for_org(db, event_id_str: str, org_id: uuid.UUID):
     from app.models.event import Event
+
     try:
         eid = uuid.UUID(event_id_str)
-    except ValueError:
-        raise HTTPException(422, "Invalid event ID.")
-    event = await db.scalar(
-        select(Event).where(Event.id == eid, Event.org_id == org_id)
-    )
+    except ValueError as err:
+        raise HTTPException(422, "Invalid event ID.") from err
+    event = await db.scalar(select(Event).where(Event.id == eid, Event.org_id == org_id))
     if not event:
         raise HTTPException(404, "Event not found.")
     return event
@@ -67,8 +69,8 @@ async def check_in(
         else:
             try:
                 rid = uuid.UUID(data.registration_id)
-            except (ValueError, TypeError):
-                raise HTTPException(422, "Invalid registration_id.")
+            except (ValueError, TypeError) as err:
+                raise HTTPException(422, "Invalid registration_id.") from err
             reg = await ci_svc.check_in_by_id(db, rid)
 
     except ci_svc.AlreadyCheckedInError as e:
@@ -102,8 +104,8 @@ async def undo_check_in(
     event = await _get_event_for_org(db, event_id, org.id)
     try:
         rid = uuid.UUID(reg_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid registration ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
 
     reg = await db.scalar(
         select(Registration).where(
@@ -124,6 +126,42 @@ async def checkin_stats(slug: str, event_id: str, db: DBSession, org_access: Org
     event = await _get_event_for_org(db, event_id, org.id)
     stats = await ci_svc.get_checkin_stats(db, event.id)
     return {"success": True, "data": stats}
+
+
+@router_checkin.get("/check-in/pulse")
+async def checkin_pulse(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+    """Live-pulse snapshot — capacity fill + per-ticket-tier check-in rate."""
+    org, role, is_owner = org_access
+    event = await _get_event_for_org(db, event_id, org.id)
+    stats = await ci_svc.get_live_pulse(db, event)
+    return {"success": True, "data": stats}
+
+
+@router_checkin.get("/check-in/stream")
+async def checkin_stream(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+    """SSE endpoint — pushes live pulse stats every 5 s. Nginx must have proxy_buffering off."""
+    org, role, is_owner = org_access
+    event = await _get_event_for_org(db, event_id, org.id)
+
+    async def _generate():
+        try:
+            while True:
+                async with AsyncSessionLocal() as session:
+                    stats = await ci_svc.get_live_pulse(session, event)
+                yield f"data: {json.dumps(stats)}\n\n"
+                await asyncio.sleep(5)
+        except asyncio.CancelledError:
+            pass
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @router_checkin.get("/check-in/recent")

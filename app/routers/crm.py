@@ -77,8 +77,9 @@ async def import_contacts_csv(
     skipped = 0
     errors: list[str] = []
 
-    from app.models.crm import Contact
     from sqlalchemy import select
+
+    from app.models.crm import Contact
 
     for i, row in enumerate(reader, start=2):
         name = (row.get("name") or "").strip()
@@ -136,8 +137,9 @@ async def update_contact_tags(
     tags: list[str] = Body(...),
 ):
     """Replace the tag list on a contact."""
-    from app.models.crm import Contact
     from sqlalchemy import select
+
+    from app.models.crm import Contact
 
     org, role, _ = org_access
     if role not in ("admin", "organizer"):
@@ -145,12 +147,10 @@ async def update_contact_tags(
 
     try:
         cid = uuid.UUID(contact_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid contact ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid contact ID.") from err
 
-    contact = await db.scalar(
-        select(Contact).where(Contact.id == cid, Contact.org_id == org.id)
-    )
+    contact = await db.scalar(select(Contact).where(Contact.id == cid, Contact.org_id == org.id))
     if not contact:
         raise HTTPException(404, "Contact not found.")
 
@@ -170,8 +170,9 @@ async def list_contacts(
     per_page: int = 50,
 ):
     org, role, _ = org_access
-    from app.models.crm import Contact
     from sqlalchemy import func, or_, select
+
+    from app.models.crm import Contact
 
     per_page = min(per_page, 100)
     stmt = select(Contact).where(Contact.org_id == org.id)
@@ -184,9 +185,7 @@ async def list_contacts(
         )
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = await db.scalars(
-        stmt.order_by(Contact.created_at.desc())
-        .offset((page - 1) * per_page)
-        .limit(per_page)
+        stmt.order_by(Contact.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
     )
     contacts = list(rows.all())
     return {

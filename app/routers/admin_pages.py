@@ -1,6 +1,7 @@
 """
 Admin HTML pages — all routes under /admin/, require user.role == 'admin'.
 """
+
 from __future__ import annotations
 
 import uuid
@@ -11,7 +12,6 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_, select
 from sqlalchemy.orm import selectinload
 
-from app.database import get_db
 from app.dependencies import DBSession
 from app.services import admin_service as adm_svc
 
@@ -21,9 +21,10 @@ templates = Jinja2Templates(directory="app/templates")
 
 async def _require_admin_ctx(request: Request, db):
     """Return admin user or redirect to login."""
+    from jose import JWTError, jwt
+
     from app.config import settings
     from app.models.user import User
-    from jose import JWTError, jwt
 
     token = request.cookies.get("heelo_access")
     if not token:
@@ -47,6 +48,7 @@ def _ctx(request, admin_user, active_page: str, **kwargs):
 
 # ── Overview ──────────────────────────────────────────────────────────────────
 
+
 @router_admin_pages.get("", response_class=HTMLResponse)
 @router_admin_pages.get("/", response_class=HTMLResponse)
 async def admin_overview(request: Request, db: DBSession):
@@ -60,11 +62,19 @@ async def admin_overview(request: Request, db: DBSession):
 
     return templates.TemplateResponse(
         "admin/overview.html",
-        _ctx(request, admin_user, "overview", stats=stats, recent_orgs=recent_orgs, recent_users=recent_users),
+        _ctx(
+            request,
+            admin_user,
+            "overview",
+            stats=stats,
+            recent_orgs=recent_orgs,
+            recent_users=recent_users,
+        ),
     )
 
 
 # ── Organizations ─────────────────────────────────────────────────────────────
+
 
 @router_admin_pages.get("/organizations", response_class=HTMLResponse)
 async def admin_orgs(request: Request, db: DBSession):
@@ -90,9 +100,16 @@ async def admin_orgs(request: Request, db: DBSession):
     return templates.TemplateResponse(
         "admin/organizations.html",
         _ctx(
-            request, admin_user, "organizations",
-            orgs=orgs, total=total, page=page, per_page=30,
-            q=q or "", selected_plan=selected_plan or "", selected_status=selected_status or "",
+            request,
+            admin_user,
+            "organizations",
+            orgs=orgs,
+            total=total,
+            page=page,
+            per_page=30,
+            q=q or "",
+            selected_plan=selected_plan or "",
+            selected_status=selected_status or "",
         ),
     )
 
@@ -105,8 +122,8 @@ async def admin_org_detail(org_id: str, request: Request, db: DBSession):
 
     try:
         oid = uuid.UUID(org_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid org ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid org ID.") from err
 
     detail = await adm_svc.get_org_detail(db, oid)
     if not detail:
@@ -120,6 +137,7 @@ async def admin_org_detail(org_id: str, request: Request, db: DBSession):
 
 # ── Users ─────────────────────────────────────────────────────────────────────
 
+
 @router_admin_pages.get("/users", response_class=HTMLResponse)
 async def admin_users(request: Request, db: DBSession):
     admin_user = await _require_admin_ctx(request, db)
@@ -127,17 +145,50 @@ async def admin_users(request: Request, db: DBSession):
         return RedirectResponse("/login?next=/admin/users", status_code=302)
 
     q = request.query_params.get("q", "").strip() or None
-    selected_role = request.query_params.get("role", "").strip() or None
+    selected_category = request.query_params.get("category", "").strip() or None
+    selected_country = request.query_params.get("country", "").strip() or None
+    selected_age_bracket = request.query_params.get("age_bracket", "").strip() or None
+    selected_interest = request.query_params.get("interest", "").strip() or None
+    selected_vibe = request.query_params.get("vibe", "").strip() or None
     page = max(1, int(request.query_params.get("page", 1)))
 
-    users, total = await adm_svc.list_users(db, search=q, role=selected_role, page=page, per_page=30)
+    users, total = await adm_svc.list_users(
+        db,
+        search=q,
+        category=selected_category,
+        country=selected_country,
+        age_bracket=selected_age_bracket,
+        interest=selected_interest,
+        vibe=selected_vibe,
+        page=page,
+        per_page=30,
+    )
+    counts = await adm_svc.get_user_category_counts(db)
+    vendor_user_ids = await adm_svc.batch_vendor_user_ids(db, [u.id for u in users])
+    insights = await adm_svc.audience_insights(db)
 
     return templates.TemplateResponse(
         "admin/users.html",
         _ctx(
-            request, admin_user, "users",
-            users=users, total=total, page=page, per_page=30,
-            q=q or "", selected_role=selected_role or "",
+            request,
+            admin_user,
+            "users",
+            users=users,
+            total=total,
+            page=page,
+            per_page=30,
+            q=q or "",
+            selected_category=selected_category or "all",
+            selected_country=selected_country or "",
+            selected_age_bracket=selected_age_bracket or "",
+            selected_interest=selected_interest or "",
+            selected_vibe=selected_vibe or "",
+            counts=counts,
+            vendor_user_ids=vendor_user_ids,
+            country_names=adm_svc.COUNTRY_NAMES,
+            age_brackets=[label for label, _, _ in adm_svc.AGE_BRACKETS],
+            filter_interests=[row["interest"] for row in insights["top_interests"]],
+            filter_vibes=[row["vibe"] for row in insights["top_vibes"]],
         ),
     )
 
@@ -150,8 +201,8 @@ async def admin_user_detail(user_id: str, request: Request, db: DBSession):
 
     try:
         uid = uuid.UUID(user_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid user ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid user ID.") from err
 
     detail = await adm_svc.get_user_detail(db, uid)
     if not detail:
@@ -163,7 +214,25 @@ async def admin_user_detail(user_id: str, request: Request, db: DBSession):
     )
 
 
+# ── Audience insights ─────────────────────────────────────────────────────────
+
+
+@router_admin_pages.get("/insights", response_class=HTMLResponse)
+async def admin_insights(request: Request, db: DBSession):
+    admin_user = await _require_admin_ctx(request, db)
+    if not admin_user:
+        return RedirectResponse("/login?next=/admin/insights", status_code=302)
+
+    insights = await adm_svc.audience_insights(db)
+
+    return templates.TemplateResponse(
+        "admin/insights.html",
+        _ctx(request, admin_user, "insights", insights=insights),
+    )
+
+
 # ── Events ────────────────────────────────────────────────────────────────────
+
 
 @router_admin_pages.get("/events", response_class=HTMLResponse)
 async def admin_events(request: Request, db: DBSession):
@@ -171,9 +240,9 @@ async def admin_events(request: Request, db: DBSession):
     if not admin_user:
         return RedirectResponse("/login?next=/admin/events", status_code=302)
 
-    from app.models.event import Event
-    from app.models.organization import Organization
     from sqlalchemy import func
+
+    from app.models.event import Event
 
     q_str = request.query_params.get("q", "").strip() or None
     selected_status = request.query_params.get("status", "").strip() or None
@@ -199,8 +268,45 @@ async def admin_events(request: Request, db: DBSession):
     return templates.TemplateResponse(
         "admin/events.html",
         _ctx(
-            request, admin_user, "events",
-            events=events, total=total or 0, page=page, per_page=per_page,
-            q=q_str or "", selected_status=selected_status or "",
+            request,
+            admin_user,
+            "events",
+            events=events,
+            total=total or 0,
+            page=page,
+            per_page=per_page,
+            q=q_str or "",
+            selected_status=selected_status or "",
+        ),
+    )
+
+
+# ── Broadcasts (platform-wide promotional email) ──────────────────────────────
+
+
+@router_admin_pages.get("/broadcasts", response_class=HTMLResponse)
+async def admin_broadcasts(request: Request, db: DBSession):
+    admin_user = await _require_admin_ctx(request, db)
+    if not admin_user:
+        return RedirectResponse("/login?next=/admin/broadcasts", status_code=302)
+
+    from app.services import admin_broadcast_service as bc_svc
+
+    page = max(1, int(request.query_params.get("page", 1)))
+    broadcasts, total = await bc_svc.list_broadcasts(db, page=page, per_page=20)
+    counts = await adm_svc.get_user_category_counts(db)
+
+    return templates.TemplateResponse(
+        "admin/broadcasts.html",
+        _ctx(
+            request,
+            admin_user,
+            "broadcasts",
+            broadcasts=broadcasts,
+            total=total,
+            page=page,
+            per_page=20,
+            counts=counts,
+            gmail_daily_limit=bc_svc.GMAIL_DAILY_SOFT_LIMIT,
         ),
     )

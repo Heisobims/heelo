@@ -1,7 +1,7 @@
 """Public REST API — API key auth, events, registrations, check-in, stats."""
+
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -36,11 +36,10 @@ async def test_public_get_event(client: AsyncClient, api_key, published_event):
     assert resp.json()["data"]["title"] == published_event.title
 
 
-async def test_public_get_event_not_in_org_returns_404(
-    client: AsyncClient, api_key, db
-):
+async def test_public_get_event_not_in_org_returns_404(client: AsyncClient, api_key, db):
     """An API key from org A cannot see events from org B."""
     import uuid
+
     raw, _ = api_key
     resp = await client.get(
         f"/api/public/v1/events/{uuid.uuid4()}",
@@ -49,7 +48,9 @@ async def test_public_get_event_not_in_org_returns_404(
     assert resp.status_code == 404
 
 
-async def test_public_list_registrations(client: AsyncClient, api_key, published_event, registration):
+async def test_public_list_registrations(
+    client: AsyncClient, api_key, published_event, registration
+):
     raw, _ = api_key
     resp = await client.get(
         f"/api/public/v1/events/{published_event.id}/registrations",

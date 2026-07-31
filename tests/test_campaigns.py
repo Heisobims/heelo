@@ -1,11 +1,10 @@
 """Campaign — create, schedule, send, recipient tracking."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-import pytest
 from httpx import AsyncClient
-
 
 _CAMPAIGN_PAYLOAD = {
     "name": "Pre-event Hype",

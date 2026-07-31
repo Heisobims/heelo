@@ -1,0 +1,196 @@
+{% extends "admin/layout.html" %}
+{% block title %}Broadcasts{% endblock %}
+
+{% block head %}
+<style>
+  .bc-form-row { margin-bottom: 16px; }
+  .bc-label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+  .bc-input, .bc-select, .bc-textarea {
+    width: 100%; background: var(--admin-bg); border: 1px solid var(--admin-border);
+    color: var(--text); border-radius: 8px; padding: 9px 12px; font-size: 0.85rem; font-family: inherit;
+  }
+  .bc-input:focus, .bc-select:focus, .bc-textarea:focus { outline: none; border-color: var(--admin-accent); }
+  .bc-textarea { min-height: 220px; resize: vertical; line-height: 1.5; }
+  .bc-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
+  .bc-audience-count { font-weight: 700; color: var(--admin-accent); }
+  .bc-warning {
+    background: #f59e0b15; border: 1px solid #f59e0b40; color: #fbbf24; border-radius: 8px;
+    padding: 10px 14px; font-size: 0.8rem; margin-bottom: 20px; display: none;
+  }
+  .bc-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .bc-status { font-size: 0.78rem; padding: 2px 9px; border-radius: 100px; font-weight: 600; }
+  .bc-status-draft { background: #71717a20; color: #a1a1aa; }
+  .bc-status-sending { background: #3b82f620; color: #60a5fa; }
+  .bc-status-sent { background: #00c85320; color: #22c55e; }
+  .bc-status-failed { background: #ff6b6b20; color: #ff6b6b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:1.4rem;font-weight:700;">Broadcasts</h1>
+  <p style="color:var(--text-muted);font-size:0.85rem;margin-top:4px;">Send a promotional or announcement email to a category of platform users.</p>
+</div>
+
+<div class="section-card">
+  <div class="bc-warning" id="gmail-warning">
+    <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">warning</span>
+    This audience exceeds the ~{{ gmail_daily_limit }}/day Gmail sending limit on a personal account. Sending may get throttled or flagged — consider a transactional email provider (Resend, SendGrid) for sends this size.
+  </div>
+
+  <div class="bc-form-row">
+    <label class="bc-label">Audience</label>
+    <select class="bc-select" id="bc-category" onchange="updateAudienceCount()">
+      <option value="all">All users ({{ counts.all }})</option>
+      <option value="organizer">Organizers ({{ counts.organizer }})</option>
+      <option value="attendee">Attendees ({{ counts.attendee }})</option>
+      <option value="vendor">Vendors ({{ counts.vendor }})</option>
+      <option value="admin">Admins ({{ counts.admin }})</option>
+    </select>
+    <div class="bc-hint">This will send to <span class="bc-audience-count" id="bc-audience-count">{{ counts.all }}</span> people.</div>
+  </div>
+
+  <div class="bc-form-row">
+    <label class="bc-label">Send via</label>
+    <select class="bc-select" id="bc-channel">
+      <option value="email">Email</option>
+      <option value="notification">In-app notification (dashboard bell)</option>
+      <option value="both">Both</option>
+    </select>
+  </div>
+
+  <div class="bc-form-row">
+    <label class="bc-label">Subject</label>
+    <input class="bc-input" type="text" id="bc-subject" placeholder="What's new on Heelo...">
+    <div class="bc-hint">Also used as the notification title, if sending via in-app notification.</div>
+  </div>
+
+  <div class="bc-form-row">
+    <label class="bc-label">Message (HTML)</label>
+    <textarea class="bc-textarea" id="bc-body" placeholder="Hi {{ '{{name}}' }},&#10;&#10;..."></textarea>
+    <div class="bc-hint">Supports <code>{{ '{{name}}' }}</code> and <code>{{ '{{email}}' }}</code> merge tags — personalized per recipient at send time. For in-app notifications, HTML tags are stripped and the text is trimmed to 300 characters.</div>
+  </div>
+
+  <div id="bc-error" style="display:none;color:#ff6b6b;font-size:0.82rem;margin-top:8px;"></div>
+  <div id="bc-notice" style="display:none;color:#22c55e;font-size:0.82rem;margin-top:8px;"></div>
+
+  <div class="bc-actions">
+    <button class="btn btn-ghost" id="bc-test-btn" onclick="sendTest()">Send test to myself</button>
+    <button class="btn btn-accent" id="bc-send-btn" onclick="confirmAndSend()">Send to <span id="bc-send-count">{{ counts.all }}</span> recipients</button>
+  </div>
+</div>
+
+<div class="section-card">
+  <div class="section-header"><div class="section-title">Send history</div></div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Subject</th><th>Audience</th><th>Channel</th><th>Recipients</th><th>Sent / Failed</th><th>Status</th><th>Date</th></tr>
+    </thead>
+    <tbody>
+      {% for b in broadcasts %}
+      <tr>
+        <td>{{ b.subject }}</td>
+        <td style="color:var(--text-muted);font-size:0.8rem;text-transform:capitalize;">{{ b.audience_category }}</td>
+        <td style="color:var(--text-muted);font-size:0.8rem;text-transform:capitalize;">{{ b.channel }}</td>
+        <td>{{ b.recipient_count }}</td>
+        <td style="font-size:0.8rem;">{{ b.sent_count }} <span style="color:var(--text-muted);">/ {{ b.failed_count }}</span></td>
+        <td><span class="bc-status bc-status-{{ b.status }}">{{ b.status }}</span></td>
+        <td style="color:var(--text-muted);font-size:0.75rem;">{{ b.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+      {% if not broadcasts %}
+      <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:32px;">No broadcasts sent yet.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const _counts = {{ counts | tojson }};
+const _gmailLimit = {{ gmail_daily_limit }};
+
+function updateAudienceCount() {
+  const category = document.getElementById('bc-category').value;
+  const count = _counts[category] ?? 0;
+  document.getElementById('bc-audience-count').textContent = count;
+  document.getElementById('bc-send-count').textContent = count;
+  document.getElementById('gmail-warning').style.display = count > _gmailLimit ? 'block' : 'none';
+}
+
+function showError(msg) {
+  const el = document.getElementById('bc-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('bc-notice').style.display = 'none';
+}
+
+function showNotice(msg) {
+  const el = document.getElementById('bc-notice');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('bc-error').style.display = 'none';
+}
+
+function setSending(sending) {
+  document.getElementById('bc-test-btn').disabled = sending;
+  document.getElementById('bc-send-btn').disabled = sending;
+}
+
+function getFormValues() {
+  return {
+    subject: document.getElementById('bc-subject').value.trim(),
+    body: document.getElementById('bc-body').value.trim(),
+    audience_category: document.getElementById('bc-category').value,
+    channel: document.getElementById('bc-channel').value,
+  };
+}
+
+async function sendTest() {
+  const { subject, body, audience_category } = getFormValues();
+  if (!subject || !body) { showError('Subject and message are required.'); return; }
+  setSending(true);
+  try {
+    const res = await fetch('/api/v1/admin/broadcasts/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, body, audience_category }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || 'Failed to send test.');
+    showNotice(`Test sent to ${data.data.sent_to}.`);
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    setSending(false);
+  }
+}
+
+async function confirmAndSend() {
+  const { subject, body, audience_category, channel } = getFormValues();
+  if (!subject || !body) { showError('Subject and message are required.'); return; }
+  const count = _counts[audience_category] ?? 0;
+  if (!confirm(`Send this to ${count} recipients via ${channel}? This can't be undone.`)) return;
+  setSending(true);
+  try {
+    const res = await fetch('/api/v1/admin/broadcasts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, body, audience_category, channel }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.detail || 'Failed to send broadcast.');
+    showNotice('Broadcast queued — sending in the background. Refresh to see updated status.');
+    document.getElementById('bc-subject').value = '';
+    document.getElementById('bc-body').value = '';
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    setSending(false);
+  }
+}
+
+updateAudienceCount();
+</script>
+{% endblock %}

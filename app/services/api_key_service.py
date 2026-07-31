@@ -45,9 +45,7 @@ async def create_api_key(
 
 async def list_api_keys(db: AsyncSession, org_id: uuid.UUID) -> list[ApiKey]:
     rows = await db.scalars(
-        select(ApiKey)
-        .where(ApiKey.org_id == org_id)
-        .order_by(ApiKey.created_at.desc())
+        select(ApiKey).where(ApiKey.org_id == org_id).order_by(ApiKey.created_at.desc())
     )
     return list(rows.all())
 
@@ -57,15 +55,11 @@ async def revoke_api_key(db: AsyncSession, key: ApiKey) -> None:
     await db.commit()
 
 
-async def authenticate_api_key(
-    db: AsyncSession, raw_key: str
-) -> ApiKey | None:
+async def authenticate_api_key(db: AsyncSession, raw_key: str) -> ApiKey | None:
     if not raw_key or not raw_key.startswith(_PREFIX):
         return None
     h = _hash(raw_key)
-    key = await db.scalar(
-        select(ApiKey).where(ApiKey.key_hash == h, ApiKey.is_active.is_(True))
-    )
+    key = await db.scalar(select(ApiKey).where(ApiKey.key_hash == h, ApiKey.is_active.is_(True)))
     if not key:
         return None
     if key.expires_at and key.expires_at < datetime.now(UTC):

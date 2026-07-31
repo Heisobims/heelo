@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.dependencies import DBSession, OrgAccess
+from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.services import api_key_service as ak_svc
 
 router_api_keys = APIRouter(
@@ -40,18 +40,15 @@ async def list_keys(slug: str, db: DBSession, org_access: OrgAccess):
 
 
 @router_api_keys.post("", status_code=201)
-async def create_key(slug: str, body: CreateKeyIn, db: DBSession, org_access: OrgAccess):
+async def create_key(
+    slug: str, body: CreateKeyIn, db: DBSession, org_access: OrgAccess, current_user: CurrentUser
+):
     org, role, is_owner = org_access
     if not is_owner and role not in ("admin",):
         raise HTTPException(403, "Only org admins can create API keys.")
 
-    from app.models.organization import OrganizationMember
-    from sqlalchemy import select
-
-    # get the acting user id from the first member query (via org_access resolves current user)
-    # We pass None for created_by since we don't have it in this dep; enhance if needed
     raw, key = await ak_svc.create_api_key(
-        db, org_id=org.id, created_by=org.owner_id, name=body.name
+        db, org_id=org.id, created_by=current_user.id, name=body.name
     )
     return {
         "success": True,
@@ -74,6 +71,7 @@ async def revoke_key(slug: str, key_id: str, db: DBSession, org_access: OrgAcces
         raise HTTPException(403, "Only org admins can revoke API keys.")
 
     from sqlalchemy import select
+
     from app.models.api import ApiKey
 
     key = await db.scalar(

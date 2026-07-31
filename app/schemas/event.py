@@ -39,7 +39,18 @@ class EventCreateRequest(BaseModel):
     is_private: bool = False
     password: str | None = None
     category_ids: list[uuid.UUID] = Field(default_factory=list)
+    vibe_tags: list[str] = Field(default_factory=list, max_length=8)
     extras: dict | None = None
+
+    @field_validator("vibe_tags")
+    @classmethod
+    def clean_vibe_tags(cls, v: list[str]) -> list[str]:
+        cleaned = [t.strip().lower()[:50] for t in v if t.strip()]
+        seen: list[str] = []
+        for tag in cleaned:
+            if tag not in seen:
+                seen.append(tag)
+        return seen
 
     @field_validator("title")
     @classmethod
@@ -74,7 +85,20 @@ class EventUpdateRequest(BaseModel):
     is_private: bool | None = None
     password: str | None = None
     category_ids: list[uuid.UUID] | None = None
+    vibe_tags: list[str] | None = Field(None, max_length=8)
     extras: dict | None = None
+
+    @field_validator("vibe_tags")
+    @classmethod
+    def clean_vibe_tags(cls, v: list[str] | None) -> list[str] | None:
+        if v is None:
+            return None
+        cleaned = [t.strip().lower()[:50] for t in v if t.strip()]
+        seen: list[str] = []
+        for tag in cleaned:
+            if tag not in seen:
+                seen.append(tag)
+        return seen
 
 
 class EventOut(BaseModel):
@@ -106,6 +130,7 @@ class EventOut(BaseModel):
     is_template: bool
     created_at: datetime
     categories: list[CategoryOut] = Field(default_factory=list)
+    vibe_tags: list[str] = Field(default_factory=list)
     extras: dict | None = None
 
     model_config = {"from_attributes": True}
@@ -132,6 +157,7 @@ class EventListItem(BaseModel):
 
 class PublicEventOut(BaseModel):
     """Stripped event schema for unauthenticated public access."""
+
     id: uuid.UUID
     title: str
     slug: str
@@ -153,6 +179,8 @@ class PublicEventOut(BaseModel):
     max_capacity: int | None = None
     is_private: bool
     categories: list[CategoryOut] = Field(default_factory=list)
+    vibe_tags: list[str] = Field(default_factory=list)
+    registration_count: int = 0
 
     model_config = {"from_attributes": True}
 

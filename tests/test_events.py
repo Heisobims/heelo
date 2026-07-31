@@ -1,9 +1,8 @@
 """Event CRUD — create, update, publish, list, delete."""
+
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
-
 
 _EVENT_PAYLOAD = {
     "title": "Afrobeats Night Lagos",
@@ -80,7 +79,9 @@ async def test_publish_draft_event(client: AsyncClient, org, event, user_headers
     assert resp.json()["data"]["status"] == "published"
 
 
-async def test_publish_already_published_returns_400(client: AsyncClient, org, published_event, user_headers):
+async def test_publish_already_published_returns_400(
+    client: AsyncClient, org, published_event, user_headers
+):
     resp = await client.post(
         f"/api/v1/organizations/{org.slug}/events/{published_event.id}/publish",
         headers=user_headers,
@@ -90,6 +91,7 @@ async def test_publish_already_published_returns_400(client: AsyncClient, org, p
 
 async def test_get_nonexistent_event_returns_404(client: AsyncClient, org, user_headers):
     import uuid
+
     resp = await client.get(
         f"/api/v1/organizations/{org.slug}/events/{uuid.uuid4()}",
         headers=user_headers,

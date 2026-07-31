@@ -3,11 +3,13 @@ Public REST API — authenticated via X-API-Key header.
 Org context is derived from the API key's org_id.
 Base path: /api/public/v1/
 """
+
 from __future__ import annotations
 
 import uuid
 from typing import Annotated
 
+import structlog
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -16,6 +18,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models.api import ApiKey
 from app.services import api_key_service as ak_svc
+
+logger = structlog.get_logger()
 
 DBSession = Annotated[AsyncSession, Depends(get_db)]
 
@@ -32,6 +36,7 @@ async def _check_rate_limit(x_api_key: str | None = Header(default=None)) -> Non
         return  # auth dependency will reject this below
     try:
         import redis.asyncio as aioredis
+
         from app.config import settings
 
         r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
@@ -48,8 +53,9 @@ async def _check_rate_limit(x_api_key: str | None = Header(default=None)) -> Non
             )
     except HTTPException:
         raise
-    except Exception:
-        pass  # Redis unavailable — fail open
+    except Exception as err:
+        # Redis unavailable — fail open, but make the outage visible.
+        logger.warning("public_api.rate_limit_check_failed", error=str(err))
 
 
 router_public_api = APIRouter(
@@ -60,6 +66,7 @@ router_public_api = APIRouter(
 
 
 # ── API key auth dependency ───────────────────────────────────────────────────
+
 
 async def _require_api_key(
     x_api_key: str | None = Header(default=None),
@@ -78,9 +85,10 @@ AuthKey = Annotated[ApiKey, Depends(_require_api_key)]
 
 # ── Pagination helpers ────────────────────────────────────────────────────────
 
+import math as _math
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
-import math as _math
 
 
 def _paginated(
@@ -117,17 +125,30 @@ def _paginated(
         headers["Link"] = ", ".join(links)
 
     return JSONResponse(
-        content={"success": True, "meta": {"total": total, "page": page, "per_page": per_page, "total_pages": total_pages}, "data": data},
+        content={
+            "success": True,
+            "meta": {
+                "total": total,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": total_pages,
+            },
+            "data": data,
+        },
         headers=headers,
     )
 
 
 # ── Events ────────────────────────────────────────────────────────────────────
 
+
 @router_public_api.get("/events")
-async def list_events(request: Request, db: DBSession, auth: AuthKey, page: int = 1, per_page: int = 20):
-    from app.models.event import Event
+async def list_events(
+    request: Request, db: DBSession, auth: AuthKey, page: int = 1, per_page: int = 20
+):
     from sqlalchemy import func
+
+    from app.models.event import Event
 
     per_page = min(per_page, 100)
     offset = (max(page, 1) - 1) * per_page
@@ -175,9 +196,10 @@ async def list_registrations(
     per_page: int = 50,
     status: str | None = None,
 ):
+    from sqlalchemy import func
+
     from app.models.event import Event
     from app.models.ticketing import Registration
-    from sqlalchemy import func
 
     per_page = min(per_page, 100)
     offset = (max(page, 1) - 1) * per_page
@@ -227,11 +249,12 @@ async def check_in(event_id: str, body: CheckInRequest, db: DBSession, auth: Aut
     except ci_svc.AlreadyCheckedInError as e:
         return {"success": False, "error": {"code": "ALREADY_CHECKED_IN", "message": str(e)}}
     except ci_svc.CheckInError as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, str(e)) from e
 
     # Fire webhook
     try:
         from app.services import webhook_service as wh_svc
+
         await wh_svc.fire_event(
             db,
             org_id=auth.org_id,
@@ -245,21 +268,22 @@ async def check_in(event_id: str, body: CheckInRequest, db: DBSession, auth: Aut
                 "checked_in_at": reg.checked_in_at.isoformat() if reg.checked_in_at else None,
             },
         )
-    except Exception:
-        pass
+    except Exception as err:
+        logger.warning(
+            "public_api.checkin_webhook_failed", registration_id=str(reg.id), error=str(err)
+        )
 
     return {"success": True, "data": _reg_dict(reg)}
 
 
 @router_public_api.get("/stats")
 async def org_stats(db: DBSession, auth: AuthKey):
-    from app.models.event import Event
-    from app.models.ticketing import Registration, Order
     from sqlalchemy import func
 
-    event_count = await db.scalar(
-        select(func.count()).where(Event.org_id == auth.org_id)
-    )
+    from app.models.event import Event
+    from app.models.ticketing import Order, Registration
+
+    event_count = await db.scalar(select(func.count()).where(Event.org_id == auth.org_id))
     reg_count = await db.scalar(
         select(func.count())
         .select_from(Registration)
@@ -284,6 +308,7 @@ async def org_stats(db: DBSession, auth: AuthKey):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _event_dict(e) -> dict:
     return {
         "id": str(e.id),
@@ -293,7 +318,8 @@ def _event_dict(e) -> dict:
         "start_datetime": e.start_datetime.isoformat() if e.start_datetime else None,
         "end_datetime": e.end_datetime.isoformat() if e.end_datetime else None,
         "location": ", ".join(filter(None, [e.venue_name, e.venue_city])) or None,
-        "is_virtual": e.is_virtual,
+        "format": e.format,
+        "is_virtual": e.format == "virtual",
         "cover_image_url": e.cover_image_url,
     }
 

@@ -142,7 +142,16 @@
         {% if vendor.price_range %}
         <span class="vd-chip vd-price-chip {{ vendor.price_range }}">{{ {'budget': 'Budget-friendly', 'mid': 'Mid-range', 'premium': 'Premium'}.get(vendor.price_range, vendor.price_range) }}</span>
         {% endif %}
+        {% if vendor.capacity %}
+        <span class="vd-chip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Up to {{ "{:,}".format(vendor.capacity) }} guests
+        </span>
+        {% endif %}
       </div>
+      {% if vendor.address %}
+      <div style="font-size:13px; color:var(--text-muted); margin-top:6px;">{{ vendor.address }}</div>
+      {% endif %}
       <div class="vd-contact-links">
         {% if vendor.contact_email %}
         <a href="mailto:{{ vendor.contact_email }}" class="vd-contact-link">

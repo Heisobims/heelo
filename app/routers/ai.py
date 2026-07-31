@@ -19,6 +19,7 @@ router_ai = APIRouter(
 
 # ── Request bodies ────────────────────────────────────────────────────────────
 
+
 class EventDescriptionRequest(BaseModel):
     title: str = Field(..., min_length=1)
     format: str = "in_person"
@@ -38,8 +39,10 @@ class CampaignCopyRequest(BaseModel):
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _sse_stream(gen):
     """Wrap an async generator of text chunks into an SSE StreamingResponse."""
+
     async def _emit():
         try:
             async for chunk in gen:
@@ -66,6 +69,7 @@ def _require_editor(role: str) -> None:
 
 # ── Event description generator ───────────────────────────────────────────────
 
+
 @router_ai.post("/ai/generate-event-description")
 async def generate_event_description(
     slug: str,
@@ -87,6 +91,7 @@ async def generate_event_description(
 
 
 # ── Campaign copy generator ───────────────────────────────────────────────────
+
 
 @router_ai.post("/ai/generate-campaign-copy")
 async def generate_campaign_copy(
@@ -111,6 +116,7 @@ async def generate_campaign_copy(
 
 # ── Analytics insights ────────────────────────────────────────────────────────
 
+
 @router_ai.post("/events/{event_id}/ai/insights")
 async def analytics_insights(
     slug: str,
@@ -123,17 +129,19 @@ async def analytics_insights(
 
     try:
         eid = uuid.UUID(event_id)
-    except ValueError:
-        raise HTTPException(422, "Invalid event ID.")
+    except ValueError as err:
+        raise HTTPException(422, "Invalid event ID.") from err
+
+    from sqlalchemy import select
 
     from app.models.event import Event
-    from sqlalchemy import select
 
     event = await db.scalar(select(Event).where(Event.id == eid, Event.org_id == org.id))
     if not event:
         raise HTTPException(404, "Event not found.")
 
     from app.services import analytics_service as an_svc
+
     summary = await an_svc.get_event_summary(db, eid)
     ticket_breakdown = await an_svc.get_ticket_breakdown(db, eid)
 

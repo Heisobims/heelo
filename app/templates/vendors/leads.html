@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}My Enquiries — Heelo Vendors{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<style>
+  .vs-nav {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
+  }
+  .vs-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
+  .vs-nav-logo span { color: var(--cyan-dark, #00b3a9); }
+  .vs-nav-right { margin-left: auto; display: flex; gap: 10px; }
+  .vs-btn { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; font-family: inherit; }
+  .vs-btn-outline { border: 1px solid var(--border-light); background: #fff; color: var(--text-primary); }
+  .vs-wrap { max-width: 780px; margin: 0 auto; padding: 40px 24px 80px; }
+  .lead-card { background: #fff; border: 1px solid var(--border-light); border-radius: 12px; padding: 20px; margin-bottom: 12px; }
+  .lead-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .lead-name { font-weight: 700; font-size: 15px; }
+  .lead-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .lead-message { font-size: 14px; margin-top: 12px; padding: 12px; background: var(--bg-secondary,#f7f7f5); border-radius: 8px; }
+  .lead-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 10px; border-radius: 100px; background: rgba(0,255,243,0.12); color: var(--cyan-dark,#00b3a9); white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="vs-nav">
+  <a href="/" class="vs-nav-logo">heelo<span>.</span></a>
+  <div class="vs-nav-right">
+    <a href="/vendors/{{ vendor.slug }}" class="vs-btn vs-btn-outline">View my listing</a>
+  </div>
+</nav>
+
+<div class="vs-wrap">
+  <div style="margin-bottom:28px;">
+    <div style="font-size:13px; color:var(--text-muted);">{{ vendor.business_name }}</div>
+    <h1 style="font-family:var(--font-serif); font-size:28px; font-weight:700; margin-top:4px;">My enquiries</h1>
+  </div>
+
+  {% if not leads %}
+  <div class="empty-state-card">
+    <div class="empty-state-icon">
+      <span class="material-symbols-outlined" style="font-size:26px; color:var(--text-muted);">inbox</span>
+    </div>
+    <h2 class="empty-state-title">No enquiries yet</h2>
+    <p class="empty-state-body">When someone contacts you through your listing, it'll show up here — and we'll email you too.</p>
+  </div>
+  {% else %}
+  {% for lead in leads %}
+  <div class="lead-card">
+    <div class="lead-row">
+      <div>
+        <div class="lead-name">{{ lead.requester_name }}</div>
+        <div class="lead-sub">{{ lead.requester_email }}{% if lead.event_name %} · {{ lead.event_name }}{% endif %}</div>
+      </div>
+      <span class="lead-badge">{{ lead.status }}</span>
+    </div>
+    {% if lead.message %}
+    <div class="lead-message">{{ lead.message }}</div>
+    {% endif %}
+    <div class="lead-sub" style="margin-top:10px;">{{ lead.created_at.strftime('%b %-d, %Y') }}</div>
+  </div>
+  {% endfor %}
+
+  <div class="pagination" style="display:flex; gap:8px; align-items:center; margin-top:16px;">
+    {% if page > 1 %}
+    <a href="?page={{ page - 1 }}" class="vs-btn vs-btn-outline">&larr; Prev</a>
+    {% endif %}
+    {% if page * per_page < total %}
+    <a href="?page={{ page + 1 }}" class="vs-btn vs-btn-outline">Next &rarr;</a>
+    {% endif %}
+    <span class="lead-sub">{{ total }} total</span>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

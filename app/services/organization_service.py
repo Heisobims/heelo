@@ -9,18 +9,13 @@ from jose import JWTError, jwt
 from slugify import slugify
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.config import settings
 from app.models.event import Event
 from app.models.organization import Organization, OrganizationMember
 from app.models.payment import PaymentAccount
 from app.models.user import User
-from app.schemas.organization import (
-    OnboardingState,
-    OrgCreateRequest,
-    OrgUpdateRequest,
-)
+from app.schemas.organization import OnboardingState, OrgCreateRequest, OrgUpdateRequest
 from app.utils.email import send_team_invite_email
 
 logger = structlog.get_logger()
@@ -30,6 +25,7 @@ _INVITE_EXPIRE_DAYS = 7
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _make_invite_token(org_id: uuid.UUID, invited_email: str, role: str) -> str:
     payload = {
@@ -66,6 +62,7 @@ def _org_initials(name: str) -> str:
 
 
 # ── Organization CRUD ─────────────────────────────────────────────────────────
+
 
 async def create_organization(
     db: AsyncSession,
@@ -107,8 +104,7 @@ async def create_organization(
 
 async def get_organization_by_slug(db: AsyncSession, slug: str) -> Organization | None:
     return await db.scalar(
-        select(Organization)
-        .where(Organization.slug == slug, Organization.is_active == True)
+        select(Organization).where(Organization.slug == slug, Organization.is_active == True)
     )
 
 
@@ -131,6 +127,7 @@ async def update_organization(
 
 
 # ── User's org list ───────────────────────────────────────────────────────────
+
 
 async def get_user_organizations(
     db: AsyncSession,
@@ -171,6 +168,7 @@ async def get_user_organizations(
 
 # ── Membership ────────────────────────────────────────────────────────────────
 
+
 async def get_org_membership(
     db: AsyncSession,
     org_id: uuid.UUID,
@@ -201,13 +199,15 @@ async def get_org_members(
     )
     result = []
     for member, user in rows.all():
-        result.append({
-            "member": member,
-            "user": user,
-            "display_name": user.full_name if user else member.invited_email,
-            "display_email": user.email if user else member.invited_email,
-            "display_avatar": user.avatar_url if user else None,
-        })
+        result.append(
+            {
+                "member": member,
+                "user": user,
+                "display_name": user.full_name if user else member.invited_email,
+                "display_email": user.email if user else member.invited_email,
+                "display_avatar": user.avatar_url if user else None,
+            }
+        )
     return result
 
 
@@ -232,7 +232,9 @@ async def invite_member(
             )
         )
         if existing_member:
-            raise ValueError(f"{'Already a member' if existing_member.status == 'active' else 'Invite already sent'}.")
+            raise ValueError(
+                f"{'Already a member' if existing_member.status == 'active' else 'Invite already sent'}."
+            )
 
     # Check pending invite by email
     existing_invite = await db.scalar(
@@ -279,8 +281,8 @@ async def accept_invite(
     """Validate invite token and activate the membership for the current user."""
     try:
         payload = decode_invite_token(token)
-    except JWTError:
-        raise ValueError("This invite link is invalid or has expired.")
+    except JWTError as err:
+        raise ValueError("This invite link is invalid or has expired.") from err
 
     org_id = uuid.UUID(payload["org_id"])
     invited_email = payload["invited_email"]
@@ -372,23 +374,31 @@ async def update_member_role(
 
 # ── Onboarding & metrics ──────────────────────────────────────────────────────
 
+
 async def get_onboarding_state(db: AsyncSession, org_id: uuid.UUID) -> OnboardingState:
-    event_count = await db.scalar(
-        select(func.count(Event.id)).where(
-            Event.org_id == org_id, Event.deleted_at.is_(None)
+    event_count = (
+        await db.scalar(
+            select(func.count(Event.id)).where(Event.org_id == org_id, Event.deleted_at.is_(None))
         )
-    ) or 0
+        or 0
+    )
 
-    payment_count = await db.scalar(
-        select(func.count(PaymentAccount.id)).where(PaymentAccount.org_id == org_id)
-    ) or 0
-
-    active_member_count = await db.scalar(
-        select(func.count(OrganizationMember.id)).where(
-            OrganizationMember.org_id == org_id,
-            OrganizationMember.status == "active",
+    payment_count = (
+        await db.scalar(
+            select(func.count(PaymentAccount.id)).where(PaymentAccount.org_id == org_id)
         )
-    ) or 0
+        or 0
+    )
+
+    active_member_count = (
+        await db.scalar(
+            select(func.count(OrganizationMember.id)).where(
+                OrganizationMember.org_id == org_id,
+                OrganizationMember.status == "active",
+            )
+        )
+        or 0
+    )
 
     return OnboardingState(
         has_event=event_count > 0,
@@ -401,34 +411,108 @@ async def get_onboarding_state(db: AsyncSession, org_id: uuid.UUID) -> Onboardin
 async def get_org_metrics(db: AsyncSession, org_id: uuid.UUID) -> dict:
     from app.models.ticketing import Order, Registration
 
-    total_events = await db.scalar(
-        select(func.count(Event.id)).where(
-            Event.org_id == org_id, Event.deleted_at.is_(None)
+    total_events = (
+        await db.scalar(
+            select(func.count(Event.id)).where(Event.org_id == org_id, Event.deleted_at.is_(None))
         )
-    ) or 0
+        or 0
+    )
 
-    total_registrations = await db.scalar(
-        select(func.count(Registration.id))
-        .join(Event, Event.id == Registration.event_id)
-        .where(
-            Event.org_id == org_id,
-            Registration.status.in_(["confirmed", "checked_in"]),
+    total_registrations = (
+        await db.scalar(
+            select(func.count(Registration.id))
+            .join(Event, Event.id == Registration.event_id)
+            .where(
+                Event.org_id == org_id,
+                Registration.status.in_(["confirmed", "checked_in"]),
+            )
         )
-    ) or 0
+        or 0
+    )
 
-    total_revenue_row = await db.scalar(
-        select(func.coalesce(func.sum(Order.net_amount), 0))
-        .join(Event, Event.id == Order.event_id)
-        .where(
-            Event.org_id == org_id,
-            Order.payment_status == "paid",
+    total_revenue_row = (
+        await db.scalar(
+            select(func.coalesce(func.sum(Order.net_amount), 0))
+            .join(Event, Event.id == Order.event_id)
+            .where(
+                Event.org_id == org_id,
+                Order.payment_status == "paid",
+            )
         )
-    ) or 0
+        or 0
+    )
 
     return {
         "total_events": total_events,
         "total_registrations": total_registrations,
         "total_revenue": float(total_revenue_row),
+    }
+
+
+async def get_org_finance_summary(db: AsyncSession, org_id: uuid.UUID) -> dict:
+    """Revenue totals, per-event breakdown, and recent paid orders for the Finance page."""
+    from app.models.ticketing import Order
+
+    totals_row = (
+        await db.execute(
+            select(
+                func.coalesce(func.sum(Order.total_amount), 0),
+                func.coalesce(func.sum(Order.net_amount), 0),
+                func.coalesce(func.sum(Order.platform_fee), 0),
+                func.count(Order.id),
+            )
+            .join(Event, Event.id == Order.event_id)
+            .where(Event.org_id == org_id, Order.payment_status == "paid")
+        )
+    ).one()
+    gross, net, fees, paid_order_count = totals_row
+
+    per_event_rows = (
+        await db.execute(
+            select(
+                Event.id,
+                Event.title,
+                Event.slug,
+                func.coalesce(func.sum(Order.net_amount), 0),
+                func.count(Order.id),
+            )
+            .join(Order, Order.event_id == Event.id)
+            .where(Event.org_id == org_id, Order.payment_status == "paid")
+            .group_by(Event.id, Event.title, Event.slug)
+            .order_by(func.sum(Order.net_amount).desc())
+        )
+    ).all()
+    by_event = [
+        {
+            "event_id": eid,
+            "title": title,
+            "slug": slug,
+            "net_revenue": float(net_rev),
+            "orders": cnt,
+        }
+        for eid, title, slug, net_rev, cnt in per_event_rows
+    ]
+
+    from sqlalchemy.orm import selectinload
+
+    recent_orders_rows = (
+        await db.scalars(
+            select(Order)
+            .join(Event, Event.id == Order.event_id)
+            .where(Event.org_id == org_id, Order.payment_status == "paid")
+            .order_by(Order.created_at.desc())
+            .limit(20)
+            .options(selectinload(Order.event))
+        )
+    ).all()
+
+    return {
+        "gross_amount": float(gross),
+        "net_amount": float(net),
+        "platform_fees": float(fees),
+        "paid_order_count": paid_order_count or 0,
+        "by_event": by_event,
+        "recent_orders": list(recent_orders_rows),
     }
 
 

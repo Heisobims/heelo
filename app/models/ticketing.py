@@ -21,9 +21,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.checkin import Checkin
     from app.models.event import Event
     from app.models.user import User
-    from app.models.checkin import Checkin
 
 
 class TicketType(Base, TimestampMixin):
@@ -32,9 +32,7 @@ class TicketType(Base, TimestampMixin):
     __tablename__ = "ticket_types"
     __table_args__ = (Index("ix_ticket_types_event_visible", "event_id", "is_visible"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("events.id", ondelete="CASCADE"),
@@ -63,9 +61,7 @@ class TicketType(Base, TimestampMixin):
     registrations: Mapped[list[Registration]] = relationship(
         "Registration", back_populates="ticket_type"
     )
-    waitlists: Mapped[list[Waitlist]] = relationship(
-        "Waitlist", back_populates="ticket_type"
-    )
+    waitlists: Mapped[list[Waitlist]] = relationship("Waitlist", back_populates="ticket_type")
 
     def __repr__(self) -> str:
         return f"<TicketType {self.name} event={self.event_id}>"
@@ -77,9 +73,7 @@ class RegistrationFormField(Base, TimestampMixin):
     __tablename__ = "registration_form_fields"
     __table_args__ = (Index("ix_reg_form_fields_event", "event_id", "sort_order"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -110,9 +104,7 @@ class Registration(Base, TimestampMixin):
         Index("ix_registrations_user", "user_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("events.id", ondelete="RESTRICT"),
@@ -146,13 +138,19 @@ class Registration(Base, TimestampMixin):
     # Ticket PDF URL in R2
     ticket_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     # WhatsApp delivery status
-    whatsapp_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    whatsapp_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Attendee opted in to receive ticket/reminders via WhatsApp (copied from Order at registration)
+    whatsapp_consent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # Transfer support
     transferred_from_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("registrations.id", ondelete="SET NULL"), nullable=True
     )
     transfer_token: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
-    transfer_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    transfer_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     event: Mapped[Event] = relationship("Event", back_populates="registrations")
     ticket_type: Mapped[TicketType] = relationship("TicketType", back_populates="registrations")
@@ -172,9 +170,7 @@ class RegistrationAnswer(Base, TimestampMixin):
 
     __tablename__ = "registration_answers"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     registration_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("registrations.id", ondelete="CASCADE"),
@@ -204,9 +200,7 @@ class Order(Base, TimestampMixin):
         Index("ix_orders_reference", "payment_reference"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     # Null for guest checkout
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
@@ -218,6 +212,8 @@ class Order(Base, TimestampMixin):
     buyer_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     buyer_email: Mapped[str] = mapped_column(String(255), nullable=False)
     buyer_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    # Buyer opted in to WhatsApp contact (ticket delivery, reminders, bot replies)
+    whatsapp_consent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     # Amount after platform fee
     net_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
@@ -245,9 +241,7 @@ class Order(Base, TimestampMixin):
     items: Mapped[list[OrderItem]] = relationship(
         "OrderItem", back_populates="order", cascade="all, delete-orphan"
     )
-    registrations: Mapped[list[Registration]] = relationship(
-        "Registration", back_populates="order"
-    )
+    registrations: Mapped[list[Registration]] = relationship("Registration", back_populates="order")
     promo_code: Mapped[PromoCode | None] = relationship("PromoCode")
 
     def __repr__(self) -> str:
@@ -259,9 +253,7 @@ class OrderItem(Base, TimestampMixin):
 
     __tablename__ = "order_items"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     order_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("orders.id", ondelete="CASCADE"),
@@ -288,9 +280,7 @@ class PromoCode(Base, TimestampMixin):
         Index("ix_promo_codes_event", "event_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False
     )
@@ -315,13 +305,9 @@ class Waitlist(Base, TimestampMixin):
     """Queue for a sold-out ticket type — auto-notified on cancellation."""
 
     __tablename__ = "waitlists"
-    __table_args__ = (
-        Index("ix_waitlists_event_position", "event_id", "position"),
-    )
+    __table_args__ = (Index("ix_waitlists_event_position", "event_id", "position"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     event_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -335,11 +321,14 @@ class Waitlist(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Expiry window after notification — if not claimed, next person is notified
-    offer_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    offer_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     event: Mapped[Event] = relationship("Event", back_populates="waitlists")
     ticket_type: Mapped[TicketType] = relationship("TicketType", back_populates="waitlists")

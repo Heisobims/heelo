@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
-from sqlalchemy.orm import DeclarativeBase, MappedColumn, mapped_column
-from sqlalchemy import DateTime, func
-import uuid
 from datetime import datetime
 
-from app.config import settings
+from sqlalchemy import DateTime, func
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, MappedColumn, mapped_column
 
+from app.config import settings
 
 # ── Engine ────────────────────────────────────────────────────────────────────
 engine = create_async_engine(

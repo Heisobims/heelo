@@ -11,12 +11,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.user import User
+    from app.models.api import ApiKey, WebhookSubscription
+    from app.models.campaign import Campaign
     from app.models.event import Event
     from app.models.payment import PaymentAccount, Payout
-    from app.models.campaign import Campaign
-    from app.models.api import ApiKey, WebhookSubscription
     from app.models.speaker import Speaker
+    from app.models.user import User
 
 
 class Organization(Base, TimestampMixin):
@@ -25,9 +25,7 @@ class Organization(Base, TimestampMixin):
     __tablename__ = "organizations"
     __table_args__ = (Index("ix_organizations_slug", "slug", unique=True),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     owner_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="RESTRICT"),
@@ -40,6 +38,12 @@ class Organization(Base, TimestampMixin):
     cover_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     website: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # Public-facing contact — shown in campaign email footers, distinct from the owner's login email
+    contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    instagram_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    twitter_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    facebook_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    linkedin_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # ISO 3166-1 alpha-2 country code
     country: Mapped[str | None] = mapped_column(String(2), nullable=True)
     # ISO 4217 currency code — used as default for new events
@@ -59,27 +63,17 @@ class Organization(Base, TimestampMixin):
     members: Mapped[list[OrganizationMember]] = relationship(
         "OrganizationMember", back_populates="organization", cascade="all, delete-orphan"
     )
-    events: Mapped[list[Event]] = relationship(
-        "Event", back_populates="organization"
-    )
+    events: Mapped[list[Event]] = relationship("Event", back_populates="organization")
     payment_accounts: Mapped[list[PaymentAccount]] = relationship(
         "PaymentAccount", back_populates="organization"
     )
-    payouts: Mapped[list[Payout]] = relationship(
-        "Payout", back_populates="organization"
-    )
-    campaigns: Mapped[list[Campaign]] = relationship(
-        "Campaign", back_populates="organization"
-    )
-    api_keys: Mapped[list[ApiKey]] = relationship(
-        "ApiKey", back_populates="organization"
-    )
+    payouts: Mapped[list[Payout]] = relationship("Payout", back_populates="organization")
+    campaigns: Mapped[list[Campaign]] = relationship("Campaign", back_populates="organization")
+    api_keys: Mapped[list[ApiKey]] = relationship("ApiKey", back_populates="organization")
     webhook_subscriptions: Mapped[list[WebhookSubscription]] = relationship(
         "WebhookSubscription", back_populates="organization"
     )
-    speakers: Mapped[list[Speaker]] = relationship(
-        "Speaker", back_populates="organization"
-    )
+    speakers: Mapped[list[Speaker]] = relationship("Speaker", back_populates="organization")
 
     def __repr__(self) -> str:
         return f"<Organization {self.slug}>"
@@ -94,9 +88,7 @@ class OrganizationMember(Base, TimestampMixin):
         Index("ix_org_members_user", "user_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     org_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("organizations.id", ondelete="CASCADE"),
@@ -116,19 +108,13 @@ class OrganizationMember(Base, TimestampMixin):
     invited_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    invited_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    accepted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    invited_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # invite_pending | active | suspended
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="invite_pending")
 
     # ── Relationships ─────────────────────────────────────────────────────────
-    organization: Mapped[Organization] = relationship(
-        "Organization", back_populates="members"
-    )
+    organization: Mapped[Organization] = relationship("Organization", back_populates="members")
     user: Mapped[User] = relationship(
         "User", back_populates="org_memberships", foreign_keys=[user_id]
     )

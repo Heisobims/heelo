@@ -1,11 +1,10 @@
 """Check-in — QR token, manual, undo, stats."""
+
 from __future__ import annotations
 
 import uuid
 
-import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def test_check_in_by_registration_id(
@@ -49,9 +48,7 @@ async def test_check_in_nonexistent_registration(
     assert resp.status_code == 404
 
 
-async def test_undo_check_in(
-    client: AsyncClient, org, published_event, registration, user_headers
-):
+async def test_undo_check_in(client: AsyncClient, org, published_event, registration, user_headers):
     # Check in first
     await client.post(
         f"/api/v1/organizations/{org.slug}/events/{published_event.id}/check-in",
@@ -67,9 +64,7 @@ async def test_undo_check_in(
     assert resp.json()["data"]["status"] == "confirmed"
 
 
-async def test_checkin_stats(
-    client: AsyncClient, org, published_event, registration, user_headers
-):
+async def test_checkin_stats(client: AsyncClient, org, published_event, registration, user_headers):
     resp = await client.get(
         f"/api/v1/organizations/{org.slug}/events/{published_event.id}/check-in/stats",
         headers=user_headers,

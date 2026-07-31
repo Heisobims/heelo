@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -89,8 +89,7 @@ class TicketTypeOut(BaseModel):
     @computed_field
     @property
     def is_on_sale(self) -> bool:
-        from datetime import timezone
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if self.sale_start and self.sale_start.tzinfo and now < self.sale_start:
             return False
         if self.sale_end and self.sale_end.tzinfo and now > self.sale_end:
@@ -100,7 +99,9 @@ class TicketTypeOut(BaseModel):
 
 class FormFieldCreateRequest(BaseModel):
     label: str = Field(..., min_length=1, max_length=500)
-    field_type: Literal["short_text", "long_text", "dropdown", "multi_select", "checkbox"] = "short_text"
+    field_type: Literal["short_text", "long_text", "dropdown", "multi_select", "checkbox"] = (
+        "short_text"
+    )
     is_required: bool = False
     options: list[str] | None = None
     sort_order: int = 0
@@ -109,7 +110,9 @@ class FormFieldCreateRequest(BaseModel):
 
 class FormFieldUpdateRequest(BaseModel):
     label: str | None = Field(None, min_length=1, max_length=500)
-    field_type: Literal["short_text", "long_text", "dropdown", "multi_select", "checkbox"] | None = None
+    field_type: (
+        Literal["short_text", "long_text", "dropdown", "multi_select", "checkbox"] | None
+    ) = None
     is_required: bool | None = None
     options: list[str] | None = None
     sort_order: int | None = None
@@ -186,6 +189,8 @@ class RegisterRequest(BaseModel):
     buyer_name: str = Field(..., min_length=1, max_length=255)
     buyer_email: EmailStr
     buyer_phone: str | None = Field(None, max_length=30)
+    # Opt-in to receive ticket delivery, reminders, and support replies via WhatsApp
+    whatsapp_consent: bool = False
     items: list[OrderItemRequest] = Field(..., min_length=1)
     attendees: list[AttendeeDetail] | None = None
     form_answers: dict[str, str] = Field(default_factory=dict)
@@ -230,3 +235,4 @@ class WaitlistJoinRequest(BaseModel):
     ticket_type_id: uuid.UUID
     name: str = Field(..., min_length=1, max_length=255)
     email: EmailStr
+    phone: str | None = Field(None, max_length=30, description="Optional — for WhatsApp notice")

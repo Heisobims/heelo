@@ -1,7 +1,7 @@
 """API key management — create, list, revoke."""
+
 from __future__ import annotations
 
-import pytest
 from httpx import AsyncClient
 
 
@@ -66,6 +66,7 @@ async def test_revoke_api_key(client: AsyncClient, org, api_key, user_headers):
 
 async def test_revoke_nonexistent_key_returns_404(client: AsyncClient, org, user_headers):
     import uuid
+
     resp = await client.delete(
         f"/api/v1/organizations/{org.slug}/api-keys/{uuid.uuid4()}",
         headers=user_headers,

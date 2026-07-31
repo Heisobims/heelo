@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>Live Pulse — {{ event.title }}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cyan: #00FFF3;
+      --green: #22c55e;
+      --orange: #f97316;
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --border: rgba(255,255,255,0.08);
+      --text: #f5f5f5;
+      --text-secondary: rgba(245,245,245,0.55);
+    }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; }
+    body { padding: 1.5rem; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .topbar-title { font-size: 1.125rem; font-weight: 700; }
+    .topbar-event { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.125rem; }
+    .live-dot { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; color: var(--green); font-weight: 600; }
+    .live-dot::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.4s ease infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.75rem; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; }
+    .stat-value { font-size: 2.25rem; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
+    .stat-value.cyan { color: var(--cyan); }
+    .stat-label { font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.5rem; }
+
+    .capacity-bar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 1.75rem; }
+    .capacity-bar-track { height: 10px; border-radius: 100px; background: rgba(255,255,255,0.08); overflow: hidden; margin-top: 0.75rem; }
+    .capacity-bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--green)); border-radius: 100px; transition: width 0.4s ease; }
+
+    .tier-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .tier-row { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 0.875rem 1.125rem; }
+    .tier-row-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .tier-name { font-weight: 600; font-size: 0.9375rem; }
+    .tier-count { font-size: 0.8125rem; color: var(--text-secondary); }
+    .tier-bar-track { height: 6px; border-radius: 100px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .tier-bar-fill { height: 100%; background: var(--orange); border-radius: 100px; transition: width 0.4s ease; }
+
+    .section-label { font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Live Pulse</div>
+      <div class="topbar-event">{{ event.title }}</div>
+    </div>
+    <span class="live-dot" id="live-indicator">Live</span>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value cyan" id="stat-checked-in">{{ stats.checked_in }}</div>
+      <div class="stat-label">Checked in</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-percent">{{ stats.percent_checked_in }}%</div>
+      <div class="stat-label">Of confirmed tickets</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-confirmed">{{ stats.confirmed }}</div>
+      <div class="stat-label">Confirmed, not yet in</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-pending">{{ stats.pending }}</div>
+      <div class="stat-label">Pending payment</div>
+    </div>
+  </div>
+
+  {% if stats.capacity %}
+  <div class="capacity-bar-wrap">
+    <div style="display:flex; align-items:baseline; justify-content:space-between;">
+      <span class="section-label" style="margin:0;">Room capacity</span>
+      <span id="capacity-label" style="font-size:0.875rem; color:var(--text-secondary);">{{ stats.checked_in }} / {{ stats.capacity }}</span>
+    </div>
+    <div class="capacity-bar-track">
+      <div class="capacity-bar-fill" id="capacity-bar" style="width:{{ stats.percent_of_capacity or 0 }}%;"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="section-label">Ticket tiers filling the room</div>
+  <div class="tier-list" id="tier-list">
+    {% for tier in stats.ticket_tiers %}
+    <div class="tier-row">
+      <div class="tier-row-top">
+        <span class="tier-name">{{ tier.name }}</span>
+        <span class="tier-count">{{ tier.checked_in }}{% if tier.quantity %} / {{ tier.quantity }}{% endif %} checked in &middot; {{ tier.sold }} sold</span>
+      </div>
+      {% if tier.quantity %}
+      <div class="tier-bar-track"><div class="tier-bar-fill" style="width:{{ tier.percent_of_quantity or 0 }}%;"></div></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    const streamUrl = "/api/v1/organizations/{{ org.slug }}/events/{{ event.id }}/check-in/stream";
+    const liveIndicator = document.getElementById('live-indicator');
+
+    function render(stats) {
+      document.getElementById('stat-checked-in').textContent = stats.checked_in;
+      document.getElementById('stat-percent').textContent = stats.percent_checked_in + '%';
+      document.getElementById('stat-confirmed').textContent = stats.confirmed;
+      document.getElementById('stat-pending').textContent = stats.pending;
+
+      const capBar = document.getElementById('capacity-bar');
+      if (capBar && stats.capacity) {
+        capBar.style.width = (stats.percent_of_capacity || 0) + '%';
+        document.getElementById('capacity-label').textContent = stats.checked_in + ' / ' + stats.capacity;
+      }
+
+      const list = document.getElementById('tier-list');
+      list.innerHTML = stats.ticket_tiers.map(t => `
+        <div class="tier-row">
+          <div class="tier-row-top">
+            <span class="tier-name">${t.name}</span>
+            <span class="tier-count">${t.checked_in}${t.quantity ? ' / ' + t.quantity : ''} checked in &middot; ${t.sold} sold</span>
+          </div>
+          ${t.quantity ? `<div class="tier-bar-track"><div class="tier-bar-fill" style="width:${t.percent_of_quantity || 0}%;"></div></div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    const source = new EventSource(streamUrl);
+    source.onmessage = (e) => {
+      try { render(JSON.parse(e.data)); } catch {}
+      liveIndicator.style.opacity = '1';
+    };
+    source.onerror = () => {
+      liveIndicator.textContent = 'Reconnecting…';
+      liveIndicator.style.color = 'var(--orange)';
+    };
+    source.onopen = () => {
+      liveIndicator.textContent = 'Live';
+      liveIndicator.style.color = 'var(--green)';
+    };
+  </script>
+</body>
+</html>

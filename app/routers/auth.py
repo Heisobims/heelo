@@ -1,10 +1,21 @@
 from __future__ import annotations
 
 import urllib.parse
+from datetime import UTC
 from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, Cookie, Depends, File, HTTPException, Request, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Cookie,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,12 +27,11 @@ from app.schemas.auth import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
-    MeResponse,
     RefreshRequest,
     RegisterRequest,
     RegisterResponse,
-    ResetPasswordRequest,
     ResendOTPRequest,
+    ResetPasswordRequest,
     SelectRoleRequest,
     TokenResponse,
     UpdateProfileRequest,
@@ -29,7 +39,6 @@ from app.schemas.auth import (
     VerifyOTPRequest,
 )
 from app.services.auth_service import AuthService
-from app.utils.auth import decode_access_token
 
 logger = structlog.get_logger()
 
@@ -200,7 +209,9 @@ async def refresh_tokens(
     """
     raw = (heelo_refresh or "") if heelo_refresh else (body.refresh_token if body else "")
     if not raw:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="No refresh token provided.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="No refresh token provided."
+        )
     svc = AuthService(db)
     tokens = await svc.refresh_tokens(raw)
     _set_auth_cookies(response, tokens)
@@ -214,13 +225,15 @@ async def google_redirect():
     if not settings.GOOGLE_CLIENT_ID:
         raise HTTPException(status_code=503, detail="Google OAuth not configured.")
     redirect_uri = f"{settings.FRONTEND_URL}/api/v1/auth/google/callback"
-    params = urllib.parse.urlencode({
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": redirect_uri,
-        "response_type": "code",
-        "scope": "openid email profile",
-        "access_type": "offline",
-    })
+    params = urllib.parse.urlencode(
+        {
+            "client_id": settings.GOOGLE_CLIENT_ID,
+            "redirect_uri": redirect_uri,
+            "response_type": "code",
+            "scope": "openid email profile",
+            "access_type": "offline",
+        }
+    )
     return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?{params}")
 
 
@@ -235,7 +248,13 @@ async def google_callback(
     svc = AuthService(db)
     info = await svc.exchange_google_code(code, redirect_uri)
     tokens = await svc.handle_oauth(info)
-    redirect = RedirectResponse(url="/onboarding/role" if not tokens.user.role or tokens.user.role == "attendee" else "/dashboard")
+    redirect = RedirectResponse(
+        url=(
+            "/onboarding/role"
+            if not tokens.user.role or tokens.user.role == "attendee"
+            else "/dashboard"
+        )
+    )
     _set_auth_cookies(redirect, tokens)
     return redirect
 
@@ -246,11 +265,13 @@ async def facebook_redirect():
     if not settings.FACEBOOK_CLIENT_ID:
         raise HTTPException(status_code=503, detail="Facebook OAuth not configured.")
     redirect_uri = f"{settings.FRONTEND_URL}/api/v1/auth/facebook/callback"
-    params = urllib.parse.urlencode({
-        "client_id": settings.FACEBOOK_CLIENT_ID,
-        "redirect_uri": redirect_uri,
-        "scope": "email,public_profile",
-    })
+    params = urllib.parse.urlencode(
+        {
+            "client_id": settings.FACEBOOK_CLIENT_ID,
+            "redirect_uri": redirect_uri,
+            "scope": "email,public_profile",
+        }
+    )
     return RedirectResponse(f"https://www.facebook.com/v18.0/dialog/oauth?{params}")
 
 
@@ -302,7 +323,9 @@ async def me(
 ):
     """Return the authenticated user's profile."""
     from sqlalchemy import select
+
     from app.models.user import User
+
     user = await db.scalar(select(User).where(User.id == current_user_id))  # type: ignore[arg-type]
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
@@ -316,6 +339,7 @@ async def update_me(
     db: AsyncSession = Depends(get_db),
 ):
     from sqlalchemy import select
+
     from app.models.user import User
 
     user = await db.scalar(select(User).where(User.id == current_user_id))
@@ -333,6 +357,10 @@ async def update_me(
         user.username = body.username or None
     if body.whatsapp_number is not None:
         user.whatsapp_number = body.whatsapp_number or None
+    if body.country is not None:
+        user.country = body.country or None
+    if body.birth_year is not None:
+        user.birth_year = body.birth_year
 
     return UserOut.model_validate(user)
 
@@ -344,6 +372,7 @@ async def change_password(
     db: AsyncSession = Depends(get_db),
 ):
     from sqlalchemy import select
+
     from app.models.user import User
     from app.utils.auth import hash_password, verify_password
 
@@ -365,6 +394,7 @@ async def upload_avatar(
     file: UploadFile = File(...),
 ):
     from sqlalchemy import select
+
     from app.models.user import User
     from app.utils import storage
 
@@ -403,12 +433,13 @@ async def get_notifications(
     Keyed by type so the client can render appropriate icons.
     """
     import uuid as _uuid
-    from datetime import timezone
-    from sqlalchemy import select, desc
-    from app.models.user import User
-    from app.models.organization import OrganizationMember
+
+    from sqlalchemy import desc, select
+
     from app.models.event import Event
+    from app.models.organization import OrganizationMember
     from app.models.ticketing import Registration
+    from app.models.user import User
 
     uid = _uuid.UUID(str(current_user_id))
     user = await db.scalar(select(User).where(User.id == uid))
@@ -427,9 +458,7 @@ async def get_notifications(
     org_ids = [m.org_id for m in member_rows.all()]
 
     if org_ids:
-        event_ids_rows = await db.scalars(
-            select(Event.id).where(Event.org_id.in_(org_ids))
-        )
+        event_ids_rows = await db.scalars(select(Event.id).where(Event.org_id.in_(org_ids)))
         event_ids = list(event_ids_rows.all())
 
         if event_ids:
@@ -443,14 +472,18 @@ async def get_notifications(
                 .limit(10)
             )
             for r in regs.all():
-                items.append({
-                    "type": "registration",
-                    "icon": "how_to_reg",
-                    "title": f"{r.attendee_name} registered",
-                    "body": r.attendee_email,
-                    "ts": r.created_at.replace(tzinfo=timezone.utc).isoformat() if r.created_at else None,
-                    "url": None,
-                })
+                items.append(
+                    {
+                        "type": "registration",
+                        "icon": "how_to_reg",
+                        "title": f"{r.attendee_name} registered",
+                        "body": r.attendee_email,
+                        "ts": (
+                            r.created_at.replace(tzinfo=UTC).isoformat() if r.created_at else None
+                        ),
+                        "url": None,
+                    }
+                )
 
     # Attendee: show their own confirmed registrations
     my_regs = await db.scalars(
@@ -463,14 +496,37 @@ async def get_notifications(
         .limit(10)
     )
     for r in my_regs.all():
-        items.append({
-            "type": "ticket",
-            "icon": "confirmation_number",
-            "title": "Ticket confirmed",
-            "body": r.attendee_name,
-            "ts": r.created_at.replace(tzinfo=timezone.utc).isoformat() if r.created_at else None,
-            "url": f"/my-tickets",
-        })
+        items.append(
+            {
+                "type": "ticket",
+                "icon": "confirmation_number",
+                "title": "Ticket confirmed",
+                "body": r.attendee_name,
+                "ts": (r.created_at.replace(tzinfo=UTC).isoformat() if r.created_at else None),
+                "url": "/my-tickets",
+            }
+        )
+
+    # Real notification rows (e.g. connection requests/accepts) — unread first
+    from app.models.notification import Notification
+
+    notif_rows = await db.scalars(
+        select(Notification)
+        .where(Notification.user_id == uid, Notification.is_read == False)
+        .order_by(desc(Notification.created_at))
+        .limit(10)
+    )
+    for n in notif_rows.all():
+        items.append(
+            {
+                "type": n.type,
+                "icon": n.icon or "notifications",
+                "title": n.title,
+                "body": n.body,
+                "ts": n.created_at.replace(tzinfo=UTC).isoformat() if n.created_at else None,
+                "url": n.action_url,
+            }
+        )
 
     # Sort all items by ts desc, take top 20
     items.sort(key=lambda x: x["ts"] or "", reverse=True)

@@ -6,7 +6,6 @@ from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.campaign import Campaign, CampaignRecipient
 from app.models.ticketing import Registration
@@ -17,6 +16,7 @@ _VALID_TYPES = {"email", "whatsapp", "sms"}
 
 
 # ── CRUD ──────────────────────────────────────────────────────────────────────
+
 
 async def create_campaign(
     db: AsyncSession,
@@ -51,9 +51,7 @@ async def create_campaign(
 
 
 async def get_campaign(db: AsyncSession, campaign_id: uuid.UUID) -> Campaign | None:
-    return await db.scalar(
-        select(Campaign).where(Campaign.id == campaign_id)
-    )
+    return await db.scalar(select(Campaign).where(Campaign.id == campaign_id))
 
 
 async def list_campaigns(
@@ -66,9 +64,7 @@ async def list_campaigns(
     stmt = select(Campaign).where(Campaign.org_id == org_id)
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     result = await db.scalars(
-        stmt.order_by(Campaign.created_at.desc())
-        .offset((page - 1) * per_page)
-        .limit(per_page)
+        stmt.order_by(Campaign.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
     )
     return list(result.all()), total
 
@@ -103,6 +99,7 @@ async def delete_campaign(db: AsyncSession, campaign: Campaign) -> None:
 
 # ── Audience ──────────────────────────────────────────────────────────────────
 
+
 async def preview_audience_count(
     db: AsyncSession,
     org_id: uuid.UUID,
@@ -118,6 +115,7 @@ async def preview_audience_count(
         )
     else:
         from app.models.event import Event
+
         stmt = (
             select(func.count(Registration.id))
             .join(Event, Event.id == Registration.event_id)
@@ -129,9 +127,7 @@ async def preview_audience_count(
 async def _build_recipients(db: AsyncSession, campaign: Campaign) -> int:
     statuses = (campaign.audience_filter or {}).get("statuses", ["confirmed", "checked_in"])
 
-    await db.execute(
-        delete(CampaignRecipient).where(CampaignRecipient.campaign_id == campaign.id)
-    )
+    await db.execute(delete(CampaignRecipient).where(CampaignRecipient.campaign_id == campaign.id))
 
     if campaign.event_id:
         stmt = select(Registration).where(
@@ -140,6 +136,7 @@ async def _build_recipients(db: AsyncSession, campaign: Campaign) -> int:
         )
     else:
         from app.models.event import Event
+
         stmt = (
             select(Registration)
             .join(Event, Event.id == Registration.event_id)
@@ -147,6 +144,20 @@ async def _build_recipients(db: AsyncSession, campaign: Campaign) -> int:
         )
 
     rows = await db.scalars(stmt)
+    registrations = list(rows.all())
+
+    unsubscribed_emails: set[str] = set()
+    if campaign.type == "email" and registrations:
+        from app.models.crm import Contact
+
+        unsub_rows = await db.scalars(
+            select(Contact.email).where(
+                Contact.org_id == campaign.org_id,
+                Contact.is_unsubscribed == True,  # noqa: E712
+            )
+        )
+        unsubscribed_emails = {e.lower() for e in unsub_rows.all() if e}
+
     recs = [
         CampaignRecipient(
             campaign_id=campaign.id,
@@ -157,7 +168,8 @@ async def _build_recipients(db: AsyncSession, campaign: Campaign) -> int:
             name=reg.attendee_name,
             status="pending",
         )
-        for reg in rows.all()
+        for reg in registrations
+        if not (campaign.type == "email" and reg.attendee_email.lower() in unsubscribed_emails)
     ]
     if recs:
         db.add_all(recs)
@@ -166,6 +178,7 @@ async def _build_recipients(db: AsyncSession, campaign: Campaign) -> int:
 
 
 # ── Send / schedule ───────────────────────────────────────────────────────────
+
 
 async def send_now(db: AsyncSession, campaign: Campaign) -> Campaign:
     if campaign.status not in ("draft", "scheduled"):
@@ -180,6 +193,7 @@ async def send_now(db: AsyncSession, campaign: Campaign) -> Campaign:
     await db.commit()
 
     from app.tasks.campaign import send_campaign as _task
+
     _task.delay(str(campaign.id))
     return campaign
 
@@ -204,6 +218,7 @@ async def schedule_campaign(
 
 # ── Stats ─────────────────────────────────────────────────────────────────────
 
+
 async def get_recipient_stats(db: AsyncSession, campaign_id: uuid.UUID) -> dict:
     """Return {status: count} for every distinct recipient status in the campaign."""
     rows = await db.execute(
@@ -217,7 +232,9 @@ async def get_recipient_stats(db: AsyncSession, campaign_id: uuid.UUID) -> dict:
 async def cancel_campaign(db: AsyncSession, campaign: Campaign) -> Campaign:
     """Revert a scheduled campaign back to draft and clear the scheduled_at time."""
     if campaign.status != "scheduled":
-        raise HTTPException(400, f"Only scheduled campaigns can be cancelled (current status: '{campaign.status}').")
+        raise HTTPException(
+            400, f"Only scheduled campaigns can be cancelled (current status: '{campaign.status}')."
+        )
     campaign.status = "draft"
     campaign.scheduled_at = None
     await db.commit()

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import json
-import uuid
-
 import csv
 import io as _io
+import json
+import uuid
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -21,16 +20,15 @@ router_analytics = APIRouter(
 
 
 async def _get_event(db, event_id_str: str, org_id: uuid.UUID):
-    from app.models.event import Event
     from sqlalchemy import select
+
+    from app.models.event import Event
 
     try:
         eid = uuid.UUID(event_id_str)
-    except ValueError:
-        raise HTTPException(422, "Invalid event ID.")
-    event = await db.scalar(
-        select(Event).where(Event.id == eid, Event.org_id == org_id)
-    )
+    except ValueError as err:
+        raise HTTPException(422, "Invalid event ID.") from err
+    event = await db.scalar(select(Event).where(Event.id == eid, Event.org_id == org_id))
     if not event:
         raise HTTPException(404, "Event not found.")
     return event
@@ -45,7 +43,9 @@ async def analytics_summary(slug: str, event_id: str, db: DBSession, org_access:
 
 
 @router_analytics.get("/analytics/ticket-breakdown")
-async def analytics_ticket_breakdown(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+async def analytics_ticket_breakdown(
+    slug: str, event_id: str, db: DBSession, org_access: OrgAccess
+):
     org, role, is_owner = org_access
     event = await _get_event(db, event_id, org.id)
     data = await an_svc.get_ticket_breakdown(db, event.id)
@@ -108,9 +108,10 @@ async def analytics_stream(slug: str, event_id: str, db: DBSession, org_access: 
 @router_analytics.get("/analytics/export.csv")
 async def analytics_export_csv(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
     """Download all registrations for this event as a CSV file."""
-    from app.models.ticketing import Registration, TicketType
     from sqlalchemy import select
     from sqlalchemy.orm import selectinload
+
+    from app.models.ticketing import Registration
 
     org, role, is_owner = org_access
     event = await _get_event(db, event_id, org.id)
@@ -118,34 +119,48 @@ async def analytics_export_csv(slug: str, event_id: str, db: DBSession, org_acce
     rows = await db.scalars(
         select(Registration)
         .where(Registration.event_id == event.id)
-        .options(selectinload(Registration.ticket_type))
+        .options(selectinload(Registration.ticket_type), selectinload(Registration.order))
         .order_by(Registration.created_at.asc())
     )
     regs = list(rows.all())
 
     buf = _io.StringIO()
     writer = csv.writer(buf)
-    writer.writerow([
-        "registration_id", "status", "attendee_name", "attendee_email",
-        "attendee_phone", "ticket_type", "ticket_price", "currency",
-        "checked_in_at", "created_at", "utm_source", "utm_medium", "utm_campaign",
-    ])
+    writer.writerow(
+        [
+            "registration_id",
+            "status",
+            "attendee_name",
+            "attendee_email",
+            "attendee_phone",
+            "ticket_type",
+            "ticket_price",
+            "currency",
+            "checked_in_at",
+            "created_at",
+            "utm_source",
+            "utm_medium",
+            "utm_campaign",
+        ]
+    )
     for r in regs:
-        writer.writerow([
-            str(r.id),
-            r.status,
-            r.attendee_name,
-            r.attendee_email,
-            r.attendee_phone or "",
-            r.ticket_type.name if r.ticket_type else "",
-            r.ticket_type.price if r.ticket_type else "",
-            r.ticket_type.currency if r.ticket_type else "",
-            r.checked_in_at.isoformat() if r.checked_in_at else "",
-            r.created_at.isoformat() if r.created_at else "",
-            getattr(r, "utm_source", "") or "",
-            getattr(r, "utm_medium", "") or "",
-            getattr(r, "utm_campaign", "") or "",
-        ])
+        writer.writerow(
+            [
+                str(r.id),
+                r.status,
+                r.attendee_name,
+                r.attendee_email,
+                r.attendee_phone or "",
+                r.ticket_type.name if r.ticket_type else "",
+                r.ticket_type.price if r.ticket_type else "",
+                r.ticket_type.currency if r.ticket_type else "",
+                r.checked_in_at.isoformat() if r.checked_in_at else "",
+                r.created_at.isoformat() if r.created_at else "",
+                r.order.utm_source if r.order and r.order.utm_source else "",
+                r.order.utm_medium if r.order and r.order.utm_medium else "",
+                r.order.utm_campaign if r.order and r.order.utm_campaign else "",
+            ]
+        )
 
     fname = f"{event.slug}-registrations.csv"
     return StreamingResponse(

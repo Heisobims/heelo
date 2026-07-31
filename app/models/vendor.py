@@ -3,21 +3,30 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.user import User
     from app.models.organization import Organization
+    from app.models.user import User
 
 
 VENDOR_CATEGORIES = [
-    "photography", "videography", "catering", "decorations",
-    "security", "entertainment", "mc", "venue", "sound_lighting",
-    "branding", "logistics", "other",
+    "photography",
+    "videography",
+    "catering",
+    "decorations",
+    "security",
+    "entertainment",
+    "mc",
+    "venue",
+    "sound_lighting",
+    "branding",
+    "logistics",
+    "other",
 ]
 
 VENDOR_PRICE_RANGES = ["budget", "mid", "premium"]
@@ -34,9 +43,7 @@ class Vendor(Base, TimestampMixin):
         Index("ix_vendors_location", "location_city", "location_country"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
@@ -50,6 +57,9 @@ class Vendor(Base, TimestampMixin):
     tagline: Mapped[str | None] = mapped_column(String(255), nullable=True)
     location_city: Mapped[str | None] = mapped_column(String(255), nullable=True)
     location_country: Mapped[str | None] = mapped_column(String(2), nullable=True)
+    address: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Guest capacity — only meaningful for category="venue", null otherwise
+    capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     contact_phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
     website_url: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -79,9 +89,7 @@ class VendorLead(Base, TimestampMixin):
         Index("ix_vendor_leads_org", "org_id"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     vendor_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("vendors.id", ondelete="CASCADE"),

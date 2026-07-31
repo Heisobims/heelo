@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import structlog
@@ -28,16 +28,12 @@ from app.utils.auth import (
     create_raw_refresh_token,
     generate_otp,
     hash_otp,
-    hash_token,
     hash_password,
+    hash_token,
     verify_otp_hash,
     verify_password,
 )
-from app.utils.email import (
-    send_otp_email,
-    send_password_reset_email,
-    send_welcome_email,
-)
+from app.utils.email import send_otp_email, send_password_reset_email, send_welcome_email
 
 logger = structlog.get_logger()
 
@@ -86,14 +82,18 @@ class AuthService:
         # Invalidate any previous unused OTPs for this email+purpose
         await self.db.execute(
             update(OTPCode)
-            .where(OTPCode.email == email, OTPCode.purpose == "email_verification", OTPCode.used_at.is_(None))
-            .values(used_at=datetime.now(tz=timezone.utc))
+            .where(
+                OTPCode.email == email,
+                OTPCode.purpose == "email_verification",
+                OTPCode.used_at.is_(None),
+            )
+            .values(used_at=datetime.now(tz=UTC))
         )
         record = OTPCode(
             email=email,
             code_hash=hash_otp(otp),
             purpose="email_verification",
-            expires_at=datetime.now(tz=timezone.utc) + timedelta(minutes=settings.OTP_EXPIRE_MINUTES),
+            expires_at=datetime.now(tz=UTC) + timedelta(minutes=settings.OTP_EXPIRE_MINUTES),
         )
         self.db.add(record)
         await self.db.flush()
@@ -107,7 +107,7 @@ class AuthService:
                 OTPCode.email == data.email.lower(),
                 OTPCode.purpose == "email_verification",
                 OTPCode.used_at.is_(None),
-                OTPCode.expires_at > datetime.now(tz=timezone.utc),
+                OTPCode.expires_at > datetime.now(tz=UTC),
             )
             .order_by(OTPCode.created_at.desc())
         )
@@ -130,7 +130,7 @@ class AuthService:
                 detail="Incorrect code. Check your inbox and try again.",
             )
 
-        otp_record.used_at = datetime.now(tz=timezone.utc)
+        otp_record.used_at = datetime.now(tz=UTC)
 
         user = await self.db.scalar(
             select(User).where(User.email == data.email.lower(), User.deleted_at.is_(None))
@@ -181,7 +181,7 @@ class AuthService:
                 detail="Please verify your email first.",
             )
 
-        user.last_seen_at = datetime.now(tz=timezone.utc)
+        user.last_seen_at = datetime.now(tz=UTC)
         logger.info("auth.login", user_id=str(user.id))
         return await self._issue_tokens(user, long_lived=data.remember_me)
 
@@ -192,7 +192,7 @@ class AuthService:
             select(RefreshToken).where(
                 RefreshToken.token_hash == token_hash,
                 RefreshToken.revoked_at.is_(None),
-                RefreshToken.expires_at > datetime.now(tz=timezone.utc),
+                RefreshToken.expires_at > datetime.now(tz=UTC),
             )
         )
         if not record:
@@ -202,7 +202,7 @@ class AuthService:
             )
 
         # Rotate: revoke old, issue new
-        record.revoked_at = datetime.now(tz=timezone.utc)
+        record.revoked_at = datetime.now(tz=UTC)
         user = await self._get_user_or_404(str(record.user_id))
         return await self._issue_tokens(user)
 
@@ -213,7 +213,7 @@ class AuthService:
             select(RefreshToken).where(RefreshToken.token_hash == token_hash)
         )
         if record:
-            record.revoked_at = datetime.now(tz=timezone.utc)
+            record.revoked_at = datetime.now(tz=UTC)
 
     # ── Password reset ────────────────────────────────────────────────────────
     async def forgot_password(self, data: ForgotPasswordRequest) -> None:
@@ -227,7 +227,7 @@ class AuthService:
         record = PasswordResetToken(
             user_id=user.id,
             token_hash=hash_token(raw_token),
-            expires_at=datetime.now(tz=timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(tz=UTC) + timedelta(hours=1),
         )
         self.db.add(record)
         await self.db.flush()
@@ -242,7 +242,7 @@ class AuthService:
             select(PasswordResetToken).where(
                 PasswordResetToken.token_hash == token_hash,
                 PasswordResetToken.used_at.is_(None),
-                PasswordResetToken.expires_at > datetime.now(tz=timezone.utc),
+                PasswordResetToken.expires_at > datetime.now(tz=UTC),
             )
         )
         if not record:
@@ -253,13 +253,13 @@ class AuthService:
 
         user = await self._get_user_or_404(str(record.user_id))
         user.password_hash = hash_password(data.new_password)
-        record.used_at = datetime.now(tz=timezone.utc)
+        record.used_at = datetime.now(tz=UTC)
 
         # Revoke all refresh tokens for security
         await self.db.execute(
             update(RefreshToken)
             .where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))
-            .values(revoked_at=datetime.now(tz=timezone.utc))
+            .values(revoked_at=datetime.now(tz=UTC))
         )
         logger.info("auth.password_reset", user_id=str(user.id))
 
@@ -302,7 +302,7 @@ class AuthService:
             await self.db.flush()
             send_welcome_email(user.email, user.full_name)
 
-        user.last_seen_at = datetime.now(tz=timezone.utc)
+        user.last_seen_at = datetime.now(tz=UTC)
         logger.info("auth.oauth", provider=info.provider, user_id=str(user.id))
         return await self._issue_tokens(user)
 
@@ -370,11 +370,15 @@ class AuthService:
         access_token = create_access_token(str(user.id), user.role)
         raw_refresh = create_raw_refresh_token()
 
-        days = settings.REFRESH_TOKEN_EXPIRE_DAYS * 3 if long_lived else settings.REFRESH_TOKEN_EXPIRE_DAYS
+        days = (
+            settings.REFRESH_TOKEN_EXPIRE_DAYS * 3
+            if long_lived
+            else settings.REFRESH_TOKEN_EXPIRE_DAYS
+        )
         record = RefreshToken(
             user_id=user.id,
             token_hash=hash_token(raw_refresh),
-            expires_at=datetime.now(tz=timezone.utc) + timedelta(days=days),
+            expires_at=datetime.now(tz=UTC) + timedelta(days=days),
         )
         self.db.add(record)
         await self.db.flush()

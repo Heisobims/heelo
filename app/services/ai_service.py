@@ -5,6 +5,7 @@ and the ai_tasks Celery task (sync).
 All functions degrade gracefully when ANTHROPIC_API_KEY is not set —
 they return empty strings / empty generators so the rest of the app keeps working.
 """
+
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
@@ -17,17 +18,21 @@ _MODEL_SMART = "claude-sonnet-4-6"
 
 # ── Lazy client factories ─────────────────────────────────────────────────────
 
+
 def _async_client():
     from anthropic import AsyncAnthropic
+
     return AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
 
 
 def _sync_client():
     from anthropic import Anthropic
+
     return Anthropic(api_key=settings.ANTHROPIC_API_KEY)
 
 
 # ── Event description generator (streaming) ───────────────────────────────────
+
 
 async def stream_event_description(
     *,
@@ -40,7 +45,9 @@ async def stream_event_description(
     if not settings.ANTHROPIC_API_KEY:
         return
 
-    format_label = {"in_person": "in-person", "virtual": "virtual", "hybrid": "hybrid"}.get(format, "in-person")
+    format_label = {"in_person": "in-person", "virtual": "virtual", "hybrid": "hybrid"}.get(
+        format, "in-person"
+    )
     tag_line = f"Topics/tags: {', '.join(tags)}" if tags else ""
     loc_line = f"Location: {location}" if location else ""
     refine_line = f"\n\nExisting draft (improve it):\n{existing}" if existing else ""
@@ -72,6 +79,7 @@ Write the description now:"""
 
 
 # ── Campaign copy generator (streaming) ──────────────────────────────────────
+
 
 async def stream_campaign_copy(
     *,
@@ -131,6 +139,7 @@ Write it now:"""
 
 # ── Analytics insights (non-streaming) ───────────────────────────────────────
 
+
 async def generate_analytics_insights(
     summary: dict,
     ticket_breakdown: list[dict],
@@ -168,6 +177,7 @@ Be direct, specific, and practical. No intro text, no headers — just the 3 bul
 
 
 # ── WhatsApp reply suggestion (sync, for Celery) ──────────────────────────────
+
 
 def suggest_whatsapp_reply_sync(
     *,
