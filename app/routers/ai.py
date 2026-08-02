@@ -2,19 +2,22 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Literal
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.dependencies import DBSession, OrgAccess
+from app.dependencies import DBSession
+from app.permissions import Permission, require_permission
 from app.services import ai_service as ai_svc
 
 router_ai = APIRouter(
     prefix="/api/v1/organizations/{slug}",
     tags=["ai"],
 )
+
+AiUseAccess = Annotated[tuple, Depends(require_permission(Permission.AI_USE))]
 
 
 # ── Request bodies ────────────────────────────────────────────────────────────
@@ -62,11 +65,6 @@ def _sse_stream(gen):
     )
 
 
-def _require_editor(role: str) -> None:
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
-
-
 # ── Event description generator ───────────────────────────────────────────────
 
 
@@ -75,10 +73,9 @@ async def generate_event_description(
     slug: str,
     body: EventDescriptionRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: AiUseAccess,
 ):
     org, role, _ = org_access
-    _require_editor(role)
 
     gen = ai_svc.stream_event_description(
         title=body.title,
@@ -98,10 +95,9 @@ async def generate_campaign_copy(
     slug: str,
     body: CampaignCopyRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: AiUseAccess,
 ):
     org, role, _ = org_access
-    _require_editor(role)
 
     gen = ai_svc.stream_campaign_copy(
         channel=body.channel,
@@ -122,10 +118,9 @@ async def analytics_insights(
     slug: str,
     event_id: str,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: AiUseAccess,
 ):
     org, role, _ = org_access
-    _require_editor(role)
 
     try:
         eid = uuid.UUID(event_id)

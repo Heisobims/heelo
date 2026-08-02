@@ -99,8 +99,11 @@
     </div>
 
     {% if user and user.id != profile_user.id %}
-    <div style="margin-left:auto;" id="connect-wrap">
+    <div style="margin-left:auto; display:flex; gap:8px;" id="connect-wrap">
       {% if connection_status == 'accepted' %}
+      <a href="/messages/{{ profile_user.id }}" class="pp-connect-btn pp-btn-primary" style="text-decoration:none;">
+        <span class="material-symbols-outlined" style="font-size:14px;">mail</span>Message
+      </a>
       <button class="pp-connect-btn accepted" disabled>
         <span class="material-symbols-outlined" style="font-size:14px;">how_to_reg</span>Connected
       </button>

@@ -290,6 +290,28 @@
     {% endif %}
   </div>
 
+  {% if mode == 'create' %}
+  <div class="section-card" style="padding:16px 20px; margin-bottom:20px;" x-data="templatePicker()" x-show="templates.length > 0" x-cloak>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div>
+        <div style="font-size:13.5px; font-weight:600;">Start from a template</div>
+        <div style="font-size:12.5px; color:var(--text-muted);">Reuse the setup from a past event instead of starting blank.</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select class="form-select" style="width:auto; min-width:200px;" x-model="selected">
+          <option value="">Choose a template…</option>
+          <template x-for="t in templates" :key="t.id">
+            <option :value="t.id" x-text="t.title"></option>
+          </template>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" @click="useTemplate()" :class="{'btn-loading': using}" :disabled="!selected || using">
+          <span class="btn-label">Use this</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <div x-data="eventForm()">
 
     <!-- Global error -->
@@ -402,7 +424,7 @@
           </div>
           <div class="form-group" style="margin-bottom:0;">
             <label class="form-label"><span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted);">language</span>Timezone</label>
-            <select class="form-input" x-model="form.timezone" style="appearance:auto;">
+            <select class="form-select" x-model="form.timezone">
               <optgroup label="Africa">
                 <option value="Africa/Lagos">Africa/Lagos (WAT, UTC+1)</option>
                 <option value="Africa/Accra">Africa/Accra (GMT, UTC+0)</option>
@@ -469,7 +491,7 @@
               </div>
               <div class="form-group">
                 <label class="form-label">Country</label>
-                <select class="form-input" x-model="form.venue_country" style="appearance:auto;">
+                <select class="form-select" x-model="form.venue_country">
                   <option value="">Select…</option>
                   <option value="NG">Nigeria</option><option value="GH">Ghana</option>
                   <option value="KE">Kenya</option><option value="ZA">South Africa</option>
@@ -505,7 +527,7 @@
             </div>
             <div class="form-group" style="margin-bottom:0;">
               <label class="form-label">Platform</label>
-              <select class="form-input" x-model="form.virtual_platform" style="appearance:auto;">
+              <select class="form-select" x-model="form.virtual_platform">
                 <option value="">Select platform…</option>
                 <option value="zoom">Zoom</option><option value="meet">Google Meet</option>
                 <option value="teams">Microsoft Teams</option><option value="webex">Webex</option>
@@ -593,8 +615,8 @@
                 </div>
                 <div class="form-group" style="margin:0;">
                   <label class="form-label" style="font-size:12px;">Tier</label>
-                  <select class="form-input" x-model="tDraft.tier"
-                    @change="if(tDraft.tier==='free') tDraft.price=0" style="appearance:auto; font-size:13px;">
+                  <select class="form-select" x-model="tDraft.tier"
+                    @change="if(tDraft.tier==='free') tDraft.price=0" style="font-size:13px;">
                     <option value="free">Free</option>
                     <option value="general">General</option>
                     <option value="early_bird">Early Bird</option>
@@ -609,7 +631,7 @@
                 </div>
                 <div class="form-group" style="margin:0;" x-show="tDraft.tier !== 'free'" style="display:none;">
                   <label class="form-label" style="font-size:12px;">Currency</label>
-                  <select class="form-input" x-model="tDraft.currency" style="appearance:auto; font-size:13px;">
+                  <select class="form-select" x-model="tDraft.currency" style="font-size:13px;">
                     <option value="NGN">NGN</option><option value="GHS">GHS</option>
                     <option value="KES">KES</option><option value="ZAR">ZAR</option>
                     <option value="USD">USD</option><option value="GBP">GBP</option>
@@ -649,6 +671,133 @@
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 4b · REGISTRATION FORM -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.formFields = !sections.formFields">
+        <div class="ev-sec-icon" :class="{ active: sections.formFields || formFields.length > 0 }">
+          <span class="material-symbols-outlined">list_alt</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Registration form</div>
+          <div class="ev-sec-sub" x-show="!sections.formFields"
+            x-text="formFields.length ? formFields.length + ' custom question' + (formFields.length !== 1 ? 's' : '') : 'Ask attendees custom questions at checkout'"
+            style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="badge-cnt" x-show="formFields.length > 0" x-text="formFields.length" style="display:none;"></span>
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.formFields" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+
+          <!-- Field list (drag to reorder) -->
+          <div x-show="formFields.length > 0" style="margin-bottom:12px; display:none;">
+            <template x-for="(f, idx) in formFields" :key="f._key">
+              <div class="agenda-row" draggable="true"
+                @dragstart="dragFieldStart(idx)" @dragover.prevent @drop="dropFieldAt(idx)"
+                :style="dragFieldIdx === idx ? 'opacity:0.4;' : ''">
+                <span class="material-symbols-outlined" style="cursor:grab; color:var(--text-muted); font-size:16px; align-self:center;">drag_indicator</span>
+                <div class="agenda-content">
+                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span style="font-size:14px; font-weight:600;" x-text="f.label"></span>
+                    <span style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted); text-transform:capitalize;"
+                      x-text="f.field_type.replace('_',' ')"></span>
+                    <span x-show="f.is_required" style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:100px; background:rgba(0,255,243,0.1); color:#009e95;" style="display:none;">Required</span>
+                  </div>
+                  <div style="font-size:12px; color:var(--text-muted); margin-top:3px;" x-text="fieldTicketNames(f)"></div>
+                </div>
+                <button type="button" @click="formFields.splice(idx,1)"
+                  style="width:26px;height:26px;border-radius:50%;border:none;background:rgba(229,62,62,0.08);color:#e53e3e;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;transition:opacity 0.12s;"
+                  onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+            </template>
+          </div>
+
+          <!-- Add field form -->
+          <div x-show="addingFormField" class="inline-form" style="display:none;">
+            <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
+              <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">add</span>Add question
+            </div>
+            <div class="inline-form-grid" style="margin-bottom:10px;">
+              <div class="form-group" style="margin:0; grid-column:1/-1;">
+                <label class="form-label" style="font-size:12px;">Question / label <span style="color:#e53e3e;">*</span></label>
+                <input type="text" class="form-input" placeholder="e.g. Dietary restrictions"
+                  x-model="ffDraft.label" style="font-size:13px;" maxlength="200">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:12px;">Answer type</label>
+                <select class="form-select" x-model="ffDraft.field_type" style="font-size:13px;">
+                  <option value="short_text">Short text</option>
+                  <option value="long_text">Long text</option>
+                  <option value="dropdown">Dropdown</option>
+                  <option value="multi_select">Multi-select</option>
+                  <option value="checkbox">Checkbox</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0; display:flex; align-items:flex-end;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; font-weight:500;">
+                  <input type="checkbox" x-model="ffDraft.is_required" style="width:15px; height:15px; cursor:pointer;">
+                  Required
+                </label>
+              </div>
+
+              <template x-if="['dropdown','multi_select'].includes(ffDraft.field_type)">
+                <div class="form-group" style="margin:0; grid-column:1/-1;">
+                  <label class="form-label" style="font-size:12px;">Options</label>
+                  <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;" x-show="ffDraft.options.length > 0">
+                    <template x-for="(opt, oi) in ffDraft.options" :key="oi">
+                      <span class="vibe-chip">
+                        <span x-text="opt"></span>
+                        <button type="button" @click="ffDraft.options.splice(oi,1)">
+                          <span class="material-symbols-outlined" style="font-size:12px;">close</span>
+                        </button>
+                      </span>
+                    </template>
+                  </div>
+                  <div style="display:flex; gap:8px;">
+                    <input type="text" class="form-input" placeholder="Add an option and press Enter"
+                      x-model="ffOptionDraft" @keydown.enter.prevent="addFieldOption()" style="font-size:13px;">
+                    <button type="button" class="btn btn-secondary btn-sm" @click="addFieldOption()">Add</button>
+                  </div>
+                </div>
+              </template>
+
+              <div class="form-group" style="margin:0; grid-column:1/-1;">
+                <label class="form-label" style="font-size:12px;">Applies to which ticket types?</label>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;" x-show="tickets.length > 0">
+                  <template x-for="t in tickets" :key="t._key">
+                    <span class="cat-pill" :class="{ selected: ffDraft.applies_to_ticket_keys.includes(t._key) }"
+                      @click="toggleFieldTicketKey(t._key)" x-text="t.name"></span>
+                  </template>
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;" x-show="ffDraft.applies_to_ticket_keys.length === 0">
+                  None selected = applies to all ticket types.
+                </div>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px; justify-content:flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm" @click="addingFormField=false">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" @click="saveFormField()">
+                <span class="material-symbols-outlined" style="font-size:11px;">check</span> Add question
+              </button>
+            </div>
+          </div>
+
+          <button type="button" class="add-btn" x-show="!addingFormField"
+            @click="addingFormField=true; ffDraft={ label:'', field_type:'short_text', is_required:false, options:[], applies_to_ticket_keys:[] }; ffOptionDraft=''">
+            <span class="material-symbols-outlined">add</span> Add question
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <!-- 5 · AGENDA -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
     <div class="ev-card">
@@ -672,23 +821,26 @@
         <div class="ev-sec-divider"></div>
         <div class="ev-sec-body">
 
-          <!-- Agenda list -->
+          <!-- Agenda list (drag to reorder) -->
           <div x-show="agenda.length > 0" style="margin-bottom:12px; display:none;">
             <template x-for="(item, idx) in agenda" :key="item._key">
-              <div class="agenda-row">
+              <div class="agenda-row" draggable="true"
+                @dragstart="dragStart(idx)" @dragover.prevent @drop="dropAt(idx)"
+                :style="dragIdx === idx ? 'opacity:0.4;' : ''">
+                <span class="material-symbols-outlined" style="cursor:grab; color:var(--text-muted); font-size:16px; align-self:center;">drag_indicator</span>
                 <div class="agenda-time">
                   <span x-text="item.time || '–'"></span>
                   <span x-show="item.end_time"> – <span x-text="item.end_time"></span></span>
                 </div>
                 <div class="agenda-content">
                   <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span class="stype-dot" :class="'st-' + item.type"></span>
+                    <span class="stype-dot" :class="'st-' + item.session_type"></span>
                     <span style="font-size:14px; font-weight:600;" x-text="item.title"></span>
                     <span style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted); text-transform:capitalize;"
-                      x-text="item.type.replace('_',' ')"></span>
+                      x-text="item.session_type.replace('_',' ')"></span>
                   </div>
-                  <div x-show="item.speaker" style="font-size:12px; color:var(--text-muted); margin-top:3px; display:none;">
-                    <span class="material-symbols-outlined" style="font-size:10px; margin-right:4px;">mic</span><span x-text="item.speaker"></span>
+                  <div x-show="item.speaker_keys.length > 0" style="font-size:12px; color:var(--text-muted); margin-top:3px; display:none;">
+                    <span class="material-symbols-outlined" style="font-size:10px; margin-right:4px;">mic</span><span x-text="agendaSpeakerNames(item)"></span>
                   </div>
                   <div x-show="item.track" style="font-size:11px; color:#009e95; margin-top:2px; display:none;">
                     <span class="material-symbols-outlined" style="font-size:9px; margin-right:3px;">sell</span><span x-text="item.track"></span>
@@ -721,7 +873,7 @@
               </div>
               <div class="form-group" style="margin:0;">
                 <label class="form-label" style="font-size:12px;">Type</label>
-                <select class="form-input" x-model="aDraft.type" style="appearance:auto; font-size:13px;">
+                <select class="form-select" x-model="aDraft.session_type" style="font-size:13px;">
                   <option value="talk">Talk / Keynote</option>
                   <option value="panel">Panel Discussion</option>
                   <option value="workshop">Workshop</option>
@@ -735,12 +887,19 @@
                 <input type="text" class="form-input" placeholder="e.g. Opening Keynote"
                   x-model="aDraft.title" style="font-size:13px;" maxlength="200">
               </div>
-              <div class="form-group" style="margin:0;">
-                <label class="form-label" style="font-size:12px;">Speaker / Host</label>
-                <input type="text" class="form-input" placeholder="Name(s)"
-                  x-model="aDraft.speaker" style="font-size:13px;">
+              <div class="form-group" style="margin:0; grid-column:1/-1;">
+                <label class="form-label" style="font-size:12px;">Speakers / Hosts (optional)</label>
+                <div style="display:flex; flex-wrap:wrap; gap:6px;" x-show="allPeopleFlat().length > 0">
+                  <template x-for="person in allPeopleFlat()" :key="person._key">
+                    <span class="cat-pill" :class="{ selected: aDraft.speaker_keys.includes(person._key) }"
+                      @click="togglePersonKey(person._key)" x-text="person.name"></span>
+                  </template>
+                </div>
+                <div x-show="allPeopleFlat().length === 0" style="font-size:11px; color:var(--text-muted);">
+                  Add people in the People section above to link them to sessions.
+                </div>
               </div>
-              <div class="form-group" style="margin:0;">
+              <div class="form-group" style="margin:0; grid-column:1/-1;">
                 <label class="form-label" style="font-size:12px;">Track (optional)</label>
                 <input type="text" class="form-input" placeholder="e.g. Main Stage"
                   x-model="aDraft.track" style="font-size:13px;">
@@ -755,7 +914,7 @@
           </div>
 
           <button type="button" class="add-btn" x-show="!addingAgenda"
-            @click="addingAgenda=true; aDraft={ time:'', end_time:'', title:'', type:'talk', speaker:'', track:'' }">
+            @click="addingAgenda=true; aDraft={ time:'', end_time:'', title:'', session_type:'talk', speaker_keys:[], track:'' }">
             <span class="material-symbols-outlined">add</span> Add session
           </button>
         </div>
@@ -913,6 +1072,9 @@
                   <div class="partner-name" x-text="p.name"></div>
                   <div class="tier-lbl" :class="'tlbl-' + p.tier"
                     x-text="p.tier.charAt(0).toUpperCase() + p.tier.slice(1)"></div>
+                  <div x-show="p.is_exhibitor" style="font-size:10px; color:var(--text-muted); margin-top:2px; display:none;">
+                    Exhibitor<span x-show="p.booth_number"> · Booth <span x-text="p.booth_number"></span></span>
+                  </div>
                 </div>
               </div>
             </template>
@@ -932,7 +1094,7 @@
               </div>
               <div class="form-group" style="margin:0;">
                 <label class="form-label" style="font-size:12px;">Tier / Type</label>
-                <select class="form-input" x-model="partDraft.tier" style="appearance:auto; font-size:13px;">
+                <select class="form-select" x-model="partDraft.tier" style="font-size:13px;">
                   <option value="platinum">Platinum Sponsor</option>
                   <option value="gold">Gold Sponsor</option>
                   <option value="silver">Silver Sponsor</option>
@@ -946,6 +1108,26 @@
                 <input type="url" class="form-input" placeholder="https://..."
                   x-model="partDraft.website" style="font-size:13px;">
               </div>
+              <div class="form-group" style="margin:0; grid-column:1/-1;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer; font-weight:500;">
+                  <input type="checkbox" x-model="partDraft.is_exhibitor" style="width:15px; height:15px; cursor:pointer;">
+                  This is also an exhibitor with a booth
+                </label>
+              </div>
+              <template x-if="partDraft.is_exhibitor">
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Booth number</label>
+                  <input type="text" class="form-input" placeholder="e.g. A12"
+                    x-model="partDraft.booth_number" style="font-size:13px;">
+                </div>
+              </template>
+              <template x-if="partDraft.is_exhibitor">
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Category</label>
+                  <input type="text" class="form-input" placeholder="e.g. Hardware"
+                    x-model="partDraft.category" style="font-size:13px;">
+                </div>
+              </template>
             </div>
             <div style="display:flex; gap:8px; justify-content:flex-end;">
               <button type="button" class="btn btn-secondary btn-sm" @click="addingPartner=false">Cancel</button>
@@ -956,7 +1138,7 @@
           </div>
 
           <button type="button" class="add-btn" x-show="!addingPartner"
-            @click="addingPartner=true; partDraft={ name:'', tier:'partner', website:'', logo_url:'' }">
+            @click="addingPartner=true; partDraft={ name:'', tier:'partner', website:'', logo_url:'', is_exhibitor:false, booth_number:'', category:'' }">
             <span class="material-symbols-outlined">add</span> Add partner / sponsor
           </button>
         </div>
@@ -1042,6 +1224,48 @@
             <span class="material-symbols-outlined" style="margin-right:4px;">info</span>
             JPEG, PNG or WebP · Max 10 MB · Recommended 1920×1080
           </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- 8b · PAGE LAYOUT -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div class="ev-card">
+      <div class="ev-sec-hd" @click="sections.layout = !sections.layout">
+        <div class="ev-sec-icon" :class="{ active: sections.layout }">
+          <span class="material-symbols-outlined">dashboard_customize</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Page layout</div>
+          <div class="ev-sec-sub" x-show="!sections.layout"
+            x-text="'Reorder and show/hide sections on your public event page'"
+            style="display:none;"></div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.layout" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+          <p style="font-size:12px; color:var(--text-muted); margin:-4px 0 12px;">
+            Drag to reorder. Sections with no content (e.g. no agenda added) won't show up on your page regardless of this setting.
+          </p>
+          <template x-for="(s, idx) in sectionOrder" :key="s._key">
+            <div class="agenda-row" draggable="true"
+              @dragstart="dragSectionStart(idx)" @dragover.prevent @drop="dropSectionAt(idx)"
+              :style="dragSectionIdx === idx ? 'opacity:0.4;' : ''">
+              <span class="material-symbols-outlined" style="cursor:grab; color:var(--text-muted); font-size:16px; align-self:center;">drag_indicator</span>
+              <div class="agenda-content" style="display:flex; align-items:center;">
+                <span style="font-size:14px; font-weight:600;" x-text="sectionLabels[s.key]"></span>
+              </div>
+              <div class="tog" @click="s.visible = !s.visible" :style="s.visible ? 'background:var(--cyan)' : 'background:var(--border-color)'">
+                <div class="tog-knob" :style="s.visible ? 'transform:translateX(18px)' : 'transform:translateX(2px)'"></div>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -1205,9 +1429,44 @@
 </div>
 
 <script>
+function templatePicker() {
+  return {
+    templates: [],
+    selected: '',
+    using: false,
+
+    async init() {
+      try {
+        const res = await fetch(`/api/v1/organizations/{{ org.slug }}/events/templates`, { credentials: 'include' });
+        const data = await res.json();
+        if (data.success) this.templates = data.data;
+      } catch {}
+    },
+
+    async useTemplate() {
+      if (!this.selected) return;
+      this.using = true;
+      try {
+        const res = await fetch(`/api/v1/organizations/{{ org.slug }}/events/${this.selected}/duplicate`, {
+          method: 'POST', credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error?.message || 'Failed to use template.'); return; }
+        window.location.href = `/org/{{ org.slug }}/events/${data.data.id}/edit`;
+      } catch { alert('Network error.'); }
+      finally { this.using = false; }
+    },
+  };
+}
+
 function eventForm() {
   const existing = {{ event_dict | tojson if event_dict is defined and event_dict else 'null' }};
   const existingTickets = {{ existing_tickets | tojson if existing_tickets is defined and existing_tickets else '[]' }};
+  const existingSpeakers = {{ existing_speakers | tojson if existing_speakers is defined and existing_speakers else '[]' }};
+  const existingSponsors = {{ existing_sponsors | tojson if existing_sponsors is defined and existing_sponsors else '[]' }};
+  const existingSessions = {{ existing_sessions | tojson if existing_sessions is defined and existing_sessions else '[]' }};
+  const existingFormFields = {{ existing_form_fields | tojson if existing_form_fields is defined and existing_form_fields else '[]' }};
+  const existingSectionOrder = {{ existing_section_order | tojson if existing_section_order is defined and existing_section_order else '[]' }};
   const orgSlug = '{{ org.slug }}';
   const existingId = existing ? existing.id : null;
 
@@ -1223,6 +1482,53 @@ function eventForm() {
   const extras = ex.extras || {};
   let _k = 0;
   const k = () => ++_k;
+
+  const toTimeHHMM = iso => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const p = n => String(n).padStart(2,'0');
+    return `${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+
+  /* Ticket types: every ticket keeps a stable client-side _key so custom
+     registration form fields can reference them (via applies_to_ticket_keys)
+     before they have a real id (new, not-yet-saved ticket types). */
+  const ticketsInit = existingTickets.map(tt => ({ ...tt, _key: k() }));
+  const ticketIdToKey = {};
+  for (const tt of ticketsInit) ticketIdToKey[tt.id] = tt._key;
+
+  const formFieldsInit = existingFormFields.map(ff => ({
+    id: ff.id, label: ff.label, field_type: ff.field_type, is_required: ff.is_required,
+    options: ff.options || [],
+    applies_to_ticket_keys: (ff.applies_to_ticket_type_ids || []).map(tid => ticketIdToKey[tid]).filter(Boolean),
+    _key: k(),
+  }));
+
+  /* People roster: real speakers/panelists/etc, loaded from event_speakers links.
+     Every person keeps a stable client-side _key so Agenda sessions can reference
+     them before they have a real speaker_id (new, not-yet-saved people). */
+  const peopleInit = { speakers:[], panelists:[], moderators:[], judges:[], organizers:[] };
+  const roleToTab = { speaker:'speakers', panelist:'panelists', moderator:'moderators', judge:'judges', organizer:'organizers' };
+  const speakerIdToKey = {};
+  for (const s of existingSpeakers) {
+    const key = k();
+    peopleInit[roleToTab[s.role_type] || 'speakers'].push({
+      id:s.id, speaker_id:s.speaker_id, name:s.name, title:s.title||'', company:s.company||'',
+      bio:s.bio||'', photo_url:s.photo_url||'', _key:key,
+    });
+    speakerIdToKey[s.speaker_id] = key;
+  }
+
+  const agendaInit = existingSessions.map(s => ({
+    id: s.id,
+    time: toTimeHHMM(s.start_datetime),
+    end_time: toTimeHHMM(s.end_datetime),
+    title: s.title,
+    session_type: s.session_type,
+    track: s.track || '',
+    speaker_keys: (s.speaker_ids || []).map(sid => speakerIdToKey[sid]).filter(Boolean),
+    _key: k(),
+  }));
 
   return {
     /* ─ Core form ─ */
@@ -1250,18 +1556,53 @@ function eventForm() {
     vibeDraft: '',
 
     /* ─ Section open/close ─ */
-    sections: { basics:true, datetime:true, location:true, ticketing:false, agenda:false, people:false, partners:false, media:false, settings:false },
+    sections: { basics:true, datetime:true, location:true, ticketing:false, formFields:false, agenda:false, people:false, partners:false, media:false, layout:false, settings:false },
+
+    /* ─ Page layout (section order/visibility) ─ */
+    sectionLabels: { about:'About', agenda:'Agenda', people:'People', partners:'Partners & Sponsors', gallery:'Gallery', discussion:'Discussion' },
+    sectionOrder: (existingSectionOrder.length ? existingSectionOrder : [
+      {key:'about'},{key:'agenda'},{key:'people'},{key:'partners'},{key:'gallery'},{key:'discussion'},
+    ]).map(s => ({ key: s.key, visible: s.visible !== false, _key: k() })),
+    dragSectionIdx: null,
+    dragSectionStart(idx) { this.dragSectionIdx = idx; },
+    dropSectionAt(idx) {
+      if (this.dragSectionIdx === null || this.dragSectionIdx === idx) return;
+      const moved = this.sectionOrder.splice(this.dragSectionIdx, 1)[0];
+      this.sectionOrder.splice(idx, 0, moved);
+      this.dragSectionIdx = null;
+    },
 
     /* ─ Ticketing ─ */
-    tickets: existingTickets.map(tt => ({ ...tt, _key: k() })),
+    tickets: ticketsInit,
     isFree: existingTickets.length === 0,
     addingTicket: false,
     tDraft: { name:'', tier:'general', price:0, currency:'NGN', quantity:null, description:'' },
 
     /* ─ Agenda ─ */
-    agenda: (extras.agenda || []).map(a => ({ ...a, _key: k() })),
+    agenda: agendaInit,
     addingAgenda: false,
-    aDraft: { time:'', end_time:'', title:'', type:'talk', speaker:'', track:'' },
+    dragIdx: null,
+    aDraft: { time:'', end_time:'', title:'', session_type:'talk', speaker_keys:[], track:'' },
+
+    allPeopleFlat() {
+      return Object.values(this.people).flat();
+    },
+    togglePersonKey(key) {
+      const i = this.aDraft.speaker_keys.indexOf(key);
+      if (i === -1) this.aDraft.speaker_keys.push(key);
+      else this.aDraft.speaker_keys.splice(i, 1);
+    },
+    agendaSpeakerNames(item) {
+      const all = this.allPeopleFlat();
+      return item.speaker_keys.map(key => all.find(p => p._key === key)?.name).filter(Boolean).join(', ');
+    },
+    dragStart(idx) { this.dragIdx = idx; },
+    dropAt(idx) {
+      if (this.dragIdx === null || this.dragIdx === idx) return;
+      const moved = this.agenda.splice(this.dragIdx, 1)[0];
+      this.agenda.splice(idx, 0, moved);
+      this.dragIdx = null;
+    },
 
     /* ─ People ─ */
     personTabs: [
@@ -1272,20 +1613,53 @@ function eventForm() {
       { id:'organizers', label:'Organizers', icon:'business' },
     ],
     activeTab: 'speakers',
-    people: {
-      speakers:   (extras.people?.speakers   || []).map(p => ({ ...p, _key: k() })),
-      panelists:  (extras.people?.panelists  || []).map(p => ({ ...p, _key: k() })),
-      moderators: (extras.people?.moderators || []).map(p => ({ ...p, _key: k() })),
-      judges:     (extras.people?.judges     || []).map(p => ({ ...p, _key: k() })),
-      organizers: (extras.people?.organizers || []).map(p => ({ ...p, _key: k() })),
-    },
+    people: peopleInit,
     addingPerson: false,
     pDraft: { name:'', title:'', company:'', bio:'', photo_url:'' },
 
     /* ─ Partners ─ */
-    partners: (extras.partners || []).map(p => ({ ...p, _key: k() })),
+    partners: existingSponsors.map(s => ({
+      id: s.id, name: s.name, tier: s.tier, website: s.website || '', logo_url: s.logo_url || '',
+      is_exhibitor: s.is_exhibitor || false, booth_number: s.booth_number || '', category: s.category || '',
+      _key: k(),
+    })),
     addingPartner: false,
-    partDraft: { name:'', tier:'partner', website:'', logo_url:'' },
+    partDraft: { name:'', tier:'partner', website:'', logo_url:'', is_exhibitor:false, booth_number:'', category:'' },
+
+    /* ─ Registration form fields ─ */
+    formFields: formFieldsInit,
+    addingFormField: false,
+    dragFieldIdx: null,
+    ffDraft: { label:'', field_type:'short_text', is_required:false, options:[], applies_to_ticket_keys:[] },
+    ffOptionDraft: '',
+
+    toggleFieldTicketKey(key) {
+      const i = this.ffDraft.applies_to_ticket_keys.indexOf(key);
+      if (i === -1) this.ffDraft.applies_to_ticket_keys.push(key);
+      else this.ffDraft.applies_to_ticket_keys.splice(i, 1);
+    },
+    addFieldOption() {
+      const v = this.ffOptionDraft.trim();
+      if (!v) return;
+      this.ffDraft.options.push(v);
+      this.ffOptionDraft = '';
+    },
+    saveFormField() {
+      if (!this.ffDraft.label.trim()) return;
+      this.formFields.push({ ...this.ffDraft, options:[...this.ffDraft.options], applies_to_ticket_keys:[...this.ffDraft.applies_to_ticket_keys], _key: k() });
+      this.addingFormField = false;
+    },
+    fieldTicketNames(f) {
+      if (!f.applies_to_ticket_keys.length) return 'All ticket types';
+      return this.tickets.filter(t => f.applies_to_ticket_keys.includes(t._key)).map(t => t.name).join(', ') || 'All ticket types';
+    },
+    dragFieldStart(idx) { this.dragFieldIdx = idx; },
+    dropFieldAt(idx) {
+      if (this.dragFieldIdx === null || this.dragFieldIdx === idx) return;
+      const moved = this.formFields.splice(this.dragFieldIdx, 1)[0];
+      this.formFields.splice(idx, 0, moved);
+      this.dragFieldIdx = null;
+    },
 
     /* ─ Images ─ */
     thumb0: { preview:null, url: ex.cover_image_url || null,  file:null, uploading:false, error:null },
@@ -1450,21 +1824,11 @@ function eventForm() {
       const isPublish=action==='publish';
       if(isPublish) this.publishing=true; else this.saving=true;
 
-      const strip = obj => { const {_key,...rest}=obj; return rest; };
       const parseHours = s => (s || '').split(',').map(x => parseFloat(x.trim())).filter(x => !isNaN(x) && x > 0);
 
       const extras = {
         email_reminder_hours:    parseHours(this.form.email_reminder_hours),
         whatsapp_reminder_hours: parseHours(this.form.whatsapp_reminder_hours),
-        agenda:   this.agenda.map(strip),
-        people: {
-          speakers:   this.people.speakers.map(strip),
-          panelists:  this.people.panelists.map(strip),
-          moderators: this.people.moderators.map(strip),
-          judges:     this.people.judges.map(strip),
-          organizers: this.people.organizers.map(strip),
-        },
-        partners: this.partners.map(strip),
       };
 
       const { email_reminder_hours, whatsapp_reminder_hours, ...formRest } = this.form;
@@ -1481,6 +1845,7 @@ function eventForm() {
         virtual_platform: this.form.virtual_platform || null,
         password:         this.form.password         || null,
         extras,
+        section_order: this.sectionOrder.map(s => ({ key: s.key, visible: s.visible })),
       };
 
       try {
@@ -1509,14 +1874,24 @@ function eventForm() {
           }
         }
 
+        /* ticketKeyToId captures every ticket type's real id (existing or
+           freshly created) so the Registration Form sync below can resolve
+           its applies_to_ticket_keys references into real ticket_type_ids. */
+        const ticketKeyToId = {};
+        for (const tt of this.tickets) {
+          if (tt.id) ticketKeyToId[tt._key] = tt.id;
+        }
+
         /* create ticket types in create mode */
         if (!isEdit && !this.isFree && this.tickets.length>0) {
           for (const tt of this.tickets) {
             const {_key,...body}=tt;
-            await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/ticket-types`,{
+            const res = await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/ticket-types`,{
               method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
               body: JSON.stringify({...body, price: Number(body.price||0)}),
             });
+            const resData = await res.json();
+            if (resData.id) ticketKeyToId[_key] = resData.id;
           }
         }
 
@@ -1531,11 +1906,143 @@ function eventForm() {
           }
           for (const tt of this.tickets.filter(t=>!t.id)) {
             const {_key,...body}=tt;
-            await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/ticket-types`,{
+            const res = await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/ticket-types`,{
               method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
               body: JSON.stringify({...body, price: Number(body.price||0)}),
             });
+            const resData = await res.json();
+            if (resData.id) ticketKeyToId[_key] = resData.id;
           }
+        }
+
+        /* sync Registration Form fields: delete removed, add new, persist
+           drag-and-drop order and ticket-type scoping */
+        {
+          if (isEdit) {
+            const existingIds = new Set(existingFormFields.map(f=>f.id));
+            const currentIds  = new Set(this.formFields.filter(f=>f.id).map(f=>f.id));
+            for (const id of existingIds) {
+              if (!currentIds.has(id)) {
+                await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/form-fields/${id}`,{method:'DELETE',credentials:'include'});
+              }
+            }
+          }
+          for (let idx = 0; idx < this.formFields.length; idx++) {
+            const f = this.formFields[idx];
+            const applies_to_ticket_type_ids = f.applies_to_ticket_keys.map(key => ticketKeyToId[key]).filter(Boolean);
+            const body = {
+              label: f.label, field_type: f.field_type, is_required: f.is_required,
+              options: ['dropdown','multi_select'].includes(f.field_type) ? f.options : null,
+              applies_to_ticket_type_ids: applies_to_ticket_type_ids.length ? applies_to_ticket_type_ids : null,
+              sort_order: idx,
+            };
+            if (f.id) {
+              await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/form-fields/${f.id}`,{
+                method:'PATCH', headers:{'Content-Type':'application/json'}, credentials:'include',
+                body: JSON.stringify(body),
+              });
+            } else {
+              await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/form-fields`,{
+                method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+                body: JSON.stringify(body),
+              });
+            }
+          }
+        }
+
+        /* sync People roster: delete removed links, add newly-typed people.
+           keyToSpeakerId captures every person's real speaker_id (existing or
+           freshly created) so the Agenda sync below can resolve its
+           speaker_keys references into real speaker_ids. */
+        const keyToSpeakerId = {};
+        {
+          const roleOf = { speakers:'speaker', panelists:'panelist', moderators:'moderator', judges:'judge', organizers:'organizer' };
+          const currentPeople = Object.entries(this.people).flatMap(([tab, list]) =>
+            list.map((p, idx) => ({ ...p, role_type: roleOf[tab], sort_order: idx })));
+
+          for (const p of currentPeople) {
+            if (p.speaker_id) keyToSpeakerId[p._key] = p.speaker_id;
+          }
+
+          if (isEdit) {
+            const existingIds = new Set(existingSpeakers.map(s=>s.id));
+            const currentIds  = new Set(currentPeople.filter(p=>p.id).map(p=>p.id));
+            for (const id of existingIds) {
+              if (!currentIds.has(id)) {
+                await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/speakers/${id}`,{method:'DELETE',credentials:'include'});
+              }
+            }
+          }
+          for (const p of currentPeople.filter(p=>!p.id)) {
+            const { _key, id, ...body } = p;
+            const res = await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/speakers`,{
+              method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+              body: JSON.stringify(body),
+            });
+            const resData = await res.json();
+            if (resData.success) keyToSpeakerId[_key] = resData.data.speaker_id;
+          }
+        }
+
+        /* sync agenda sessions: delete removed, add new, persist drag-and-drop order */
+        {
+          const datePart = (this.form.start_datetime || '').split('T')[0];
+          const toIso = (date, hhmm) => hhmm ? new Date(`${date}T${hhmm}:00`).toISOString() : null;
+
+          if (isEdit) {
+            const existingIds = new Set(existingSessions.map(s=>s.id));
+            const currentIds  = new Set(this.agenda.filter(a=>a.id).map(a=>a.id));
+            for (const id of existingIds) {
+              if (!currentIds.has(id)) {
+                await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/sessions/${id}`,{method:'DELETE',credentials:'include'});
+              }
+            }
+          }
+
+          for (let idx = 0; idx < this.agenda.length; idx++) {
+            const item = this.agenda[idx];
+            const speaker_ids = item.speaker_keys.map(key => keyToSpeakerId[key]).filter(Boolean);
+            const start = toIso(datePart, item.time);
+            if (!start) continue;
+            // default a 30-minute slot when no end time was given, since a
+            // session must have end > start
+            const end = toIso(datePart, item.end_time) || new Date(new Date(start).getTime() + 30*60000).toISOString();
+            if (item.id) {
+              await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/sessions/${item.id}`,{
+                method:'PATCH', headers:{'Content-Type':'application/json'}, credentials:'include',
+                body: JSON.stringify({
+                  title:item.title, session_type:item.session_type, track:item.track||null,
+                  speaker_ids, start_datetime:start, end_datetime:end, sort_order:idx,
+                }),
+              });
+            } else {
+              await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/sessions`,{
+                method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+                body: JSON.stringify({
+                  title:item.title, session_type:item.session_type, track:item.track||null,
+                  speaker_ids, start_datetime:start, end_datetime:end, sort_order:idx,
+                }),
+              });
+            }
+          }
+        }
+
+        /* sync partners/sponsors: delete removed, add new */
+        if (isEdit) {
+          const existingIds = new Set(existingSponsors.map(s=>s.id));
+          const currentIds  = new Set(this.partners.filter(p=>p.id).map(p=>p.id));
+          for (const id of existingIds) {
+            if (!currentIds.has(id)) {
+              await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/sponsors/${id}`,{method:'DELETE',credentials:'include'});
+            }
+          }
+        }
+        for (const p of this.partners.filter(p=>!p.id)) {
+          const { _key, id, ...body } = p;
+          await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/sponsors`,{
+            method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
+            body: JSON.stringify(body),
+          });
         }
 
         if (isPublish) {

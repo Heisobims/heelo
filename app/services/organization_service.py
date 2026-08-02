@@ -119,7 +119,10 @@ async def update_organization(
     org: Organization,
     data: OrgUpdateRequest,
 ) -> Organization:
-    update_data = data.model_dump(exclude_none=True)
+    # exclude_unset (not exclude_none): the settings page always submits the
+    # whole form, including explicit nulls for fields the organizer cleared —
+    # exclude_none would silently ignore those clears and leave stale values.
+    update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(org, field, value)
     logger.info("org.updated", org_id=str(org.id))
@@ -217,8 +220,8 @@ async def invite_member(
     inviter: User,
     email: str,
     role: str,
-) -> str:
-    """Create pending membership + send invite email. Returns the invite token."""
+) -> OrganizationMember:
+    """Create pending membership + send invite email. Returns the new membership row."""
     email = email.lower().strip()
 
     # Check if already a member
@@ -265,12 +268,12 @@ async def invite_member(
     invite_url = f"{settings.FRONTEND_URL}/accept-invite/{token}"
 
     try:
-        send_team_invite_email(email, inviter.full_name, org.name, invite_url)
+        send_team_invite_email(email, inviter.full_name, org.name, invite_url, org.brand_color)
     except Exception as exc:
         logger.error("org.invite_email_failed", exc=str(exc), email=email)
 
     logger.info("org.member_invited", org_id=str(org.id), email=email, role=role)
-    return token
+    return member
 
 
 async def accept_invite(
@@ -330,23 +333,25 @@ async def accept_invite(
 async def remove_member(
     db: AsyncSession,
     org: Organization,
-    user_id_to_remove: uuid.UUID,
+    member_id: uuid.UUID,
     requesting_user_id: uuid.UUID,
 ) -> None:
-    if user_id_to_remove == org.owner_id:
-        raise ValueError("Cannot remove the organization owner.")
-
+    """Remove a member (or cancel a pending invite) by its membership row id —
+    not user_id, since pending invites have no user_id yet."""
     member = await db.scalar(
         select(OrganizationMember).where(
+            OrganizationMember.id == member_id,
             OrganizationMember.org_id == org.id,
-            OrganizationMember.user_id == user_id_to_remove,
         )
     )
     if not member:
         raise ValueError("Member not found.")
+    if member.user_id and member.user_id == org.owner_id:
+        raise ValueError("Cannot remove the organization owner.")
 
     await db.delete(member)
-    logger.info("org.member_removed", org_id=str(org.id), removed=str(user_id_to_remove))
+    await db.flush()
+    logger.info("org.member_removed", org_id=str(org.id), removed=str(member_id))
 
 
 async def update_member_role(
@@ -409,7 +414,7 @@ async def get_onboarding_state(db: AsyncSession, org_id: uuid.UUID) -> Onboardin
 
 
 async def get_org_metrics(db: AsyncSession, org_id: uuid.UUID) -> dict:
-    from app.models.ticketing import Order, Registration
+    from app.models.ticketing import REVENUE_STATUSES, Order, Registration
 
     total_events = (
         await db.scalar(
@@ -432,11 +437,11 @@ async def get_org_metrics(db: AsyncSession, org_id: uuid.UUID) -> dict:
 
     total_revenue_row = (
         await db.scalar(
-            select(func.coalesce(func.sum(Order.net_amount), 0))
+            select(func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0))
             .join(Event, Event.id == Order.event_id)
             .where(
                 Event.org_id == org_id,
-                Order.payment_status == "paid",
+                Order.payment_status.in_(REVENUE_STATUSES),
             )
         )
         or 0
@@ -451,18 +456,18 @@ async def get_org_metrics(db: AsyncSession, org_id: uuid.UUID) -> dict:
 
 async def get_org_finance_summary(db: AsyncSession, org_id: uuid.UUID) -> dict:
     """Revenue totals, per-event breakdown, and recent paid orders for the Finance page."""
-    from app.models.ticketing import Order
+    from app.models.ticketing import REVENUE_STATUSES, Order
 
     totals_row = (
         await db.execute(
             select(
-                func.coalesce(func.sum(Order.total_amount), 0),
-                func.coalesce(func.sum(Order.net_amount), 0),
+                func.coalesce(func.sum(Order.total_amount - Order.refunded_amount), 0),
+                func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0),
                 func.coalesce(func.sum(Order.platform_fee), 0),
                 func.count(Order.id),
             )
             .join(Event, Event.id == Order.event_id)
-            .where(Event.org_id == org_id, Order.payment_status == "paid")
+            .where(Event.org_id == org_id, Order.payment_status.in_(REVENUE_STATUSES))
         )
     ).one()
     gross, net, fees, paid_order_count = totals_row
@@ -473,13 +478,13 @@ async def get_org_finance_summary(db: AsyncSession, org_id: uuid.UUID) -> dict:
                 Event.id,
                 Event.title,
                 Event.slug,
-                func.coalesce(func.sum(Order.net_amount), 0),
+                func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0),
                 func.count(Order.id),
             )
             .join(Order, Order.event_id == Event.id)
-            .where(Event.org_id == org_id, Order.payment_status == "paid")
+            .where(Event.org_id == org_id, Order.payment_status.in_(REVENUE_STATUSES))
             .group_by(Event.id, Event.title, Event.slug)
-            .order_by(func.sum(Order.net_amount).desc())
+            .order_by(func.sum(Order.net_amount - Order.refunded_amount).desc())
         )
     ).all()
     by_event = [
@@ -499,7 +504,7 @@ async def get_org_finance_summary(db: AsyncSession, org_id: uuid.UUID) -> dict:
         await db.scalars(
             select(Order)
             .join(Event, Event.id == Order.event_id)
-            .where(Event.org_id == org_id, Order.payment_status == "paid")
+            .where(Event.org_id == org_id, Order.payment_status.in_(REVENUE_STATUSES))
             .order_by(Order.created_at.desc())
             .limit(20)
             .options(selectinload(Order.event))

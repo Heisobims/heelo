@@ -97,6 +97,27 @@ async def set_role(user_id: str, body: RoleIn, db: DBSession, _: AdminUser):
     return {"success": True, "data": {"id": str(user.id), "role": user.role}}
 
 
+# ── Vendors / venues ────────────────────────────────────────────────────────
+
+
+@router_admin.post("/vendors/{vendor_id}/suspend")
+async def suspend_vendor(vendor_id: str, db: DBSession, _: AdminUser):
+    try:
+        vendor = await adm_svc.suspend_vendor(db, uuid.UUID(vendor_id))
+    except ValueError as e:
+        raise HTTPException(404, str(e)) from e
+    return {"success": True, "data": {"id": str(vendor.id), "status": vendor.status}}
+
+
+@router_admin.post("/vendors/{vendor_id}/reinstate")
+async def reinstate_vendor(vendor_id: str, db: DBSession, _: AdminUser):
+    try:
+        vendor = await adm_svc.reinstate_vendor(db, uuid.UUID(vendor_id))
+    except ValueError as e:
+        raise HTTPException(404, str(e)) from e
+    return {"success": True, "data": {"id": str(vendor.id), "status": vendor.status}}
+
+
 # ── Broadcasts (platform-wide promotional email) ──────────────────────────────
 
 _VALID_AUDIENCES = {"all", "organizer", "attendee", "vendor", "admin"}

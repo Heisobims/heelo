@@ -2,31 +2,19 @@
 {% block title %}Create your account — Heelo{% endblock %}
 
 {% block body %}
-<div class="auth-split">
+<div class="auth-centered">
+  <div class="auth-centered-inner">
 
-  <!-- ── Left: brand panel ──────────────────────────────────────────── -->
-  <div class="auth-split-left">
-    <a href="/" class="logo">heelo</a>
+    <a href="/" style="font-family:var(--font-serif); font-size:22px; font-weight:700; color:var(--text-primary); display:block; margin-bottom:48px;">heelo</a>
 
-    <div>
-      <p class="hero-text">Every great event starts with heelo.</p>
-      <p class="hero-sub">Create, sell tickets, check in attendees, and grow your community — all in one place.</p>
+    <div class="step-indicator" style="justify-content:center;">
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
     </div>
 
-  </div>
-
-  <!-- ── Right: registration form ──────────────────────────────────── -->
-  <div class="auth-split-right">
-    <div class="auth-split-right-inner">
-
-      <div class="step-indicator">
-        <div class="step-dot active"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-      </div>
-
-      <h1 class="h1" style="margin-bottom:6px;">Create your account</h1>
-      <p class="text-secondary small" style="margin-bottom:32px;">Already have one? <a href="/login" style="color:var(--text-primary); text-decoration:underline; text-underline-offset:3px;">Sign in</a></p>
+    <h1 class="h1" style="margin-bottom:6px;">Create your account</h1>
+    <p class="text-secondary small" style="margin-bottom:32px;">Already have one? <a href="/login" style="color:var(--text-primary); text-decoration:underline; text-underline-offset:3px;">Sign in</a></p>
 
       <div id="reg-error" class="alert alert-danger mb-4" style="display:none;"></div>
 

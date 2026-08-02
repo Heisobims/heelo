@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import structlog
 from fastapi import HTTPException
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -22,6 +22,7 @@ from app.models.ticketing import (
 )
 from app.schemas.ticketing import (
     FormFieldCreateRequest,
+    FormFieldUpdateRequest,
     OrderItemRequest,
     PromoCodeCreateRequest,
     RegisterRequest,
@@ -74,6 +75,37 @@ async def create_ticket_type(
     await db.commit()
     await db.refresh(tt)
     return tt
+
+
+async def copy_ticket_types(
+    db: AsyncSession, source_event_id: uuid.UUID, target_event_id: uuid.UUID
+) -> None:
+    """
+    Copy a source event's ticket type structure onto a target event — used by
+    event duplication, "start from template", and recurring series generation.
+    Copies pricing/tiers/limits only; never sales counters (quantity_sold /
+    quantity_reserved always start at 0 on the new event).
+    """
+    source_tts = await get_ticket_types(db, source_event_id)
+    for tt in source_tts:
+        db.add(
+            TicketType(
+                event_id=target_event_id,
+                name=tt.name,
+                description=tt.description,
+                price=tt.price,
+                currency=tt.currency,
+                quantity=tt.quantity,
+                tier=tt.tier,
+                sale_start=tt.sale_start,
+                sale_end=tt.sale_end,
+                max_per_order=tt.max_per_order,
+                min_per_order=tt.min_per_order,
+                is_visible=tt.is_visible,
+                sort_order=tt.sort_order,
+            )
+        )
+    await db.flush()
 
 
 async def update_ticket_type(
@@ -134,6 +166,20 @@ async def create_form_field(
         ),
     )
     db.add(ff)
+    await db.commit()
+    await db.refresh(ff)
+    return ff
+
+
+async def update_form_field(
+    db: AsyncSession, ff: RegistrationFormField, data: FormFieldUpdateRequest
+) -> RegistrationFormField:
+    updates = data.model_dump(exclude_unset=True)
+    if "applies_to_ticket_type_ids" in updates:
+        ids = updates["applies_to_ticket_type_ids"]
+        updates["applies_to_ticket_type_ids"] = [str(i) for i in ids] if ids else None
+    for field, value in updates.items():
+        setattr(ff, field, value)
     await db.commit()
     await db.refresh(ff)
     return ff
@@ -241,6 +287,46 @@ async def resolve_promo(
 
 # ── Registration ──────────────────────────────────────────────────────────────
 
+# Discount applied to a friend's ticket when they register through another
+# attendee's referral link. A business/pricing decision, not an engineering
+# one — change this constant to adjust the incentive.
+REFERRAL_DISCOUNT_PERCENT = Decimal("0.10")
+
+
+async def _resolve_referral(
+    db: AsyncSession, event_id: uuid.UUID, referral_code: str | None, buyer_email: str
+) -> uuid.UUID | None:
+    """
+    Validate a referral code (the referrer's own registration id, from their
+    shareable link) for this event. Returns the referrer's registration id if
+    valid, else None — an unknown, wrong-event, or self-referral code just
+    silently drops the discount rather than failing the whole registration.
+    """
+    if not referral_code:
+        return None
+    try:
+        referrer_id = uuid.UUID(referral_code)
+    except ValueError:
+        return None
+    referrer = await db.scalar(
+        select(Registration).where(
+            Registration.id == referrer_id,
+            Registration.event_id == event_id,
+            Registration.status.in_(("confirmed", "checked_in")),
+        )
+    )
+    if not referrer or referrer.attendee_email.lower() == buyer_email.lower():
+        return None
+    return referrer_id
+
+
+async def get_referral_stats(db: AsyncSession, registration_id: uuid.UUID) -> dict:
+    """How many orders were referred by this attendee's link."""
+    count = await db.scalar(
+        select(func.count(Order.id)).where(Order.referral_code == str(registration_id))
+    )
+    return {"referred_count": count or 0}
+
 
 async def register(
     db: AsyncSession,
@@ -278,7 +364,18 @@ async def register(
     raw_total = sum(
         Decimal(str(tt_map[item.ticket_type_id].price)) * item.quantity for item in data.items
     )
-    total_amount = max(Decimal("0"), raw_total - discount_amount)
+
+    referrer_id = await _resolve_referral(db, event.id, data.referral_code, data.buyer_email)
+    # Referral and promo-code discounts don't stack — a promo code takes
+    # precedence if the buyer used both; the referral is still recorded for
+    # attribution either way, it just doesn't also discount the order.
+    referral_discount = (
+        (raw_total * REFERRAL_DISCOUNT_PERCENT)
+        if (referrer_id and discount_amount == Decimal("0"))
+        else Decimal("0")
+    )
+
+    total_amount = max(Decimal("0"), raw_total - discount_amount - referral_discount)
     is_free = total_amount == Decimal("0")
     currency = tt_map[data.items[0].ticket_type_id].currency
 
@@ -298,7 +395,8 @@ async def register(
         payment_provider="free" if is_free else None,
         payment_status="paid" if is_free else "pending",
         promo_code_id=promo.id if promo else None,
-        discount_amount=float(discount_amount),
+        discount_amount=float(discount_amount + referral_discount),
+        referral_code=str(referrer_id) if referrer_id else None,
         utm_source=data.utm_source,
         utm_medium=data.utm_medium,
         utm_campaign=data.utm_campaign,
@@ -405,6 +503,18 @@ async def register(
     if promo:
         promo.used_count += 1
 
+    # Someone who was on the waitlist and just successfully registered has
+    # claimed their spot — drop them from the queue so they don't get
+    # re-notified or block the position count for people behind them.
+    ticket_type_ids = {item.ticket_type_id for item in data.items}
+    if ticket_type_ids:
+        await db.execute(
+            delete(Waitlist).where(
+                Waitlist.ticket_type_id.in_(ticket_type_ids),
+                Waitlist.email == data.buyer_email.lower(),
+            )
+        )
+
     await db.commit()
 
     loaded = await db.scalar(
@@ -504,6 +614,13 @@ async def cancel_registration(
     if order:
         sibling_statuses = [r.status for r in order.registrations if r.id != reg.id]
         if refunded:
+            order.refunded_amount = float(order.refunded_amount or 0) + float(tt.price)
+            # Reverse our cut on the refunded portion too — the platform shouldn't
+            # keep a fee on money that was given back. Proportional to how the fee
+            # was originally computed (a flat % of gross), not the whole order's fee.
+            fee_reversed = float(tt.price) * float(pay_svc.PLATFORM_FEE_PERCENT)
+            order.platform_fee = max(0.0, float(order.platform_fee or 0) - fee_reversed)
+            order.net_amount = float(order.net_amount or 0) + fee_reversed
             order.payment_status = (
                 "refunded"
                 if all(s in ("cancelled", "refunded") for s in sibling_statuses)
@@ -534,13 +651,17 @@ async def cancel_registration(
             error=str(err),
         )
 
-    await _notify_waitlist_spot_opened(db, tt.id)
+    await notify_next_waitlist_entry(db, tt.id)
 
     return reg
 
 
-async def _notify_waitlist_spot_opened(db: AsyncSession, ticket_type_id: uuid.UUID) -> None:
-    """Offer a just-freed spot to the next un-notified person on the waitlist."""
+async def notify_next_waitlist_entry(
+    db: AsyncSession, ticket_type_id: uuid.UUID
+) -> Waitlist | None:
+    """Offer a just-freed spot to the next un-notified person on the waitlist —
+    called automatically when a registration is cancelled, and available for an
+    organizer to trigger manually (e.g. after raising capacity by hand)."""
     next_wl = await db.scalar(
         select(Waitlist)
         .where(Waitlist.ticket_type_id == ticket_type_id, Waitlist.notified_at.is_(None))
@@ -548,8 +669,9 @@ async def _notify_waitlist_spot_opened(db: AsyncSession, ticket_type_id: uuid.UU
         .limit(1)
     )
     if not next_wl:
-        return
+        return None
 
+    next_wl.notified_at = datetime.now(UTC)
     next_wl.offer_expires_at = datetime.now(UTC) + timedelta(hours=24)
     await db.commit()
 
@@ -571,6 +693,8 @@ async def _notify_waitlist_spot_opened(db: AsyncSession, ticket_type_id: uuid.UU
             waitlist_id=str(next_wl.id),
             error=str(err),
         )
+
+    return next_wl
 
 
 async def list_registrations(
@@ -659,3 +783,42 @@ async def join_waitlist(
     await db.commit()
     await db.refresh(wl)
     return wl
+
+
+async def list_waitlist(db: AsyncSession, event_id: uuid.UUID) -> list[Waitlist]:
+    stmt = (
+        select(Waitlist)
+        .where(Waitlist.event_id == event_id)
+        .options(selectinload(Waitlist.ticket_type))
+        .order_by(Waitlist.ticket_type_id, Waitlist.position)
+    )
+    result = await db.scalars(stmt)
+    return list(result.all())
+
+
+async def get_waitlist_entry(
+    db: AsyncSession, event_id: uuid.UUID, waitlist_id: uuid.UUID
+) -> Waitlist:
+    entry = await db.scalar(
+        select(Waitlist).where(Waitlist.id == waitlist_id, Waitlist.event_id == event_id)
+    )
+    if not entry:
+        raise HTTPException(404, "Waitlist entry not found.")
+    return entry
+
+
+async def remove_from_waitlist(db: AsyncSession, entry: Waitlist) -> None:
+    """Remove a person from the waitlist and close the gap in `position` for
+    everyone behind them on the same ticket type's queue."""
+    ticket_type_id = entry.ticket_type_id
+    removed_position = entry.position
+    await db.delete(entry)
+    await db.execute(
+        update(Waitlist)
+        .where(
+            Waitlist.ticket_type_id == ticket_type_id,
+            Waitlist.position > removed_position,
+        )
+        .values(position=Waitlist.position - 1)
+    )
+    await db.commit()

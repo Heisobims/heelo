@@ -25,13 +25,18 @@ async def test_create_org_requires_auth(client: AsyncClient):
     assert resp.status_code == 401
 
 
-async def test_create_org_duplicate_slug_returns_409(client: AsyncClient, org, user_headers):
+async def test_create_org_with_colliding_name_gets_auto_deduped_slug(
+    client: AsyncClient, org, user_headers
+):
+    # Slugs are derived server-side from `name` and auto-deduplicated — there's no
+    # client-supplied slug to collide on, so a same-named org just gets a distinct slug.
     resp = await client.post(
         "/api/v1/organizations",
-        json={"name": "Other Org", "slug": org.slug},
+        json={"name": org.name},
         headers=user_headers,
     )
-    assert resp.status_code == 409
+    assert resp.status_code == 201
+    assert resp.json()["data"]["slug"] != org.slug
 
 
 async def test_get_organization(client: AsyncClient, org, user_headers):
@@ -61,10 +66,68 @@ async def test_update_organization(client: AsyncClient, org, user_headers):
 async def test_invite_team_member(client: AsyncClient, org, other_user, user_headers):
     resp = await client.post(
         f"/api/v1/organizations/{org.slug}/members/invite",
-        json={"email": other_user.email, "role": "staff"},
+        json={"email": other_user.email, "role": "organizer"},
         headers=user_headers,
     )
-    assert resp.status_code in (200, 201)
+    assert resp.status_code == 201
+    member = resp.json()["data"]["member"]
+    assert member["status"] == "invite_pending"
+    # other_user already has an account, so the invite links to it immediately.
+    assert member["user_id"] == str(other_user.id)
+
+
+async def test_cancel_pending_invite_for_unregistered_email(client: AsyncClient, org, user_headers):
+    """Regression test: an invite to someone with no Heelo account yet has no
+    user_id, so cancelling it must be keyed by the membership row's own id —
+    previously the remove endpoint required a user_id and silently no-op'd."""
+    invite_resp = await client.post(
+        f"/api/v1/organizations/{org.slug}/members/invite",
+        json={"email": "not-yet-a-user@example.com", "role": "organizer"},
+        headers=user_headers,
+    )
+    member = invite_resp.json()["data"]["member"]
+    assert member["user_id"] is None
+    member_id = member["id"]
+
+    resp = await client.delete(
+        f"/api/v1/organizations/{org.slug}/members/{member_id}",
+        headers=user_headers,
+    )
+    assert resp.status_code == 204
+
+    list_resp = await client.get(f"/api/v1/organizations/{org.slug}/members", headers=user_headers)
+    assert "not-yet-a-user@example.com" not in [
+        m["invited_email"] for m in list_resp.json()["data"]
+    ]
+
+
+async def test_remove_active_member(client: AsyncClient, db, org, other_user, user_headers):
+    from datetime import UTC, datetime
+
+    from app.models.organization import OrganizationMember
+
+    member = OrganizationMember(
+        org_id=org.id,
+        user_id=other_user.id,
+        role="organizer",
+        invited_at=datetime.now(UTC),
+        accepted_at=datetime.now(UTC),
+        status="active",
+    )
+    db.add(member)
+    await db.commit()
+    await db.refresh(member)
+
+    resp = await client.delete(
+        f"/api/v1/organizations/{org.slug}/members/{member.id}",
+        headers=user_headers,
+    )
+    assert resp.status_code == 204
+
+    list_resp = await client.get(f"/api/v1/organizations/{org.slug}/members", headers=user_headers)
+    assert str(other_user.id) not in [
+        m["user_id"] for m in list_resp.json()["data"] if m["user_id"]
+    ]
 
 
 async def test_list_org_members(client: AsyncClient, org, user_headers):

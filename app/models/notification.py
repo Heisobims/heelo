@@ -31,7 +31,8 @@ class Notification(Base, TimestampMixin):
         index=True,
     )
     # registration_confirmed | order_paid | event_reminder | checkin_complete
-    # campaign_sent | team_invite | connection_request | new_event | refund_issued
+    # campaign_sent | team_invite | connection_request | connection_accepted
+    # direct_message | new_event | refund_issued
     type: Mapped[str] = mapped_column(String(60), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)

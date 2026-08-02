@@ -181,14 +181,22 @@
     </div>
     {% endif %}
 
-    {% if vendor.portfolio_urls %}
+    {% if vendor.portfolio_urls or vendor.portfolio_link %}
     <div class="vd-section">
       <div class="vd-section-title">Portfolio</div>
+      {% if vendor.portfolio_urls %}
       <div class="vd-portfolio">
         {% for img_url in vendor.portfolio_urls %}
         <img src="{{ img_url }}" alt="Portfolio image" loading="lazy">
         {% endfor %}
       </div>
+      {% endif %}
+      {% if vendor.portfolio_link %}
+      <a href="{{ vendor.portfolio_link }}" target="_blank" rel="noopener noreferrer" class="vd-contact-link" style="{% if vendor.portfolio_urls %}margin-top:14px;{% endif %}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        View full portfolio ↗
+      </a>
+      {% endif %}
     </div>
     {% endif %}
 

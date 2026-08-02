@@ -44,7 +44,7 @@
   <tr>
     <td align="center" style="padding-bottom:16px;">
       <a href="{{ register_url }}"
-         style="display:inline-block;background-color:#00FFF3;color:#000000;font-family:system-ui,-apple-system,sans-serif;font-size:16px;font-weight:800;text-decoration:none;padding:16px 36px;border-radius:10px;">
+         style="display:inline-block;background-color:{{ brand_color or '#00FFF3' }};color:{{ brand_color | contrast_text('#000000') }};font-family:system-ui,-apple-system,sans-serif;font-size:16px;font-weight:800;text-decoration:none;padding:16px 36px;border-radius:10px;">
         Claim My Spot →
       </a>
     </td>

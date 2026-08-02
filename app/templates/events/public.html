@@ -8,6 +8,16 @@
 
 {% block head %}
 <meta property="og:type" content="website">
+{% set cyan_text = (org.brand_color | contrast_text('#0A0A0A')) if org and org.brand_color else '#0A0A0A' %}
+{% if org and org.brand_color %}
+<style>
+  :root { --cyan: {{ org.brand_color }}; --cyan-hover: {{ org.brand_color }}; --border-focus: {{ org.brand_color }}; }
+  /* The org's brand color can be dark/saturated (unlike platform cyan, which
+     is always light) — repoint cyan-background buttons at a contrast-safe
+     text color instead of assuming black always reads. */
+  #interested-btn[data-interested="true"] { color: {{ cyan_text }} !important; }
+</style>
+{% endif %}
 <style>
 [x-cloak]{display:none!important}
 body { background: var(--bg-secondary); }
@@ -27,7 +37,8 @@ body { background: var(--bg-secondary); }
 }
 .ev-nav-title {
   font-size: 14px; color: var(--text-muted);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 1; min-width: 0;
 }
 
 /* ── Hero ─────────────────────────────────────────────────────── */
@@ -193,6 +204,18 @@ body { background: var(--bg-secondary); }
   .ev-hero { max-height: 240px; }
   .ev-hero-content { padding: 18px 20px; }
 }
+
+/* The nav's action buttons (Interested/Share/Dashboard, or Sign in/Sign up)
+   don't fit next to the logo + event title on a phone — collapse them to
+   icon-only and tighten the rest instead of overflowing horizontally. */
+@media (max-width: 560px) {
+  .ev-nav { padding: 0 14px; gap: 8px; }
+  .ev-nav-actions { gap: 4px; }
+  .ev-nav-actions .btn-sm { padding: 0 9px; }
+  .ev-nav-btn-label { display: none; }
+  .ev-nav-actions .material-symbols-outlined { margin-right: 0 !important; }
+  .ev-nav-signin { display: none; }
+}
 </style>
 {% endblock %}
 
@@ -204,34 +227,34 @@ body { background: var(--bg-secondary); }
   <span class="material-symbols-outlined" style="color:var(--border-color); font-size:11px; flex-shrink:0;">chevron_right</span>
   <span class="ev-nav-title">{{ event.title }}</span>
   {% if user %}
-  <div style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
+  <div class="ev-nav-actions" style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
     {% if event.status in ('published', 'live') %}
     <button type="button" class="btn btn-secondary btn-sm" id="interested-btn"
       data-slug="{{ event.slug }}" data-interested="{{ 'true' if is_interested else 'false' }}"
       data-logged-in="true"
       onclick="heeloToggleInterestBtn(this)"
-      style="{% if is_interested %}background:var(--cyan); border-color:var(--cyan); color:#000;{% endif %}">
+      style="{% if is_interested %}background:var(--cyan); border-color:var(--cyan); color:{{ cyan_text }};{% endif %}">
       <span class="material-symbols-outlined" id="interested-icon" style="font-size:11px; margin-right:5px;">{{ 'favorite' if is_interested else 'favorite_border' }}</span>
-      <span id="interested-label">{{ 'Interested' if is_interested else "I'm interested" }}</span>
+      <span id="interested-label" class="ev-nav-btn-label">{{ 'Interested' if is_interested else "I'm interested" }}</span>
     </button>
     <button type="button" class="btn btn-secondary btn-sm"
       onclick="navigator.share ? navigator.share({title:'{{ event.title }}',url:window.location.href}) : navigator.clipboard.writeText(window.location.href)">
-      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">share</span>Share
+      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">share</span><span class="ev-nav-btn-label">Share</span>
     </button>
     {% endif %}
     <a href="/dashboard" class="btn btn-secondary btn-sm">
-      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">speed</span>Dashboard
+      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">speed</span><span class="ev-nav-btn-label">Dashboard</span>
     </a>
   </div>
   {% else %}
-  <div style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
+  <div class="ev-nav-actions" style="margin-left:auto; display:flex; align-items:center; gap:8px; flex-shrink:0;">
     {% if event.status in ('published', 'live') %}
     <button type="button" class="btn btn-secondary btn-sm" data-logged-in="false"
       onclick="heeloToggleInterestBtn(this)">
-      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">favorite_border</span>I'm interested
+      <span class="material-symbols-outlined" style="font-size:11px; margin-right:5px;">favorite_border</span><span class="ev-nav-btn-label">I'm interested</span>
     </button>
     {% endif %}
-    <a href="/login" style="font-size:14px; color:var(--text-secondary); text-decoration:none;">Sign in</a>
+    <a href="/login" class="ev-nav-signin" style="font-size:14px; color:var(--text-secondary); text-decoration:none;">Sign in</a>
     <a href="/register" class="btn btn-primary btn-sm">Sign up free</a>
   </div>
   {% endif %}
@@ -281,7 +304,7 @@ async function heeloToggleInterestBtn(btn) {
     btn.dataset.interested = interested ? 'true' : 'false';
     btn.style.background = interested ? 'var(--cyan)' : '';
     btn.style.borderColor = interested ? 'var(--cyan)' : '';
-    btn.style.color = interested ? '#000' : '';
+    btn.style.color = interested ? '{{ cyan_text }}' : '';
     if (icon) icon.textContent = interested ? 'favorite' : 'favorite_border';
     if (label) label.textContent = interested ? 'Interested' : "I'm interested";
   };
@@ -309,7 +332,7 @@ async function heeloToggleInterestBtn(btn) {
   <div class="ev-hero-grad"></div>
   <div class="ev-hero-content">
     <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap;">
-      <span style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; background:rgba(0,255,243,0.18); color:#00FFF3; backdrop-filter:blur(4px); letter-spacing:0.06em;">
+      <span style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; background:rgba(255,255,255,0.15); color:var(--cyan); backdrop-filter:blur(4px); letter-spacing:0.06em;">
         <span class="material-symbols-outlined" style="margin-right:5px; font-size:12px;">{% if event.format == 'virtual' %}videocam{% elif event.format == 'hybrid' %}shuffle{% else %}location_on{% endif %}</span>
         {{ event.format | replace('_', ' ') | upper }}
       </span>
@@ -318,6 +341,9 @@ async function heeloToggleInterestBtn(btn) {
         <span style="width:6px;height:6px;background:#fff;border-radius:50%;animation:pulse 1.2s ease infinite;"></span>
         LIVE NOW
       </span>
+      <a href="/e/{{ event.slug }}/live" style="font-size:11px; font-weight:700; padding:3px 10px; border-radius:100px; background:rgba(255,255,255,0.18); color:#fff; backdrop-filter:blur(4px); text-decoration:none; display:inline-flex; align-items:center; gap:5px;">
+        <span class="material-symbols-outlined" style="font-size:12px;">forum</span> Join Live Q&amp;A
+      </a>
       {% endif %}
     </div>
     <h1 style="font-family:var(--font-serif); font-size:clamp(22px,4vw,42px); font-weight:700; color:#fff; margin:0 0 8px; text-shadow:0 2px 12px rgba(0,0,0,0.5); line-height:1.15;">
@@ -441,7 +467,8 @@ async function heeloToggleInterestBtn(btn) {
 
     {% set extras = event.extras or {} %}
 
-    <!-- ── About ──────────────────────────────────────────────────── -->
+    <!-- ── Reorderable content sections (organizer-controlled order/visibility) ── -->
+    {% macro sec_about() %}
     {% if event.description %}
     <div class="ev-card animate-in animate-in-d1">
       <div class="ev-card-body">
@@ -452,16 +479,18 @@ async function heeloToggleInterestBtn(btn) {
       </div>
     </div>
     {% endif %}
+    {% endmacro %}
 
-    <!-- ── Agenda ─────────────────────────────────────────────────── -->
-    {% if extras.agenda %}
+    {% macro sec_agenda() %}
+    {% set sessions = sessions or [] %}
+    {% if sessions %}
     <div class="ev-card animate-in animate-in-d1">
       <div class="ev-card-body">
         <div class="ev-card-title">
           <span class="material-symbols-outlined">checklist</span> Agenda
-          <span style="font-size:12px; font-weight:500; color:var(--text-muted); margin-left:auto;">{{ extras.agenda | length }} session{{ 's' if extras.agenda | length != 1 }}</span>
+          <span style="font-size:12px; font-weight:500; color:var(--text-muted); margin-left:auto;">{{ sessions | length }} session{{ 's' if sessions | length != 1 }}</span>
         </div>
-        {% for item in extras.agenda %}
+        {% for item in sessions %}
         <div class="agenda-row">
           <div class="agenda-time">
             {{ item.time or '–' }}{% if item.end_time %}<br><span style="opacity:0.6;">{{ item.end_time }}</span>{% endif %}
@@ -469,21 +498,21 @@ async function heeloToggleInterestBtn(btn) {
           <div style="flex:1; min-width:0;">
             <div style="display:flex; align-items:flex-start; gap:0; flex-wrap:wrap;">
               <span class="agenda-dot" style="background:
-                {%- if item.type == 'panel' %}#9333ea
-                {%- elif item.type == 'workshop' %}#3b82f6
-                {%- elif item.type == 'networking' %}#22c55e
-                {%- elif item.type == 'break' %}#f59e0b
-                {%- elif item.type == 'ceremony' %}#ec4899
+                {%- if item.session_type == 'panel' %}#9333ea
+                {%- elif item.session_type == 'workshop' %}#3b82f6
+                {%- elif item.session_type == 'networking' %}#22c55e
+                {%- elif item.session_type == 'break' %}#f59e0b
+                {%- elif item.session_type == 'ceremony' %}#ec4899
                 {%- else %}#009e95{%- endif %};"></span>
               <span style="font-size:14px; font-weight:600; flex:1; min-width:0;">{{ item.title }}</span>
             </div>
             <div style="display:flex; align-items:center; gap:10px; margin-top:4px; flex-wrap:wrap;">
               <span style="font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted); text-transform:capitalize;">
-                {{ (item.type or 'talk').replace('_',' ') }}
+                {{ (item.session_type or 'talk').replace('_',' ') }}
               </span>
-              {% if item.speaker %}
+              {% if item.speaker_names %}
               <span style="font-size:12px; color:var(--text-muted);">
-                <span class="material-symbols-outlined" style="font-size:9px; margin-right:3px;">mic</span>{{ item.speaker }}
+                <span class="material-symbols-outlined" style="font-size:9px; margin-right:3px;">mic</span>{{ item.speaker_names | join(', ') }}
               </span>
               {% endif %}
               {% if item.track %}
@@ -498,14 +527,16 @@ async function heeloToggleInterestBtn(btn) {
       </div>
     </div>
     {% endif %}
+    {% endmacro %}
 
-    <!-- ── People (speakers, panelists, moderators, judges, organizers) ── -->
+    {% macro sec_people() %}
+    {% set speakers = speakers or [] %}
     {% set people_sections = [
-      ('speakers',   'Speakers & Guests',  'mic',              extras.people.speakers   if extras.people is defined else []),
-      ('panelists',  'Panelists',          'forum',            extras.people.panelists  if extras.people is defined else []),
-      ('moderators', 'Moderators',         'gavel',            extras.people.moderators if extras.people is defined else []),
-      ('judges',     'Judges',             'balance',          extras.people.judges     if extras.people is defined else []),
-      ('organizers', 'Organizers',         'business',         extras.people.organizers if extras.people is defined else []),
+      ('speakers',   'Speakers & Guests',  'mic',      speakers | selectattr('role_type', 'equalto', 'speaker')   | list),
+      ('panelists',  'Panelists',          'forum',    speakers | selectattr('role_type', 'equalto', 'panelist')  | list),
+      ('moderators', 'Moderators',         'gavel',    speakers | selectattr('role_type', 'equalto', 'moderator') | list),
+      ('judges',     'Judges',             'balance',  speakers | selectattr('role_type', 'equalto', 'judge')     | list),
+      ('organizers', 'Organizers',         'business', speakers | selectattr('role_type', 'equalto', 'organizer') | list),
     ] %}
     {% for section_id, section_label, section_icon, people_list in people_sections %}
     {% if people_list %}
@@ -516,7 +547,7 @@ async function heeloToggleInterestBtn(btn) {
         </div>
         <div class="people-grid">
           {% for person in people_list %}
-          <div class="person-tile">
+          <a href="/speakers/{{ person.speaker_slug }}" class="person-tile" style="text-decoration:none; color:inherit;">
             <div class="person-pic">
               {% if person.photo_url %}
               <img src="{{ person.photo_url }}" alt="{{ person.name }}">
@@ -533,16 +564,17 @@ async function heeloToggleInterestBtn(btn) {
             {% if person.bio %}
             <div style="font-size:11px; color:var(--text-muted); margin-top:3px; line-height:1.4;">{{ person.bio }}</div>
             {% endif %}
-          </div>
+          </a>
           {% endfor %}
         </div>
       </div>
     </div>
     {% endif %}
     {% endfor %}
+    {% endmacro %}
 
-    <!-- ── Partners & Sponsors ────────────────────────────────────── -->
-    {% set partners = extras.partners if extras.partners else [] %}
+    {% macro sec_partners() %}
+    {% set partners = sponsors or [] %}
     {% if partners %}
     {% set tier_meta = [
       ('platinum', 'Platinum',      '#9333ea'),
@@ -592,43 +624,9 @@ async function heeloToggleInterestBtn(btn) {
       </div>
     </div>
     {% endif %}
+    {% endmacro %}
 
-    <!-- ── People going ──────────────────────────────────────────── -->
-    {% if user and (connectable_attendees or mutuals_going_count > 0) %}
-    <div class="ev-card animate-in animate-in-d2">
-      <div class="ev-card-body">
-        <div class="ev-card-title">
-          <span class="material-symbols-outlined">groups</span> People going
-        </div>
-        {% if mutuals_going_count > 0 %}
-        <p style="font-size:13px; color:var(--cyan-dark, #00b3a9); font-weight:600; margin:-8px 0 14px;">
-          {{ mutuals_going_count }} {{ 'person' if mutuals_going_count == 1 else 'people' }} you know {{ 'is' if mutuals_going_count == 1 else 'are' }} going
-        </p>
-        {% endif %}
-        {% if connectable_attendees %}
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          {% for att_user, att_profile in connectable_attendees %}
-          <div style="display:flex; align-items:center; gap:10px;">
-            <a href="/p/{{ att_user.username }}" style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; text-decoration:none; color:inherit;">
-              <div style="width:36px; height:36px; border-radius:50%; background:var(--cyan); color:#000; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">
-                {% if att_user.avatar_url %}<img src="{{ att_user.avatar_url }}" alt="" style="width:100%; height:100%; object-fit:cover;">{% else %}{{ att_user.full_name[0].upper() }}{% endif %}
-              </div>
-              <div style="min-width:0;">
-                <div style="font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ att_user.full_name }}</div>
-                {% if att_profile.headline %}<div style="font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ att_profile.headline }}</div>{% endif %}
-              </div>
-            </a>
-            <button type="button" class="btn btn-secondary btn-sm" style="flex-shrink:0;"
-              onclick="heeloSendConnectRequest('{{ att_user.id }}', this)">Connect</button>
-          </div>
-          {% endfor %}
-        </div>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- ── Gallery ────────────────────────────────────────────────── -->
+    {% macro sec_gallery() %}
     {% if event.gallery_1_url or event.gallery_2_url %}
     <div class="ev-card animate-in animate-in-d2">
       <div class="ev-card-body">
@@ -655,8 +653,9 @@ async function heeloToggleInterestBtn(btn) {
       </div>
     </div>
     {% endif %}
+    {% endmacro %}
 
-    <!-- ── Discussion ─────────────────────────────────────────────── -->
+    {% macro sec_discussion() %}
     <div class="ev-card animate-in animate-in-d2" x-data="discussion()">
       <div class="ev-card-body">
         <div class="ev-card-title">
@@ -685,7 +684,7 @@ async function heeloToggleInterestBtn(btn) {
                 Cancel
               </button>
               <button type="button" @click="post()" :disabled="!msg.trim() || posting"
-                style="padding:5px 14px; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; background:#00FFF3; color:#000; transition:opacity 0.15s;"
+                style="padding:5px 14px; border:none; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; background:var(--cyan); color:{{ cyan_text }}; transition:opacity 0.15s;"
                 :style="(!msg.trim() || posting) ? 'opacity:0.35; cursor:not-allowed;' : 'opacity:1;'">
                 <span class="material-symbols-outlined" x-text="posting ? 'progress_activity' : 'send'" style="font-size:13px; margin-right:4px;"></span>
                 <span x-text="posting ? 'Posting…' : 'Post'"></span>
@@ -730,6 +729,53 @@ async function heeloToggleInterestBtn(btn) {
         </div>
       </div>
     </div>
+    {% endmacro %}
+
+    {% set section_renderers = {
+      'about': sec_about, 'agenda': sec_agenda, 'people': sec_people,
+      'partners': sec_partners, 'gallery': sec_gallery, 'discussion': sec_discussion,
+    } %}
+    {% set sections = sections or [] %}
+    {% for s in sections %}
+    {% if s.visible and s.key in section_renderers %}
+    {{ section_renderers[s.key]() }}
+    {% endif %}
+    {% endfor %}
+
+    <!-- ── People going ──────────────────────────────────────────── -->
+    {% if user and (connectable_attendees or mutuals_going_count > 0) %}
+    <div class="ev-card animate-in animate-in-d2">
+      <div class="ev-card-body">
+        <div class="ev-card-title">
+          <span class="material-symbols-outlined">groups</span> People going
+        </div>
+        {% if mutuals_going_count > 0 %}
+        <p style="font-size:13px; color:var(--cyan-dark, #00b3a9); font-weight:600; margin:-8px 0 14px;">
+          {{ mutuals_going_count }} {{ 'person' if mutuals_going_count == 1 else 'people' }} you know {{ 'is' if mutuals_going_count == 1 else 'are' }} going
+        </p>
+        {% endif %}
+        {% if connectable_attendees %}
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          {% for att_user, att_profile in connectable_attendees %}
+          <div style="display:flex; align-items:center; gap:10px;">
+            <a href="/p/{{ att_user.username }}" style="display:flex; align-items:center; gap:10px; flex:1; min-width:0; text-decoration:none; color:inherit;">
+              <div style="width:36px; height:36px; border-radius:50%; background:var(--cyan); color:#000; font-size:14px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden;">
+                {% if att_user.avatar_url %}<img src="{{ att_user.avatar_url }}" alt="" style="width:100%; height:100%; object-fit:cover;">{% else %}{{ att_user.full_name[0].upper() }}{% endif %}
+              </div>
+              <div style="min-width:0;">
+                <div style="font-size:13.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ att_user.full_name }}</div>
+                {% if att_profile.headline %}<div style="font-size:12px; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ att_profile.headline }}</div>{% endif %}
+              </div>
+            </a>
+            <button type="button" class="btn btn-secondary btn-sm" style="flex-shrink:0;"
+              onclick="heeloSendConnectRequest('{{ att_user.id }}', this)">Connect</button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
 
     <!-- ── Share ───────────────────────────────────────────────────── -->
     <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;" x-data="{ copied: false }">
@@ -937,7 +983,7 @@ async function heeloToggleInterestBtn(btn) {
         <!-- Add to calendar -->
         {% if event.status in ('published', 'live') and event.start_datetime %}
         <div style="margin-top:12px; text-align:center;">
-          <a href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ event.title | urlencode }}&dates={{ event.start_datetime.strftime('%Y%m%dT%H%M%S') }}/{{ event.end_datetime.strftime('%Y%m%dT%H%M%S') }}&details={{ event.description[:200] | urlencode if event.description else '' }}&location={{ (event.venue_name + ', ' + event.venue_city) | urlencode if event.venue_city else '' }}"
+          <a href="{{ gcal_url }}"
             target="_blank"
             style="font-size:12px; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:5px;"
             onmouseover="this.style.color='var(--text-secondary)'" onmouseout="this.style.color='var(--text-muted)'">

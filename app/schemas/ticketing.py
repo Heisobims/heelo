@@ -116,6 +116,7 @@ class FormFieldUpdateRequest(BaseModel):
     is_required: bool | None = None
     options: list[str] | None = None
     sort_order: int | None = None
+    applies_to_ticket_type_ids: list[uuid.UUID] | None = None
 
 
 class FormFieldOut(BaseModel):
@@ -127,6 +128,7 @@ class FormFieldOut(BaseModel):
     is_required: bool
     options: list[str] | None
     sort_order: int
+    applies_to_ticket_type_ids: list[uuid.UUID] | None = None
 
 
 class PromoCodeCreateRequest(BaseModel):
@@ -198,6 +200,7 @@ class RegisterRequest(BaseModel):
     utm_source: str | None = None
     utm_medium: str | None = None
     utm_campaign: str | None = None
+    referral_code: str | None = None
 
 
 class RegistrationOut(BaseModel):
@@ -236,3 +239,16 @@ class WaitlistJoinRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
     email: EmailStr
     phone: str | None = Field(None, max_length=30, description="Optional — for WhatsApp notice")
+
+
+class WaitlistOut(BaseModel):
+    id: uuid.UUID
+    ticket_type_id: uuid.UUID
+    ticket_type_name: str | None
+    name: str
+    email: str
+    phone: str | None
+    position: int
+    notified_at: datetime | None
+    offer_expires_at: datetime | None
+    created_at: datetime

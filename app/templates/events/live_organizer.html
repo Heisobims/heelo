@@ -1,0 +1,214 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Live — {{ event.title }} — Heelo{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+  .lo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .lo-title { font-size: 18px; font-weight: 700; }
+  .lo-card { background: #fff; border: 1px solid var(--border-light); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .lo-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 14px; }
+
+  .lo-poll-row { border: 1.5px solid var(--border-light); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .lo-poll-q { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .lo-poll-status { display: inline-flex; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 100px; text-transform: uppercase; margin-left: 8px; }
+  .lo-status-draft { background: var(--bg-secondary); color: var(--text-muted); }
+  .lo-status-open { background: rgba(34,197,94,0.12); color: #15803d; }
+  .lo-status-closed { background: rgba(0,0,0,0.06); color: var(--text-secondary); }
+  .lo-option-bar { display: flex; align-items: center; gap: 8px; font-size: 12.5px; margin-bottom: 4px; }
+  .lo-option-bar-fill { height: 6px; border-radius: 3px; background: var(--cyan); }
+  .lo-option-bar-track { flex: 1; height: 6px; border-radius: 3px; background: var(--bg-secondary); overflow: hidden; }
+  .lo-actions { display: flex; gap: 6px; margin-top: 10px; }
+
+  .lo-q-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+  .lo-q-row:last-child { border-bottom: none; }
+  .lo-q-body { font-size: 13.5px; flex: 1; }
+  .lo-q-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div style="max-width:780px; margin:0 auto; padding:28px 20px;" x-data="liveOrganizer()" x-init="load()">
+  <div class="lo-header">
+    <div class="lo-title">Live — {{ event.title }}</div>
+    <a class="btn btn-secondary btn-sm" href="/e/{{ event.slug }}/live" target="_blank">
+      <span class="material-symbols-outlined" style="font-size:15px;">open_in_new</span> Open audience view
+    </a>
+  </div>
+
+  <!-- Livestream -->
+  <div class="lo-card">
+    <div class="lo-section-title">Livestream</div>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">
+      Paste a YouTube/Vimeo link, an HLS (.m3u8) URL, or any embeddable stream link from the tool you're already using (StreamYard, Twitch, Restream, etc.). It'll show up as a player on the audience view above the poll/Q&amp;A.
+    </p>
+    <div style="display:flex; gap:8px;">
+      <input type="url" class="form-input" x-model="livestreamUrl" placeholder="https://youtube.com/watch?v=... or https://stream.example.com/live.m3u8">
+      <button type="button" class="btn btn-primary btn-sm" @click="saveLivestreamUrl()" :disabled="savingLivestream">
+        <span x-text="savingLivestream ? 'Saving…' : 'Save'"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Polls -->
+  <div class="lo-card">
+    <div class="lo-section-title">Polls</div>
+
+    <template x-for="poll in polls" :key="poll.id">
+      <div class="lo-poll-row">
+        <div class="lo-poll-q">
+          <span x-text="poll.question"></span>
+          <span class="lo-poll-status" :class="'lo-status-' + poll.status" x-text="poll.status"></span>
+        </div>
+        <template x-for="opt in poll.options" :key="opt.id">
+          <div class="lo-option-bar">
+            <span style="width:120px; flex-shrink:0;" x-text="opt.text"></span>
+            <div class="lo-option-bar-track"><div class="lo-option-bar-fill" :style="'width:' + pct(poll, opt) + '%'"></div></div>
+            <span style="width:70px; text-align:right; color:var(--text-muted);" x-text="opt.vote_count + ' (' + pct(poll, opt) + '%)'"></span>
+          </div>
+        </template>
+        <div class="lo-actions">
+          <button type="button" class="btn btn-secondary btn-sm" x-show="poll.status !== 'open'" @click="openPoll(poll.id)">Open for voting</button>
+          <button type="button" class="btn btn-secondary btn-sm" x-show="poll.status === 'open'" @click="closePoll(poll.id)">Close voting</button>
+          <button type="button" class="btn btn-secondary btn-sm" style="color:#D0021B;" @click="deletePoll(poll.id)">Delete</button>
+        </div>
+      </div>
+    </template>
+    <div x-show="polls.length === 0" style="font-size:13px; color:var(--text-muted); padding:8px 0;">No polls yet.</div>
+
+    <!-- New poll form -->
+    <div x-show="addingPoll" class="inline-form" style="margin-top:12px;">
+      <div class="form-group">
+        <label class="form-label" style="font-size:12px;">Question</label>
+        <input type="text" class="form-input" x-model="draft.question" placeholder="e.g. Which topic should we cover next?">
+      </div>
+      <template x-for="(opt, i) in draft.options" :key="i">
+        <div class="form-group" style="display:flex; gap:8px; align-items:center;">
+          <input type="text" class="form-input" x-model="draft.options[i]" :placeholder="'Option ' + (i + 1)">
+          <button type="button" class="btn btn-secondary btn-sm" @click="draft.options.splice(i,1)" x-show="draft.options.length > 2">✕</button>
+        </div>
+      </template>
+      <button type="button" class="btn btn-secondary btn-sm" @click="draft.options.push('')" style="margin-bottom:10px;">+ Add option</button>
+      <div style="display:flex; gap:8px; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary btn-sm" @click="addingPoll=false">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" @click="createPoll()">Create poll</button>
+      </div>
+    </div>
+    <button type="button" class="add-btn" x-show="!addingPoll" @click="addingPoll=true; draft={question:'', options:['','']}">
+      <span class="material-symbols-outlined">add</span> New poll
+    </button>
+  </div>
+
+  <!-- Q&A -->
+  <div class="lo-card">
+    <div class="lo-section-title">Q&amp;A</div>
+    <template x-for="q in questions" :key="q.id">
+      <div class="lo-q-row" :style="q.is_hidden ? 'opacity:0.4;' : ''">
+        <div style="flex:1;">
+          <div class="lo-q-body" x-text="q.body"></div>
+          <div class="lo-q-meta">
+            <span x-text="q.author_name || 'Anonymous'"></span> · <span x-text="q.upvotes"></span> upvotes
+            <span x-show="q.is_answered" style="color:#15803d;"> · Answered</span>
+            <span x-show="q.is_hidden"> · Hidden</span>
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <button type="button" class="btn btn-secondary btn-sm" @click="toggleAnswered(q)" x-text="q.is_answered ? 'Unmark' : 'Mark answered'"></button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="toggleHidden(q)" x-text="q.is_hidden ? 'Unhide' : 'Hide'"></button>
+          <button type="button" class="btn btn-secondary btn-sm" style="color:#D0021B;" @click="deleteQuestion(q.id)">Delete</button>
+        </div>
+      </div>
+    </template>
+    <div x-show="questions.length === 0" style="font-size:13px; color:var(--text-muted); padding:8px 0;">No questions yet.</div>
+  </div>
+</div>
+
+<script>
+function liveOrganizer() {
+  const orgSlug = {{ org.slug | tojson }};
+  const eventId = {{ event.id | string | tojson }};
+
+  return {
+    polls: [],
+    questions: [],
+    addingPoll: false,
+    draft: { question: '', options: ['', ''] },
+    _timer: null,
+    livestreamUrl: {{ (event.livestream_url or '') | tojson }},
+    savingLivestream: false,
+
+    async saveLivestreamUrl() {
+      this.savingLivestream = true;
+      try {
+        await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+          body: JSON.stringify({ livestream_url: this.livestreamUrl.trim() || null }),
+        });
+      } finally { this.savingLivestream = false; }
+    },
+
+    pct(poll, opt) {
+      const total = poll.options.reduce((s, o) => s + o.vote_count, 0);
+      return total > 0 ? Math.round((opt.vote_count / total) * 100) : 0;
+    },
+
+    async load() {
+      const [pollsRes, qRes] = await Promise.all([
+        fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/polls`, { credentials: 'include' }),
+        fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/questions`, { credentials: 'include' }),
+      ]);
+      const pollsJ = await pollsRes.json();
+      const qJ = await qRes.json();
+      if (pollsJ.success) this.polls = pollsJ.data;
+      if (qJ.success) this.questions = qJ.data;
+      if (!this._timer) this._timer = setInterval(() => this.load(), 4000);
+    },
+
+    async createPoll() {
+      const options = this.draft.options.map(o => o.trim()).filter(Boolean);
+      if (!this.draft.question.trim() || options.length < 2) return;
+      await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/polls`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ question: this.draft.question.trim(), options }),
+      });
+      this.addingPoll = false;
+      await this.load();
+    },
+
+    async openPoll(id) {
+      await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/polls/${id}/open`, { method: 'POST', credentials: 'include' });
+      await this.load();
+    },
+    async closePoll(id) {
+      await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/polls/${id}/close`, { method: 'POST', credentials: 'include' });
+      await this.load();
+    },
+    async deletePoll(id) {
+      if (!confirm('Delete this poll?')) return;
+      await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/polls/${id}`, { method: 'DELETE', credentials: 'include' });
+      await this.load();
+    },
+
+    async toggleAnswered(q) {
+      await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/questions/${q.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ is_answered: !q.is_answered }),
+      });
+      await this.load();
+    },
+    async toggleHidden(q) {
+      await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/questions/${q.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ is_hidden: !q.is_hidden }),
+      });
+      await this.load();
+    },
+    async deleteQuestion(id) {
+      if (!confirm('Delete this question?')) return;
+      await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/live/questions/${id}`, { method: 'DELETE', credentials: 'include' });
+      await this.load();
+    },
+  };
+}
+</script>
+{% endblock %}

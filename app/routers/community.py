@@ -1,15 +1,20 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.dependencies import CurrentUser, CurrentUserID, DBSession, OrgAccess
+from app.permissions import Permission, require_permission
 from app.services import inbox_service as inbox_svc
 
 router_community = APIRouter(
     prefix="/api/v1/organizations/{slug}",
     tags=["community"],
 )
+
+InboxReplyAccess = Annotated[tuple, Depends(require_permission(Permission.INBOX_REPLY))]
 
 
 # ── WhatsApp inbox API ────────────────────────────────────────────────────────
@@ -25,12 +30,10 @@ async def send_inbox_reply(
     phone: str,
     body: ReplyRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: InboxReplyAccess,
     current_user: CurrentUser,
 ):
     org, role, _ = org_access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     if not body.body.strip():
         raise HTTPException(422, "Reply body cannot be empty.")
 
@@ -93,7 +96,6 @@ class CommentRequest(BaseModel):
 
 @router_comments.get("/{slug}/comments")
 async def list_comments(slug: str, db: DBSession, page: int = 1):
-
     from sqlalchemy import desc, func, select
 
     from app.models.event import Event, EventComment

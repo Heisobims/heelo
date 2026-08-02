@@ -83,6 +83,35 @@ class Connection(Base, TimestampMixin):
         return f"<Connection {self.user_id} → {self.connected_user_id} {self.status}>"
 
 
+class DirectMessage(Base, TimestampMixin):
+    """A single message in an attendee-to-attendee DM thread. There's no
+    separate conversation/thread table — a thread is just every message
+    between two user ids, the same lightweight approach WhatsAppMessage
+    uses (thread key = phone number there, = the other user's id here)."""
+
+    __tablename__ = "direct_messages"
+    __table_args__ = (
+        Index("ix_direct_messages_sender", "sender_id"),
+        Index("ix_direct_messages_recipient_read", "recipient_id", "is_read"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    sender_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    recipient_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    sender: Mapped[User] = relationship("User", foreign_keys=[sender_id])
+    recipient: Mapped[User] = relationship("User", foreign_keys=[recipient_id])
+
+    def __repr__(self) -> str:
+        return f"<DirectMessage {self.sender_id} → {self.recipient_id}>"
+
+
 class OrganizerFollower(Base, TimestampMixin):
     """A user following an organization to receive new event notifications."""
 

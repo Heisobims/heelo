@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Rate {{ event.title }} — Heelo{% endblock %}
+
+{% block head %}
+<style>
+  .fb-star { cursor: pointer; color: var(--border); transition: color 0.12s, transform 0.08s; }
+  .fb-star:hover, .fb-star:hover ~ .fb-star { color: var(--border); }
+  .fb-stars:hover .fb-star { color: var(--border); }
+  .fb-star.filled { color: #FFB300; }
+  .fb-star:hover { transform: scale(1.12); }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="auth-centered">
+  <div class="auth-centered-inner" x-data="feedbackForm()">
+
+    <a href="/" style="font-family:var(--font-serif); font-size:22px; font-weight:700; color:var(--text-primary); display:block; margin-bottom:40px;">heelo</a>
+
+    <div x-show="!submitted">
+      <h1 class="h1" style="margin-bottom:10px;">How was {{ event.title }}?</h1>
+      <p class="text-secondary" style="margin-bottom:28px;">Hi {{ reg.attendee_name }} — your feedback helps the organizer make the next one even better.</p>
+
+      <div x-show="error" class="alert alert-danger mb-4" x-text="error" style="display:none;"></div>
+
+      <div class="fb-stars" style="display:flex; gap:6px; justify-content:center; margin-bottom:24px;">
+        <template x-for="n in [1,2,3,4,5]" :key="n">
+          <span class="fb-star" :class="{ filled: n <= rating }" @click="rating = n" @mouseenter="hover = n" @mouseleave="hover = 0">
+            <svg width="36" height="36" viewBox="0 0 24 24" :fill="n <= (hover || rating) ? '#FFB300' : 'none'" stroke="currentColor" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </span>
+        </template>
+      </div>
+
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label" for="comment">Anything you'd like to add? (optional)</label>
+        <textarea id="comment" class="form-input" style="height:100px; padding-top:10px;" x-model="comment" placeholder="What stood out, what could be better…"></textarea>
+      </div>
+
+      <button type="button" class="btn btn-primary btn-full" :class="{ 'btn-loading': loading }" :disabled="!rating || loading" @click="submit()">
+        <span class="btn-label">Submit feedback</span>
+      </button>
+    </div>
+
+    <div x-show="submitted" x-cloak class="animate-in">
+      <div style="width:48px; height:48px; background:var(--success-bg); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h1 class="h1" style="margin-bottom:10px;">Thanks for the feedback!</h1>
+      <p class="text-secondary">The organizer will see this — it genuinely helps.</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function feedbackForm() {
+  return {
+    rating: 0,
+    hover: 0,
+    comment: '',
+    loading: false,
+    error: '',
+    submitted: false,
+
+    async submit() {
+      if (!this.rating) return;
+      this.loading = true;
+      this.error = '';
+      try {
+        const res = await fetch('/api/v1/registrations/{{ reg.id }}/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rating: this.rating, comment: this.comment.trim() || null }),
+        });
+        const data = await res.json();
+        if (!res.ok) { this.error = data.error?.message || 'Something went wrong. Please try again.'; return; }
+        this.submitted = true;
+      } catch { this.error = 'Network error. Please try again.'; }
+      finally { this.loading = false; }
+    },
+  };
+}
+</script>
+{% endblock %}

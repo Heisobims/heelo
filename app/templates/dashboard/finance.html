@@ -93,7 +93,7 @@
     <div style="overflow-x:auto;">
       <table class="fin-table">
         <thead>
-          <tr><th>Buyer</th><th>Event</th><th>Provider</th><th>Net Amount</th><th>Date</th></tr>
+          <tr><th>Buyer</th><th>Event</th><th>Provider</th><th>Net Amount</th><th>Status</th><th>Date</th></tr>
         </thead>
         <tbody>
           {% for order in finance.recent_orders %}
@@ -101,7 +101,16 @@
             <td>{{ order.buyer_name or order.buyer_email }}</td>
             <td>{{ order.event.title if order.event else '—' }}</td>
             <td style="text-transform:capitalize;">{{ order.payment_provider or '—' }}</td>
-            <td>{{ order.currency }} {{ "{:,.0f}".format(order.net_amount) }}</td>
+            <td>{{ order.currency }} {{ "{:,.0f}".format(order.net_amount - order.refunded_amount) }}</td>
+            <td>
+              {% if order.payment_status == "paid" %}
+              <span class="badge badge-success">Paid</span>
+              {% elif order.payment_status == "partially_refunded" %}
+              <span class="badge badge-warning">Partially refunded</span>
+              {% elif order.payment_status == "refunded" %}
+              <span class="badge badge-ended">Refunded</span>
+              {% endif %}
+            </td>
             <td style="color:var(--text-muted);">{{ order.created_at.strftime('%Y-%m-%d') }}</td>
           </tr>
           {% endfor %}

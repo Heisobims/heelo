@@ -1,0 +1,103 @@
+{% extends "admin/layout.html" %}
+{% block title %}Vendors{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:1.4rem;font-weight:700;">Vendors &amp; venues</h1>
+  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">{{ total }} total vendors</p>
+</div>
+
+<div class="section-card">
+  <form method="get" action="/admin/vendors">
+    <div class="search-bar">
+      <input name="q" value="{{ q }}" placeholder="Search by business name or slug..." />
+      <select name="category">
+        <option value="">All categories</option>
+        {% for c in categories %}
+        <option value="{{ c }}" {% if selected_category == c %}selected{% endif %}>{{ c|replace('_', ' ')|capitalize }}</option>
+        {% endfor %}
+      </select>
+      <select name="status">
+        <option value="">All statuses</option>
+        <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="suspended" {% if selected_status == 'suspended' %}selected{% endif %}>Suspended</option>
+      </select>
+      <button type="submit" class="btn btn-accent">Filter</button>
+    </div>
+  </form>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Business</th><th>Category</th><th>Owner</th><th>Location</th><th>Leads</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in vendors %}
+      <tr id="vendor-{{ v.id }}">
+        <td>
+          <a href="/vendors/{{ v.slug }}" target="_blank">{{ v.business_name }}</a><br>
+          <span style="color:var(--text-muted,#71717a);font-size:0.72rem;">/{{ v.slug }}</span>
+        </td>
+        <td style="text-transform:capitalize;">{{ v.category|replace('_', ' ') }}</td>
+        <td style="font-size:0.78rem;">{{ v.user.email if v.user else '—' }}</td>
+        <td>{{ v.location_city or '—' }}{% if v.location_country %}, {{ v.location_country }}{% endif %}</td>
+        <td>{{ v.lead_count }}</td>
+        <td>
+          <span class="badge {{ 'badge-active' if v.status == 'active' else ('badge-pending' if v.status == 'pending' else 'badge-suspended') }}" id="status-badge-{{ v.id }}">
+            {{ v.status|capitalize }}
+          </span>
+        </td>
+        <td>
+          {% if v.status == 'suspended' %}
+          <button class="btn btn-sm btn-accent" onclick="reinstateVendor('{{ v.id }}', '{{ v.business_name }}')">Reinstate</button>
+          {% else %}
+          <button class="btn btn-sm btn-danger" onclick="suspendVendor('{{ v.id }}', '{{ v.business_name }}')">Suspend</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?q={{ q }}&category={{ selected_category }}&status={{ selected_status }}&page={{ page - 1 }}">&larr; Prev</a>
+    {% endif %}
+    <span class="current">{{ page }}</span>
+    {% if page * per_page < total %}
+    <a href="?q={{ q }}&category={{ selected_category }}&status={{ selected_status }}&page={{ page + 1 }}">Next &rarr;</a>
+    {% endif %}
+    <span class="info">{{ total }} results</span>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function suspendVendor(id, name) {
+  if (!confirm(`Suspend "${name}"? Their listing will be hidden from organizers.`)) return;
+  const r = await fetch(`/api/v1/admin/vendors/${id}/suspend`, { method: 'POST' });
+  if (r.ok) {
+    const badge = document.getElementById(`status-badge-${id}`);
+    badge.className = 'badge badge-suspended';
+    badge.textContent = 'Suspended';
+    badge.closest('tr').querySelector('button').outerHTML =
+      `<button class="btn btn-sm btn-accent" onclick="reinstateVendor('${id}','${name}')">Reinstate</button>`;
+  } else { alert('Failed to suspend.'); }
+}
+
+async function reinstateVendor(id, name) {
+  if (!confirm(`Reinstate "${name}"?`)) return;
+  const r = await fetch(`/api/v1/admin/vendors/${id}/reinstate`, { method: 'POST' });
+  if (r.ok) {
+    const badge = document.getElementById(`status-badge-${id}`);
+    badge.className = 'badge badge-active';
+    badge.textContent = 'Active';
+    badge.closest('tr').querySelector('button').outerHTML =
+      `<button class="btn btn-sm btn-danger" onclick="suspendVendor('${id}','${name}')">Suspend</button>`;
+  } else { alert('Failed to reinstate.'); }
+}
+</script>
+{% endblock %}

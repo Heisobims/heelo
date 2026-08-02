@@ -31,6 +31,7 @@ class OrgUpdateRequest(BaseModel):
     twitter_url: str | None = None
     facebook_url: str | None = None
     linkedin_url: str | None = None
+    brand_color: str | None = Field(None, pattern=r"^#[0-9A-Fa-f]{6}$")
 
 
 class OrgOut(BaseModel):
@@ -51,6 +52,7 @@ class OrgOut(BaseModel):
     twitter_url: str | None = None
     facebook_url: str | None = None
     linkedin_url: str | None = None
+    brand_color: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

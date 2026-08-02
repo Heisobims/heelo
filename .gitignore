@@ -1,3 +1,6 @@
+# Local Postgres data dir (pgserver)
+.pgdata/
+
 # Python
 __pycache__/
 *.py[cod]

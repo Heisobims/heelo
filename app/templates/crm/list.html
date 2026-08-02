@@ -55,7 +55,8 @@
 
   .att-name { font-weight: 600; }
   .att-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem; }
-  .checked-in { color: var(--cyan-dark, #00b3a9) !important; }
+  .checked-in { display: inline-flex; align-items: center; gap: 3px; color: var(--cyan-dark, #00b3a9) !important; }
+  .checked-in .material-symbols-outlined { font-size: 14px; }
   .cell-main { font-weight: 500; }
   .cell-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
   .cell-free { color: var(--text-secondary); font-size: 0.8rem; }
@@ -80,6 +81,7 @@
 
   /* ── Empty state ─────────────────────────────────────────────────────────── */
   .crm-empty { text-align: center; padding: 4rem 1.5rem; color: var(--text-secondary); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+  .crm-empty svg { display: block; margin: 0 auto; opacity: .5; }
   .crm-empty p { margin: 1rem 0 0.5rem; font-size: 0.9375rem; }
   .clear-link { font-size: 0.875rem; color: var(--cyan-dark,#00b3a9); text-decoration: none; font-weight: 600; }
   .clear-link:hover { text-decoration: underline; }

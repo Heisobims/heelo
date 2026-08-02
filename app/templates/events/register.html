@@ -3,6 +3,16 @@
 {% block meta_description %}Register for {{ event.title }}{% endblock %}
 
 {% block head %}
+{% set cyan_text = (org.brand_color | contrast_text('#0A0A0A')) if org and org.brand_color else '#0A0A0A' %}
+{% if org and org.brand_color %}
+<style>
+  :root { --cyan: {{ org.brand_color }}; --cyan-hover: {{ org.brand_color }}; --border-focus: {{ org.brand_color }}; }
+  /* The org's brand color can be dark/saturated (unlike platform cyan, which
+     is always light) — repoint this page's cyan-background buttons at a
+     contrast-safe text color instead of assuming black always reads. */
+  .btn-primary { color: {{ cyan_text }}; }
+</style>
+{% endif %}
 <style>
   [x-cloak] { display: none !important; }
   body { background: var(--bg-secondary); }
@@ -104,6 +114,16 @@
     border-color: var(--cyan);
   }
 
+  .form-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6B6B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 40px;
+    cursor: pointer;
+  }
+
   .order-summary {
     background: var(--bg-secondary);
     border-radius: 12px;
@@ -168,11 +188,11 @@
   <!-- Step indicator -->
   <div style="display:flex; align-items:center; gap:8px; margin-bottom:28px;">
     <div style="width:24px; height:24px; border-radius:50%; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;"
-         :style="step >= 1 ? 'background:var(--cyan);color:#000;' : 'background:var(--bg-secondary);color:var(--text-muted);'">1</div>
+         :style="step >= 1 ? 'background:var(--cyan);color:{{ cyan_text }};' : 'background:var(--bg-secondary);color:var(--text-muted);'">1</div>
     <div style="font-size:13px; font-weight:500;" :style="step === 1 ? 'color:var(--text-primary)' : 'color:var(--text-muted)'">Select tickets</div>
     <div style="flex:1; height:1px; background:var(--border-light); margin:0 4px;"></div>
     <div style="width:24px; height:24px; border-radius:50%; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;"
-         :style="step >= 2 ? 'background:var(--cyan);color:#000;' : 'background:var(--bg-secondary);color:var(--text-muted);'">2</div>
+         :style="step >= 2 ? 'background:var(--cyan);color:{{ cyan_text }};' : 'background:var(--bg-secondary);color:var(--text-muted);'">2</div>
     <div style="font-size:13px; font-weight:500;" :style="step === 2 ? 'color:var(--text-primary)' : 'color:var(--text-muted)'">Your details</div>
   </div>
 
@@ -180,6 +200,8 @@
   <div style="background:#fff; border:1px solid var(--border-light); border-radius:12px; padding:14px 18px; margin-bottom:24px; display:flex; align-items:center; gap:14px;">
     {% if event.cover_image_url %}
     <img src="{{ event.cover_image_url }}" alt="" style="width:48px; height:34px; border-radius:6px; object-fit:cover; flex-shrink:0;">
+    {% elif org and org.logo_url %}
+    <img src="{{ org.logo_url }}" alt="{{ org.name }}" style="width:34px; height:34px; border-radius:8px; object-fit:cover; flex-shrink:0;">
     {% endif %}
     <div style="min-width:0;">
       <div style="font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ event.title }}</div>
@@ -188,11 +210,18 @@
         {% if event.venue_city %} · {{ event.venue_city }}{% endif %}
       </div>
     </div>
+    {% if org and org.logo_url and event.cover_image_url %}
+    <img src="{{ org.logo_url }}" alt="{{ org.name }}" style="width:28px; height:28px; border-radius:6px; object-fit:cover; flex-shrink:0; margin-left:auto;" title="Organized by {{ org.name }}">
+    {% endif %}
   </div>
 
   <!-- ── Step 1: Select tickets ─────────────────────────────────────────── -->
   <div x-show="step === 1">
     <h2 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin-bottom:16px;">Choose tickets</h2>
+
+    <div x-show="_referralCode" x-cloak style="background:#00FFF318; border:1px solid #00FFF3; border-radius:10px; padding:10px 14px; font-size:13px; margin-bottom:16px;">
+      🎉 You were invited by a friend — a referral discount applies at checkout if you're eligible.
+    </div>
 
     {% if not ticket_types %}
     <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
@@ -322,34 +351,37 @@
         </div>
       </template>
 
-      <!-- Custom form fields -->
-      {% if form_fields %}
-      <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:20px; margin-bottom:16px;">
-        <div style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px;">Additional information</div>
-        {% for ff in form_fields %}
-        <div class="form-group" {% if loop.last %}style="margin-bottom:0;"{% endif %}>
-          <label>{{ ff.label }}{% if ff.is_required %} *{% endif %}</label>
-          {% if ff.field_type == 'long_text' %}
-          <textarea x-model="answers['{{ ff.id }}']" rows="3" {% if ff.is_required %}required{% endif %} placeholder="{{ ff.label }}"></textarea>
-          {% elif ff.field_type == 'dropdown' %}
-          <select x-model="answers['{{ ff.id }}']" {% if ff.is_required %}required{% endif %}>
-            <option value="">— Select —</option>
-            {% for opt in (ff.options or []) %}
-            <option value="{{ opt }}">{{ opt }}</option>
-            {% endfor %}
-          </select>
-          {% elif ff.field_type == 'checkbox' %}
-          <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;">
-            <input type="checkbox" x-model="answers['{{ ff.id }}']" style="width:auto; margin:0;">
-            <span style="font-size:14px;">{{ ff.label }}</span>
-          </label>
-          {% else %}
-          <input type="text" x-model="answers['{{ ff.id }}']" {% if ff.is_required %}required{% endif %} placeholder="{{ ff.label }}">
-          {% endif %}
+      <!-- Custom form fields (filtered to fields that apply to the selected ticket types) -->
+      <template x-if="visibleFormFields().length > 0">
+        <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:20px; margin-bottom:16px;">
+          <div style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px;">Additional information</div>
+          <template x-for="(f, i) in visibleFormFields()" :key="f.id">
+            <div class="form-group" :style="i === visibleFormFields().length - 1 ? 'margin-bottom:0;' : ''">
+              <label x-text="f.label + (f.is_required ? ' *' : '')"></label>
+              <template x-if="f.field_type === 'long_text'">
+                <textarea x-model="answers[f.id]" rows="3" :required="f.is_required" :placeholder="f.label"></textarea>
+              </template>
+              <template x-if="f.field_type === 'dropdown'">
+                <select x-model="answers[f.id]" :required="f.is_required">
+                  <option value="">— Select —</option>
+                  <template x-for="opt in (f.options || [])" :key="opt">
+                    <option :value="opt" x-text="opt"></option>
+                  </template>
+                </select>
+              </template>
+              <template x-if="f.field_type === 'checkbox'">
+                <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;">
+                  <input type="checkbox" x-model="answers[f.id]" style="width:auto; margin:0;">
+                  <span style="font-size:14px;" x-text="f.label"></span>
+                </label>
+              </template>
+              <template x-if="!['long_text','dropdown','checkbox'].includes(f.field_type)">
+                <input type="text" x-model="answers[f.id]" :required="f.is_required" :placeholder="f.label">
+              </template>
+            </div>
+          </template>
         </div>
-        {% endfor %}
-      </div>
-      {% endif %}
+      </template>
 
       <!-- Promo code -->
       <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:20px; margin-bottom:16px;" x-data="{ showPromo: false }">
@@ -439,6 +471,14 @@ const _preSelected = (() => {
 })();
 const _preTotal = Object.values(_preSelected).reduce((a, b) => a + b, 0);
 
+// Referral link capture — global (not nested in registerForm()) so `x-show="_referralCode"`
+// can read it directly, same as _eventSlug/_preSelected above.
+const _referralCode = (() => {
+  const fromUrl = new URLSearchParams(window.location.search).get('ref');
+  if (fromUrl) sessionStorage.setItem('_referral_code', fromUrl);
+  return fromUrl || sessionStorage.getItem('_referral_code') || null;
+})();
+
 function registerForm() {
   const _utmParams = (() => {
     const p = new URLSearchParams(window.location.search);
@@ -473,6 +513,16 @@ function registerForm() {
 
     get hasSelection() {
       return Object.values(this.quantities).some(q => parseInt(q) > 0);
+    },
+
+    visibleFormFields() {
+      const selectedTtIds = Object.entries(this.quantities)
+        .filter(([, q]) => parseInt(q) > 0)
+        .map(([ttId]) => ttId);
+      return _formFields.filter(f => {
+        if (!f.applies_to_ticket_type_ids || f.applies_to_ticket_type_ids.length === 0) return true;
+        return f.applies_to_ticket_type_ids.some(id => selectedTtIds.includes(id));
+      });
     },
 
     get totalTickets() {
@@ -582,8 +632,11 @@ function registerForm() {
             email: a.email || this.buyer.email,
             phone: a.phone || null,
           })) : null,
-          form_answers: this.answers,
+          form_answers: Object.fromEntries(
+            Object.entries(this.answers).filter(([fid]) => this.visibleFormFields().some(f => f.id === fid))
+          ),
           promo_code: this.promoApplied ? this.promo.trim().toUpperCase() : null,
+          referral_code: _referralCode,
           ..._utmParams,
         };
 

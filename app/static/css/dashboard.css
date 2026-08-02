@@ -165,6 +165,10 @@
   position: relative;
 }
 
+.mobile-sidebar-toggle {
+  display: none;
+}
+
 .topnav-icon-btn:hover {
   background: var(--bg-secondary);
   color: var(--text-primary);
@@ -357,11 +361,86 @@
   flex-shrink: 0;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-light);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.18s var(--ease, ease);
+}
+
+/* Scrollable nav-links region — separate from the sidebar container so the
+   collapse toggle below can stay pinned and always reachable, even when
+   there are enough links to overflow the available height. */
+.sidebar-nav {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.dash-sidebar.collapsed {
+  width: 68px;
+}
+
+.dash-sidebar.collapsed .sidebar-nav {
+  padding: 16px 10px;
+}
+
+.dash-sidebar.collapsed .sidebar-link {
+  justify-content: center;
+  padding: 10px;
+}
+
+.dash-sidebar.collapsed .sidebar-label,
+.dash-sidebar.collapsed .sidebar-section,
+.dash-sidebar.collapsed .sidebar-badge {
+  display: none;
+}
+
+.dash-sidebar.collapsed .sidebar-collapse-btn {
+  justify-content: center;
+  padding: 10px;
+}
+
+.dash-sidebar.collapsed .sidebar-collapse-btn svg { transform: rotate(180deg); }
+
+.sidebar-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-collapse-btn {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-light);
+  border-radius: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar-collapse-btn:hover {
+  background: rgba(0,0,0,0.04);
+  color: var(--text-primary);
+}
+
+.sidebar-collapse-btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
 }
 
 .sidebar-section {
@@ -823,6 +902,10 @@
 
 /* ── Mobile sidebar toggle ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .mobile-sidebar-toggle {
+    display: flex;
+  }
+
   .dash-sidebar {
     position: fixed;
     top: 56px;
@@ -836,6 +919,17 @@
   }
 
   .dash-sidebar.open { transform: translateX(0); }
+
+  /* Collapse-to-rail is a desktop affordance only — mobile always uses the
+     full-width slide-in overlay above. */
+  .dash-sidebar.collapsed { width: 220px; }
+  .dash-sidebar.collapsed .sidebar-nav { padding: 16px 12px; }
+  .dash-sidebar.collapsed .sidebar-link { justify-content: flex-start; padding: 8px 10px; }
+  .dash-sidebar.collapsed .sidebar-label,
+  .dash-sidebar.collapsed .sidebar-section,
+  .dash-sidebar.collapsed .sidebar-badge { display: block; }
+  .dash-sidebar.collapsed .sidebar-label { display: inline; }
+  .sidebar-collapse-btn { display: none; }
 
   .dash-content { padding: 20px; }
 

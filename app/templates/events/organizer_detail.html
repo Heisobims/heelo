@@ -132,7 +132,7 @@
   <!-- ── Tab navigation ────────────────────────────────────────────────────── -->
   <div x-data="{ tab: 'overview' }">
     <div style="display:flex; gap:0; border-bottom:1px solid var(--border-light); margin-bottom:20px;">
-      {% for tab_id, tab_label in [('overview', 'Overview'), ('tickets', 'Tickets'), ('registrations', 'Registrations'), ('analytics', 'Analytics')] %}
+      {% for tab_id, tab_label in [('overview', 'Overview'), ('tickets', 'Tickets'), ('registrations', 'Registrations'), ('waitlist', 'Waitlist'), ('sponsors', 'Sponsors'), ('analytics', 'Analytics'), ('feedback', 'Feedback')] %}
       <button
         @click="tab = '{{ tab_id }}'; $dispatch('heelo:tab', { tab: '{{ tab_id }}' })"
         style="padding:10px 18px; font-size:14px; font-weight:500; border:none; background:transparent; cursor:pointer; border-bottom:2px solid transparent; color:var(--text-muted); transition:all 0.12s;"
@@ -227,6 +227,72 @@
         </button>
       </div>
       {% endif %}
+
+      <!-- Event actions: duplicate, template, recurring series -->
+      <div class="section-card" style="padding:20px; margin-top:16px;" x-data="eventReuseActions()">
+        <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Reuse &amp; repeat</div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:16px; margin-bottom:16px; border-bottom:1px solid var(--border-light);">
+          <div>
+            <div style="font-size:13.5px; font-weight:500;">Duplicate this event</div>
+            <div style="font-size:12.5px; color:var(--text-muted);">Creates a new draft with the same details and ticket types.</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" @click="duplicate()" :class="{'btn-loading': duplicating}" :disabled="duplicating">
+            <span class="btn-label">Duplicate</span>
+          </button>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <div>
+            <div style="font-size:13.5px; font-weight:500;">{{ 'Saved as a template' if event.is_template else 'Save as a template' }}</div>
+            <div style="font-size:12.5px; color:var(--text-muted);">{% if event.is_template %}Available as a starting point when creating new events.{% else %}Reuse this event's setup next time you create one.{% endif %}</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" :class="{'btn-loading': savingTemplate}" @click="toggleTemplate()" :disabled="savingTemplate">
+            <span class="btn-label" x-text="isTemplate ? 'Remove' : 'Save as template'"></span>
+          </button>
+        </div>
+      </div>
+
+      {% if not event.parent_event_id %}
+      <!-- Recurring series -->
+      <div class="section-card" style="padding:20px; margin-top:16px;" x-data="recurrenceManager()">
+        <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Recurring series</div>
+
+        {% if recurring_children %}
+        <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:14px;">
+          {{ recurring_children|length }} occurrence{{ 's' if recurring_children|length != 1 }} generated ({{ event.recurrence_rule }}, through {{ event.recurrence_end_date.strftime('%d %b %Y') if event.recurrence_end_date else '—' }}) &mdash; each is its own draft to review and publish.
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          {% for child in recurring_children %}
+          <a href="/org/{{ org.slug }}/events/{{ child.id }}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:8px; background:var(--bg-secondary); text-decoration:none; color:inherit; font-size:13px;">
+            <span>{{ child.start_datetime.strftime('%d %b %Y, %H:%M') }}</span>
+            <span class="badge {{ 'badge-draft' if child.status == 'draft' else 'badge-published' }}">{{ child.status|capitalize }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:14px;">Generate a series of occurrences from this event's date and details — each one a separate draft you review before publishing.</div>
+        <div style="display:flex; gap:8px; align-items:end; flex-wrap:wrap;">
+          <div>
+            <label class="form-label">Repeats</label>
+            <select class="form-select" style="width:auto;" x-model="rule">
+              <option value="weekly">Weekly</option>
+              <option value="daily">Daily</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Until</label>
+            <input type="date" class="form-input" style="width:auto;" x-model="endDate">
+          </div>
+          <button type="button" class="btn btn-primary btn-sm" @click="generate()" :class="{'btn-loading': generating}" :disabled="!endDate || generating">
+            <span class="btn-label">Generate series</span>
+          </button>
+        </div>
+        <div x-show="error" x-text="error" class="alert alert-danger" style="display:none; margin-top:12px;"></div>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>
 
     <!-- ── Tickets tab ──────────────────────────────────────────────────────── -->
@@ -252,10 +318,13 @@
           <div>
             <label class="form-label">Price (0 = free)</label>
             <div style="display:flex; gap:6px;">
-              <select class="form-input" x-model="newTt.currency" style="width:80px; flex-shrink:0;">
+              <select class="form-select" x-model="newTt.currency" style="width:92px; flex-shrink:0;">
                 <option>NGN</option><option>GHS</option><option>KES</option><option>ZAR</option><option>USD</option><option>GBP</option><option>EUR</option>
               </select>
               <input type="number" class="form-input" x-model="newTt.price" placeholder="0" min="0" step="0.01">
+            </div>
+            <div x-show="newTt.price > 0" style="display:none; font-size:12px; color:var(--text-muted); margin-top:6px;">
+              Heelo's fee: <span x-text="feeAmount()"></span> ({{ platform_fee_percent }}%) &middot; you receive <strong x-text="netAmount()"></strong> per ticket sold
             </div>
           </div>
           <div>
@@ -374,7 +443,7 @@
             </div>
             <div>
               <label class="form-label">Discount type</label>
-              <select class="form-input" x-model="newPromo.discount_type">
+              <select class="form-select" x-model="newPromo.discount_type">
                 <option value="percent">Percentage (%)</option>
                 <option value="fixed">Fixed amount</option>
               </select>
@@ -433,7 +502,7 @@
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
         <h2 style="font-size:16px; font-weight:600; margin:0;">Registrations <span x-text="total > 0 ? '(' + total + ')' : ''" style="font-weight:400; color:var(--text-muted);"></span></h2>
         <div style="display:flex; gap:6px;">
-          <select class="form-input" style="height:34px; font-size:13px; padding:0 10px;" x-model="statusFilter" @change="loadRegistrations()">
+          <select class="form-select" style="height:34px; font-size:13px; padding:0 30px 0 10px; background-position:right 8px center;" x-model="statusFilter" @change="loadRegistrations()">
             <option value="">All statuses</option>
             <option value="confirmed">Confirmed</option>
             <option value="pending">Pending payment</option>
@@ -504,6 +573,106 @@
       </div>
     </div>
 
+    <!-- Waitlist tab -->
+    <div x-show="tab === 'waitlist'" style="display:none;" x-data="waitlistTab()"
+         @heelo:tab.window="if ($event.detail.tab === 'waitlist' && !loaded) load()">
+
+      <div x-show="loading" style="display:flex; align-items:center; gap:10px; color:var(--text-muted); padding:24px 0;">
+        <div style="width:16px; height:16px; border:2px solid var(--border-light); border-top-color:var(--cyan); border-radius:50%; animation:spin 0.6s linear infinite;"></div>
+        Loading waitlist...
+      </div>
+
+      <div x-show="!loading && entries.length === 0" class="empty-state-card" style="max-width:400px; margin:0 auto;">
+        <div class="empty-state-icon">
+          <span class="material-symbols-outlined" style="font-size:26px; color:var(--text-muted);">hourglass_empty</span>
+        </div>
+        <h2 class="empty-state-title">No one on the waitlist</h2>
+        <p class="empty-state-body">When a ticket type sells out, attendees can join its waitlist from the event page and they'll show up here.</p>
+      </div>
+
+      <div x-show="!loading && entries.length > 0" style="display:none;">
+        <template x-for="group in groupedByTicketType()" :key="group.ticket_type_id">
+          <div class="section-card" style="margin-bottom:16px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--border-light);">
+              <span style="font-size:14px; font-weight:600;" x-text="group.ticket_type_name || 'Unknown ticket type'"></span>
+              <button type="button" class="btn btn-secondary btn-sm" @click="notifyNext(group.ticket_type_id)">
+                Notify next person
+              </button>
+            </div>
+            <template x-for="e in group.items" :key="e.id">
+              <div style="display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border-light);">
+                <span style="width:22px; height:22px; border-radius:50%; background:var(--bg-secondary); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;" x-text="e.position"></span>
+                <div style="flex:1; min-width:0;">
+                  <span style="font-size:13.5px; font-weight:600;" x-text="e.name"></span>
+                  <span style="font-size:12px; color:var(--text-muted); margin-left:8px;" x-text="e.email"></span>
+                  <template x-if="e.notified_at">
+                    <div style="font-size:11px; margin-top:2px;" :style="isExpired(e) ? 'color:#e53e3e;' : 'color:#15803d;'">
+                      <span x-text="isExpired(e) ? 'Offer expired' : 'Notified — offer expires ' + formatDate(e.offer_expires_at)"></span>
+                    </div>
+                  </template>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" style="padding:0 10px; color:#D0021B;" @click="remove(e.id)">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                </button>
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <!-- Sponsors tab -->
+    <div x-show="tab === 'sponsors'" style="display:none;" x-data="sponsorsTab()"
+         @heelo:tab.window="if ($event.detail.tab === 'sponsors' && !loaded) load()">
+
+      <div x-show="loading" style="display:flex; align-items:center; gap:10px; color:var(--text-muted); padding:24px 0;">
+        <div style="width:16px; height:16px; border:2px solid var(--border-light); border-top-color:var(--cyan); border-radius:50%; animation:spin 0.6s linear infinite;"></div>
+        Loading sponsors...
+      </div>
+
+      <div x-show="!loading && sponsors.length === 0" class="empty-state-card" style="max-width:400px; margin:0 auto;">
+        <div class="empty-state-icon">
+          <span class="material-symbols-outlined" style="font-size:26px; color:var(--text-muted);">handshake</span>
+        </div>
+        <h2 class="empty-state-title">No sponsors yet</h2>
+        <p class="empty-state-body">Add sponsors from the event edit page, then invite them here to self-manage their listing.</p>
+      </div>
+
+      <div x-show="!loading && sponsors.length > 0" style="display:none;">
+        <div class="section-card">
+          <template x-for="s in sponsors" :key="s.id">
+            <div style="display:flex; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--border-light);">
+              <div style="flex:1; min-width:0;">
+                <span style="font-size:14px; font-weight:600;" x-text="s.name"></span>
+                <span style="font-size:11px; font-weight:700; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted); text-transform:capitalize; margin-left:8px;"
+                  x-text="s.is_exhibitor ? 'exhibitor' : s.tier"></span>
+                <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">
+                  <template x-if="s.user_id">
+                    <span style="color:#15803d;">Claimed<span x-show="s.contact_email"> · <span x-text="s.contact_email"></span></span></span>
+                  </template>
+                  <template x-if="!s.user_id && s.contact_email">
+                    <span>Invited · <span x-text="s.contact_email"></span></span>
+                  </template>
+                  <template x-if="!s.user_id && !s.contact_email">
+                    <span>Not invited</span>
+                  </template>
+                </div>
+              </div>
+              <template x-if="!s.user_id">
+                <div style="display:flex; align-items:center; gap:6px;" x-data="{ email: s.contact_email || '', sending: false, sent: false }">
+                  <input type="email" x-model="email" placeholder="sponsor@company.com"
+                    style="width:180px; padding:6px 10px; border:1.5px solid var(--border-light); border-radius:7px; font-size:12.5px;">
+                  <button type="button" class="btn btn-secondary btn-sm" :disabled="sending || !email"
+                    @click="sending=true; inviteSponsor(s.id, email).then(()=>{sent=true; sending=false; s.contact_email=email;}).catch(()=>sending=false)"
+                    x-text="sent ? 'Sent' : (sending ? 'Sending…' : 'Send invite')"></button>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
     <!-- Analytics tab -->
     <div x-show="tab === 'analytics'" style="display:none;padding:2rem 0 1rem;">
       <div style="text-align:center;">
@@ -525,6 +694,39 @@
           </a>
         </div>
       </div>
+    </div>
+
+    <!-- ── Feedback tab ─────────────────────────────────────────────────────── -->
+    <div x-show="tab === 'feedback'" style="display:none;" x-data="feedbackTab()"
+         @heelo:tab.window="if ($event.detail.tab === 'feedback' && !loaded) load()">
+      <template x-if="loaded && summary">
+        <div>
+          <div style="display:flex; gap:16px; margin-bottom:20px;">
+            <div class="section-card" style="padding:16px 20px; flex:1;">
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Average rating</div>
+              <div style="font-size:24px; font-weight:700;" x-text="summary.average_rating !== null ? summary.average_rating + ' / 5' : '—'"></div>
+            </div>
+            <div class="section-card" style="padding:16px 20px; flex:1;">
+              <div style="font-size:12px; color:var(--text-muted); margin-bottom:4px;">Responses</div>
+              <div style="font-size:24px; font-weight:700;" x-text="summary.count"></div>
+            </div>
+          </div>
+
+          <template x-if="summary.count === 0">
+            <div style="text-align:center; padding:40px 0; color:var(--text-muted); font-size:14px;">No feedback yet — it's requested by email a few hours after the event ends.</div>
+          </template>
+
+          <template x-for="f in summary.recent" :key="f.created_at + (f.attendee_name || '')">
+            <div class="section-card" style="padding:14px 18px; margin-bottom:10px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <span style="font-size:13px; font-weight:600;" x-text="f.attendee_name || 'Anonymous'"></span>
+                <span style="color:#FFB300; font-size:13px;" x-text="'★'.repeat(f.rating) + '☆'.repeat(5 - f.rating)"></span>
+              </div>
+              <div x-show="f.comment" style="font-size:13.5px; color:var(--text-secondary);" x-text="f.comment"></div>
+            </div>
+          </template>
+        </div>
+      </template>
     </div>
   </div>
 
@@ -583,6 +785,69 @@ function eventActions(eventId, eventSlug, currentStatus, orgSlug) {
 const _orgSlug = {{ org.slug | tojson }};
 const _eventId = {{ event.id | string | tojson }};
 
+function eventReuseActions() {
+  return {
+    duplicating: false,
+    savingTemplate: false,
+    isTemplate: {{ 'true' if event.is_template else 'false' }},
+
+    async duplicate() {
+      this.duplicating = true;
+      try {
+        const res = await fetch(`/api/v1/organizations/${_orgSlug}/events/${_eventId}/duplicate`, {
+          method: 'POST', credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.error?.message || 'Failed to duplicate event.'); return; }
+        window.location.href = `/org/${_orgSlug}/events/${data.data.id}/edit`;
+      } catch { alert('Network error.'); }
+      finally { this.duplicating = false; }
+    },
+
+    async toggleTemplate() {
+      this.savingTemplate = true;
+      try {
+        const res = await fetch(`/api/v1/organizations/${_orgSlug}/events/${_eventId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ is_template: !this.isTemplate }),
+        });
+        if (!res.ok) { alert('Failed to update.'); return; }
+        this.isTemplate = !this.isTemplate;
+        window.location.reload();
+      } catch { alert('Network error.'); }
+      finally { this.savingTemplate = false; }
+    },
+  };
+}
+
+function recurrenceManager() {
+  return {
+    rule: 'weekly',
+    endDate: '',
+    generating: false,
+    error: '',
+
+    async generate() {
+      this.generating = true;
+      this.error = '';
+      try {
+        const res = await fetch(`/api/v1/organizations/${_orgSlug}/events/${_eventId}/recurrence/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ rule: this.rule, end_date: new Date(this.endDate).toISOString() }),
+        });
+        const data = await res.json();
+        if (!res.ok) { this.error = data.error?.message || 'Failed to generate series.'; return; }
+        window.location.reload();
+      } catch { this.error = 'Network error.'; }
+      finally { this.generating = false; }
+    },
+  };
+}
+
 function ticketManager() {
   return {
     showAddForm: false,
@@ -593,6 +858,19 @@ function ticketManager() {
     promoError: '',
     newTt: { name: '', price: 0, currency: '{{ org.currency or "NGN" }}', quantity: '', description: '', max_per_order: 10 },
     newPromo: { code: '', discount_type: 'percent', discount_value: '', max_uses: '' },
+    platformFeePercent: {{ platform_fee_percent }},
+
+    feeAmount() {
+      const price = parseFloat(this.newTt.price) || 0;
+      const fee = price * (this.platformFeePercent / 100);
+      return `${this.newTt.currency} ${fee.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    },
+
+    netAmount() {
+      const price = parseFloat(this.newTt.price) || 0;
+      const fee = price * (this.platformFeePercent / 100);
+      return `${this.newTt.currency} ${(price - fee).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    },
 
     resetForm() {
       this.newTt = { name: '', price: 0, currency: '{{ org.currency or "NGN" }}', quantity: '', description: '', max_per_order: 10 };
@@ -707,6 +985,133 @@ function registrationsTab() {
       finally { this.loading = false; }
     },
   };
+}
+
+function feedbackTab() {
+  return {
+    summary: null,
+    loading: false,
+    loaded: false,
+
+    async load() {
+      this.loading = true;
+      try {
+        const res = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/feedback`,
+          { credentials: 'include' }
+        );
+        const data = await res.json();
+        if (data.success) {
+          this.summary = data.data;
+          this.loaded = true;
+        }
+      } catch {}
+      finally { this.loading = false; }
+    },
+  };
+}
+
+function waitlistTab() {
+  return {
+    entries: [],
+    loading: false,
+    loaded: false,
+
+    async load() {
+      this.loading = true;
+      try {
+        const res = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/waitlist`,
+          { credentials: 'include' }
+        );
+        const data = await res.json();
+        if (data.success) {
+          this.entries = data.data;
+          this.loaded = true;
+        }
+      } catch {}
+      finally { this.loading = false; }
+    },
+
+    groupedByTicketType() {
+      const groups = {};
+      for (const e of this.entries) {
+        if (!groups[e.ticket_type_id]) {
+          groups[e.ticket_type_id] = { ticket_type_id: e.ticket_type_id, ticket_type_name: e.ticket_type_name, items: [] };
+        }
+        groups[e.ticket_type_id].items.push(e);
+      }
+      return Object.values(groups);
+    },
+
+    isExpired(e) {
+      return e.offer_expires_at && new Date(e.offer_expires_at) < new Date();
+    },
+
+    formatDate(iso) {
+      if (!iso) return '';
+      return new Date(iso).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    },
+
+    async remove(waitlistId) {
+      if (!confirm('Remove this person from the waitlist?')) return;
+      await fetch(`/api/v1/organizations/${_orgSlug}/events/${_eventId}/waitlist/${waitlistId}`,
+        { method: 'DELETE', credentials: 'include' });
+      this.entries = this.entries.filter(e => e.id !== waitlistId);
+    },
+
+    async notifyNext(ticketTypeId) {
+      const res = await fetch(
+        `/api/v1/organizations/${_orgSlug}/events/${_eventId}/ticket-types/${ticketTypeId}/waitlist/notify-next`,
+        { method: 'POST', credentials: 'include' }
+      );
+      const data = await res.json();
+      if (data.success && data.data) {
+        const entry = this.entries.find(e => e.id === data.data.id);
+        if (entry) {
+          entry.notified_at = data.data.notified_at;
+          entry.offer_expires_at = data.data.offer_expires_at;
+        }
+      } else if (data.success && !data.data) {
+        alert('Nobody is waiting for this ticket type.');
+      }
+    },
+  };
+}
+
+function sponsorsTab() {
+  return {
+    sponsors: [],
+    loading: false,
+    loaded: false,
+
+    async load() {
+      this.loading = true;
+      try {
+        const res = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/sponsors`,
+          { credentials: 'include' }
+        );
+        const data = await res.json();
+        if (data.success) {
+          this.sponsors = data.data;
+          this.loaded = true;
+        }
+      } catch {}
+      finally { this.loading = false; }
+    },
+  };
+}
+
+async function inviteSponsor(sponsorId, email) {
+  const res = await fetch(
+    `/api/v1/organizations/${_orgSlug}/events/${_eventId}/sponsors/${sponsorId}/invite`,
+    {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ email }),
+    }
+  );
+  if (!res.ok) throw new Error('failed');
 }
 
 // Auto-load registrations when tab switches

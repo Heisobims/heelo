@@ -130,6 +130,24 @@ def _register_routers(app: FastAPI) -> None:
     )  # /api/v1/events/{slug}/register, /ticket-types, /promo-codes
     app.include_router(router_registrations)  # /api/v1/registrations/{id}/qr.png
 
+    from app.routers.badges import router_org as badge_org_api
+    from app.routers.badges import router_registrations as badge_registrations_api
+
+    app.include_router(badge_registrations_api)  # /api/v1/registrations/{id}/badge.pdf
+    app.include_router(badge_org_api)  # /api/v1/organizations/{slug}/events/{id}/badges.pdf
+
+    from app.routers.certificates import router_org as certificate_org_api
+    from app.routers.certificates import router_registrations as certificate_registrations_api
+
+    app.include_router(certificate_registrations_api)  # /api/v1/registrations/{id}/certificate.pdf
+    app.include_router(certificate_org_api)  # /api/v1/orgs/{slug}/events/{id}/certificates/...
+
+    from app.routers.live import router_org as live_org_api
+    from app.routers.live import router_public as live_public_api
+
+    app.include_router(live_org_api)  # /api/v1/organizations/{slug}/events/{id}/live/...
+    app.include_router(live_public_api)  # /api/v1/events/{slug}/live/...
+
     from app.routers.payment import router_payment_accounts, router_webhooks
 
     app.include_router(router_webhooks)  # /api/v1/webhooks/{paystack,flutterwave,stripe}
@@ -138,6 +156,33 @@ def _register_routers(app: FastAPI) -> None:
     from app.routers.checkin import router_checkin
 
     app.include_router(router_checkin)  # /api/v1/organizations/{slug}/events/{id}/check-in/...
+
+    from app.routers.speaker import router_event as speaker_event_api
+    from app.routers.speaker import router_org as speaker_org_api
+    from app.routers.speaker import router_public as speaker_public_api
+
+    app.include_router(speaker_org_api)  # /api/v1/organizations/{slug}/speakers/...
+    app.include_router(speaker_event_api)  # /api/v1/organizations/{slug}/events/{id}/speakers/...
+    app.include_router(speaker_public_api)  # /api/v1/events/{slug}/speakers
+
+    from app.routers.sponsor import router_event as sponsor_event_api
+    from app.routers.sponsor import router_portal as sponsor_portal_api
+    from app.routers.sponsor import router_public as sponsor_public_api
+
+    app.include_router(sponsor_event_api)  # /api/v1/organizations/{slug}/events/{id}/sponsors/...
+    app.include_router(sponsor_public_api)  # /api/v1/events/{slug}/sponsors
+    app.include_router(sponsor_portal_api)  # /api/v1/sponsor-portal/...
+
+    from app.routers.agenda import router_event as agenda_event_api
+    from app.routers.agenda import router_public as agenda_public_api
+
+    app.include_router(agenda_event_api)  # /api/v1/organizations/{slug}/events/{id}/sessions/...
+    app.include_router(agenda_public_api)  # /api/v1/events/{slug}/sessions
+
+    from app.routers.feedback import router_feedback_org, router_feedback_public
+
+    app.include_router(router_feedback_public)  # /api/v1/registrations/{id}/feedback
+    app.include_router(router_feedback_org)  # /api/v1/organizations/{slug}/events/{id}/feedback
 
     from app.routers.whatsapp import router_whatsapp
 
@@ -174,6 +219,10 @@ def _register_routers(app: FastAPI) -> None:
     from app.routers.connections import router_connections
 
     app.include_router(router_connections)  # /api/v1/connections/...
+
+    from app.routers.messages import router_messages
+
+    app.include_router(router_messages)  # /api/v1/messages/...
 
     from app.routers.api_keys import router_api_keys
 

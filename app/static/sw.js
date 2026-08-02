@@ -10,7 +10,7 @@
  *   - All other API              → Network-only (no offline fallback)
  */
 
-const CACHE_VERSION = 'heelo-v2';
+const CACHE_VERSION = 'heelo-v5';
 const OFFLINE_URL   = '/offline';
 
 // Precache: these must all return 200 at install time
@@ -190,6 +190,23 @@ async function enqueueCheckin(item) {
   });
 }
 
+// Best-effort registration id for a queued item, purely for reporting a sync
+// conflict back to the UI — not used for anything security-sensitive (the
+// server independently verifies the QR JWT before ever checking anyone in).
+function _queuedItemRegId(body) {
+  try {
+    const parsed = JSON.parse(body);
+    if (parsed.registration_id) return parsed.registration_id;
+    if (parsed.qr_token) {
+      const payload = JSON.parse(atob(parsed.qr_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return payload.rid || null;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
 async function drainCheckinQueue() {
   const db = await openQueueDB();
   const items = await new Promise((resolve, reject) => {
@@ -198,6 +215,9 @@ async function drainCheckinQueue() {
     req.onsuccess = (e) => resolve(e.target.result);
     req.onerror   = (e) => reject(e.target.error);
   });
+
+  let drained = 0;
+  const duplicates = [];
 
   for (const item of items) {
     try {
@@ -215,13 +235,23 @@ async function drainCheckinQueue() {
           tx.oncomplete = resolve;
           tx.onerror    = (e) => reject(e.target.error);
         });
+        drained++;
+        if (resp.status === 409) {
+          duplicates.push(_queuedItemRegId(item.body));
+        }
       }
     } catch {
       // Still offline — leave in queue
     }
   }
 
-  // Notify all clients of sync completion
+  // Notify all clients of sync completion — including which of the queued
+  // check-ins, if any, turned out to already be checked in elsewhere by the
+  // time they synced, so the UI can flag it instead of dropping it silently.
   const clients = await self.clients.matchAll();
-  clients.forEach(client => client.postMessage({ type: 'CHECKIN_SYNC_COMPLETE', count: items.length }));
+  clients.forEach(client => client.postMessage({
+    type: 'CHECKIN_SYNC_COMPLETE',
+    count: drained,
+    duplicates,
+  }));
 }

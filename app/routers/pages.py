@@ -13,10 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.dependencies import DBSession
+from app.permissions import Permission, require_page_permission
 from app.services import organization_service as org_svc
+from app.utils.color import contrasting_text_color
 
 router_pages = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
+templates.env.filters["contrast_text"] = contrasting_text_color
 
 
 # ── Legal ─────────────────────────────────────────────────────────────────────
@@ -33,6 +36,29 @@ async def terms_page(request: Request):
 async def privacy_page(request: Request):
     return templates.TemplateResponse(
         "legal/privacy.html", {"request": request, "updated_date": "July 31, 2026"}
+    )
+
+
+@router_pages.get("/pricing", response_class=HTMLResponse)
+async def pricing_page(request: Request):
+    from app.services import payment_service as pay_svc
+
+    token = request.cookies.get("heelo_access")
+    is_logged_in = False
+    if token:
+        try:
+            jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            is_logged_in = True
+        except JWTError:
+            pass
+
+    return templates.TemplateResponse(
+        "marketing/pricing.html",
+        {
+            "request": request,
+            "is_logged_in": is_logged_in,
+            "platform_fee_percent": f"{float(pay_svc.PLATFORM_FEE_PERCENT) * 100:g}",
+        },
     )
 
 
@@ -84,6 +110,27 @@ async def landing_page(request: Request):
 @router_pages.get("/offline", response_class=HTMLResponse)
 async def offline_page(request: Request):
     return templates.TemplateResponse("pwa/offline.html", {"request": request})
+
+
+@router_pages.get("/feedback/{registration_id}", response_class=HTMLResponse)
+async def feedback_page(registration_id: str, request: Request, db: DBSession):
+    import uuid as _uuid
+
+    from app.services import ticketing_service as tk_svc
+
+    try:
+        reg_id = _uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await tk_svc.get_registration_by_id(db, reg_id)
+    if not reg or not reg.event:
+        raise HTTPException(404, "Registration not found.")
+
+    return templates.TemplateResponse(
+        "events/feedback.html",
+        {"request": request, "reg": reg, "event": reg.event},
+    )
 
 
 def _current_user_or_none(request: Request):
@@ -366,8 +413,7 @@ async def org_finance(slug: str, request: Request, db: DBSession):
     user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
     if not user:
         return RedirectResponse(f"/login?next=/org/{slug}/finance", status_code=302)
-    if not org or role not in ("admin", "organizer", "finance"):
-        raise HTTPException(403, "Access denied.")
+    require_page_permission(Permission.FINANCE_VIEW, role, org)
 
     onboarding = await org_svc.get_onboarding_state(db, org.id)
     finance = await org_svc.get_org_finance_summary(db, org.id)
@@ -438,8 +484,7 @@ async def org_event_new(slug: str, request: Request, db: DBSession):
     user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
     if not user:
         return RedirectResponse(f"/login?next=/org/{slug}/events/new", status_code=302)
-    if not org or role not in ("admin", "organizer"):
-        raise HTTPException(403, "Access denied.")
+    require_page_permission(Permission.EVENTS_MANAGE, role, org)
 
     from app.services import event_service as ev_svc
 
@@ -480,6 +525,7 @@ async def org_event_detail(slug: str, event_id: str, request: Request, db: DBSes
         raise HTTPException(403, "Access denied.")
 
     from app.services import event_service as ev_svc
+    from app.services import payment_service as pay_svc
     from app.services import ticketing_service as tk_svc
 
     event = await ev_svc.get_event_by_id(db, _uuid.UUID(event_id))
@@ -490,6 +536,9 @@ async def org_event_detail(slug: str, event_id: str, request: Request, db: DBSes
     ticket_types = await tk_svc.get_ticket_types(db, event.id)
     promo_codes = await tk_svc.get_promo_codes(db, event.id)
     onboarding = await org_svc.get_onboarding_state(db, org.id)
+    recurring_children = (
+        await ev_svc.list_recurring_children(db, event.id) if event.is_recurring else []
+    )
     sidebar_state = {
         "has_events": True,
         "has_revenue": stats["total_revenue"] > 0,
@@ -511,6 +560,46 @@ async def org_event_detail(slug: str, event_id: str, request: Request, db: DBSes
             user_role=role,
             ticket_types=ticket_types,
             promo_codes=promo_codes,
+            platform_fee_percent=f"{float(pay_svc.PLATFORM_FEE_PERCENT) * 100:g}",
+            recurring_children=recurring_children,
+            active_page="events",
+        ),
+    )
+
+
+@router_pages.get("/org/{slug}/events/{event_id}/live", response_class=HTMLResponse)
+async def org_event_live(slug: str, event_id: str, request: Request, db: DBSession):
+    import uuid as _uuid
+
+    user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
+    if not user:
+        return RedirectResponse(f"/login?next=/org/{slug}/events/{event_id}/live", status_code=302)
+    require_page_permission(Permission.LIVE_ENGAGEMENT_MANAGE, role, org)
+
+    from app.services import event_service as ev_svc
+
+    event = await ev_svc.get_event_by_id(db, _uuid.UUID(event_id))
+    if not event or str(event.org_id) != str(org.id):
+        raise HTTPException(404, "Event not found.")
+
+    onboarding = await org_svc.get_onboarding_state(db, org.id)
+    sidebar_state = {
+        "has_events": True,
+        "has_revenue": False,
+        "has_registrations": False,
+        "whatsapp_connected": False,
+    }
+
+    return templates.TemplateResponse(
+        "events/live_organizer.html",
+        _dash_ctx(
+            request,
+            user,
+            org,
+            orgs,
+            onboarding,
+            sidebar_state,
+            event=event,
             active_page="events",
         ),
     )
@@ -523,10 +612,12 @@ async def org_event_edit(slug: str, event_id: str, request: Request, db: DBSessi
     user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
     if not user:
         return RedirectResponse(f"/login?next=/org/{slug}/events/{event_id}/edit", status_code=302)
-    if not org or role not in ("admin", "organizer"):
-        raise HTTPException(403, "Access denied.")
+    require_page_permission(Permission.EVENTS_MANAGE, role, org)
 
+    from app.services import agenda_service as ag_svc
     from app.services import event_service as ev_svc
+    from app.services import speaker_service as sp_svc
+    from app.services import sponsor_service as spn_svc
     from app.services import ticketing_service as tk_svc
 
     event = await ev_svc.get_event_by_id(db, _uuid.UUID(event_id))
@@ -536,11 +627,17 @@ async def org_event_edit(slug: str, event_id: str, request: Request, db: DBSessi
     if event.status == "cancelled":
         raise HTTPException(400, "Cannot edit a cancelled event.")
 
+    from app.schemas.agenda import SessionOut
     from app.schemas.event import EventOut
-    from app.schemas.ticketing import TicketTypeOut
+    from app.schemas.sponsor import SponsorOut
+    from app.schemas.ticketing import FormFieldOut, TicketTypeOut
 
     categories = await ev_svc.get_all_categories(db)
     ticket_types = await tk_svc.get_ticket_types(db, event.id)
+    speaker_links = await sp_svc.list_event_speakers(db, event.id)
+    sponsors = await spn_svc.list_sponsors(db, event.id)
+    sessions = await ag_svc.list_sessions(db, event.id)
+    form_fields = await tk_svc.get_form_fields(db, event.id)
     onboarding = await org_svc.get_onboarding_state(db, org.id)
     sidebar_state = {
         "has_events": True,
@@ -552,6 +649,13 @@ async def org_event_edit(slug: str, event_id: str, request: Request, db: DBSessi
     existing_tickets = [
         TicketTypeOut.model_validate(tt).model_dump(mode="json") for tt in ticket_types
     ]
+    existing_speakers = [sp_svc.event_speaker_to_dict(link) for link in speaker_links]
+    existing_sponsors = [SponsorOut.model_validate(s).model_dump(mode="json") for s in sponsors]
+    existing_sessions = [SessionOut.model_validate(s).model_dump(mode="json") for s in sessions]
+    existing_form_fields = [
+        FormFieldOut.model_validate(f).model_dump(mode="json") for f in form_fields
+    ]
+    existing_section_order = ev_svc.get_effective_section_order(event)
 
     return templates.TemplateResponse(
         "events/create_edit.html",
@@ -566,6 +670,11 @@ async def org_event_edit(slug: str, event_id: str, request: Request, db: DBSessi
             event_dict=event_dict,
             categories=categories,
             existing_tickets=existing_tickets,
+            existing_speakers=existing_speakers,
+            existing_sponsors=existing_sponsors,
+            existing_sessions=existing_sessions,
+            existing_form_fields=existing_form_fields,
+            existing_section_order=existing_section_order,
             mode="edit",
             active_page="events",
         ),
@@ -579,6 +688,7 @@ async def org_event_edit(slug: str, event_id: str, request: Request, db: DBSessi
 async def public_event_page(event_slug: str, request: Request, db: DBSession):
     from app.services import event_service as ev_svc
     from app.services import ticketing_service as tk_svc
+    from app.utils.calendar_file import google_calendar_url
 
     event = await ev_svc.get_event_by_slug(db, event_slug)
     if not event or event.deleted_at is not None or event.status == "draft":
@@ -610,7 +720,26 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
 
     ticket_types = await tk_svc.get_ticket_types(db, event.id, public_only=True)
 
+    from app.schemas.agenda import SessionOut
+    from app.schemas.sponsor import SponsorOut
+    from app.services import agenda_service as ag_svc
     from app.services import inbox_service as inbox_svc
+    from app.services import speaker_service as sp_svc
+    from app.services import sponsor_service as spn_svc
+
+    speaker_links = await sp_svc.list_event_speakers(db, event.id)
+    speakers = [sp_svc.event_speaker_to_dict(link) for link in speaker_links]
+    sponsor_rows = await spn_svc.list_sponsors(db, event.id)
+    sponsors = [SponsorOut.model_validate(s).model_dump(mode="json") for s in sponsor_rows]
+    session_rows = await ag_svc.list_sessions(db, event.id)
+    sessions = [SessionOut.model_validate(s).model_dump(mode="json") for s in session_rows]
+    speaker_id_to_name = {s["speaker_id"]: s["name"] for s in speakers}
+    for sess, row in zip(sessions, session_rows, strict=True):
+        sess["speaker_names"] = [
+            speaker_id_to_name[sid] for sid in sess["speaker_ids"] if sid in speaker_id_to_name
+        ]
+        sess["time"] = row.start_datetime.strftime("%H:%M")
+        sess["end_time"] = row.end_datetime.strftime("%H:%M")
 
     follower_count = await inbox_svc.get_follower_count(db, event.org_id)
     is_following = False
@@ -650,12 +779,41 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
             "event": event,
             "org": org,
             "ticket_types": ticket_types,
+            "speakers": speakers,
+            "sponsors": sponsors,
+            "sessions": sessions,
             "follower_count": follower_count,
             "is_following": is_following,
             "is_interested": is_interested,
             "connectable_attendees": connectable_attendees,
             "mutuals_going_count": mutuals_going_count or 0,
+            "sections": ev_svc.get_effective_section_order(event),
+            "gcal_url": google_calendar_url(event) if event.start_datetime else None,
         },
+    )
+
+
+@router_pages.get("/e/{event_slug}/live", response_class=HTMLResponse)
+async def event_live_page(event_slug: str, request: Request, db: DBSession):
+    """Public — no login required, matching the anonymous-Q&A product
+    decision. Anyone with the event link can vote and ask questions."""
+    from sqlalchemy import select
+
+    from app.services import event_service as ev_svc
+
+    event = await ev_svc.get_event_by_slug(db, event_slug)
+    if not event or event.deleted_at is not None or event.status == "draft":
+        raise HTTPException(404, "Event not found.")
+
+    from app.models.organization import Organization
+    from app.utils.livestream import resolve_embed
+
+    org = await db.scalar(select(Organization).where(Organization.id == event.org_id))
+    livestream = resolve_embed(event.livestream_url)
+
+    return templates.TemplateResponse(
+        "events/live_attendee.html",
+        {"request": request, "event": event, "org": org, "livestream": livestream},
     )
 
 
@@ -724,6 +882,7 @@ async def register_page(event_slug: str, request: Request, db: DBSession):
                 "field_type": ff.field_type,
                 "is_required": ff.is_required,
                 "options": ff.options or [],
+                "applies_to_ticket_type_ids": ff.applies_to_ticket_type_ids or None,
             }
             for ff in form_fields
         ]
@@ -1065,8 +1224,7 @@ async def campaign_new(slug: str, request: Request, db: DBSession):
     user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
     if not user:
         return RedirectResponse(f"/login?next=/org/{slug}/campaigns/new", status_code=302)
-    if not org or role not in ("admin", "organizer"):
-        raise HTTPException(403, "Access denied.")
+    require_page_permission(Permission.CAMPAIGNS_MANAGE, role, org)
 
     import json as _json
 
@@ -1181,8 +1339,7 @@ async def campaign_edit(slug: str, campaign_id: str, request: Request, db: DBSes
         return RedirectResponse(
             f"/login?next=/org/{slug}/campaigns/{campaign_id}/edit", status_code=302
         )
-    if not org or role not in ("admin", "organizer"):
-        raise HTTPException(403, "Access denied.")
+    require_page_permission(Permission.CAMPAIGNS_MANAGE, role, org)
 
     try:
         cid = _uuid.UUID(campaign_id)
@@ -2323,6 +2480,89 @@ async def org_contacts(
     )
 
 
+@router_pages.get("/speakers/{slug}", response_class=HTMLResponse)
+async def public_speaker_profile(slug: str, request: Request, db: DBSession):
+    from app.services import speaker_service as sp_svc
+
+    user, _ = await _get_auth_context(request, db)
+
+    speaker = await sp_svc.get_speaker_by_slug(db, slug)
+    if not speaker:
+        raise HTTPException(404, "Speaker not found.")
+
+    events = await sp_svc.list_public_events_for_speaker(db, speaker.id)
+
+    return templates.TemplateResponse(
+        "speakers/profile.html",
+        {
+            "request": request,
+            "user": user,
+            "speaker": speaker,
+            "events": events,
+        },
+    )
+
+
+@router_pages.get("/sponsor-invite/{token}", response_class=HTMLResponse)
+async def sponsor_invite_claim(token: str, request: Request, db: DBSession):
+    import uuid as _uuid
+
+    from app.services import sponsor_service as sp_svc
+
+    user, _ = await _get_auth_context(request, db)
+
+    payload = sp_svc.decode_sponsor_invite_token(token)
+    sponsor = await sp_svc.get_sponsor_by_id(db, _uuid.UUID(payload["sponsor_id"]))
+    if not sponsor:
+        raise HTTPException(404, "Sponsor not found.")
+
+    from app.models.event import Event
+
+    event = await db.get(Event, sponsor.event_id)
+
+    return templates.TemplateResponse(
+        "sponsors/invite_claim.html",
+        {
+            "request": request,
+            "user": user,
+            "token": token,
+            "sponsor": sponsor,
+            "event": event,
+        },
+    )
+
+
+@router_pages.get("/my-sponsorships", response_class=HTMLResponse)
+async def my_sponsorships(request: Request, db: DBSession):
+    from app.services import sponsor_service as sp_svc
+
+    user, _ = await _get_auth_context(request, db)
+    if not user:
+        return RedirectResponse("/login?next=/my-sponsorships", status_code=302)
+
+    sponsors = await sp_svc.list_my_sponsorships(db, user.id)
+
+    from app.models.event import Event
+
+    event_ids = {s.event_id for s in sponsors}
+    events = {}
+    if event_ids:
+        from sqlalchemy import select
+
+        rows = await db.scalars(select(Event).where(Event.id.in_(event_ids)))
+        events = {e.id: e for e in rows.all()}
+
+    return templates.TemplateResponse(
+        "sponsors/my_sponsorships.html",
+        {
+            "request": request,
+            "user": user,
+            "sponsors": sponsors,
+            "events": events,
+        },
+    )
+
+
 @router_pages.get("/p/{username}", response_class=HTMLResponse)
 async def public_user_profile(username: str, request: Request, db: DBSession):
     from sqlalchemy import select
@@ -2363,6 +2603,83 @@ async def public_user_profile(username: str, request: Request, db: DBSession):
             "user": viewer,
             "attended_regs": attended_regs,
             "connection_status": connection_status,
+        },
+    )
+
+
+@router_pages.get("/messages", response_class=HTMLResponse)
+async def messages_list(request: Request, db: DBSession):
+    from app.services import message_service as msg_svc
+
+    user, _ = await _get_auth_context(request, db)
+    if not user:
+        return RedirectResponse("/login?next=/messages", status_code=302)
+
+    threads = await msg_svc.list_threads(db, user.id)
+
+    from sqlalchemy import select
+
+    from app.models.user import User
+
+    enriched = []
+    for t in threads:
+        other = await db.scalar(select(User).where(User.id == t["other_user_id"]))
+        if not other:
+            continue
+        enriched.append({**t, "other_user": other})
+
+    return templates.TemplateResponse(
+        "messages/list.html",
+        {"request": request, "user": user, "threads": enriched},
+    )
+
+
+@router_pages.get("/messages/{other_user_id}", response_class=HTMLResponse)
+async def messages_thread(other_user_id: str, request: Request, db: DBSession):
+    import uuid as _uuid
+
+    from sqlalchemy import select
+
+    from app.models.user import User
+    from app.services import connection_service as conn_svc
+    from app.services import message_service as msg_svc
+
+    user, _ = await _get_auth_context(request, db)
+    if not user:
+        return RedirectResponse(f"/login?next=/messages/{other_user_id}", status_code=302)
+
+    try:
+        other_id = _uuid.UUID(other_user_id)
+    except ValueError as err:
+        raise HTTPException(404, "User not found.") from err
+
+    other_user = await db.scalar(select(User).where(User.id == other_id))
+    if not other_user or other_user.deleted_at is not None:
+        raise HTTPException(404, "User not found.")
+
+    status = await conn_svc.connection_status(db, user.id, other_id)
+    if status != "accepted":
+        raise HTTPException(403, "You can only message people you're connected with.")
+
+    threads = await msg_svc.list_threads(db, user.id)
+    thread_users = {}
+    for t in threads:
+        u = await db.scalar(select(User).where(User.id == t["other_user_id"]))
+        if u:
+            thread_users[t["other_user_id"]] = u
+
+    messages = await msg_svc.get_thread_messages(db, user.id, other_id)
+    await msg_svc.mark_thread_read(db, user.id, other_id)
+
+    return templates.TemplateResponse(
+        "messages/thread.html",
+        {
+            "request": request,
+            "user": user,
+            "other_user": other_user,
+            "messages": messages,
+            "threads": threads,
+            "thread_users": thread_users,
         },
     )
 

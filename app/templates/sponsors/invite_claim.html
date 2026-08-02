@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Claim sponsorship — Heelo{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<style>
+  body { background: var(--bg-secondary); }
+  .sc-nav {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
+  }
+  .sc-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
+  .sc-nav-logo span { color: var(--cyan-dark, #00b3a9); }
+
+  .sc-wrap { max-width: 480px; margin: 4rem auto; padding: 0 1.5rem; text-align: center; }
+  .sc-card { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: 2.5rem 2rem; }
+  .sc-icon { width: 52px; height: 52px; border-radius: 50%; background: rgba(0,255,243,0.1); color: var(--cyan-dark,#00b3a9); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.2rem; }
+  .sc-title { font-family: var(--font-serif, 'STK Bureau Serif', Georgia, serif); font-size: 1.4rem; font-weight: 700; margin: 0 0 0.5rem; }
+  .sc-sub { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.8rem; }
+  .sc-btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 26px; border-radius: 9px; font-size: 14px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; text-decoration: none; }
+  .sc-btn-primary { background: var(--text-primary); color: #fff; }
+  .sc-btn-outline { border: 1.5px solid var(--border-light); color: var(--text-primary); background: #fff; }
+  .sc-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .sc-error { color: #e53e3e; font-size: 13px; margin-top: 12px; display: none; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="sc-nav"><a href="/" class="sc-nav-logo">heelo<span>.</span></a></nav>
+
+<div class="sc-wrap">
+  <div class="sc-card">
+    <div class="sc-icon">
+      <span class="material-symbols-outlined">handshake</span>
+    </div>
+
+    {% if sponsor.invite_accepted %}
+    <h1 class="sc-title">Already claimed</h1>
+    <p class="sc-sub"><strong>{{ sponsor.name }}</strong>'s sponsorship of {{ event.title if event else 'this event' }} has already been claimed.</p>
+    {% if user %}
+    <a href="/my-sponsorships" class="sc-btn sc-btn-primary">Go to my sponsorships</a>
+    {% endif %}
+
+    {% elif user %}
+    <h1 class="sc-title">Claim your sponsorship</h1>
+    <p class="sc-sub">Claim <strong>{{ sponsor.name }}</strong>'s sponsorship of <strong>{{ event.title if event else 'this event' }}</strong> to manage your logo, website, and description yourself.</p>
+    <button class="sc-btn sc-btn-primary" id="claim-btn" onclick="claimSponsorship()">Claim sponsorship</button>
+    <div class="sc-error" id="claim-error">Something went wrong. Please try again.</div>
+
+    {% else %}
+    <h1 class="sc-title">Claim your sponsorship</h1>
+    <p class="sc-sub"><strong>{{ sponsor.name }}</strong> has been listed as a sponsor of <strong>{{ event.title if event else 'this event' }}</strong>. Sign in or create a free account to claim and manage this listing.</p>
+    <div class="sc-row">
+      <a href="/login?next=/sponsor-invite/{{ token }}" class="sc-btn sc-btn-outline">Sign in</a>
+      <a href="/register?next=/sponsor-invite/{{ token }}" class="sc-btn sc-btn-primary">Create account</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+async function claimSponsorship() {
+  const btn = document.getElementById('claim-btn');
+  const err = document.getElementById('claim-error');
+  btn.disabled = true;
+  btn.textContent = 'Claiming…';
+  try {
+    const res = await fetch('/api/v1/sponsor-portal/invite/{{ token }}/claim', {
+      method: 'POST', credentials: 'include',
+    });
+    if (!res.ok) throw new Error('failed');
+    window.location.href = '/my-sponsorships';
+  } catch {
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Claim sponsorship';
+  }
+}
+</script>
+{% endblock %}

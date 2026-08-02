@@ -87,6 +87,7 @@ img, video, svg { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font: inherit; border: none; background: none; }
 input, textarea, select { font: inherit; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--cyan); }
 ul, ol { list-style: none; }
 
 /* ── Typography scale ─────────────────────────────────────── */
@@ -245,6 +246,7 @@ h3, .h3 {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  text-align: left;
 }
 
 .form-label {
@@ -632,72 +634,7 @@ h3, .h3 {
   .otp-group { gap: 6px; }
 }
 
-/* ── Auth layout: split ───────────────────────────────────── */
-.auth-split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 100vh;
-}
-
-.auth-split-left {
-  background: var(--text-primary);
-  color: var(--white);
-  padding: 64px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-  overflow: hidden;
-}
-
-.auth-split-left::before {
-  content: '';
-  position: absolute;
-  top: -40%;
-  right: -20%;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(0,255,243,0.12) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.auth-split-left .logo {
-  font-family: var(--font-serif);
-  font-size: 24px;
-  color: var(--white);
-}
-
-.auth-split-left .hero-text {
-  font-family: var(--font-serif);
-  font-size: clamp(36px, 4vw, 52px);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: var(--white);
-  margin-bottom: 16px;
-}
-
-.auth-split-left .hero-sub {
-  font-size: 15px;
-  color: rgba(255,255,255,0.55);
-  max-width: 360px;
-  line-height: 1.6;
-}
-
-.auth-split-right {
-  background: var(--white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 48px;
-}
-
-.auth-split-right-inner {
-  width: 100%;
-  max-width: 400px;
-}
-
-/* Auth: centered layout (OTP, role, forgot password) */
+/* Auth: centered layout (login, register, OTP, role, forgot password) */
 .auth-centered {
   min-height: 100vh;
   display: flex;
@@ -923,16 +860,3 @@ h3, .h3 {
 
 /* Alpine: hide x-cloak elements until Alpine initialises */
 [x-cloak] { display: none !important; }
-
-/* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .auth-split {
-    grid-template-columns: 1fr;
-  }
-  .auth-split-left {
-    display: none;
-  }
-  .auth-split-right {
-    padding: 40px 24px;
-  }
-}

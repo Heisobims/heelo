@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import uuid
+from io import BytesIO
 
 import structlog
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from PIL import Image
+from pydantic import BaseModel, Field, field_validator
 
 from app.dependencies import CurrentUser, DBSession
 from app.models.vendor import VENDOR_CATEGORIES
@@ -13,6 +15,16 @@ from app.services import vendor_service as vsvc
 logger = structlog.get_logger()
 
 router_vendor = APIRouter(prefix="/api/v1/vendors", tags=["vendors"])
+
+_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
+_MAX_PORTFOLIO_IMAGES = 3
+
+
+def _validate_portfolio_urls(v: list[str] | None) -> list[str] | None:
+    if v is not None and len(v) > _MAX_PORTFOLIO_IMAGES:
+        raise ValueError(f"You can upload up to {_MAX_PORTFOLIO_IMAGES} portfolio samples.")
+    return v
 
 
 class VendorCreateRequest(BaseModel):
@@ -28,6 +40,13 @@ class VendorCreateRequest(BaseModel):
     contact_phone: str | None = Field(None, max_length=30)
     website_url: str | None = Field(None, max_length=500)
     price_range: str | None = None
+    # A profile image is required — vendors are discovered visually in the
+    # marketplace grid, so a listing with no photo at all isn't useful.
+    cover_image_url: str = Field(..., min_length=1)
+    portfolio_urls: list[str] | None = Field(None, max_length=_MAX_PORTFOLIO_IMAGES)
+    portfolio_link: str | None = Field(None, max_length=500)
+
+    _check_portfolio = field_validator("portfolio_urls")(_validate_portfolio_urls)
 
 
 class VendorUpdateRequest(BaseModel):
@@ -43,6 +62,11 @@ class VendorUpdateRequest(BaseModel):
     contact_phone: str | None = Field(None, max_length=30)
     website_url: str | None = Field(None, max_length=500)
     price_range: str | None = None
+    cover_image_url: str | None = Field(None, min_length=1)
+    portfolio_urls: list[str] | None = Field(None, max_length=_MAX_PORTFOLIO_IMAGES)
+    portfolio_link: str | None = Field(None, max_length=500)
+
+    _check_portfolio = field_validator("portfolio_urls")(_validate_portfolio_urls)
 
 
 class ContactVendorRequest(BaseModel):
@@ -70,6 +94,7 @@ def _vendor_dict(v) -> dict:
         "website_url": v.website_url,
         "cover_image_url": v.cover_image_url,
         "portfolio_urls": v.portfolio_urls or [],
+        "portfolio_link": v.portfolio_link,
         "price_range": v.price_range,
         "status": v.status,
         "is_verified": v.is_verified,
@@ -142,8 +167,40 @@ async def create_vendor(
         contact_phone=data.contact_phone,
         website_url=data.website_url,
         price_range=data.price_range,
+        cover_image_url=data.cover_image_url,
+        portfolio_urls=data.portfolio_urls,
+        portfolio_link=data.portfolio_link,
     )
     return {"success": True, "data": _vendor_dict(vendor)}
+
+
+@router_vendor.post("/upload-image")
+async def upload_vendor_image(
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+):
+    """Uploads a single image (profile photo or a portfolio sample) and
+    returns its URL. Used both during signup — before the vendor row exists
+    — and afterward to update an existing profile, so it's scoped by user
+    id rather than vendor id."""
+    if file.content_type not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(400, "Unsupported file type. Use JPEG, PNG or WebP.")
+    image_bytes = await file.read()
+    if len(image_bytes) > _MAX_UPLOAD_SIZE:
+        raise HTTPException(413, "Image must be under 5 MB.")
+    try:
+        Image.open(BytesIO(image_bytes)).verify()
+    except Exception as err:
+        raise HTTPException(400, "File does not appear to be a valid image.") from err
+
+    from app.utils import storage
+
+    url = await storage.upload_image(
+        image_bytes,
+        folder=f"vendors/{current_user.id}",
+        max_width=1600,
+    )
+    return {"success": True, "data": {"url": url}}
 
 
 @router_vendor.patch("/me")

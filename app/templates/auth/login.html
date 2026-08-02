@@ -2,26 +2,15 @@
 {% block title %}Sign in — Heelo{% endblock %}
 
 {% block body %}
-<div class="auth-split">
+<div class="auth-centered">
+  <div class="auth-centered-inner" x-data="loginForm()">
 
-  <!-- ── Left: brand panel ──────────────────────────────────────────── -->
-  <div class="auth-split-left">
-    <a href="/" class="logo">heelo</a>
-    <div>
-      <p class="hero-text">Good to have you back.</p>
-      <p class="hero-sub">Your events, attendees, and revenue are waiting.</p>
-    </div>
-    <div></div><!-- spacer -->
-  </div>
+    <a href="/" style="font-family:var(--font-serif); font-size:22px; font-weight:700; color:var(--text-primary); display:block; margin-bottom:48px;">heelo</a>
 
-  <!-- ── Right: login form ──────────────────────────────────────────── -->
-  <div class="auth-split-right">
-    <div class="auth-split-right-inner" x-data="loginForm()">
-
-      <h1 class="h1" style="margin-bottom:6px;">Sign in</h1>
-      <p class="text-secondary small" style="margin-bottom:32px;">
-        New to Heelo? <a href="/register" style="color:var(--text-primary); text-decoration:underline; text-underline-offset:3px;">Create an account</a>
-      </p>
+    <h1 class="h1" style="margin-bottom:6px;">Sign in</h1>
+    <p class="text-secondary small" style="margin-bottom:32px;">
+      New to Heelo? <a href="/register" style="color:var(--text-primary); text-decoration:underline; text-underline-offset:3px;">Create an account</a>
+    </p>
 
       <!-- Global error -->
       <div x-show="errors._global" class="alert alert-danger mb-4" x-text="errors._global" style="display:none;"></div>

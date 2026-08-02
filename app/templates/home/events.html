@@ -11,8 +11,8 @@
     position: sticky; top: 0; z-index: 40;
     background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-light);
-    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
   }
+  .ev-nav-inner { display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px; }
   .ev-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
   .ev-nav-logo span { color: var(--cyan-dark, #00b3a9); }
   .ev-nav-links { display: flex; gap: 4px; margin-left: 16px; }
@@ -21,6 +21,40 @@
   .ev-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
   .ev-btn-ghost { padding: 6px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; text-decoration: none; color: var(--text-primary); border: 1px solid var(--border-light); }
   .ev-btn-primary { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--text-primary); color: #fff; }
+
+  /* Mobile menu toggle — same pattern as the homepage nav */
+  .ev-hamburger {
+    display: none; flex-direction: column; justify-content: center; gap: 5px;
+    background: none; border: none; cursor: pointer; padding: 6px; margin-left: 4px;
+  }
+  .ev-hamburger span {
+    display: block; width: 20px; height: 1.5px; background: var(--text-primary);
+    transition: transform 200ms, opacity 200ms; border-radius: 2px;
+  }
+  .ev-hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .ev-hamburger.open span:nth-child(2) { opacity: 0; }
+  .ev-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+  .ev-mobile-menu {
+    display: none; flex-direction: column;
+    background: #fff; border-bottom: 1px solid var(--border-light);
+    padding: 8px 24px 16px;
+  }
+  .ev-mobile-menu.open { display: flex; }
+  .ev-mobile-menu a {
+    font-size: 15px; font-weight: 500; color: var(--text-primary); text-decoration: none;
+    padding: 13px 0; border-bottom: 1px solid var(--border-light);
+  }
+  .ev-mobile-menu a:last-child { border-bottom: none; }
+  .ev-mobile-cta {
+    margin-top: 8px; background: var(--text-primary) !important; color: #fff !important;
+    border-radius: 10px; padding: 13px 20px !important; text-align: center;
+    font-weight: 600 !important; border-bottom: none !important;
+  }
+
+  @media (max-width: 768px) {
+    .ev-nav-links { display: none; }
+    .ev-hamburger { display: flex; }
+  }
 
   .ev-hero { padding: 60px 24px 48px; text-align: center; max-width: 660px; margin: 0 auto; }
   .ev-hero h1 { font-family: var(--font-serif); font-size: clamp(28px, 5vw, 44px); font-weight: 700; margin-bottom: 12px; line-height: 1.15; }
@@ -61,22 +95,50 @@
   .ev-results-header { max-width: 1100px; margin: 0 auto 20px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
   .ev-results-count { font-size: 13.5px; color: var(--text-muted); }
 
-  .ev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+  /* Bento grid — fixed column count (instead of auto-fill) so the explicit
+     spans below land predictably, with dense packing to fill any gaps left
+     by the wide/tall cards. */
+  .ev-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 230px;
+    grid-auto-flow: dense; gap: 20px; max-width: 1100px; margin: 0 auto; padding: 0 24px;
+  }
+  .ev-card:nth-child(6n+1) { grid-column: span 2; grid-row: span 2; }
+  .ev-card:nth-child(6n+4) { grid-row: span 2; }
+  .ev-card:nth-child(6n)   { grid-column: span 2; }
+
+  @media (max-width: 860px) {
+    .ev-grid { grid-template-columns: repeat(2, 1fr); }
+    .ev-card:nth-child(6n+1) { grid-column: span 2; }
+    .ev-card:nth-child(6n)   { grid-column: span 2; }
+  }
+  @media (max-width: 560px) {
+    .ev-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
+    .ev-card:nth-child(n) { grid-column: span 1 !important; grid-row: span 1 !important; }
+    /* .ev-card-img fills its height via flex:1 against the 230px row height
+       set above — with grid-auto-rows switched to auto here there's no
+       height left to fill into, so it'd collapse to 0. Fall back to a
+       fixed aspect-ratio instead. */
+    .ev-card-img { flex: none; aspect-ratio: 4/3; }
+  }
 
   .ev-card {
-    background: #fff; border: 1px solid var(--border-light); border-radius: 14px;
-    text-decoration: none; color: inherit; overflow: hidden; display: block;
-    transition: box-shadow 0.15s, transform 0.15s;
+    background: transparent; border: none; border-radius: 0;
+    text-decoration: none; color: inherit; display: flex; flex-direction: column;
   }
-  .ev-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.09); transform: translateY(-2px); }
-  .ev-card-img { width: 100%; aspect-ratio: 16/7; background: linear-gradient(135deg,#0A0A0A,#1a1a1a); position: relative; overflow: hidden; }
-  .ev-card-img img { width: 100%; height: 100%; object-fit: cover; }
-  .ev-card-img-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-size: 32px; font-weight: 700; color: rgba(255,255,255,0.06); }
-  .ev-card-badge { position: absolute; top: 10px; left: 10px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; background: rgba(0,0,0,0.6); color: #fff; backdrop-filter: blur(4px); letter-spacing: 0.03em; text-transform: uppercase; }
-  .ev-card-body { padding: 16px; }
-  .ev-card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ev-card-meta { font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
-  .ev-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .ev-card-img { width: 100%; flex: 1; min-height: 0; background: linear-gradient(135deg,#0A0A0A,#1a1a1a); position: relative; overflow: hidden; border-radius: 10px; }
+  .ev-card-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; transition: transform 0.35s ease; }
+  .ev-card:hover .ev-card-img img { transform: scale(1.035); }
+  .ev-card-img::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.05); border-radius: 10px; pointer-events: none; }
+  .ev-card-img-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-size: 32px; font-weight: 700; color: rgba(255,255,255,0.12); z-index: 1; }
+  .ev-card-badge { position: absolute; top: 12px; left: 12px; z-index: 2; font-size: 10.5px; font-weight: 600; padding: 4px 11px; border-radius: 100px; background: var(--cyan); border: none; color: #000; letter-spacing: 0.02em; text-transform: capitalize; }
+  .ev-card-body { flex-shrink: 0; padding: 14px 2px 0; }
+  .ev-card-title {
+    font-family: var(--font-serif); font-size: 18px; font-weight: 700; letter-spacing: -0.01em;
+    line-height: 1.25; margin-bottom: 8px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .ev-card-meta { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+  .ev-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
   .ev-card-location { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
 
   .ev-empty { max-width: 420px; margin: 48px auto; text-align: center; padding: 0 24px; }
@@ -94,17 +156,34 @@
 {% block body %}
 <!-- Nav -->
 <nav class="ev-nav">
-  <a href="/" class="ev-nav-logo">heelo<span>.</span></a>
-  <div class="ev-nav-links">
-    <a href="/events" class="active">Events</a>
-    <a href="/vendors">Vendors</a>
+  <div class="ev-nav-inner">
+    <a href="/" class="ev-nav-logo">heelo<span>.</span></a>
+    <div class="ev-nav-links">
+      <a href="/events" class="active">Events</a>
+      <a href="/vendors">Vendors</a>
+      <a href="/venues">Venues</a>
+    </div>
+    <div class="ev-nav-right">
+      {% if user %}
+      <a href="/home" class="ev-btn-ghost">Dashboard</a>
+      {% else %}
+      <a href="/login" class="ev-btn-ghost">Sign in</a>
+      <a href="/register" class="ev-btn-primary">Sign up</a>
+      {% endif %}
+      <button class="ev-hamburger" id="ev-hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
-  <div class="ev-nav-right">
+  <div class="ev-mobile-menu" id="ev-mobile-menu">
+    <a href="/events">Events</a>
+    <a href="/vendors">Vendors</a>
+    <a href="/venues">Venues</a>
     {% if user %}
-    <a href="/home" class="ev-btn-ghost">Dashboard</a>
+    <a href="/home" class="ev-mobile-cta">Dashboard</a>
     {% else %}
-    <a href="/login" class="ev-btn-ghost">Sign in</a>
-    <a href="/register" class="ev-btn-primary">Sign up</a>
+    <a href="/login">Sign in</a>
+    <a href="/register" class="ev-mobile-cta">Sign up →</a>
     {% endif %}
   </div>
 </nav>
@@ -209,4 +288,23 @@
 {% endif %}
 
 <div style="height: 60px;"></div>
+
+<script>
+(function () {
+  var btn = document.getElementById('ev-hamburger');
+  var menu = document.getElementById('ev-mobile-menu');
+  if (btn && menu) {
+    btn.addEventListener('click', function () {
+      btn.classList.toggle('open');
+      menu.classList.toggle('open');
+    });
+    menu.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        btn.classList.remove('open');
+        menu.classList.remove('open');
+      });
+    });
+  }
+})();
+</script>
 {% endblock %}

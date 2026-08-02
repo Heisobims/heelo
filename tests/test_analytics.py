@@ -19,7 +19,7 @@ async def test_analytics_summary(client: AsyncClient, org, published_event, user
 
 async def test_analytics_ticket_breakdown(client: AsyncClient, org, published_event, user_headers):
     resp = await client.get(
-        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/analytics/tickets",
+        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/analytics/ticket-breakdown",
         headers=user_headers,
     )
     assert resp.status_code == 200
@@ -28,19 +28,22 @@ async def test_analytics_ticket_breakdown(client: AsyncClient, org, published_ev
 
 async def test_analytics_sales_over_time(client: AsyncClient, org, published_event, user_headers):
     resp = await client.get(
-        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/analytics/sales",
+        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/analytics/sales-chart",
         headers=user_headers,
     )
     assert resp.status_code == 200
-    assert isinstance(resp.json()["data"], list)
+    data = resp.json()["data"]
+    assert isinstance(data["sales"], list)
+    assert isinstance(data["registrations"], list)
 
 
 async def test_analytics_utm_breakdown(client: AsyncClient, org, published_event, user_headers):
     resp = await client.get(
-        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/analytics/utm",
+        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/analytics/utm-breakdown",
         headers=user_headers,
     )
     assert resp.status_code == 200
+    assert isinstance(resp.json()["data"], list)
 
 
 async def test_analytics_requires_org_membership(

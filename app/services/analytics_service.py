@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.ticketing import Order, PromoCode, Registration, TicketType
+from app.models.ticketing import REVENUE_STATUSES, Order, PromoCode, Registration, TicketType
 
 
 async def get_event_summary(db: AsyncSession, event_id: uuid.UUID) -> dict:
@@ -26,11 +26,13 @@ async def get_event_summary(db: AsyncSession, event_id: uuid.UUID) -> dict:
     rev = (
         await db.execute(
             select(
-                func.coalesce(func.sum(Order.net_amount), 0).label("net"),
-                func.coalesce(func.sum(Order.total_amount), 0).label("gross"),
+                func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0).label("net"),
+                func.coalesce(func.sum(Order.total_amount - Order.refunded_amount), 0).label(
+                    "gross"
+                ),
                 func.coalesce(func.sum(Order.discount_amount), 0).label("discounts"),
                 func.count(Order.id).label("orders"),
-            ).where(Order.event_id == event_id, Order.payment_status == "paid")
+            ).where(Order.event_id == event_id, Order.payment_status.in_(REVENUE_STATUSES))
         )
     ).one()
 
@@ -92,9 +94,9 @@ async def get_sales_over_time(db: AsyncSession, event_id: uuid.UUID) -> list[dic
         select(
             period,
             func.count(Order.id).label("orders"),
-            func.coalesce(func.sum(Order.net_amount), 0).label("revenue"),
+            func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0).label("revenue"),
         )
-        .where(Order.event_id == event_id, Order.payment_status == "paid")
+        .where(Order.event_id == event_id, Order.payment_status.in_(REVENUE_STATUSES))
         .group_by(period)
         .order_by(period)
     )
@@ -128,11 +130,11 @@ async def get_utm_breakdown(db: AsyncSession, event_id: uuid.UUID) -> list[dict]
             func.coalesce(Order.utm_source, "(direct)").label("source"),
             func.coalesce(Order.utm_medium, "").label("medium"),
             func.count(Order.id).label("orders"),
-            func.coalesce(func.sum(Order.net_amount), 0).label("revenue"),
+            func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0).label("revenue"),
         )
-        .where(Order.event_id == event_id, Order.payment_status == "paid")
+        .where(Order.event_id == event_id, Order.payment_status.in_(REVENUE_STATUSES))
         .group_by(text("1"), text("2"))
-        .order_by(func.sum(Order.net_amount).desc())
+        .order_by(func.sum(Order.net_amount - Order.refunded_amount).desc())
         .limit(20)
     )
     return [
@@ -179,10 +181,11 @@ async def get_live_stats(db: AsyncSession, event_id: uuid.UUID) -> dict:
     pending = by_status.get("pending", 0)
     total_attendees = confirmed + checked_in
 
+    net_expr = func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0).label("net")
     net = (
         await db.execute(
-            select(func.coalesce(func.sum(Order.net_amount), 0).label("net")).where(
-                Order.event_id == event_id, Order.payment_status == "paid"
+            select(net_expr).where(
+                Order.event_id == event_id, Order.payment_status.in_(REVENUE_STATUSES)
             )
         )
     ).scalar() or 0

@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import uuid
 from decimal import Decimal
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import Response
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel
 from sqlalchemy import select
 
 from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.models.ticketing import PromoCode, TicketType
+from app.permissions import Permission, require_permission
 from app.schemas.ticketing import (
     FormFieldCreateRequest,
     FormFieldOut,
+    FormFieldUpdateRequest,
     OrderOut,
     PromoCodeCreateRequest,
     PromoCodeOut,
@@ -23,12 +26,19 @@ from app.schemas.ticketing import (
     TicketTypeOut,
     TicketTypeUpdateRequest,
     WaitlistJoinRequest,
+    WaitlistOut,
 )
+from app.services import checkin_service as ci_svc
 from app.services import ticketing_service as tk_svc
 from app.utils.calendar_file import build_ics
 from app.utils.qr_code import generate_qr_png
 
 # ── Organizer API (under org/event scope) ─────────────────────────────────────
+
+TicketingManageAccess = Annotated[tuple, Depends(require_permission(Permission.TICKETING_MANAGE))]
+RegistrationsManageAccess = Annotated[
+    tuple, Depends(require_permission(Permission.REGISTRATIONS_MANAGE))
+]
 
 router_org = APIRouter(
     prefix="/api/v1/organizations/{slug}/events/{event_id}",
@@ -59,11 +69,13 @@ async def list_ticket_types(slug: str, event_id: str, db: DBSession, org_access:
 
 @router_org.post("/ticket-types", response_model=TicketTypeOut, status_code=201)
 async def create_ticket_type(
-    slug: str, event_id: str, data: TicketTypeCreateRequest, db: DBSession, org_access: OrgAccess
+    slug: str,
+    event_id: str,
+    data: TicketTypeCreateRequest,
+    db: DBSession,
+    org_access: TicketingManageAccess,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer") and not is_owner:
-        raise HTTPException(403, "Insufficient permissions.")
     event = await _get_event_for_org(db, event_id, org.id)
     return await tk_svc.create_ticket_type(db, event.id, data)
 
@@ -75,11 +87,9 @@ async def update_ticket_type(
     tt_id: str,
     data: TicketTypeUpdateRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: TicketingManageAccess,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer") and not is_owner:
-        raise HTTPException(403, "Insufficient permissions.")
     event = await _get_event_for_org(db, event_id, org.id)
     try:
         tid = uuid.UUID(tt_id)
@@ -95,11 +105,9 @@ async def update_ticket_type(
 
 @router_org.delete("/ticket-types/{tt_id}", status_code=204)
 async def delete_ticket_type(
-    slug: str, event_id: str, tt_id: str, db: DBSession, org_access: OrgAccess
+    slug: str, event_id: str, tt_id: str, db: DBSession, org_access: TicketingManageAccess
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer") and not is_owner:
-        raise HTTPException(403, "Insufficient permissions.")
     event = await _get_event_for_org(db, event_id, org.id)
     try:
         tid = uuid.UUID(tt_id)
@@ -115,11 +123,9 @@ async def delete_ticket_type(
 
 @router_org.post("/ticket-types/{tt_id}/toggle-visibility", response_model=TicketTypeOut)
 async def toggle_visibility(
-    slug: str, event_id: str, tt_id: str, db: DBSession, org_access: OrgAccess
+    slug: str, event_id: str, tt_id: str, db: DBSession, org_access: TicketingManageAccess
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer") and not is_owner:
-        raise HTTPException(403, "Insufficient permissions.")
     event = await _get_event_for_org(db, event_id, org.id)
     try:
         tid = uuid.UUID(tt_id)
@@ -146,18 +152,44 @@ async def list_form_fields(slug: str, event_id: str, db: DBSession, org_access: 
 
 @router_org.post("/form-fields", response_model=FormFieldOut, status_code=201)
 async def create_form_field(
-    slug: str, event_id: str, data: FormFieldCreateRequest, db: DBSession, org_access: OrgAccess
+    slug: str,
+    event_id: str,
+    data: FormFieldCreateRequest,
+    db: DBSession,
+    org_access: TicketingManageAccess,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer") and not is_owner:
-        raise HTTPException(403, "Insufficient permissions.")
     event = await _get_event_for_org(db, event_id, org.id)
     return await tk_svc.create_form_field(db, event.id, data)
 
 
+@router_org.patch("/form-fields/{ff_id}", response_model=FormFieldOut)
+async def update_form_field(
+    slug: str,
+    event_id: str,
+    ff_id: str,
+    data: FormFieldUpdateRequest,
+    db: DBSession,
+    org_access: TicketingManageAccess,
+):
+    from app.models.ticketing import RegistrationFormField
+
+    org, role, is_owner = org_access
+    event = await _get_event_for_org(db, event_id, org.id)
+    ff = await db.scalar(
+        select(RegistrationFormField).where(
+            RegistrationFormField.id == uuid.UUID(ff_id),
+            RegistrationFormField.event_id == event.id,
+        )
+    )
+    if not ff:
+        raise HTTPException(404, "Form field not found.")
+    return await tk_svc.update_form_field(db, ff, data)
+
+
 @router_org.delete("/form-fields/{ff_id}", status_code=204)
 async def delete_form_field(
-    slug: str, event_id: str, ff_id: str, db: DBSession, org_access: OrgAccess
+    slug: str, event_id: str, ff_id: str, db: DBSession, org_access: TicketingManageAccess
 ):
     from app.models.ticketing import RegistrationFormField
 
@@ -184,18 +216,20 @@ async def list_promo_codes(slug: str, event_id: str, db: DBSession, org_access: 
 
 @router_org.post("/promo-codes", response_model=PromoCodeOut, status_code=201)
 async def create_promo_code(
-    slug: str, event_id: str, data: PromoCodeCreateRequest, db: DBSession, org_access: OrgAccess
+    slug: str,
+    event_id: str,
+    data: PromoCodeCreateRequest,
+    db: DBSession,
+    org_access: TicketingManageAccess,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer") and not is_owner:
-        raise HTTPException(403, "Insufficient permissions.")
     event = await _get_event_for_org(db, event_id, org.id)
     return await tk_svc.create_promo_code(db, event.id, data)
 
 
 @router_org.delete("/promo-codes/{pc_id}", status_code=204)
 async def delete_promo_code(
-    slug: str, event_id: str, pc_id: str, db: DBSession, org_access: OrgAccess
+    slug: str, event_id: str, pc_id: str, db: DBSession, org_access: TicketingManageAccess
 ):
     org, role, is_owner = org_access
     event = await _get_event_for_org(db, event_id, org.id)
@@ -253,11 +287,9 @@ async def cancel_registration(
     reg_id: str,
     body: CancelRegistrationRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: RegistrationsManageAccess,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer") and not is_owner:
-        raise HTTPException(403, "Insufficient permissions.")
 
     event = await _get_event_for_org(db, event_id, org.id)
 
@@ -272,6 +304,66 @@ async def cancel_registration(
 
     reg = await tk_svc.cancel_registration(db, reg, refund=body.refund, cancelled_by="organizer")
     return {"success": True, "data": {"id": str(reg.id), "status": reg.status}}
+
+
+def _waitlist_out(entry) -> dict:
+    return WaitlistOut(
+        id=entry.id,
+        ticket_type_id=entry.ticket_type_id,
+        ticket_type_name=entry.ticket_type.name if entry.ticket_type else None,
+        name=entry.name,
+        email=entry.email,
+        phone=entry.phone,
+        position=entry.position,
+        notified_at=entry.notified_at,
+        offer_expires_at=entry.offer_expires_at,
+        created_at=entry.created_at,
+    ).model_dump(mode="json")
+
+
+@router_org.get("/waitlist")
+async def list_waitlist(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+    org, role, is_owner = org_access
+    event = await _get_event_for_org(db, event_id, org.id)
+    entries = await tk_svc.list_waitlist(db, event.id)
+    return {"success": True, "data": [_waitlist_out(e) for e in entries]}
+
+
+@router_org.delete("/waitlist/{waitlist_id}", status_code=204)
+async def remove_waitlist_entry(
+    slug: str, event_id: str, waitlist_id: str, db: DBSession, org_access: RegistrationsManageAccess
+):
+    org, role, is_owner = org_access
+    event = await _get_event_for_org(db, event_id, org.id)
+    try:
+        wid = uuid.UUID(waitlist_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid waitlist entry ID.") from err
+    entry = await tk_svc.get_waitlist_entry(db, event.id, wid)
+    await tk_svc.remove_from_waitlist(db, entry)
+
+
+@router_org.post("/ticket-types/{tt_id}/waitlist/notify-next")
+async def notify_next_waitlist(
+    slug: str, event_id: str, tt_id: str, db: DBSession, org_access: RegistrationsManageAccess
+):
+    org, role, is_owner = org_access
+    event = await _get_event_for_org(db, event_id, org.id)
+    try:
+        ttid = uuid.UUID(tt_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid ticket type ID.") from err
+
+    tt = await db.scalar(
+        select(TicketType).where(TicketType.id == ttid, TicketType.event_id == event.id)
+    )
+    if not tt:
+        raise HTTPException(404, "Ticket type not found.")
+
+    entry = await tk_svc.notify_next_waitlist_entry(db, ttid)
+    if not entry:
+        return {"success": True, "data": None, "message": "Nobody is waiting for this ticket type."}
+    return {"success": True, "data": _waitlist_out(entry)}
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -415,6 +507,54 @@ async def registration_calendar_ics(registration_id: str, db: DBSession):
         media_type="text/calendar",
         headers={"Content-Disposition": f'attachment; filename="{reg.event.slug}.ics"'},
     )
+
+
+@router_registrations.get("/{registration_id}/join")
+async def join_virtual_event(registration_id: str, db: DBSession):
+    """
+    The actual link attendees click from reminder emails/WhatsApp for virtual and
+    hybrid events. Records a lightweight "attendee opened this link" attendance
+    signal (reusing check-in, so virtual events show up in the same analytics
+    in-person events already get) before bouncing straight to the real meeting URL.
+    """
+    try:
+        reg_id = uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await ci_svc.mark_virtual_join(db, reg_id)
+    if not reg or not reg.event:
+        raise HTTPException(404, "Registration not found.")
+
+    if reg.event.virtual_url:
+        return RedirectResponse(reg.event.virtual_url)
+    return RedirectResponse(f"/e/{reg.event.slug}")
+
+
+@router_registrations.get("/{registration_id}/referral-stats")
+async def registration_referral_stats(registration_id: str, db: DBSession):
+    """
+    Powers the "bring a friend" card on an attendee's ticket page — their
+    shareable link and how many people have registered through it so far.
+    """
+    try:
+        reg_id = uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await tk_svc.get_registration_by_id(db, reg_id)
+    if not reg or not reg.event:
+        raise HTTPException(404, "Registration not found.")
+
+    stats = await tk_svc.get_referral_stats(db, reg_id)
+    return {
+        "success": True,
+        "data": {
+            "referral_path": f"/e/{reg.event.slug}?ref={reg_id}",
+            "referred_count": stats["referred_count"],
+            "discount_percent": float(tk_svc.REFERRAL_DISCOUNT_PERCENT) * 100,
+        },
+    }
 
 
 @router_registrations.post("/{registration_id}/cancel")

@@ -134,7 +134,7 @@
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div class="form-group" style="margin-bottom:0;">
               <label class="form-label">Country</label>
-              <select class="form-input" x-model="form.country" style="appearance:auto;">
+              <select class="form-select" x-model="form.country">
                 <option value="">Select…</option>
                 <option value="NG">Nigeria</option>
                 <option value="GH">Ghana</option>
@@ -151,7 +151,7 @@
             </div>
             <div class="form-group" style="margin-bottom:0;">
               <label class="form-label">Default currency</label>
-              <select class="form-input" x-model="form.currency" style="appearance:auto;">
+              <select class="form-select" x-model="form.currency">
                 <option value="NGN">NGN — Nigerian Naira</option>
                 <option value="GHS">GHS — Ghanaian Cedi</option>
                 <option value="KES">KES — Kenyan Shilling</option>
@@ -194,6 +194,23 @@
             <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">JPEG, PNG or WebP · Max 5 MB · Square recommended (512×512)</p>
             <p x-show="logoError" x-text="logoError" style="font-size:12px; color:#dc2626; margin-top:4px; display:none;"></p>
           </div>
+        </div>
+      </div>
+
+      <div class="sett-card">
+        <p class="sett-card-title">Brand color</p>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:-8px; margin-bottom:16px;">
+          Accents your public event pages and checkout — buttons, progress steps, and highlights.
+        </p>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <input type="color" x-model="form.brand_color" style="width:44px; height:44px; padding:0; border:1.5px solid var(--border-light); border-radius:8px; cursor:pointer;">
+          <input type="text" class="form-input" x-model="form.brand_color" placeholder="#00FFF3" pattern="^#[0-9A-Fa-f]{6}$" style="width:120px; font-family:var(--font-mono);" maxlength="7">
+          <button type="button" class="btn btn-secondary btn-sm" @click="form.brand_color = ''" x-show="form.brand_color">Reset to default</button>
+        </div>
+        <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+          <button type="button" class="btn btn-primary" :class="{'btn-loading': saving}" :disabled="saving" @click="save()">
+            Save changes
+          </button>
         </div>
       </div>
     </div>
@@ -321,6 +338,7 @@ function orgSettings() {
       twitter_url: {{ (org.twitter_url or '') | tojson }},
       facebook_url: {{ (org.facebook_url or '') | tojson }},
       linkedin_url: {{ (org.linkedin_url or '') | tojson }},
+      brand_color: {{ (org.brand_color or '') | tojson }},
     },
     saving: false,
     success: '',
@@ -344,6 +362,7 @@ function orgSettings() {
           twitter_url: this.form.twitter_url.trim() || null,
           facebook_url: this.form.facebook_url.trim() || null,
           linkedin_url: this.form.linkedin_url.trim() || null,
+          brand_color: this.form.brand_color.trim() || null,
         };
         const res = await fetch('/api/v1/organizations/{{ org.slug }}', {
           method: 'PATCH',

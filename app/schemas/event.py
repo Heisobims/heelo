@@ -8,6 +8,11 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 
+class RecurrenceGenerateRequest(BaseModel):
+    rule: Literal["daily", "weekly", "monthly"]
+    end_date: datetime
+
+
 class CategoryOut(BaseModel):
     id: uuid.UUID
     name: str
@@ -15,6 +20,23 @@ class CategoryOut(BaseModel):
     icon: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+SectionKey = Literal["about", "agenda", "people", "partners", "gallery", "discussion"]
+
+DEFAULT_SECTION_ORDER: list[SectionKey] = [
+    "about",
+    "agenda",
+    "people",
+    "partners",
+    "gallery",
+    "discussion",
+]
+
+
+class SectionConfig(BaseModel):
+    key: SectionKey
+    visible: bool = True
 
 
 class EventCreateRequest(BaseModel):
@@ -87,6 +109,9 @@ class EventUpdateRequest(BaseModel):
     category_ids: list[uuid.UUID] | None = None
     vibe_tags: list[str] | None = Field(None, max_length=8)
     extras: dict | None = None
+    is_template: bool | None = None
+    section_order: list[SectionConfig] | None = None
+    livestream_url: str | None = None
 
     @field_validator("vibe_tags")
     @classmethod
@@ -132,6 +157,8 @@ class EventOut(BaseModel):
     categories: list[CategoryOut] = Field(default_factory=list)
     vibe_tags: list[str] = Field(default_factory=list)
     extras: dict | None = None
+    section_order: list[SectionConfig] | None = None
+    livestream_url: str | None = None
 
     model_config = {"from_attributes": True}
 

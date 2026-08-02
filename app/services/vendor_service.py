@@ -50,8 +50,11 @@ async def create_vendor(
     contact_phone: str | None,
     website_url: str | None,
     price_range: str | None,
+    cover_image_url: str,
     address: str | None = None,
     capacity: int | None = None,
+    portfolio_urls: list[str] | None = None,
+    portfolio_link: str | None = None,
 ) -> Vendor:
     if category not in VENDOR_CATEGORIES:
         raise HTTPException(400, f"Invalid category. Choose from: {', '.join(VENDOR_CATEGORIES)}")
@@ -78,6 +81,9 @@ async def create_vendor(
         contact_phone=contact_phone,
         website_url=website_url,
         price_range=price_range,
+        cover_image_url=cover_image_url,
+        portfolio_urls=portfolio_urls,
+        portfolio_link=portfolio_link,
         status="active",
     )
     db.add(vendor)

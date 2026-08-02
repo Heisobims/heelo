@@ -71,3 +71,67 @@ def release_stale_reservations() -> None:
 
         db.commit()
         log.info("ticketing.stale_reservations_released", order_count=len(stale_orders))
+
+
+@shared_task(name="app.tasks.ticketing.expire_waitlist_offers")
+def expire_waitlist_offers() -> None:
+    """
+    A cancellation offers the freed spot to the next waitlisted person with a
+    24h claim window (see ticketing_service.notify_next_waitlist_entry). If
+    they never act, nothing previously moved on to the person behind them —
+    the spot just sat unclaimed forever. This finds expired, unclaimed offers,
+    drops them from the queue, and offers the spot to whoever's next.
+    """
+    from app.models.ticketing import Waitlist
+
+    now = datetime.now(UTC)
+
+    with _db() as db:
+        expired = (
+            db.query(Waitlist)
+            .filter(Waitlist.notified_at.isnot(None), Waitlist.offer_expires_at < now)
+            .all()
+        )
+        if not expired:
+            return
+
+        ticket_type_ids = {entry.ticket_type_id for entry in expired}
+        for entry in expired:
+            db.delete(entry)
+        db.commit()
+        log.info("ticketing.waitlist_offers_expired", count=len(expired))
+
+        for ticket_type_id in ticket_type_ids:
+            next_wl = (
+                db.query(Waitlist)
+                .filter(Waitlist.ticket_type_id == ticket_type_id, Waitlist.notified_at.is_(None))
+                .order_by(Waitlist.position)
+                .first()
+            )
+            if not next_wl:
+                continue
+
+            next_wl.notified_at = now
+            next_wl.offer_expires_at = now + timedelta(hours=24)
+            db.commit()
+
+            try:
+                from app.tasks.email import send_waitlist_notification as _email_wl
+
+                _email_wl.delay(str(next_wl.id))
+            except Exception as err:
+                log.warning(
+                    "ticketing.waitlist_email_enqueue_failed",
+                    waitlist_id=str(next_wl.id),
+                    error=str(err),
+                )
+            try:
+                from app.tasks.whatsapp import send_waitlist_notification as _wa_wl
+
+                _wa_wl.delay(str(next_wl.id))
+            except Exception as err:
+                log.warning(
+                    "ticketing.waitlist_whatsapp_enqueue_failed",
+                    waitlist_id=str(next_wl.id),
+                    error=str(err),
+                )

@@ -19,20 +19,27 @@ from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 # ── Import all models to register them on Base before create_all ──────────────
 import app.models.api  # noqa: F401
 import app.models.campaign  # noqa: F401
+import app.models.checkin  # noqa: F401
 import app.models.community  # noqa: F401
+import app.models.crm  # noqa: F401
 import app.models.event  # noqa: F401
+import app.models.feedback  # noqa: F401
+import app.models.live  # noqa: F401
 import app.models.notification  # noqa: F401
 import app.models.organization  # noqa: F401
 import app.models.payment  # noqa: F401
 import app.models.speaker  # noqa: F401
 import app.models.ticketing  # noqa: F401
 import app.models.user  # noqa: F401
+import app.models.vendor  # noqa: F401
 from app.database import Base, get_db
 from app.main import app
 from app.utils.auth import hash_password
@@ -43,17 +50,35 @@ TEST_DATABASE_URL = os.getenv(
 )
 
 
-# ── Engine (session-scoped) ───────────────────────────────────────────────────
+# ── Schema setup (one-time) + Engine (function-scoped) ────────────────────────
+#
+# The engine (and the asyncpg connections it hands out) must be function-
+# scoped, matching pytest-asyncio's default per-test event loop. A
+# session-scoped engine gets its connections bound to whichever loop was
+# running the first time it was used — reusing it from a later test's
+# (different) loop raises asyncpg's "attached to a different loop"
+# RuntimeError. Schema create/drop is safe as session-scoped autouse work
+# because it opens and fully disposes its own engine within a single fixture
+# call, never handing a connection across a task/loop boundary.
 
 
-@pytest.fixture(scope="session")
-async def engine():
-    eng = create_async_engine(TEST_DATABASE_URL, echo=False)
+@pytest_asyncio.fixture(scope="session", autouse=True, loop_scope="session")
+async def _schema():
+    eng = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield eng
+    await eng.dispose()
+    yield
+    eng = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+    await eng.dispose()
+
+
+@pytest.fixture
+async def engine(_schema):
+    eng = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
+    yield eng
     await eng.dispose()
 
 
@@ -77,7 +102,7 @@ async def db(engine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def client(engine, db) -> AsyncGenerator[AsyncClient, None]:
+async def client(db) -> AsyncGenerator[AsyncClient, None]:
     """
     Client uses the same session as `db` so fixture-inserted data is
     immediately visible to route handlers without a separate commit.
@@ -91,7 +116,17 @@ async def client(engine, db) -> AsyncGenerator[AsyncClient, None]:
         yield c
     app.dependency_overrides.pop(get_db, None)
 
-    # Truncate all tables in dependency order
+
+@pytest.fixture(autouse=True)
+async def _truncate_after_test(engine):
+    """
+    Runs for every test regardless of which fixtures it actually requests.
+    Application service functions frequently call `db.commit()` directly
+    (not just the `client` fixture's request cycle), so relying on the
+    `client` fixture alone to clean up left data behind for any test that
+    only used `db` — causing UNIQUE-constraint collisions in later tests.
+    """
+    yield
     async with engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
             await conn.execute(table.delete())
@@ -216,6 +251,58 @@ async def org(db, user):
     return o
 
 
+async def _make_member(db, org, user, role: str):
+    """Add `user` to `org` as an active team member with the given role — for
+    testing the per-org permission matrix (owner/admin is covered by `org` +
+    `user` already, since the owner always resolves to role="admin")."""
+    from app.models.organization import OrganizationMember
+
+    now = datetime.now(UTC)
+    m = OrganizationMember(
+        org_id=org.id,
+        user_id=user.id,
+        role=role,
+        invited_at=now,
+        accepted_at=now,
+        status="active",
+    )
+    db.add(m)
+    await db.flush()
+    return m
+
+
+@pytest.fixture
+async def organizer_member(db, org, other_user):
+    """A non-owner team member with role="organizer" — distinct from the
+    owner (always role="admin") and from `other_user` alone (not a member)."""
+    return await _make_member(db, org, other_user, "organizer")
+
+
+@pytest.fixture
+def organizer_member_headers(organizer_member, other_user):
+    return {"Authorization": f"Bearer {_make_token(str(other_user.id))}"}
+
+
+@pytest.fixture
+async def finance_member(db, org, other_user):
+    return await _make_member(db, org, other_user, "finance")
+
+
+@pytest.fixture
+def finance_headers(finance_member, other_user):
+    return {"Authorization": f"Bearer {_make_token(str(other_user.id))}"}
+
+
+@pytest.fixture
+async def checkin_staff_member(db, org, other_user):
+    return await _make_member(db, org, other_user, "checkin_staff")
+
+
+@pytest.fixture
+def checkin_staff_headers(checkin_staff_member, other_user):
+    return {"Authorization": f"Bearer {_make_token(str(other_user.id))}"}
+
+
 @pytest.fixture
 async def event(db, org):
     from app.models.event import Event
@@ -226,6 +313,7 @@ async def event(db, org):
         slug="test-event",
         status="draft",
         format="in_person",
+        venue_city="Lagos",
         start_datetime=datetime.now(UTC) + timedelta(days=7),
         end_datetime=datetime.now(UTC) + timedelta(days=7, hours=3),
     )
@@ -236,7 +324,6 @@ async def event(db, org):
 
 @pytest.fixture
 async def published_event(db, org):
-
     from app.models.event import Event
 
     e = Event(
@@ -290,6 +377,69 @@ async def registration(db, published_event, ticket_type):
     db.add(r)
     await db.flush()
     return r
+
+
+@pytest.fixture
+async def order(db, published_event, ticket_type, user):
+    import uuid as _uuid
+
+    from app.models.ticketing import Order
+
+    o = Order(
+        user_id=user.id,
+        event_id=published_event.id,
+        buyer_name="Jane Doe",
+        buyer_email="jane@example.com",
+        total_amount=float(ticket_type.price),
+        net_amount=float(ticket_type.price) * 0.97,
+        platform_fee=float(ticket_type.price) * 0.03,
+        currency=ticket_type.currency,
+        payment_provider="paystack",
+        payment_reference=f"test-ref-{_uuid.uuid4()}",
+        payment_status="paid",
+    )
+    db.add(o)
+    await db.flush()
+    return o
+
+
+@pytest.fixture
+async def paid_registration(db, published_event, ticket_type, order):
+    import uuid as _uuid
+
+    from app.models.ticketing import Registration
+
+    r = Registration(
+        event_id=published_event.id,
+        ticket_type_id=ticket_type.id,
+        order_id=order.id,
+        attendee_name="Jane Doe",
+        attendee_email="jane@example.com",
+        attendee_phone="+2348012345678",
+        qr_code=f"test-qr-{_uuid.uuid4()}",
+        status="confirmed",
+    )
+    db.add(r)
+    await db.flush()
+    return r
+
+
+@pytest.fixture
+async def vendor(db, other_user):
+    from app.models.vendor import Vendor
+
+    v = Vendor(
+        user_id=other_user.id,
+        business_name="Landmark Hall",
+        slug="landmark-hall",
+        category="venue",
+        location_city="Lagos",
+        location_country="NG",
+        status="active",
+    )
+    db.add(v)
+    await db.flush()
+    return v
 
 
 @pytest.fixture

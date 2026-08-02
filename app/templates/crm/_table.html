@@ -43,7 +43,7 @@
           <td>
             <div class="cell-main">{{ r.created_at.strftime('%b %d, %Y') if r.created_at else '—' }}</div>
             {% if r.checked_in_at %}
-            <div class="att-sub checked-in"><span class="material-symbols-outlined">check</span> Checked in {{ r.checked_in_at.strftime('%H:%M') }}</div>
+            <div class="att-sub checked-in"><span class="material-symbols-outlined">check</span><span>Checked in {{ r.checked_in_at.strftime('%H:%M') }}</span></div>
             {% endif %}
           </td>
           <td style="white-space:nowrap;">

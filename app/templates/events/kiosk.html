@@ -171,6 +171,13 @@
     <span id="queue-count-badge" style="margin-left:8px;background:#000;color:#f59e0b;padding:2px 8px;border-radius:20px;font-size:0.75rem;"></span>
   </div>
 
+  <!-- Sync conflict banner — shown when queued offline check-ins turn out to
+       have already been checked in elsewhere by the time they synced. -->
+  <div id="conflict-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:201;background:#ef4444;color:#fff;text-align:center;padding:10px 16px;font-size:0.82rem;font-weight:600;cursor:pointer;" onclick="dismissConflictWarning()">
+    <span id="conflict-banner-text"></span>
+    <span style="margin-left:8px;opacity:0.8;">(tap to dismiss)</span>
+  </div>
+
   <!-- Top bar -->
   <div class="topbar" id="topbar" style="transition:top 0.2s;">
     <div>
@@ -253,6 +260,27 @@
     let overlayTimer = null;
     let _queueCount = 0;
 
+    // ── Local "already checked in" cache ────────────────────────────────────
+    //
+    // Refreshed from the server whenever online (see refreshStats). Checked
+    // before accepting any scan or manual check-in — online or offline — so an
+    // obvious duplicate is rejected immediately using recent server truth,
+    // instead of only being caught after a background sync (by which point
+    // staff has already waved the attendee through).
+    let _checkedInIds = new Set();
+
+    // Decode a QR JWT's payload without verifying its signature — purely to
+    // peek at the registration id for the local dedup check. The server still
+    // fully verifies the token before actually checking anyone in.
+    function peekRegistrationId(qrToken) {
+      try {
+        const payload = JSON.parse(atob(qrToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return payload.rid || null;
+      } catch {
+        return null;
+      }
+    }
+
     // ── Service Worker registration ───────────────────────────────────────────
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/static/sw.js', { scope: '/' })
@@ -263,6 +291,9 @@
               _queueCount = Math.max(0, _queueCount - e.data.count);
               updateQueueBadge();
               refreshStats();
+              if (e.data.duplicates?.length) {
+                showConflictWarning(e.data.duplicates);
+              }
             }
           });
         })
@@ -270,10 +301,23 @@
     }
 
     // ── Offline / online detection ────────────────────────────────────────────
+    let _offline = false;
+    let _conflictVisible = false;
+
+    // Banners stack vertically; the topbar drops below whichever are visible.
+    function relayoutBanners() {
+      const offlineBanner  = document.getElementById('offline-banner');
+      const conflictBanner = document.getElementById('conflict-banner');
+      offlineBanner.style.display  = _offline ? 'block' : 'none';
+      conflictBanner.style.display = _conflictVisible ? 'block' : 'none';
+      conflictBanner.style.top = _offline ? '40px' : '0';
+      const total = (_offline ? 40 : 0) + (_conflictVisible ? 40 : 0);
+      document.getElementById('topbar').style.top = `${total}px`;
+    }
+
     function setOfflineMode(offline) {
-      const banner = document.getElementById('offline-banner');
-      banner.style.display = offline ? 'block' : 'none';
-      document.getElementById('topbar').style.top = offline ? '40px' : '0';
+      _offline = offline;
+      relayoutBanners();
     }
 
     setOfflineMode(!navigator.onLine);
@@ -289,6 +333,25 @@
     function updateQueueBadge() {
       const badge = document.getElementById('queue-count-badge');
       badge.textContent = _queueCount > 0 ? `${_queueCount} queued` : '';
+    }
+
+    // ── Sync conflict warning ──────────────────────────────────────────────────
+    //
+    // A queued offline check-in can turn out, once synced, to have already been
+    // checked in elsewhere (another device, or the dashboard) while this device
+    // was offline. That's no longer silently dropped — it's surfaced so staff
+    // know to double-check that attendee at the door log.
+    function showConflictWarning(duplicates) {
+      _conflictVisible = true;
+      const n = duplicates.length;
+      document.getElementById('conflict-banner-text').textContent =
+        `⚠ ${n} queued check-in${n === 1 ? '' : 's'} synced as duplicate — already checked in elsewhere.`;
+      relayoutBanners();
+    }
+
+    function dismissConflictWarning() {
+      _conflictVisible = false;
+      relayoutBanners();
     }
 
     // ── Camera ──────────────────────────────────────────────────────────────
@@ -338,6 +401,15 @@
 
     // ── QR processing (offline-aware) ─────────────────────────────────────────
     async function processQR(token) {
+      // Check against the local dedup cache first — catches an obvious repeat
+      // scan immediately, using recent server truth, without even touching the
+      // network (works the same online or offline).
+      const rid = peekRegistrationId(token);
+      if (rid && _checkedInIds.has(rid)) {
+        showResult('duplicate', {});
+        return;
+      }
+
       try {
         const resp = await fetch(
           `/api/v1/organizations/${_orgSlug}/events/${_eventId}/check-in`,
@@ -352,14 +424,17 @@
 
         if (json.queued) {
           // Queued by service worker while offline
+          if (rid) _checkedInIds.add(rid);
           _queueCount++;
           updateQueueBadge();
           showResult('success', { attendee_name: 'Queued', ticket_type: 'Syncs on reconnect' });
           updateCounter(1);
         } else if (resp.ok && json.success) {
+          if (rid) _checkedInIds.add(rid);
           showResult('success', json.data);
           updateCounter(1);
         } else if (resp.status === 409) {
+          if (rid) _checkedInIds.add(rid);
           showResult('duplicate', json.error?.details || {});
         } else {
           showError(json.error?.message || 'Check-in failed.');
@@ -421,6 +496,22 @@
       } catch {}
     }
 
+    // Refreshes the local dedup cache from server truth. Only replaces entries
+    // while online — an offline attempt just fails silently and the cache keeps
+    // whatever it last knew, which is exactly what we want it to fall back on.
+    async function refreshCheckedInIds() {
+      try {
+        const resp = await fetch(
+          `/api/v1/organizations/${_orgSlug}/events/${_eventId}/check-in/checked-in-ids`,
+          { credentials: 'include' }
+        );
+        const json = await resp.json();
+        if (json.success) {
+          _checkedInIds = new Set(json.data);
+        }
+      } catch {}
+    }
+
     function updateCounter(delta) {
       const el = document.getElementById('checkin-count');
       const current = parseInt(el.textContent) || 0;
@@ -428,7 +519,9 @@
     }
 
     refreshStats();
+    refreshCheckedInIds();
     setInterval(refreshStats, 15000);
+    setInterval(refreshCheckedInIds, 15000);
 
     // ── Search drawer ────────────────────────────────────────────────────────
     function toggleDrawer(open) {
@@ -472,6 +565,7 @@
                 ${r.status === 'checked_in' ? '<span class="material-symbols-outlined">check</span> In' : 'Confirmed'}
               </span>
               ${r.status === 'confirmed' ? `<button class="checkin-btn" onclick="manualCheckIn('${r.registration_id}', this)">Check in</button>` : ''}
+              ${r.status === 'checked_in' ? `<a class="checkin-btn" href="/api/v1/registrations/${r.registration_id}/badge.pdf" target="_blank" style="text-decoration:none;">Print badge</a>` : ''}
             </div>
           </div>
         `).join('');
@@ -481,6 +575,11 @@
     }
 
     async function manualCheckIn(regId, btn) {
+      if (_checkedInIds.has(regId)) {
+        btn.textContent = 'Already in';
+        return;
+      }
+
       btn.disabled  = true;
       btn.textContent = '…';
       try {
@@ -495,17 +594,20 @@
         );
         const json = await resp.json();
         if (json.queued) {
+          _checkedInIds.add(regId);
           btn.textContent = 'Queued';
           btn.style.background = '#f59e0b';
           _queueCount++;
           updateQueueBadge();
           updateCounter(1);
         } else if (resp.ok && json.success) {
+          _checkedInIds.add(regId);
           btn.innerHTML = '<span class="material-symbols-outlined">check</span>';
           btn.style.background = 'var(--green)';
           updateCounter(1);
           setTimeout(() => runSearch(document.getElementById('search-input').value), 500);
         } else if (resp.status === 409) {
+          _checkedInIds.add(regId);
           btn.textContent = 'Already in';
         } else {
           btn.textContent = 'Failed';

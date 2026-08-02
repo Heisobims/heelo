@@ -37,9 +37,37 @@
     color: var(--text-primary); outline: none; transition: border-color 0.15s; box-sizing: border-box;
   }
   .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--cyan); }
+  .field select {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6B6B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+    padding-right: 38px;
+    cursor: pointer;
+  }
   .field textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   @media(max-width:480px) { .field-row { grid-template-columns: 1fr; } }
+
+  .vs-cover-upload {
+    width: 100%; aspect-ratio: 16/6; border-radius: 10px; overflow: hidden;
+    border: 1.5px dashed var(--border-light); background: var(--bg-secondary);
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .vs-cover-upload:hover { border-color: var(--cyan); }
+  .vs-cover-preview { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .vs-upload-placeholder {
+    width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 6px; color: var(--text-muted); font-size: 13px; font-weight: 500;
+  }
+  .vs-portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .vs-portfolio-slot {
+    aspect-ratio: 1/1; border-radius: 10px; overflow: hidden;
+    border: 1.5px dashed var(--border-light); background: var(--bg-secondary);
+    cursor: pointer; transition: border-color 0.15s;
+    display: flex; align-items: center; justify-content: center; color: var(--text-muted);
+  }
+  .vs-portfolio-slot:hover { border-color: var(--cyan); }
 
   .vs-submit-btn {
     width: 100%; padding: 14px; background: var(--text-primary); color: #fff;
@@ -117,6 +145,46 @@
     </div>
 
     <div class="vs-group">
+      <div class="vs-section-label">Photos</div>
+
+      <div class="field">
+        <label>Profile image <span style="color:#dc2626;">*</span></label>
+        <div class="hint" style="margin-top:0;margin-bottom:8px;">Shown as your listing's cover photo — organizers browse visually, so this is required.</div>
+        <div class="vs-cover-upload" @click="$refs.coverInput.click()" :style="coverPreview ? 'border-style:solid;' : ''">
+          <template x-if="coverPreview">
+            <img :src="coverPreview" alt="" class="vs-cover-preview">
+          </template>
+          <template x-if="!coverPreview">
+            <div class="vs-upload-placeholder">
+              <span class="material-symbols-outlined" style="font-size:24px;opacity:.5;">add_photo_alternate</span>
+              <span x-text="coverUploading ? 'Uploading…' : 'Click to upload'"></span>
+            </div>
+          </template>
+        </div>
+        <input type="file" x-ref="coverInput" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="uploadCover($event)">
+      </div>
+
+      <div class="field">
+        <label>Portfolio samples <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+        <div class="hint" style="margin-top:0;margin-bottom:8px;">Upload up to 3 photos of your past work, or link to a portfolio elsewhere — whichever's easier.</div>
+        <div class="vs-portfolio-grid">
+          <template x-for="(slot, i) in [0, 1, 2]" :key="i">
+            <div class="vs-portfolio-slot" @click="$refs['portfolioInput' + i].click()">
+              <template x-if="portfolioPreviews[i]">
+                <img :src="portfolioPreviews[i]" alt="" class="vs-cover-preview">
+              </template>
+              <template x-if="!portfolioPreviews[i]">
+                <span class="material-symbols-outlined" style="font-size:20px;opacity:.4;" x-text="portfolioUploading[i] ? 'hourglass_empty' : 'add'"></span>
+              </template>
+              <input type="file" :x-ref="'portfolioInput' + i" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="uploadPortfolio($event, i)">
+            </div>
+          </template>
+        </div>
+        <input type="url" x-model="form.portfolio_link" placeholder="https://instagram.com/yourbusiness or a Behance/portfolio link" style="margin-top:10px;">
+      </div>
+    </div>
+
+    <div class="vs-group">
       <div class="vs-section-label">Location</div>
       <div class="field-row">
         <div class="field">
@@ -179,7 +247,7 @@
     <button
       class="vs-submit-btn"
       @click="submit()"
-      :disabled="loading || !user"
+      :disabled="loading || !user || coverUploading"
       type="button"
     >
       <span x-text="loading ? 'Creating profile…' : 'Create vendor profile →'"></span>
@@ -211,11 +279,58 @@ function vendorSignup() {
       contact_phone: '',
       website_url: '',
       price_range: '',
+      portfolio_link: '',
+    },
+    coverUrl: '',
+    coverPreview: '',
+    coverUploading: false,
+    portfolioUrls: [null, null, null],
+    portfolioPreviews: [null, null, null],
+    portfolioUploading: [false, false, false],
+
+    async _uploadFile(file) {
+      const body = new FormData();
+      body.append('file', file);
+      const res = await fetch('/api/v1/vendors/upload-image', {
+        method: 'POST', credentials: 'include', body,
+      });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error?.message || 'Image upload failed.');
+      return j.data.url;
+    },
+    async uploadCover(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.coverPreview = URL.createObjectURL(file);
+      this.coverUploading = true; this.errorMsg = '';
+      try {
+        this.coverUrl = await this._uploadFile(file);
+      } catch (e) {
+        this.errorMsg = e.message; this.coverPreview = ''; this.coverUrl = '';
+      } finally {
+        this.coverUploading = false;
+      }
+    },
+    async uploadPortfolio(event, i) {
+      const file = event.target.files[0];
+      if (!file) return;
+      this.portfolioPreviews[i] = URL.createObjectURL(file);
+      this.portfolioUploading[i] = true; this.errorMsg = '';
+      try {
+        this.portfolioUrls[i] = await this._uploadFile(file);
+      } catch (e) {
+        this.errorMsg = e.message; this.portfolioPreviews[i] = null; this.portfolioUrls[i] = null;
+      } finally {
+        this.portfolioUploading[i] = false;
+      }
     },
     async submit() {
       if (!this.user) { window.location.href = '/login?next=/vendor-signup'; return; }
       if (!this.form.business_name || !this.form.category) {
         this.errorMsg = 'Business name and category are required.'; return;
+      }
+      if (!this.coverUrl) {
+        this.errorMsg = 'A profile image is required.'; return;
       }
       this.loading = true; this.errorMsg = '';
       try {
@@ -236,6 +351,9 @@ function vendorSignup() {
             contact_phone: this.form.contact_phone || null,
             website_url: this.form.website_url || null,
             price_range: this.form.price_range || null,
+            cover_image_url: this.coverUrl,
+            portfolio_urls: this.portfolioUrls.filter(u => u) ,
+            portfolio_link: this.form.portfolio_link || null,
           }),
         });
         const j = await res.json();

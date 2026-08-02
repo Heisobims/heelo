@@ -39,6 +39,20 @@ def _db() -> Session:
     return _SyncSession()
 
 
+def _org_branding(db: Session, org_id) -> dict:
+    """org_name/org_logo_url/brand_color kwargs for em.render() — every
+    org/event-related email template reads these to theme its header and
+    CTA buttons with the organizer's own branding instead of Heelo's."""
+    from app.models.organization import Organization
+
+    org = db.query(Organization).filter(Organization.id == org_id).first() if org_id else None
+    return {
+        "org_name": org.name if org else "Heelo",
+        "org_logo_url": org.logo_url if org else None,
+        "brand_color": org.brand_color if org else None,
+    }
+
+
 # ── Registration confirmation ─────────────────────────────────────────────────
 
 
@@ -48,7 +62,6 @@ def _db() -> Session:
 def send_registration_confirmation(order_id: str) -> None:
     """Send ticket confirmation with per-registration QR code URLs."""
     from app.models.event import Event
-    from app.models.organization import Organization
     from app.models.ticketing import Order, Registration
 
     with _db() as db:
@@ -65,8 +78,7 @@ def send_registration_confirmation(order_id: str) -> None:
         if not event:
             return
 
-        org = db.query(Organization).filter(Organization.id == event.org_id).first()
-        org_name = org.name if org else "Heelo"
+        branding = _org_branding(db, event.org_id)
 
         confirmed_regs = [
             {
@@ -85,10 +97,10 @@ def send_registration_confirmation(order_id: str) -> None:
             "registration_confirmation.html",
             order=order,
             event=event,
-            org_name=org_name,
             registrations=confirmed_regs,
             gcal_url=em.gcal_url(event),
             first_registration_id=confirmed_regs[0]["registration_id"],
+            **branding,
         )
         em.send_sync(
             to=order.buyer_email,
@@ -118,6 +130,8 @@ def send_registration_cancellation(registration_id: str, cancelled_by: str = "or
         if not event:
             return
 
+        branding = _org_branding(db, event.org_id)
+
         html = em.render(
             "registration_cancelled.html",
             event=event,
@@ -125,6 +139,7 @@ def send_registration_cancellation(registration_id: str, cancelled_by: str = "or
             ticket_type_name=reg.ticket_type.name if reg.ticket_type else "General",
             refunded=(reg.status == "refunded"),
             cancelled_by=cancelled_by,
+            **branding,
         )
         em.send_sync(
             to=reg.attendee_email,
@@ -173,7 +188,6 @@ def send_event_reminders() -> None:
     are within +/-1h of a due offset. Uses Redis dedup per (event, offset).
     """
     from app.models.event import Event
-    from app.models.organization import Organization
     from app.models.ticketing import Registration
 
     now = datetime.now(UTC)
@@ -204,8 +218,7 @@ def send_event_reminders() -> None:
             if not due_offsets:
                 continue
 
-            org = db.query(Organization).filter(Organization.id == event.org_id).first()
-            org_name = org.name if org else "Heelo"
+            branding = _org_branding(db, event.org_id)
 
             regs = (
                 db.query(Registration)
@@ -229,11 +242,11 @@ def send_event_reminders() -> None:
                         html = em.render(
                             "event_reminder.html",
                             event=event,
-                            org_name=org_name,
                             attendee_name=reg.attendee_name,
                             registration_id=rid,
                             gcal_url=em.gcal_url(event),
                             reminder_headline=headline,
+                            **branding,
                         )
                         em.send_sync(
                             to=reg.attendee_email,
@@ -251,6 +264,87 @@ def send_event_reminders() -> None:
     log.info("email.event_reminders.done", events_scanned=len(events))
 
 
+# ── Post-event feedback request ─────────────────────────────────────────────
+
+_FEEDBACK_DELAY_HOURS = 3  # how long after an event ends before asking for feedback
+_FEEDBACK_WINDOW_HOURS = 1  # tolerance around that delay, matching the hourly beat cadence
+
+
+@shared_task(name="app.tasks.email.send_feedback_requests")
+def send_feedback_requests() -> None:
+    """
+    Hourly Beat task — for events that ended ~3h ago, emails confirmed/checked-in
+    attendees a link to rate the event. One-shot per event (not per offset, unlike
+    reminders) — Redis dedup keyed per event so it never double-sends.
+    """
+    from app.models.event import Event
+    from app.models.ticketing import Registration
+
+    now = datetime.now(UTC)
+
+    try:
+        from redis import Redis as _Redis
+
+        redis = _Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    except Exception:
+        redis = None
+
+    with _db() as db:
+        events = (
+            db.query(Event)
+            .filter(
+                Event.status.in_(["ended", "live", "published"]),
+                Event.end_datetime <= now - timedelta(hours=_FEEDBACK_DELAY_HOURS),
+                Event.end_datetime
+                >= now - timedelta(hours=_FEEDBACK_DELAY_HOURS + _FEEDBACK_WINDOW_HOURS),
+                Event.deleted_at.is_(None),
+            )
+            .all()
+        )
+
+        for event in events:
+            sent_key = f"feedback_request:{event.id}"
+            if redis and redis.get(sent_key):
+                continue
+
+            branding = _org_branding(db, event.org_id)
+
+            regs = (
+                db.query(Registration)
+                .filter(
+                    Registration.event_id == event.id,
+                    Registration.status.in_(["confirmed", "checked_in"]),
+                )
+                .all()
+            )
+            for reg in regs:
+                try:
+                    html = em.render(
+                        "feedback_request.html",
+                        event=event,
+                        attendee_name=reg.attendee_name,
+                        registration_id=str(reg.id),
+                        **branding,
+                    )
+                    em.send_sync(
+                        to=reg.attendee_email,
+                        subject=f"How was {event.title}?",
+                        html=html,
+                    )
+                except Exception as exc:
+                    log.warning(
+                        "email.feedback_request.failed",
+                        reg_id=str(reg.id),
+                        event_id=str(event.id),
+                        error=str(exc),
+                    )
+
+            if redis:
+                redis.set(sent_key, "1", ex=7 * 24 * 3600)
+
+    log.info("email.feedback_requests.done", events_scanned=len(events))
+
+
 # ── Interest nudge ("save and remind") ────────────────────────────────────────
 
 _INTEREST_NUDGE_HOURS = 48
@@ -264,7 +358,6 @@ def send_interest_nudges() -> None:
     """
     from app.models.community import EventInterest
     from app.models.event import Event
-    from app.models.organization import Organization
     from app.models.ticketing import Registration
     from app.models.user import User
 
@@ -292,8 +385,7 @@ def send_interest_nudges() -> None:
         )
 
         for event in events:
-            org = db.query(Organization).filter(Organization.id == event.org_id).first()
-            org_name = org.name if org else "Heelo"
+            branding = _org_branding(db, event.org_id)
             sent_key = f"interest_nudge:{event.id}"
 
             interests = db.query(EventInterest).filter(EventInterest.event_id == event.id).all()
@@ -327,9 +419,9 @@ def send_interest_nudges() -> None:
                     html = em.render(
                         "interest_nudge.html",
                         event=event,
-                        org_name=org_name,
                         attendee_name=user.full_name,
                         gcal_url=em.gcal_url(event),
+                        **branding,
                     )
                     em.send_sync(
                         to=user.email,
@@ -353,7 +445,6 @@ def send_interest_nudges() -> None:
 )
 def send_waitlist_notification(waitlist_id: str) -> None:
     """Notify a waitlisted attendee that a spot became available."""
-    from app.models.organization import Organization
     from app.models.ticketing import TicketType, Waitlist
 
     with _db() as db:
@@ -365,17 +456,12 @@ def send_waitlist_notification(waitlist_id: str) -> None:
 
         event = db.query(EventModel).filter(EventModel.id == wl.event_id).first()
         tt = db.query(TicketType).filter(TicketType.id == wl.ticket_type_id).first()
-        org = (
-            db.query(Organization).filter(Organization.id == event.org_id).first()
-            if event
-            else None
-        )
+        branding = _org_branding(db, event.org_id if event else None)
 
         html = em.render(
             "waitlist_notification.html",
             event=event,
             ticket_type_name=tt.name if tt else "General",
-            org_name=org.name if org else "Heelo",
             name=wl.name,
             register_url=(
                 f"{settings.FRONTEND_URL}/e/{event.slug}/register"
@@ -383,6 +469,7 @@ def send_waitlist_notification(waitlist_id: str) -> None:
                 else settings.FRONTEND_URL
             ),
             offer_expires_at=wl.offer_expires_at,
+            **branding,
         )
 
         em.send_sync(
@@ -411,6 +498,8 @@ def send_event_cancellation(event_id: str, cancellation_note: str = "") -> None:
         if not event:
             return
 
+        branding = _org_branding(db, event.org_id)
+
         regs = (
             db.query(Registration)
             .filter(
@@ -430,6 +519,7 @@ def send_event_cancellation(event_id: str, cancellation_note: str = "") -> None:
                 event=event,
                 attendee_name=reg.attendee_name,
                 cancellation_note=cancellation_note,
+                **branding,
             )
             em.send_sync(
                 to=reg.attendee_email,
@@ -457,6 +547,8 @@ def send_event_update(event_id: str, changes: list[dict]) -> None:
         if not event:
             return
 
+        branding = _org_branding(db, event.org_id)
+
         regs = (
             db.query(Registration)
             .filter(
@@ -476,6 +568,7 @@ def send_event_update(event_id: str, changes: list[dict]) -> None:
                 event=event,
                 attendee_name=reg.attendee_name,
                 changes=changes,
+                **branding,
             )
             em.send_sync(
                 to=reg.attendee_email,

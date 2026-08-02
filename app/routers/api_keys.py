@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.dependencies import CurrentUser, DBSession, OrgAccess
+from app.permissions import Permission, require_permission
 from app.services import api_key_service as ak_svc
 
 router_api_keys = APIRouter(
     prefix="/api/v1/organizations/{slug}/api-keys",
     tags=["api-keys"],
 )
+
+ApiKeysManageAccess = Annotated[tuple, Depends(require_permission(Permission.API_KEYS_MANAGE))]
 
 
 class CreateKeyIn(BaseModel):
@@ -41,11 +45,13 @@ async def list_keys(slug: str, db: DBSession, org_access: OrgAccess):
 
 @router_api_keys.post("", status_code=201)
 async def create_key(
-    slug: str, body: CreateKeyIn, db: DBSession, org_access: OrgAccess, current_user: CurrentUser
+    slug: str,
+    body: CreateKeyIn,
+    db: DBSession,
+    org_access: ApiKeysManageAccess,
+    current_user: CurrentUser,
 ):
     org, role, is_owner = org_access
-    if not is_owner and role not in ("admin",):
-        raise HTTPException(403, "Only org admins can create API keys.")
 
     raw, key = await ak_svc.create_api_key(
         db, org_id=org.id, created_by=current_user.id, name=body.name
@@ -65,10 +71,8 @@ async def create_key(
 
 
 @router_api_keys.delete("/{key_id}", status_code=200)
-async def revoke_key(slug: str, key_id: str, db: DBSession, org_access: OrgAccess):
+async def revoke_key(slug: str, key_id: str, db: DBSession, org_access: ApiKeysManageAccess):
     org, role, is_owner = org_access
-    if not is_owner and role not in ("admin",):
-        raise HTTPException(403, "Only org admins can revoke API keys.")
 
     from sqlalchemy import select
 

@@ -3,17 +3,21 @@ from __future__ import annotations
 import csv
 import io
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.dependencies import DBSession, OrgAccess
+from app.permissions import Permission, require_permission
 from app.services import crm_service as crm_svc
 
 router_crm = APIRouter(
     prefix="/api/v1/organizations/{slug}",
     tags=["crm"],
 )
+
+CrmManageAccess = Annotated[tuple, Depends(require_permission(Permission.CRM_MANAGE))]
 
 
 @router_crm.get("/registrations/export.csv")
@@ -47,7 +51,7 @@ async def export_registrations_csv(
 async def import_contacts_csv(
     slug: str,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CrmManageAccess,
     file: UploadFile = File(...),
 ):
     """
@@ -56,8 +60,6 @@ async def import_contacts_csv(
     Returns count of imported / skipped rows.
     """
     org, role, _ = org_access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
 
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(422, "File must be a .csv")
@@ -133,7 +135,7 @@ async def update_contact_tags(
     slug: str,
     contact_id: str,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CrmManageAccess,
     tags: list[str] = Body(...),
 ):
     """Replace the tag list on a contact."""
@@ -142,8 +144,6 @@ async def update_contact_tags(
     from app.models.crm import Contact
 
     org, role, _ = org_access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
 
     try:
         cid = uuid.UUID(contact_id)

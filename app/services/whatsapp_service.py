@@ -240,7 +240,13 @@ def send_event_reminder_sync(
     ]
     if event.start_datetime:
         lines.append(f"📅 {date_label(event)}")
-    lines.append(f"📍 {location_label(event)}")
+    if event.format in ("virtual", "hybrid") and event.virtual_url:
+        platform = event.virtual_platform.title() if event.virtual_platform else "Online"
+        join_url = f"{settings.FRONTEND_URL}/api/v1/registrations/{registration_id}/join"
+        lines.append(f"📍 {platform} event")
+        lines.append(f"🔗 Join: {join_url}")
+    else:
+        lines.append(f"📍 {location_label(event)}")
     lines += [
         "",
         "Here's your QR code for quick check-in:",

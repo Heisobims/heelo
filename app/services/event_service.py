@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import structlog
@@ -12,9 +12,23 @@ from sqlalchemy.orm import selectinload
 
 from app.models.event import Event, EventCategory, event_category_link
 from app.models.organization import Organization
-from app.schemas.event import EventCreateRequest, EventUpdateRequest
+from app.schemas.event import DEFAULT_SECTION_ORDER, EventCreateRequest, EventUpdateRequest
 
 logger = structlog.get_logger()
+
+
+def get_effective_section_order(event: Event) -> list[dict]:
+    """The event's saved section_order, with any section keys it's missing
+    (e.g. added to DEFAULT_SECTION_ORDER after this event last saved a custom
+    order) appended as visible — so a new section type never silently stays
+    hidden on events that already customized their layout."""
+    saved = event.section_order or []
+    seen = {s["key"] for s in saved}
+    missing = [{"key": k, "visible": True} for k in DEFAULT_SECTION_ORDER if k not in seen]
+    return (
+        saved + missing if saved else [{"key": k, "visible": True} for k in DEFAULT_SECTION_ORDER]
+    )
+
 
 # ── Slug helpers ──────────────────────────────────────────────────────────────
 
@@ -105,6 +119,7 @@ async def update_event(
     if category_ids is not None:
         await _set_categories(db, event, category_ids)
 
+    await db.flush()
     logger.info("event.updated", event_id=str(event.id))
     return event
 
@@ -116,6 +131,8 @@ async def soft_delete_event(db: AsyncSession, event: Event) -> None:
 
 
 async def publish_event(db: AsyncSession, event: Event) -> Event:
+    if event.status != "draft":
+        raise ValueError(f"Event is already '{event.status}' and cannot be published again.")
     _validate_publishable(event)
     event.status = "published"
     await db.flush()
@@ -196,8 +213,134 @@ async def duplicate_event(
     if source.categories:
         clone.categories = list(source.categories)
 
+    from app.services import ticketing_service as tk_svc
+
+    await tk_svc.copy_ticket_types(db, source.id, clone.id)
+
     logger.info("event.duplicated", source_id=str(source.id), clone_id=str(clone.id))
     return clone
+
+
+# Safety bound on series generation — a mistyped far-future end_date shouldn't
+# silently create hundreds of draft events.
+MAX_RECURRING_INSTANCES = 52
+
+
+def _next_occurrence(dt: datetime, rule: str) -> datetime:
+    from dateutil.relativedelta import relativedelta
+
+    if rule == "daily":
+        return dt + timedelta(days=1)
+    if rule == "weekly":
+        return dt + timedelta(weeks=1)
+    if rule == "monthly":
+        return dt + relativedelta(months=1)
+    raise ValueError(f"Unknown recurrence rule: {rule}")
+
+
+async def generate_recurring_series(
+    db: AsyncSession,
+    parent: Event,
+    org: Organization,
+    created_by: uuid.UUID,
+    *,
+    rule: str,
+    end_date: datetime,
+) -> list[Event]:
+    """
+    Generate the occurrences of a recurring event as new draft events, each a
+    full copy of `parent` (including ticket types) with start/end shifted
+    forward by the recurrence interval. Always drafts, regardless of the
+    parent's own status — an organizer reviews and publishes each occurrence
+    (or bulk-publishes) rather than a bad end date silently going live across
+    every date in the series.
+    """
+    if rule not in ("daily", "weekly", "monthly"):
+        raise ValueError("Recurrence rule must be 'daily', 'weekly', or 'monthly'.")
+    if end_date <= parent.start_datetime:
+        raise ValueError("Recurrence end date must be after the event's start date.")
+
+    from app.services import ticketing_service as tk_svc
+
+    duration = parent.end_datetime - parent.start_datetime
+    children: list[Event] = []
+    next_start = _next_occurrence(parent.start_datetime, rule)
+
+    while next_start <= end_date and len(children) < MAX_RECURRING_INSTANCES:
+        base_slug = slugify(
+            f"{parent.title} {next_start.date().isoformat()}",
+            max_length=180,
+            word_boundary=True,
+            separator="-",
+        )
+        slug = await _unique_event_slug(db, base_slug)
+
+        child = Event(
+            org_id=org.id,
+            created_by=created_by,
+            parent_event_id=parent.id,
+            is_recurring=True,
+            title=parent.title,
+            slug=slug,
+            description=parent.description,
+            format=parent.format,
+            start_datetime=next_start,
+            end_datetime=next_start + duration,
+            timezone=parent.timezone,
+            venue_name=parent.venue_name,
+            venue_address=parent.venue_address,
+            venue_city=parent.venue_city,
+            venue_country=parent.venue_country,
+            venue_lat=parent.venue_lat,
+            venue_lng=parent.venue_lng,
+            virtual_url=parent.virtual_url,
+            virtual_platform=parent.virtual_platform,
+            max_capacity=parent.max_capacity,
+            is_private=parent.is_private,
+            vibe_tags=list(parent.vibe_tags),
+            status="draft",
+        )
+        db.add(child)
+        await db.flush()
+
+        if parent.categories:
+            child.categories = list(parent.categories)
+        await tk_svc.copy_ticket_types(db, parent.id, child.id)
+
+        children.append(child)
+        next_start = _next_occurrence(next_start, rule)
+
+    parent.is_recurring = True
+    parent.recurrence_rule = rule
+    parent.recurrence_end_date = end_date
+    await db.flush()
+
+    logger.info(
+        "event.recurring_series_generated",
+        parent_id=str(parent.id),
+        rule=rule,
+        count=len(children),
+    )
+    return children
+
+
+async def list_recurring_children(db: AsyncSession, parent_id: uuid.UUID) -> list[Event]:
+    result = await db.scalars(
+        select(Event)
+        .where(Event.parent_event_id == parent_id, Event.deleted_at.is_(None))
+        .order_by(Event.start_datetime)
+    )
+    return list(result.all())
+
+
+async def list_org_templates(db: AsyncSession, org_id: uuid.UUID) -> list[Event]:
+    """Events an organizer has marked reusable as a starting point for new events."""
+    result = await db.scalars(
+        select(Event)
+        .where(Event.org_id == org_id, Event.is_template == True, Event.deleted_at.is_(None))  # noqa: E712
+        .order_by(Event.title)
+    )
+    return list(result.all())
 
 
 # ── Listing & search ──────────────────────────────────────────────────────────

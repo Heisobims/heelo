@@ -98,6 +98,7 @@
     .badge-active { background: #00FFF320; color: #00FFF3; }
     [data-theme="light"] .badge-active { background: #00c85320; color: #00854a; }
     .badge-suspended { background: #ff6b6b20; color: #ff6b6b; }
+    .badge-pending { background: #f59e0b20; color: #fbbf24; }
     .badge-plan-starter { background: #71717a20; color: #a1a1aa; }
     .badge-plan-growth { background: #3b82f620; color: #60a5fa; }
     .badge-plan-pro { background: #8b5cf620; color: #a78bfa; }
@@ -139,6 +140,7 @@
   <nav class="admin-nav">
     <a href="/admin" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
     <a href="/admin/organizations" class="{{ 'active' if active_page == 'organizations' else '' }}">Organizations</a>
+    <a href="/admin/vendors" class="{{ 'active' if active_page == 'vendors' else '' }}">Vendors</a>
     <a href="/admin/users" class="{{ 'active' if active_page == 'users' else '' }}">Users</a>
     <a href="/admin/insights" class="{{ 'active' if active_page == 'insights' else '' }}">Insights</a>
     <a href="/admin/events" class="{{ 'active' if active_page == 'events' else '' }}">Events</a>

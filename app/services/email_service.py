@@ -23,10 +23,12 @@ from jinja2 import Environment, FileSystemLoader
 
 from app.config import settings
 from app.utils.calendar_file import google_calendar_url
+from app.utils.color import contrasting_text_color
 from app.utils.email import send_smtp
 
 _TEMPLATES_DIR = Path(__file__).parent.parent / "templates" / "emails"
 _env = Environment(loader=FileSystemLoader(str(_TEMPLATES_DIR)), autoescape=True)
+_env.filters["contrast_text"] = contrasting_text_color
 
 
 # ── Rendering ─────────────────────────────────────────────────────────────────

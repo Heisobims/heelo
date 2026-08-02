@@ -20,12 +20,21 @@ class Settings(BaseSettings):
     APP_ENV: Literal["development", "staging", "production"] = "development"
     SECRET_KEY: str
     FRONTEND_URL: str = "http://localhost:8000"
-    ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]
+    # Typed as a union (not plain list[str]) so that a non-JSON env value (e.g.
+    # "localhost,127.0.0.1,testserver") doesn't make pydantic-settings' own
+    # complex-type JSON pre-parse raise before this validator ever runs — see
+    # EnvSettingsSource._field_is_complex()'s allow_parse_failure branch.
+    ALLOWED_HOSTS: str | list[str] = ["localhost", "127.0.0.1"]
 
     @field_validator("ALLOWED_HOSTS", mode="before")
     @classmethod
     def parse_allowed_hosts(cls, v: str | list[str]) -> list[str]:
         if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("["):
+                import json
+
+                return json.loads(v)
             return [h.strip() for h in v.split(",")]
         return v
 

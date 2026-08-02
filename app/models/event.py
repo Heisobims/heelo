@@ -24,7 +24,7 @@ from app.database import Base, SoftDeleteMixin, TimestampMixin
 if TYPE_CHECKING:
     from app.models.campaign import Campaign
     from app.models.organization import Organization
-    from app.models.speaker import Sponsor
+    from app.models.speaker import EventSpeaker, Sponsor
     from app.models.ticketing import PromoCode, Registration, TicketType, Waitlist
     from app.models.user import User
 
@@ -96,6 +96,9 @@ class Event(Base, SoftDeleteMixin):
     og_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Flexible JSONB blob: agenda, people (speakers/panelists/etc), partners/sponsors
     extras: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=None)
+    # Ordered [{"key": "about", "visible": true}, ...] controlling the public
+    # event page's section order/visibility. Null = use DEFAULT_SECTION_ORDER.
+    section_order: Mapped[list | None] = mapped_column(JSONB, nullable=True, default=None)
     # Free-form organizer-typed vibe tags e.g. ["chill", "networking-heavy", "dress to impress"]
     vibe_tags: Mapped[list[str]] = mapped_column(ARRAY(String(50)), nullable=False, default=list)
 
@@ -103,6 +106,13 @@ class Event(Base, SoftDeleteMixin):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
     # in_person | virtual | hybrid
     format: Mapped[str] = mapped_column(String(20), nullable=False, default="in_person")
+    # Set when the organizer generates certificates — gates attendee downloads
+    # until they explicitly decide the event is ready (e.g. after confirming
+    # no late no-show corrections). Certificates are generated on-the-fly per
+    # download, not stored; this is purely an availability gate.
+    certificates_generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     start_datetime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_datetime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -120,6 +130,10 @@ class Event(Base, SoftDeleteMixin):
     # Virtual (virtual / hybrid)
     virtual_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     virtual_platform: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # Public livestream URL (YouTube/Vimeo/HLS/generic embed) shown on the
+    # event's live page — distinct from virtual_url, which is the private
+    # join link only sent to confirmed registrants.
+    livestream_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     max_capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -163,6 +177,12 @@ class Event(Base, SoftDeleteMixin):
     sponsors: Mapped[list[Sponsor]] = relationship(
         "Sponsor", back_populates="event", cascade="all, delete-orphan"
     )
+    event_speakers: Mapped[list[EventSpeaker]] = relationship(
+        "EventSpeaker",
+        back_populates="event",
+        cascade="all, delete-orphan",
+        order_by="EventSpeaker.sort_order",
+    )
     campaigns: Mapped[list[Campaign]] = relationship("Campaign", back_populates="event")
     categories: Mapped[list[EventCategory]] = relationship(
         "EventCategory", secondary=event_category_link, back_populates="events"
@@ -200,6 +220,8 @@ class EventSession(Base, TimestampMixin):
     speaker_ids: Mapped[list[str]] = mapped_column(
         ARRAY(UUID(as_uuid=False)), nullable=False, default=list
     )
+    # talk | panel | workshop | networking | break | ceremony
+    session_type: Mapped[str] = mapped_column(String(30), nullable=False, default="talk")
     start_datetime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     end_datetime: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # Physical room or stream URL for this session

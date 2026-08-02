@@ -65,6 +65,9 @@ class Vendor(Base, TimestampMixin):
     website_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     portfolio_urls: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # Alternative to uploading portfolio_urls — a link to work hosted elsewhere
+    # (Instagram, Behance, a personal site, etc).
+    portfolio_link: Mapped[str | None] = mapped_column(Text, nullable=True)
     price_range: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # pending | active | suspended
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")

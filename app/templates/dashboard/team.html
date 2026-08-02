@@ -148,30 +148,33 @@
 
           <!-- Actions (admins only, and can't remove yourself) -->
           {% if user_role == 'admin' or is_owner %}
-          <div x-show="m.user_id !== currentUserId" style="display:flex; gap:6px;">
-            <!-- Role picker -->
-            <select
-              class="form-input"
-              style="font-size:12px; padding:4px 8px; height:auto; min-width:120px; appearance:auto;"
-              :value="m.role"
-              @change="changeRole(m, $event.target.value)"
-              :disabled="m.updating"
-            >
-              <option value="admin">Admin</option>
-              <option value="organizer">Organizer</option>
-              <option value="finance">Finance</option>
-              <option value="checkin_staff">Check-in staff</option>
-            </select>
-            <!-- Remove -->
+          <div x-show="m.user_id !== currentUserId" style="display:flex; align-items:center; gap:6px;">
+            <!-- Role picker (active members only — pending invites don't have a
+                 role to change yet, so the select is replaced with a status pill) -->
+            <template x-if="m.status === 'active'">
+              <select
+                class="form-select"
+                style="font-size:12px; padding:4px 28px 4px 8px; height:36px; min-width:120px; background-position:right 8px center;"
+                :value="m.role"
+                @change="changeRole(m, $event.target.value)"
+                :disabled="m.updating"
+              >
+                <option value="admin">Admin</option>
+                <option value="organizer">Organizer</option>
+                <option value="finance">Finance</option>
+                <option value="checkin_staff">Check-in staff</option>
+              </select>
+            </template>
+            <!-- Remove / cancel invite -->
             <button
               type="button"
-              class="btn btn-secondary btn-sm"
-              style="color:#dc2626; border-color:#dc2626; flex-shrink:0;"
+              class="btn btn-secondary btn-icon"
+              style="width:36px; height:36px; color:#dc2626; border-color:#dc2626; flex-shrink:0;"
               :disabled="m.updating"
               @click="removeMember(m)"
-              title="Remove member"
+              :title="m.status === 'invite_pending' ? 'Cancel invite' : 'Remove member'"
             >
-              <span class="material-symbols-outlined" style="font-size:11px;">delete</span>
+              <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
             </button>
           </div>
           {% endif %}
@@ -218,7 +221,7 @@
           </div>
           <div class="form-group" style="margin-bottom:0;">
             <label class="form-label">Role</label>
-            <select class="form-input" x-model="inviteRole" style="appearance:auto;">
+            <select class="form-select" x-model="inviteRole">
               <option value="organizer">Organizer — can create and manage events</option>
               <option value="admin">Admin — full access</option>
               <option value="finance">Finance — revenue and payouts</option>
@@ -277,17 +280,19 @@ function teamManager() {
         this.inviteEmail = '';
         this.inviteRole = 'organizer';
         this.showFeedback('Invitation sent!');
-        /* Add pending member to list */
+        /* Add the real pending member row (server-assigned id — needed so
+           this invite can be cancelled without a page reload) */
+        const m = data.data.member;
         this.members.push({
-          id: Math.random().toString(),
-          user_id: null,
-          role: this.inviteRole,
-          status: 'invite_pending',
-          name: this.inviteEmail,
-          email: this.inviteEmail,
-          avatar: null,
-          invited_at: new Date().toISOString(),
-          accepted_at: null,
+          id: m.id,
+          user_id: m.user_id,
+          role: m.role,
+          status: m.status,
+          name: m.user_name,
+          email: m.user_email,
+          avatar: m.user_avatar,
+          invited_at: m.invited_at,
+          accepted_at: m.accepted_at,
           updating: false,
         });
       } catch { this.showFeedback('Network error.', 'error'); }
@@ -316,11 +321,11 @@ function teamManager() {
     },
 
     async removeMember(member) {
-      if (!member.user_id) return;
-      if (!confirm(`Remove ${member.name || member.email} from the team?`)) return;
+      const verb = member.status === 'invite_pending' ? 'Cancel the invite for' : 'Remove';
+      if (!confirm(`${verb} ${member.name || member.email} from the team?`)) return;
       member.updating = true;
       try {
-        const res = await fetch(`/api/v1/organizations/${orgSlug}/members/${member.user_id}`, {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/members/${member.id}`, {
           method: 'DELETE', credentials: 'include',
         });
         if (!res.ok && res.status !== 204) {
@@ -328,7 +333,7 @@ function teamManager() {
           return;
         }
         this.members = this.members.filter(m => m.id !== member.id);
-        this.showFeedback('Member removed.');
+        this.showFeedback(member.status === 'invite_pending' ? 'Invite cancelled.' : 'Member removed.');
       } catch { this.showFeedback('Network error.', 'error'); }
       finally { member.updating = false; }
     },

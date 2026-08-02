@@ -9,8 +9,9 @@ from sqlalchemy.orm import selectinload
 
 from app.models.event import Event
 from app.models.organization import Organization
-from app.models.ticketing import Order
+from app.models.ticketing import REVENUE_STATUSES, Order
 from app.models.user import User
+from app.models.vendor import Vendor
 
 # Display names for the country codes users/orgs can pick — mirrors the
 # select options offered in org_create.html / profile.html.
@@ -49,7 +50,9 @@ async def platform_stats(db: AsyncSession) -> dict:
     total_orgs = await db.scalar(select(func.count()).select_from(Organization))
     total_events = await db.scalar(select(func.count()).select_from(Event))
     total_revenue = await db.scalar(
-        select(func.coalesce(func.sum(Order.net_amount), 0)).where(Order.payment_status == "paid")
+        select(func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0)).where(
+            Order.payment_status.in_(REVENUE_STATUSES)
+        )
     )
     return {
         "total_users": total_users or 0,
@@ -91,9 +94,9 @@ async def list_orgs(
     for org in orgs:
         event_count = await db.scalar(select(func.count()).where(Event.org_id == org.id))
         revenue = await db.scalar(
-            select(func.coalesce(func.sum(Order.net_amount), 0))
+            select(func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0))
             .join(Event, Event.id == Order.event_id)
-            .where(Event.org_id == org.id, Order.payment_status == "paid")
+            .where(Event.org_id == org.id, Order.payment_status.in_(REVENUE_STATUSES))
         )
         result.append(
             {
@@ -132,15 +135,15 @@ async def get_org_detail(db: AsyncSession, org_id: uuid.UUID) -> dict | None:
         ).all()
     )
     revenue = await db.scalar(
-        select(func.coalesce(func.sum(Order.net_amount), 0))
+        select(func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0))
         .join(Event, Event.id == Order.event_id)
-        .where(Event.org_id == org.id, Order.payment_status == "paid")
+        .where(Event.org_id == org.id, Order.payment_status.in_(REVENUE_STATUSES))
     )
     reg_count = await db.scalar(
         select(func.count())
         .select_from(Order)
         .join(Event, Event.id == Order.event_id)
-        .where(Event.org_id == org.id, Order.payment_status == "paid")
+        .where(Event.org_id == org.id, Order.payment_status.in_(REVENUE_STATUSES))
     )
     from app.models.organization import OrganizationMember
 
@@ -181,6 +184,58 @@ async def reinstate_org(db: AsyncSession, org_id: uuid.UUID) -> Organization:
     await db.commit()
     await db.refresh(org)
     return org
+
+
+# ── Vendors / venues ─────────────────────────────────────────────────────────
+
+
+async def list_vendors(
+    db: AsyncSession,
+    *,
+    search: str | None = None,
+    category: str | None = None,
+    status: str | None = None,
+    page: int = 1,
+    per_page: int = 30,
+) -> tuple[list[Vendor], int]:
+    q = select(Vendor).options(selectinload(Vendor.user))
+    if search:
+        q = q.where(
+            or_(
+                Vendor.business_name.ilike(f"%{search}%"),
+                Vendor.slug.ilike(f"%{search}%"),
+            )
+        )
+    if category:
+        q = q.where(Vendor.category == category)
+    if status:
+        q = q.where(Vendor.status == status)
+
+    total = await db.scalar(select(func.count()).select_from(q.subquery()))
+    rows = await db.scalars(
+        q.order_by(Vendor.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+    )
+    return list(rows.all()), total or 0
+
+
+async def suspend_vendor(db: AsyncSession, vendor_id: uuid.UUID) -> Vendor:
+    vendor = await db.scalar(select(Vendor).where(Vendor.id == vendor_id))
+    if not vendor:
+        raise ValueError("Vendor not found")
+    vendor.status = "suspended"
+    await db.commit()
+    await db.refresh(vendor)
+    return vendor
+
+
+async def reinstate_vendor(db: AsyncSession, vendor_id: uuid.UUID) -> Vendor:
+    vendor = await db.scalar(select(Vendor).where(Vendor.id == vendor_id))
+    if not vendor:
+        raise ValueError("Vendor not found")
+    vendor.status = "active"
+    await db.commit()
+    await db.refresh(vendor)
+    return vendor
 
 
 def _birth_year_range_for_bracket(bracket: str) -> tuple[int | None, int | None]:

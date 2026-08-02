@@ -5,6 +5,7 @@
 {% block head %}
 {{ super() }}
 <style>
+  .ch-wrap { max-width: 780px; margin: 0 auto; padding: 28px 20px; }
   .ch-header { margin-bottom: 24px; }
   .ch-header h1 {
     font-family: 'STK Bureau Serif', Georgia, serif; font-size: 22px; font-weight: 700;
@@ -27,12 +28,16 @@
     display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 20px;
   }
   .ch-card-info { flex: 1; min-width: 0; }
-  .ch-card-title { font-size: 14.5px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ch-card-title {
+    display: flex; align-items: center; gap: 6px; min-width: 0;
+    font-size: 14.5px; font-weight: 600; color: var(--text-primary);
+  }
+  .ch-card-title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ch-card-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
   .ch-card-meta span { display: inline-flex; align-items: center; gap: 3px; }
   .ch-live-badge {
     display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 100px;
-    font-size: 10px; font-weight: 700; background: #D0021B; color: #fff; margin-left: 8px;
+    font-size: 10px; font-weight: 700; background: #D0021B; color: #fff; flex-shrink: 0;
   }
   .ch-live-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: #fff; animation: ch-pulse 1.3s ease infinite; }
   @keyframes ch-pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
@@ -51,11 +56,22 @@
 
   .ch-empty { text-align: center; padding: 50px 24px; color: var(--text-muted); background: #fff; border: 1px solid var(--border-light); border-radius: 14px; }
   .ch-empty .material-symbols-outlined { font-size: 36px; opacity: .4; margin-bottom: 10px; }
+
+  /* On narrow screens the 4 action buttons don't fit next to the image/title
+     on one row — wrap them onto their own full-width row instead of forcing
+     the whole card into horizontal overflow. */
+  @media (max-width: 640px) {
+    .ch-wrap { padding: 20px 14px; }
+    .ch-card { flex-wrap: wrap; padding: 14px; }
+    .ch-card-info { flex-basis: calc(100% - 72px); }
+    .ch-actions { flex-basis: 100%; flex-wrap: wrap; margin-top: 12px; }
+    .ch-btn { flex: 1 1 calc(50% - 4px); justify-content: center; }
+  }
 </style>
 {% endblock %}
 
 {% block main_content %}
-<div style="max-width:780px; margin:0 auto; padding:28px 20px;">
+<div class="ch-wrap">
 
   <div class="ch-header">
     <h1><span class="material-symbols-outlined" style="color:var(--cyan);margin-right:8px;">how_to_reg</span>Check-in</h1>
@@ -81,7 +97,7 @@
     {% endif %}
     <div class="ch-card-info">
       <span class="ch-card-title">
-        {{ event.title }}
+        <span class="ch-card-title-text">{{ event.title }}</span>
         {% if event.status == 'live' %}<span class="ch-live-badge"><span class="dot"></span>LIVE</span>{% endif %}
       </span>
       <div class="ch-card-meta">
@@ -101,6 +117,12 @@
       <a class="ch-btn" href="/org/{{ org.slug }}/events/{{ event.id }}/check-in">
         <span class="material-symbols-outlined" style="font-size:15px;">dashboard</span> Dashboard
       </a>
+      <a class="ch-btn" href="/org/{{ org.slug }}/events/{{ event.id }}/live">
+        <span class="material-symbols-outlined" style="font-size:15px;">forum</span> Live Q&amp;A
+      </a>
+      <a class="ch-btn" href="/api/v1/organizations/{{ org.slug }}/events/{{ event.id }}/badges.pdf" target="_blank">
+        <span class="material-symbols-outlined" style="font-size:15px;">badge</span> Print badges
+      </a>
     </div>
   </div>
   {% endfor %}
@@ -116,7 +138,7 @@
     <div class="ch-card-img-placeholder"><span class="material-symbols-outlined">event_available</span></div>
     {% endif %}
     <div class="ch-card-info">
-      <span class="ch-card-title">{{ event.title }}</span>
+      <span class="ch-card-title"><span class="ch-card-title-text">{{ event.title }}</span></span>
       <div class="ch-card-meta">
         {% if event.start_datetime %}<span><span class="material-symbols-outlined" style="font-size:14px;">calendar_today</span>{{ event.start_datetime.strftime('%a, %b %d, %Y') }}</span>{% endif %}
       </div>
@@ -125,6 +147,15 @@
       <a class="ch-btn" href="/org/{{ org.slug }}/events/{{ event.id }}/check-in">
         <span class="material-symbols-outlined" style="font-size:15px;">dashboard</span> Dashboard
       </a>
+      {% if event.certificates_generated_at %}
+      <a class="ch-btn" href="/api/v1/organizations/{{ org.slug }}/events/{{ event.id }}/certificates.pdf" target="_blank">
+        <span class="material-symbols-outlined" style="font-size:15px;">workspace_premium</span> Certificates
+      </a>
+      {% else %}
+      <button type="button" class="ch-btn" id="gen-cert-{{ event.id }}" onclick="generateCertificates('{{ org.slug }}', '{{ event.id }}', this)">
+        <span class="material-symbols-outlined" style="font-size:15px;">workspace_premium</span> Generate certificates
+      </button>
+      {% endif %}
     </div>
   </div>
   {% endfor %}
@@ -132,4 +163,23 @@
 
   {% endif %}
 </div>
+
+<script>
+async function generateCertificates(orgSlug, eventId, btn) {
+  btn.disabled = true;
+  const label = btn.textContent.trim();
+  btn.textContent = 'Generating…';
+  try {
+    const res = await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/certificates/generate`, {
+      method: 'POST', credentials: 'include',
+    });
+    if (!res.ok) throw new Error('failed');
+    btn.outerHTML = `<a class="ch-btn" href="/api/v1/organizations/${orgSlug}/events/${eventId}/certificates.pdf" target="_blank">` +
+      `<span class="material-symbols-outlined" style="font-size:15px;">workspace_premium</span> Certificates</a>`;
+  } catch {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
+}
+</script>
 {% endblock %}

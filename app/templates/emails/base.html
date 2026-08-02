@@ -23,10 +23,16 @@
 
         <!-- Logo header -->
         <tr>
-          <td align="center" style="background-color:#000000;padding:24px 40px;border-radius:16px 16px 0 0;">
+          <td align="center" style="background-color:{{ brand_color or '#000000' }};padding:24px 40px;border-radius:16px 16px 0 0;">
+            {% if org_logo_url %}
             <a href="{{ frontend_url }}" style="text-decoration:none;">
-              <span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:#00FFF3;letter-spacing:-0.03em;">heelo</span>
+              <img src="{{ org_logo_url }}" alt="{{ org_name or 'Logo' }}" style="max-height:44px;max-width:220px;display:block;margin:0 auto;border-radius:8px;">
             </a>
+            {% else %}
+            <a href="{{ frontend_url }}" style="text-decoration:none;">
+              <span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:{{ brand_color | contrast_text('#00FFF3') }};letter-spacing:-0.03em;">heelo</span>
+            </a>
+            {% endif %}
           </td>
         </tr>
 

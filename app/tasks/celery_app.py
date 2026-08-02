@@ -44,6 +44,10 @@ celery_app.conf.update(
             "task": "app.tasks.email.send_interest_nudges",
             "schedule": 3600.0,
         },
+        "email-feedback-requests-hourly": {
+            "task": "app.tasks.email.send_feedback_requests",
+            "schedule": 3600.0,
+        },
         "whatsapp-reminders-hourly": {
             "task": "app.tasks.whatsapp.send_event_reminders",
             "schedule": 3600.0,
@@ -59,6 +63,10 @@ celery_app.conf.update(
         "release-stale-reservations-every-5-min": {
             "task": "app.tasks.ticketing.release_stale_reservations",
             "schedule": 300.0,
+        },
+        "expire-waitlist-offers-every-10-min": {
+            "task": "app.tasks.ticketing.expire_waitlist_offers",
+            "schedule": 600.0,
         },
     },
 )

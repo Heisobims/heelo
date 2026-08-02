@@ -15,9 +15,9 @@
   .step:not(:last-child)::after { content: ''; position: absolute; top: 15px; left: 50%; right: -50%; height: 2px; background: var(--border); z-index: 0; }
   .step-circle { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; z-index: 1; transition: all 200ms; }
   .step.active .step-circle { border-color: var(--cyan); background: var(--cyan); color: #000; }
-  .step.done .step-circle { border-color: #22c55e; background: #22c55e; color: #fff; }
+  .step.done .step-circle { border-color: var(--text-primary); background: var(--text-primary); color: #fff; }
   .step-label { font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.375rem; font-weight: 500; }
-  .step.active .step-label { color: var(--text); font-weight: 600; }
+  .step.active .step-label { color: var(--text-primary); font-weight: 600; }
 
   /* ── Cards ─────────────────────────────────────────────────────────────── */
   .cb-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
@@ -42,6 +42,14 @@
   .field label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.375rem; }
   .field input, .field select, .field textarea { width: 100%; padding: 0.625rem 0.875rem; border: 1.5px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font-size: 0.9rem; font-family: inherit; outline: none; transition: border-color 150ms; box-sizing: border-box; }
   .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--cyan); }
+  .field select {
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6B6B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
   .field textarea { resize: vertical; min-height: 160px; line-height: 1.6; }
   .field-hint { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.375rem; }
 

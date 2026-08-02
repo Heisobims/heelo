@@ -145,7 +145,7 @@
       <div>
         <div class="form-group" style="margin-bottom:16px;">
           <label class="form-label">Bank</label>
-          <select class="form-input" x-model="bankCode" @change="resolvedName = ''; resolveError = ''" style="appearance:auto;">
+          <select class="form-select" x-model="bankCode" @change="resolvedName = ''; resolveError = ''">
             <option value="">— Select your bank —</option>
             <template x-for="bank in banks" :key="bank.code">
               <option :value="bank.code" x-text="bank.name"></option>

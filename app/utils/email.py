@@ -135,7 +135,17 @@ def send_vendor_lead_email(
     send_smtp(email, f"New enquiry from {requester_name} — {business_name}", html)
 
 
-def send_team_invite_email(email: str, inviter_name: str, org_name: str, invite_url: str) -> None:
+def send_team_invite_email(
+    email: str,
+    inviter_name: str,
+    org_name: str,
+    invite_url: str,
+    brand_color: str | None = None,
+) -> None:
+    from app.utils.color import contrasting_text_color
+
+    button_bg = brand_color or "#00FFF3"
+    button_text = contrasting_text_color(brand_color, "#0A0A0A")
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -144,7 +154,7 @@ def send_team_invite_email(email: str, inviter_name: str, org_name: str, invite_
       <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">heelo</p>
       <h1 style="font-size: 28px; font-weight: 700; margin: 32px 0 8px;">You&rsquo;ve been invited</h1>
       <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 32px;">{inviter_name} has invited you to join <strong>{org_name}</strong> on Heelo.</p>
-      <a href="{invite_url}" style="display: inline-block; background: #00FFF3; color: #0A0A0A; font-weight: 600; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 100px; margin-bottom: 32px;">Accept invitation</a>
+      <a href="{invite_url}" style="display: inline-block; background: {button_bg}; color: {button_text}; font-weight: 600; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 100px; margin-bottom: 32px;">Accept invitation</a>
       <p style="font-size: 13px; color: #ADADAD;">This invitation expires in 7 days.</p>
     </body>
     </html>

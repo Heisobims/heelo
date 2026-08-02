@@ -5,13 +5,13 @@ from __future__ import annotations
 from httpx import AsyncClient
 
 
-async def test_admin_overview_requires_admin_role(client: AsyncClient, user_headers):
-    resp = await client.get("/api/v1/admin/organizations", headers=user_headers)
+async def test_admin_action_requires_admin_role(client: AsyncClient, org, user_headers):
+    resp = await client.post(f"/api/v1/admin/organizations/{org.id}/suspend", headers=user_headers)
     assert resp.status_code == 403
 
 
-async def test_admin_unauthenticated_returns_401(client: AsyncClient):
-    resp = await client.get("/api/v1/admin/organizations")
+async def test_admin_action_unauthenticated_returns_401(client: AsyncClient, org):
+    resp = await client.post(f"/api/v1/admin/organizations/{org.id}/suspend")
     assert resp.status_code == 401
 
 

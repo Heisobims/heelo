@@ -101,6 +101,16 @@
       <span class="material-symbols-outlined" style="font-size:16px;">calendar_add_on</span> Apple / Outlook (.ics)
     </a>
   </div>
+  <div class="tv-actions">
+    <a class="tv-btn" href="/api/v1/registrations/{{ reg.id }}/badge.pdf" target="_blank">
+      <span class="material-symbols-outlined" style="font-size:16px;">badge</span> Download badge
+    </a>
+    {% if event.certificates_generated_at and reg.status == 'checked_in' %}
+    <a class="tv-btn" href="/api/v1/registrations/{{ reg.id }}/certificate.pdf" target="_blank">
+      <span class="material-symbols-outlined" style="font-size:16px;">workspace_premium</span> Certificate
+    </a>
+    {% endif %}
+  </div>
 
   <div class="ticket">
     {% if event.cover_image_url %}
@@ -159,6 +169,49 @@
     </div>
   </div>
 
+  {% if reg.status in ('confirmed', 'checked_in') %}
+  <div class="tv-referral-card" id="referral-card" style="display:none; background:#fff; border:1.5px solid var(--border-light); border-radius:16px; padding:18px 20px; margin-top:16px;">
+    <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Bring a friend</div>
+    <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;" id="referral-sub">Share your link — friends who register through it get a discount.</div>
+    <div style="display:flex; gap:8px;">
+      <input type="text" id="referral-link-input" readonly style="flex:1; min-width:0; font-family:var(--font-mono,monospace); font-size:12px; padding:9px 10px; border:1px solid var(--border-light); border-radius:8px; background:var(--bg-secondary,#F7F7F5); color:var(--text-secondary);">
+      <button type="button" class="tv-btn" id="referral-copy-btn" style="flex:none; padding:9px 14px;" onclick="copyReferralLink()">Copy</button>
+    </div>
+    <div id="referral-count" style="font-size:12px; color:var(--text-muted); margin-top:10px;"></div>
+  </div>
+  {% endif %}
+
   <p class="tv-footer-note">Show this QR code at the entrance. Save or print it — you won't need signal to check in.</p>
 </div>
+
+<script>
+(async function () {
+  try {
+    const res = await fetch('/api/v1/registrations/{{ reg.id }}/referral-stats');
+    const json = await res.json();
+    if (!json.success) return;
+    const { referral_path, referred_count, discount_percent } = json.data;
+
+    const card = document.getElementById('referral-card');
+    document.getElementById('referral-sub').textContent =
+      `Share your link — friends who register through it get ${discount_percent}% off their ticket.`;
+    document.getElementById('referral-link-input').value = window.location.origin + referral_path;
+    document.getElementById('referral-count').textContent =
+      referred_count > 0
+        ? `${referred_count} friend${referred_count === 1 ? '' : 's'} joined using your link 🎉`
+        : 'No one has used your link yet.';
+    card.style.display = 'block';
+  } catch {}
+})();
+
+function copyReferralLink() {
+  const input = document.getElementById('referral-link-input');
+  navigator.clipboard.writeText(input.value).then(() => {
+    const btn = document.getElementById('referral-copy-btn');
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = original; }, 1800);
+  });
+}
+</script>
 {% endblock %}

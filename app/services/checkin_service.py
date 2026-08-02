@@ -10,6 +10,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.checkin import Checkin
 from app.models.ticketing import Registration
 from app.utils.auth import decode_ticket_qr_token
 
@@ -122,6 +123,52 @@ async def undo_check_in(db: AsyncSession, registration_id: uuid.UUID) -> Registr
     return reg
 
 
+async def mark_virtual_join(db: AsyncSession, registration_id: uuid.UUID) -> Registration | None:
+    """
+    Attendee clicked their join link for a virtual/hybrid event. Records the first
+    click as attendance (reusing the same checked_in_at/status fields in-person
+    check-in uses, so virtual events show up in the same analytics) and logs a
+    Checkin row for audit. Idempotent — repeat clicks (reloading the email, a
+    second device) just no-op rather than erroring, since this sits in a redirect
+    path the attendee shouldn't ever see fail.
+
+    Returns None if the registration doesn't exist or isn't eligible (cancelled,
+    refunded, never paid) so the caller can fall back to a generic response
+    instead of granting "attendance" to a ticket that shouldn't have access.
+    """
+    reg = await db.scalar(
+        select(Registration)
+        .where(Registration.id == registration_id)
+        .options(selectinload(Registration.event))
+    )
+    if not reg or not reg.event:
+        return None
+    if reg.status not in ("confirmed", "checked_in"):
+        return None
+
+    # This link is only ever sent for virtual/hybrid events — for an in-person
+    # registration, don't mark attendance (that's what the door QR scan is for),
+    # just let the caller redirect wherever makes sense (event page).
+    if reg.event.format == "in_person":
+        return reg
+
+    if reg.status == "confirmed":
+        reg.status = "checked_in"
+        reg.checked_in_at = datetime.now(UTC)
+        db.add(
+            Checkin(
+                registration_id=reg.id,
+                event_id=reg.event_id,
+                method="virtual_join",
+                scanned_at=reg.checked_in_at,
+            )
+        )
+        await db.commit()
+        await db.refresh(reg)
+
+    return reg
+
+
 async def get_checkin_stats(db: AsyncSession, event_id: uuid.UUID) -> dict:
     rows = await db.execute(
         select(Registration.status, func.count(Registration.id))
@@ -190,6 +237,21 @@ async def get_live_pulse(db: AsyncSession, event) -> dict:
     ]
 
     return stats
+
+
+async def get_checked_in_ids(db: AsyncSession, event_id: uuid.UUID) -> list[str]:
+    """
+    Full set of checked-in registration IDs for an event — cheap payload meant to be
+    cached client-side (kiosk) so offline scans can be checked against recent server
+    truth before being accepted, instead of only being caught after a background sync.
+    """
+    result = await db.scalars(
+        select(Registration.id).where(
+            Registration.event_id == event_id,
+            Registration.status == "checked_in",
+        )
+    )
+    return [str(rid) for rid in result.all()]
 
 
 async def get_recent_check_ins(

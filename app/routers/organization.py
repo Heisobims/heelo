@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import uuid
 from io import BytesIO
+from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from PIL import Image
 
 from app.dependencies import CurrentUser, DBSession, OrgAccess
+from app.permissions import Permission, require_permission
 from app.schemas.organization import (
     InviteMemberRequest,
     OrgCreateRequest,
@@ -19,6 +21,9 @@ from app.schemas.organization import (
 from app.services import organization_service as svc
 
 router_api = APIRouter(prefix="/api/v1/organizations", tags=["organizations"])
+
+OrgSettingsAccess = Annotated[tuple, Depends(require_permission(Permission.ORG_SETTINGS_EDIT))]
+TeamManageAccess = Annotated[tuple, Depends(require_permission(Permission.TEAM_MANAGE))]
 
 
 def _success(data) -> dict:
@@ -77,12 +82,10 @@ async def get_organization(slug: str, access: OrgAccess, db: DBSession):
 async def update_organization(
     slug: str,
     body: OrgUpdateRequest,
-    access: OrgAccess,
+    access: OrgSettingsAccess,
     db: DBSession,
 ):
     org, role, is_owner = access
-    if role not in ("admin",) and not is_owner:
-        raise HTTPException(403, "Only org admins can update organization details.")
     updated = await svc.update_organization(db, org, body)
     return _success(OrgOut.model_validate(updated))
 
@@ -121,18 +124,33 @@ async def list_members(slug: str, access: OrgAccess, db: DBSession):
 async def invite_member(
     slug: str,
     body: InviteMemberRequest,
-    access: OrgAccess,
+    access: TeamManageAccess,
     current_user: CurrentUser,
     db: DBSession,
 ):
     org, role, is_owner = access
-    if role not in ("admin",) and not is_owner:
-        raise HTTPException(403, "Only org admins can invite members.")
     try:
-        await svc.invite_member(db, org, current_user, body.email, body.role)
+        member = await svc.invite_member(db, org, current_user, body.email, body.role)
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
-    return _success({"message": f"Invitation sent to {body.email}."})
+    return _success(
+        {
+            "message": f"Invitation sent to {body.email}.",
+            "member": OrgMemberOut(
+                id=member.id,
+                user_id=member.user_id,
+                org_id=member.org_id,
+                role=member.role,
+                status=member.status,
+                invited_at=member.invited_at,
+                accepted_at=member.accepted_at,
+                invited_email=member.invited_email,
+                user_name=body.email,
+                user_email=body.email,
+                user_avatar=None,
+            ),
+        }
+    )
 
 
 # ── Accept invite ─────────────────────────────────────────────────────────────
@@ -159,12 +177,10 @@ async def update_member_role(
     slug: str,
     user_id: uuid.UUID,
     body: UpdateMemberRoleRequest,
-    access: OrgAccess,
+    access: TeamManageAccess,
     db: DBSession,
 ):
     org, role, is_owner = access
-    if role not in ("admin",) and not is_owner:
-        raise HTTPException(403, "Only org admins can change roles.")
     try:
         member = await svc.update_member_role(db, org, user_id, body.role)
     except ValueError as exc:
@@ -175,19 +191,17 @@ async def update_member_role(
 # ── Remove member ─────────────────────────────────────────────────────────────
 
 
-@router_api.delete("/{slug}/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router_api.delete("/{slug}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_member(
     slug: str,
-    user_id: uuid.UUID,
-    access: OrgAccess,
+    member_id: uuid.UUID,
+    access: TeamManageAccess,
     current_user: CurrentUser,
     db: DBSession,
 ):
     org, role, is_owner = access
-    if role not in ("admin",) and not is_owner:
-        raise HTTPException(403, "Only org admins can remove members.")
     try:
-        await svc.remove_member(db, org, user_id, current_user.id)
+        await svc.remove_member(db, org, member_id, current_user.id)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
@@ -201,13 +215,11 @@ _MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
 @router_api.post("/{slug}/logo")
 async def upload_logo(
     slug: str,
-    access: OrgAccess,
+    access: OrgSettingsAccess,
     db: DBSession,
     logo: UploadFile = File(...),
 ):
     org, role, is_owner = access
-    if role not in ("admin",) and not is_owner:
-        raise HTTPException(403, "Only org admins can change the logo.")
     if logo.content_type not in _ALLOWED_IMAGE_TYPES:
         raise HTTPException(400, "Unsupported file type. Use JPEG, PNG or WebP.")
     image_bytes = await logo.read()

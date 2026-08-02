@@ -281,7 +281,7 @@ async def org_stats(db: DBSession, auth: AuthKey):
     from sqlalchemy import func
 
     from app.models.event import Event
-    from app.models.ticketing import Order, Registration
+    from app.models.ticketing import REVENUE_STATUSES, Order, Registration
 
     event_count = await db.scalar(select(func.count()).where(Event.org_id == auth.org_id))
     reg_count = await db.scalar(
@@ -291,9 +291,9 @@ async def org_stats(db: DBSession, auth: AuthKey):
         .where(Event.org_id == auth.org_id, Registration.status == "confirmed")
     )
     revenue = await db.scalar(
-        select(func.coalesce(func.sum(Order.net_amount), 0))
+        select(func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0))
         .join(Event, Event.id == Order.event_id)
-        .where(Event.org_id == auth.org_id, Order.payment_status == "paid")
+        .where(Event.org_id == auth.org_id, Order.payment_status.in_(REVENUE_STATUSES))
     )
 
     return {

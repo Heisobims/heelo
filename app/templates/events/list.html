@@ -2,6 +2,29 @@
 {% block title %}Events — {{ org.name }} — Heelo{% endblock %}
 {% set active_page = active_page %}
 
+{% block head %}
+{{ super() }}
+<style>
+  .ev-row {
+    display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+    border-bottom: 1px solid var(--border-light); transition: background 0.12s;
+    flex-wrap: wrap;
+  }
+  .ev-row-thumb-link { flex-shrink: 0; }
+  .ev-row-info { flex: 1; min-width: 0; }
+  .ev-row-trailing { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .ev-row-actions { position: relative; }
+
+  /* The row's trailing cluster (stats/capacity/status/actions) doesn't fit
+     next to the thumbnail+title on narrow screens — wrap it onto its own
+     full-width row instead of forcing horizontal overflow. */
+  @media (max-width: 640px) {
+    .ev-row { padding: 12px 16px; }
+    .ev-row-trailing { flex-basis: 100%; justify-content: space-between; margin-top: 4px; flex-wrap: wrap; }
+  }
+</style>
+{% endblock %}
+
 {% block main_content %}
 <div class="dash-content">
 
@@ -55,10 +78,10 @@
   <div class="section-card animate-in">
     {% for entry in events %}
     {% set ev = entry.event %}
-    <div style="display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid var(--border-light); transition:background 0.12s;" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+    <div class="ev-row" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
 
       <!-- Thumb -->
-      <a href="/org/{{ org.slug }}/events/{{ ev.id }}" style="flex-shrink:0;">
+      <a href="/org/{{ org.slug }}/events/{{ ev.id }}" class="ev-row-thumb-link">
         <div style="width:56px; height:40px; border-radius:6px; background:var(--bg-secondary); overflow:hidden;">
           {% if ev.cover_image_url %}
           <img src="{{ ev.cover_image_url }}" alt="" style="width:100%;height:100%;object-fit:cover;">
@@ -71,7 +94,7 @@
       </a>
 
       <!-- Info -->
-      <div style="flex:1; min-width:0;">
+      <div class="ev-row-info">
         <a href="/org/{{ org.slug }}/events/{{ ev.id }}" style="font-size:14px; font-weight:500; color:var(--text-primary); text-decoration:none; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ ev.title }}</a>
         <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
           {{ ev.start_datetime.strftime('%d %b %Y · %H:%M') if ev.start_datetime else 'Date TBD' }}
@@ -80,50 +103,52 @@
         </div>
       </div>
 
-      <!-- Stats -->
-      <div style="text-align:right; flex-shrink:0; margin-right:8px;">
-        <div style="font-size:14px; font-weight:600;">{{ entry.registration_count }}</div>
-        <div style="font-size:11px; color:var(--text-muted);">registrations</div>
-      </div>
-
-      {% if ev.max_capacity %}
-      <div style="text-align:right; flex-shrink:0; margin-right:8px;">
-        <div style="font-size:13px; font-weight:500; color:var(--text-secondary);">
-          {{ ((entry.registration_count / ev.max_capacity) * 100) | int }}%
+      <div class="ev-row-trailing">
+        <!-- Stats -->
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="font-size:14px; font-weight:600;">{{ entry.registration_count }}</div>
+          <div style="font-size:11px; color:var(--text-muted);">registrations</div>
         </div>
-        <div style="font-size:11px; color:var(--text-muted);">capacity</div>
-      </div>
-      {% endif %}
 
-      <!-- Status -->
-      <span class="status-badge {{ ev.status }}" style="flex-shrink:0;">{{ ev.status | capitalize }}</span>
+        {% if ev.max_capacity %}
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="font-size:13px; font-weight:500; color:var(--text-secondary);">
+            {{ ((entry.registration_count / ev.max_capacity) * 100) | int }}%
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">capacity</div>
+        </div>
+        {% endif %}
 
-      <!-- Actions -->
-      <div style="display:flex; gap:4px; flex-shrink:0;" x-data="{ open: false }">
-        <button @click="open = !open" style="width:32px;height:32px;border:1px solid var(--border-light);border-radius:6px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);" type="button">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-        </button>
-        <div x-show="open" x-transition @click.away="open=false" style="position:absolute;right:24px;background:#fff;border:1px solid var(--border-light);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.1);min-width:160px;z-index:20;overflow:hidden;display:none;">
-          <a href="/org/{{ org.slug }}/events/{{ ev.id }}" class="user-menu-item">View dashboard</a>
-          <a href="/org/{{ org.slug }}/events/{{ ev.id }}/edit" class="user-menu-item">Edit</a>
-          {% if ev.status in ('published', 'live', 'ended') %}
-          <a href="/e/{{ ev.slug }}" target="_blank" class="user-menu-item">Public page ↗</a>
-          {% endif %}
-          <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
-          <button
-            class="user-menu-item"
-            hx-post="/api/v1/organizations/{{ org.slug }}/events/{{ ev.id }}/duplicate"
-            hx-headers='{"Content-Type":"application/json"}'
-            hx-on::after-request="if(event.detail.successful){window.location.href='/org/{{ org.slug }}/events/'+JSON.parse(event.detail.xhr.responseText).data.id+'/edit'}"
-            type="button"
-          >Duplicate</button>
-          {% if ev.status != 'cancelled' %}
-          <button
-            class="user-menu-item danger"
-            onclick="if(confirm('Cancel this event?')){fetch('/api/v1/organizations/{{ org.slug }}/events/{{ ev.id }}/cancel',{method:'POST',credentials:'include'}).then(()=>location.reload())}"
-            type="button"
-          >Cancel event</button>
-          {% endif %}
+        <!-- Status -->
+        <span class="status-badge {{ ev.status }}" style="flex-shrink:0;">{{ ev.status | capitalize }}</span>
+
+        <!-- Actions -->
+        <div class="ev-row-actions" style="display:flex; gap:4px; flex-shrink:0;" x-data="{ open: false }">
+          <button @click="open = !open" style="width:32px;height:32px;border:1px solid var(--border-light);border-radius:6px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+          </button>
+          <div x-show="open" x-transition @click.away="open=false" style="position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid var(--border-light);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.1);min-width:160px;z-index:20;overflow:hidden;display:none;">
+            <a href="/org/{{ org.slug }}/events/{{ ev.id }}" class="user-menu-item">View dashboard</a>
+            <a href="/org/{{ org.slug }}/events/{{ ev.id }}/edit" class="user-menu-item">Edit</a>
+            {% if ev.status in ('published', 'live', 'ended') %}
+            <a href="/e/{{ ev.slug }}" target="_blank" class="user-menu-item">Public page ↗</a>
+            {% endif %}
+            <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
+            <button
+              class="user-menu-item"
+              hx-post="/api/v1/organizations/{{ org.slug }}/events/{{ ev.id }}/duplicate"
+              hx-headers='{"Content-Type":"application/json"}'
+              hx-on::after-request="if(event.detail.successful){window.location.href='/org/{{ org.slug }}/events/'+JSON.parse(event.detail.xhr.responseText).data.id+'/edit'}"
+              type="button"
+            >Duplicate</button>
+            {% if ev.status != 'cancelled' %}
+            <button
+              class="user-menu-item danger"
+              onclick="if(confirm('Cancel this event?')){fetch('/api/v1/organizations/{{ org.slug }}/events/{{ ev.id }}/cancel',{method:'POST',credentials:'include'}).then(()=>location.reload())}"
+              type="button"
+            >Cancel event</button>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>

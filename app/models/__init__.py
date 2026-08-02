@@ -13,6 +13,7 @@ from app.models.community import (  # noqa: F401
     WhatsAppMessage,
 )
 from app.models.event import Event, EventCategory, EventSession, event_category_link  # noqa: F401
+from app.models.feedback import EventFeedback  # noqa: F401
 from app.models.notification import AdminBroadcast, AuditLog, Notification  # noqa: F401
 from app.models.organization import Organization, OrganizationMember  # noqa: F401
 from app.models.payment import PaymentAccount, Payout  # noqa: F401
@@ -53,6 +54,7 @@ __all__ = [
     "Campaign",
     "CampaignRecipient",
     "Checkin",
+    "EventFeedback",
     "AttendeeProfile",
     "Connection",
     "EventInterest",

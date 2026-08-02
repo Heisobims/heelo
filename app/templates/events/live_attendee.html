@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Live — {{ event.title }} — Heelo{% endblock %}
+
+{% block head %}
+{% if org and org.brand_color %}
+<style>:root { --cyan: {{ org.brand_color }}; --cyan-hover: {{ org.brand_color }}; --border-focus: {{ org.brand_color }}; }</style>
+{% endif %}
+<style>
+  [x-cloak] { display: none !important; }
+  body { background: var(--bg-secondary); }
+  .lv-nav {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 52px;
+  }
+  .lv-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
+  .lv-nav-logo span { color: var(--cyan-dark, #00b3a9); }
+  .lv-wrap { max-width: 560px; margin: 0 auto; padding: 24px 20px 60px; }
+  .lv-event-title { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; text-align: center; }
+  .lv-video-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #0A0A0A; border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
+  .lv-video { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+
+  .lv-card { background: #fff; border: 1px solid var(--border-light); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
+  .lv-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+
+  .lv-poll-question { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+  .lv-option { position: relative; border: 1.5px solid var(--border-light); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; cursor: pointer; overflow: hidden; transition: border-color .12s; }
+  .lv-option:hover { border-color: var(--cyan); }
+  .lv-option.voted { cursor: default; }
+  .lv-option-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(0,255,243,0.12); z-index: 0; transition: width .3s; }
+  .lv-option-label { position: relative; z-index: 1; display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; }
+  .lv-empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px 0; }
+
+  .lv-q-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .lv-q-form textarea, .lv-q-form input { padding: 10px 12px; border: 1.5px solid var(--border-light); border-radius: 8px; font-size: 13.5px; font-family: inherit; resize: none; }
+  .lv-q-form textarea:focus, .lv-q-form input:focus { outline: none; border-color: var(--cyan); }
+  .lv-submit-btn { align-self: flex-end; padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; border: none; background: var(--text-primary); color: #fff; cursor: pointer; }
+  .lv-submit-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .lv-question { display: flex; gap: 10px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+  .lv-question:last-child { border-bottom: none; }
+  .lv-upvote-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 40px; flex-shrink: 0; padding: 6px 0; border: 1.5px solid var(--border-light); border-radius: 8px; background: #fff; cursor: pointer; font-weight: 700; font-size: 12px; color: var(--text-secondary); }
+  .lv-upvote-btn.upvoted { border-color: var(--cyan); color: var(--cyan-dark, #00b3a9); }
+  .lv-question-body { font-size: 14px; line-height: 1.5; }
+  .lv-question-author { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .lv-question-answered { display: inline-block; font-size: 10px; font-weight: 700; color: #15803d; background: rgba(34,197,94,0.1); padding: 2px 7px; border-radius: 100px; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="lv-nav"><a href="/" class="lv-nav-logo">heelo<span>.</span></a></nav>
+
+<div class="lv-wrap" x-data="liveEngagement()" x-init="init()">
+  <div class="lv-event-title">{{ event.title }}</div>
+
+  {% if livestream %}
+  <div class="lv-video-wrap">
+    {% if livestream.type == 'hls' %}
+    <video id="lv-hls-video" class="lv-video" controls playsinline></video>
+    {% else %}
+    <iframe class="lv-video" src="{{ livestream.embed_url }}" frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen></iframe>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Poll -->
+  <template x-if="poll">
+    <div class="lv-card">
+      <div class="lv-section-title"><span class="material-symbols-outlined" style="font-size:16px;">bar_chart</span> Live Poll</div>
+      <div class="lv-poll-question" x-text="poll.question"></div>
+      <template x-for="opt in poll.options" :key="opt.id">
+        <div class="lv-option" :class="{ voted: hasVoted(poll.id) }" @click="vote(opt.id)">
+          <div class="lv-option-fill" :style="'width:' + pct(opt) + '%'"></div>
+          <div class="lv-option-label">
+            <span x-text="opt.text"></span>
+            <span x-show="hasVoted(poll.id)" x-text="pct(opt) + '% (' + opt.vote_count + ')'"></span>
+          </div>
+        </div>
+      </template>
+    </div>
+  </template>
+  <template x-if="!poll">
+    <div class="lv-card"><div class="lv-empty">No poll is open right now.</div></div>
+  </template>
+
+  <!-- Q&A -->
+  <div class="lv-card">
+    <div class="lv-section-title"><span class="material-symbols-outlined" style="font-size:16px;">forum</span> Q&amp;A</div>
+
+    <div class="lv-q-form">
+      <textarea rows="2" placeholder="Ask a question…" x-model="draftBody" maxlength="500"></textarea>
+      <input type="text" placeholder="Your name (optional)" x-model="draftName" maxlength="100">
+      <button class="lv-submit-btn" @click="submitQuestion()" :disabled="!draftBody.trim() || submitting">Ask</button>
+    </div>
+
+    <template x-if="questions.length === 0">
+      <div class="lv-empty">No questions yet — be the first to ask.</div>
+    </template>
+    <template x-for="q in questions" :key="q.id">
+      <div class="lv-question">
+        <button class="lv-upvote-btn" :class="{ upvoted: hasUpvoted(q.id) }" @click="upvote(q.id)" :disabled="hasUpvoted(q.id)">
+          <span class="material-symbols-outlined" style="font-size:16px;">arrow_upward</span>
+          <span x-text="q.upvotes"></span>
+        </button>
+        <div>
+          <div class="lv-question-body" x-text="q.body"></div>
+          <div class="lv-question-author" x-text="q.author_name || 'Anonymous'"></div>
+          <div class="lv-question-answered" x-show="q.is_answered">Answered</div>
+        </div>
+      </div>
+    </template>
+  </div>
+</div>
+
+{% if livestream and livestream.type == 'hls' %}
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script>
+(function() {
+  const src = {{ livestream.embed_url | tojson }};
+  const video = document.getElementById('lv-hls-video');
+  if (!video) return;
+  if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    // Safari supports HLS natively
+    video.src = src;
+  } else if (window.Hls && Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(src);
+    hls.attachMedia(video);
+  }
+})();
+</script>
+{% endif %}
+
+<script>
+function liveEngagement() {
+  return {
+    poll: null,
+    questions: [],
+    draftBody: '',
+    draftName: '',
+    submitting: false,
+    votedPolls: JSON.parse(localStorage.getItem('heelo_voted_polls') || '{}'),
+    upvotedQuestions: JSON.parse(localStorage.getItem('heelo_upvoted_questions') || '{}'),
+
+    hasVoted(pollId) { return !!this.votedPolls[pollId]; },
+    hasUpvoted(qId) { return !!this.upvotedQuestions[qId]; },
+    pct(opt) {
+      const total = (this.poll?.options || []).reduce((s, o) => s + o.vote_count, 0);
+      return total > 0 ? Math.round((opt.vote_count / total) * 100) : 0;
+    },
+
+    async vote(optionId) {
+      if (!this.poll || this.hasVoted(this.poll.id)) return;
+      this.votedPolls[this.poll.id] = optionId;
+      localStorage.setItem('heelo_voted_polls', JSON.stringify(this.votedPolls));
+      try {
+        const res = await fetch(`/api/v1/events/{{ event.slug }}/live/polls/${this.poll.id}/vote`, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ option_id: optionId }),
+        });
+        const j = await res.json();
+        if (j.success) this.poll = j.data;
+      } catch {}
+    },
+
+    async submitQuestion() {
+      if (!this.draftBody.trim() || this.submitting) return;
+      this.submitting = true;
+      try {
+        const res = await fetch(`/api/v1/events/{{ event.slug }}/live/questions`, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ body: this.draftBody.trim(), author_name: this.draftName.trim() || null }),
+        });
+        const j = await res.json();
+        if (j.success) {
+          this.questions.unshift(j.data);
+          this.draftBody = ''; this.draftName = '';
+        }
+      } finally { this.submitting = false; }
+    },
+
+    async upvote(qId) {
+      if (this.hasUpvoted(qId)) return;
+      this.upvotedQuestions[qId] = true;
+      localStorage.setItem('heelo_upvoted_questions', JSON.stringify(this.upvotedQuestions));
+      try {
+        const res = await fetch(`/api/v1/events/{{ event.slug }}/live/questions/${qId}/upvote`, { method: 'POST' });
+        const j = await res.json();
+        if (j.success) {
+          const q = this.questions.find(x => x.id === qId);
+          if (q) q.upvotes = j.data.upvotes;
+        }
+      } catch {}
+    },
+
+    init() {
+      const es = new EventSource(`/api/v1/events/{{ event.slug }}/live/stream`);
+      es.onmessage = (ev) => {
+        const data = JSON.parse(ev.data);
+        this.poll = data.poll;
+        // Re-sort by upvotes so the live feed matches the server ordering.
+        this.questions = data.questions;
+      };
+    },
+  };
+}
+</script>
+{% endblock %}

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.models.campaign import Campaign
+from app.permissions import Permission, require_permission
 from app.schemas.campaign import CampaignCreateRequest, CampaignSendRequest, CampaignUpdateRequest
 from app.services import campaign_service as camp_svc
 
@@ -13,6 +15,8 @@ router_campaigns = APIRouter(
     prefix="/api/v1/organizations/{slug}/campaigns",
     tags=["campaigns"],
 )
+
+CampaignsManageAccess = Annotated[tuple, Depends(require_permission(Permission.CAMPAIGNS_MANAGE))]
 
 
 async def _get_campaign_for_org(db, campaign_id_str: str, org_id: uuid.UUID) -> Campaign:
@@ -54,12 +58,10 @@ async def create_campaign(
     slug: str,
     data: CampaignCreateRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CampaignsManageAccess,
     current_user: CurrentUser,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     campaign = await camp_svc.create_campaign(db, org.id, current_user.id, data)
     return {"success": True, "data": _campaign_dict(campaign)}
 
@@ -111,11 +113,9 @@ async def update_campaign(
     campaign_id: str,
     data: CampaignUpdateRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CampaignsManageAccess,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     c = await _get_campaign_for_org(db, campaign_id, org.id)
     c = await camp_svc.update_campaign(db, c, data)
     return {"success": True, "data": _campaign_dict(c)}
@@ -125,10 +125,10 @@ async def update_campaign(
 
 
 @router_campaigns.delete("/{campaign_id}", status_code=204)
-async def delete_campaign(slug: str, campaign_id: str, db: DBSession, org_access: OrgAccess):
+async def delete_campaign(
+    slug: str, campaign_id: str, db: DBSession, org_access: CampaignsManageAccess
+):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     c = await _get_campaign_for_org(db, campaign_id, org.id)
     await camp_svc.delete_campaign(db, c)
 
@@ -142,11 +142,9 @@ async def send_or_schedule(
     campaign_id: str,
     data: CampaignSendRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CampaignsManageAccess,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     c = await _get_campaign_for_org(db, campaign_id, org.id)
 
     if data.scheduled_at:
@@ -161,10 +159,10 @@ async def send_or_schedule(
 
 
 @router_campaigns.post("/{campaign_id}/cancel")
-async def cancel_campaign(slug: str, campaign_id: str, db: DBSession, org_access: OrgAccess):
+async def cancel_campaign(
+    slug: str, campaign_id: str, db: DBSession, org_access: CampaignsManageAccess
+):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     c = await _get_campaign_for_org(db, campaign_id, org.id)
     c = await camp_svc.cancel_campaign(db, c)
     return {"success": True, "data": _campaign_dict(c), "message": "Campaign returned to draft."}

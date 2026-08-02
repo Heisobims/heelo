@@ -135,6 +135,44 @@ async def admin_org_detail(org_id: str, request: Request, db: DBSession):
     )
 
 
+# ── Vendors / venues ──────────────────────────────────────────────────────────
+
+
+@router_admin_pages.get("/vendors", response_class=HTMLResponse)
+async def admin_vendors(request: Request, db: DBSession):
+    admin_user = await _require_admin_ctx(request, db)
+    if not admin_user:
+        return RedirectResponse("/login?next=/admin/vendors", status_code=302)
+
+    from app.models.vendor import VENDOR_CATEGORIES
+
+    q = request.query_params.get("q", "").strip() or None
+    selected_category = request.query_params.get("category", "").strip() or None
+    selected_status = request.query_params.get("status", "").strip() or None
+    page = max(1, int(request.query_params.get("page", 1)))
+
+    vendors, total = await adm_svc.list_vendors(
+        db, search=q, category=selected_category, status=selected_status, page=page, per_page=30
+    )
+
+    return templates.TemplateResponse(
+        "admin/vendors.html",
+        _ctx(
+            request,
+            admin_user,
+            "vendors",
+            vendors=vendors,
+            total=total,
+            page=page,
+            per_page=30,
+            q=q or "",
+            categories=VENDOR_CATEGORIES,
+            selected_category=selected_category or "",
+            selected_status=selected_status or "",
+        ),
+    )
+
+
 # ── Users ─────────────────────────────────────────────────────────────────────
 
 

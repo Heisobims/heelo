@@ -2,22 +2,28 @@ from __future__ import annotations
 
 import uuid
 from io import BytesIO
+from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, Query, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 from PIL import Image
 
 from app.dependencies import CurrentUser, CurrentUserID, DBSession, OrgAccess
+from app.permissions import Permission, require_permission
 from app.schemas.event import (
     EventCreateRequest,
     EventListItem,
     EventOut,
     EventUpdateRequest,
     PublicEventOut,
+    RecurrenceGenerateRequest,
 )
 from app.services import event_service as svc
 
 router_org = APIRouter(prefix="/api/v1/organizations/{slug}/events", tags=["events"])
 router_public = APIRouter(prefix="/api/v1/events", tags=["events-public"])
+
+EventsManageAccess = Annotated[tuple, Depends(require_permission(Permission.EVENTS_MANAGE))]
+EventsDeleteAccess = Annotated[tuple, Depends(require_permission(Permission.EVENTS_DELETE))]
 
 _ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
 _MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -33,13 +39,11 @@ def _ok(data) -> dict:
 @router_org.post("", status_code=status.HTTP_201_CREATED)
 async def create_event(
     body: EventCreateRequest,
-    access: OrgAccess,
+    access: EventsManageAccess,
     current_user: CurrentUser,
     db: DBSession,
 ):
     org, role, _ = access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Only admins and organizers can create events.")
     event = await svc.create_event(db, org, current_user.id, body)
     return _ok(EventOut.model_validate(event))
 
@@ -85,6 +89,28 @@ async def list_events(
     )
 
 
+@router_org.get("/templates")
+async def list_templates(access: OrgAccess, db: DBSession):
+    """
+    Registered before GET /{event_id} — FastAPI matches routes in registration
+    order, and "/templates" would otherwise be captured by the {event_id} path
+    parameter, fail UUID parsing, and 422.
+    """
+    org, _, _ = access
+    templates = await svc.list_org_templates(db, org.id)
+    return _ok(
+        [
+            {
+                "id": str(t.id),
+                "title": t.title,
+                "format": t.format,
+                "venue_city": t.venue_city,
+            }
+            for t in templates
+        ]
+    )
+
+
 @router_org.get("/{event_id}")
 async def get_event(
     event_id: uuid.UUID,
@@ -105,12 +131,10 @@ async def get_event(
 async def update_event(
     event_id: uuid.UUID,
     body: EventUpdateRequest,
-    access: OrgAccess,
+    access: EventsManageAccess,
     db: DBSession,
 ):
     org, role, _ = access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -152,12 +176,10 @@ async def update_event(
 @router_org.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_event(
     event_id: uuid.UUID,
-    access: OrgAccess,
+    access: EventsDeleteAccess,
     db: DBSession,
 ):
     org, role, is_owner = access
-    if role not in ("admin",) and not is_owner:
-        raise HTTPException(403, "Only admins can delete events.")
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -167,12 +189,10 @@ async def delete_event(
 @router_org.post("/{event_id}/publish")
 async def publish_event(
     event_id: uuid.UUID,
-    access: OrgAccess,
+    access: EventsManageAccess,
     db: DBSession,
 ):
     org, role, _ = access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -186,12 +206,10 @@ async def publish_event(
 @router_org.post("/{event_id}/cancel")
 async def cancel_event(
     event_id: uuid.UUID,
-    access: OrgAccess,
+    access: EventsManageAccess,
     db: DBSession,
 ):
     org, role, _ = access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -210,12 +228,10 @@ async def cancel_event(
 @router_org.post("/{event_id}/go-live")
 async def go_live(
     event_id: uuid.UUID,
-    access: OrgAccess,
+    access: EventsManageAccess,
     db: DBSession,
 ):
     org, role, _ = access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -229,7 +245,7 @@ async def go_live(
 @router_org.post("/{event_id}/end")
 async def end_event(
     event_id: uuid.UUID,
-    access: OrgAccess,
+    access: EventsManageAccess,
     db: DBSession,
 ):
     org, role, _ = access
@@ -246,13 +262,11 @@ async def end_event(
 @router_org.post("/{event_id}/duplicate", status_code=status.HTTP_201_CREATED)
 async def duplicate_event(
     event_id: uuid.UUID,
-    access: OrgAccess,
+    access: EventsManageAccess,
     current_user: CurrentUser,
     db: DBSession,
 ):
     org, role, _ = access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -260,16 +274,63 @@ async def duplicate_event(
     return _ok({"id": str(clone.id), "slug": clone.slug})
 
 
+@router_org.post("/{event_id}/recurrence/generate", status_code=status.HTTP_201_CREATED)
+async def generate_recurring_series(
+    event_id: uuid.UUID,
+    body: RecurrenceGenerateRequest,
+    access: EventsManageAccess,
+    current_user: CurrentUser,
+    db: DBSession,
+):
+    org, role, _ = access
+    event = await svc.get_event_by_id(db, event_id)
+    if not event or str(event.org_id) != str(org.id):
+        raise HTTPException(404, "Event not found.")
+    try:
+        children = await svc.generate_recurring_series(
+            db, event, org, current_user.id, rule=body.rule, end_date=body.end_date
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return _ok(
+        {
+            "count": len(children),
+            "events": [
+                {"id": str(c.id), "slug": c.slug, "start_datetime": c.start_datetime}
+                for c in children
+            ],
+        }
+    )
+
+
+@router_org.get("/{event_id}/recurrence/children")
+async def list_recurring_children(event_id: uuid.UUID, access: OrgAccess, db: DBSession):
+    org, _, _ = access
+    event = await svc.get_event_by_id(db, event_id)
+    if not event or str(event.org_id) != str(org.id):
+        raise HTTPException(404, "Event not found.")
+    children = await svc.list_recurring_children(db, event.id)
+    return _ok(
+        [
+            {
+                "id": str(c.id),
+                "slug": c.slug,
+                "status": c.status,
+                "start_datetime": c.start_datetime,
+            }
+            for c in children
+        ]
+    )
+
+
 @router_org.post("/{event_id}/cover")
 async def upload_cover(
     event_id: uuid.UUID,
-    access: OrgAccess,
+    access: EventsManageAccess,
     db: DBSession,
     cover: UploadFile = File(...),
 ):
     org, role, _ = access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -295,15 +356,13 @@ async def upload_cover(
 async def upload_gallery_image(
     event_id: uuid.UUID,
     slot: int,
-    access: OrgAccess,
+    access: EventsManageAccess,
     db: DBSession,
     image: UploadFile = File(...),
 ):
     if slot not in (1, 2):
         raise HTTPException(400, "Slot must be 1 or 2.")
     org, role, _ = access
-    if role not in ("admin", "organizer"):
-        raise HTTPException(403, "Insufficient permissions.")
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -339,7 +398,6 @@ async def search_events(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=50),
 ):
-
     events, total = await svc.search_public_events(
         db,
         q=q,

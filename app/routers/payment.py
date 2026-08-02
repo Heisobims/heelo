@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 
 from app.dependencies import DBSession, OrgAccess
 from app.models.payment import PaymentAccount
+from app.permissions import Permission, require_permission
 from app.schemas.payment import (
     FlutterwaveSubaccountRequest,
     PaymentAccountOut,
@@ -119,6 +121,10 @@ router_payment_accounts = APIRouter(
     tags=["payment-accounts"],
 )
 
+PaymentAccountsManageAccess = Annotated[
+    tuple, Depends(require_permission(Permission.PAYMENT_ACCOUNTS_MANAGE))
+]
+
 
 @router_payment_accounts.get("", response_model=list[PaymentAccountOut])
 async def list_accounts(slug: str, db: DBSession, org_access: OrgAccess):
@@ -153,14 +159,9 @@ async def connect_paystack(
     slug: str,
     data: PaystackSubaccountRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: PaymentAccountsManageAccess,
 ):
     org, role, is_owner = org_access
-    if not is_owner and role != "admin":
-        raise HTTPException(
-            403, "Only the organization owner or admin can manage payment accounts."
-        )
-
     account = await acc_svc.create_paystack_subaccount(db, org.id, data, org)
     return account
 
@@ -170,14 +171,9 @@ async def connect_flutterwave(
     slug: str,
     data: FlutterwaveSubaccountRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: PaymentAccountsManageAccess,
 ):
     org, role, is_owner = org_access
-    if not is_owner and role != "admin":
-        raise HTTPException(
-            403, "Only the organization owner or admin can manage payment accounts."
-        )
-
     account = await acc_svc.create_flutterwave_subaccount(db, org.id, data, org)
     return account
 
@@ -187,11 +183,9 @@ async def set_default_account(
     slug: str,
     account_id: str,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: PaymentAccountsManageAccess,
 ):
     org, role, is_owner = org_access
-    if not is_owner and role != "admin":
-        raise HTTPException(403, "Insufficient permissions.")
 
     try:
         aid = uuid.UUID(account_id)
@@ -228,11 +222,9 @@ async def delete_account(
     slug: str,
     account_id: str,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: PaymentAccountsManageAccess,
 ):
     org, role, is_owner = org_access
-    if not is_owner and role != "admin":
-        raise HTTPException(403, "Insufficient permissions.")
 
     try:
         aid = uuid.UUID(account_id)

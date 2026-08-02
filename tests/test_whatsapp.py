@@ -110,6 +110,69 @@ def test_send_event_reminder_headline_varies_by_offset(monkeypatch):
     assert "tomorrow" in sent["text"]
 
 
+# ── send_event_reminder_sync — virtual join link delivery ──────────────────────
+
+
+def test_send_event_reminder_includes_virtual_link(monkeypatch):
+    sent = {}
+    monkeypatch.setattr(wa, "send_text_sync", lambda to, body: sent.update(text=body))
+    monkeypatch.setattr(wa, "send_image_sync", lambda *a, **k: None)
+
+    event = _fake_event(
+        format="virtual",
+        venue_name=None,
+        venue_city=None,
+        virtual_platform="Zoom",
+        virtual_url="https://zoom.us/j/123456789",
+    )
+    wa.send_event_reminder_sync(
+        phone="+2348012345678", attendee_name="Jane", event=event, registration_id="r1"
+    )
+    # The message links to the join-redirect endpoint (which records attendance
+    # before bouncing to the real meeting URL), not the raw virtual_url directly.
+    assert "/api/v1/registrations/r1/join" in sent["text"]
+    assert "link shared closer to the date" not in sent["text"]
+
+
+def test_send_event_reminder_hybrid_includes_virtual_link(monkeypatch):
+    sent = {}
+    monkeypatch.setattr(wa, "send_text_sync", lambda to, body: sent.update(text=body))
+    monkeypatch.setattr(wa, "send_image_sync", lambda *a, **k: None)
+
+    event = _fake_event(
+        format="hybrid", virtual_platform="Zoom", virtual_url="https://zoom.us/j/123456789"
+    )
+    wa.send_event_reminder_sync(
+        phone="+2348012345678", attendee_name="Jane", event=event, registration_id="r1"
+    )
+    assert "/api/v1/registrations/r1/join" in sent["text"]
+
+
+def test_send_event_reminder_in_person_omits_virtual_link(monkeypatch):
+    sent = {}
+    monkeypatch.setattr(wa, "send_text_sync", lambda to, body: sent.update(text=body))
+    monkeypatch.setattr(wa, "send_image_sync", lambda *a, **k: None)
+
+    wa.send_event_reminder_sync(
+        phone="+2348012345678", attendee_name="Jane", event=_fake_event(), registration_id="r1"
+    )
+    assert "Join:" not in sent["text"]
+    assert "Eko Hotel, Lagos" in sent["text"]
+
+
+def test_send_event_reminder_virtual_without_url_omits_join_line(monkeypatch):
+    sent = {}
+    monkeypatch.setattr(wa, "send_text_sync", lambda to, body: sent.update(text=body))
+    monkeypatch.setattr(wa, "send_image_sync", lambda *a, **k: None)
+
+    event = _fake_event(format="virtual", venue_name=None, venue_city=None, virtual_url=None)
+    wa.send_event_reminder_sync(
+        phone="+2348012345678", attendee_name="Jane", event=event, registration_id="r1"
+    )
+    assert "Join:" not in sent["text"]
+    assert "link shared closer to the date" in sent["text"]
+
+
 # ── Reminder interval configuration (Event.extras) ─────────────────────────────
 
 

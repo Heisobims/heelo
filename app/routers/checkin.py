@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -12,12 +13,16 @@ from sqlalchemy import select
 from app.database import AsyncSessionLocal
 from app.dependencies import DBSession, OrgAccess
 from app.models.ticketing import Registration
+from app.permissions import Permission, require_permission
 from app.services import checkin_service as ci_svc
 
 router_checkin = APIRouter(
     prefix="/api/v1/organizations/{slug}/events/{event_id}",
     tags=["checkin"],
 )
+
+CheckinScanAccess = Annotated[tuple, Depends(require_permission(Permission.CHECKIN_SCAN))]
+CheckinUndoAccess = Annotated[tuple, Depends(require_permission(Permission.CHECKIN_UNDO))]
 
 
 class CheckInRequest(BaseModel):
@@ -55,7 +60,7 @@ async def check_in(
     event_id: str,
     data: CheckInRequest,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CheckinScanAccess,
 ):
     org, role, is_owner = org_access
     event = await _get_event_for_org(db, event_id, org.id)
@@ -95,11 +100,9 @@ async def undo_check_in(
     event_id: str,
     reg_id: str,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CheckinUndoAccess,
 ):
     org, role, is_owner = org_access
-    if role not in ("admin", "organizer") and not is_owner:
-        raise HTTPException(403, "Insufficient permissions.")
 
     event = await _get_event_for_org(db, event_id, org.id)
     try:
@@ -118,6 +121,20 @@ async def undo_check_in(
 
     reg = await ci_svc.undo_check_in(db, rid)
     return {"success": True, "data": _reg_dict(reg)}
+
+
+@router_checkin.get("/check-in/checked-in-ids")
+async def checkin_checked_in_ids(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+    """
+    Lightweight list of already-checked-in registration IDs, polled by the kiosk to
+    keep a local dedup cache fresh — lets it reject an obvious duplicate scan before
+    even attempting the network call (or while offline), instead of only catching it
+    on a later background sync.
+    """
+    org, role, is_owner = org_access
+    event = await _get_event_for_org(db, event_id, org.id)
+    ids = await ci_svc.get_checked_in_ids(db, event.id)
+    return {"success": True, "data": ids}
 
 
 @router_checkin.get("/check-in/stats")

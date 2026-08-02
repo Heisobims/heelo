@@ -191,6 +191,12 @@ class RegistrationAnswer(Base, TimestampMixin):
     )
 
 
+# payment_status values that still count toward revenue (a refund reduces
+# how much of the order's amount counts, but doesn't zero it out — see
+# Order.refunded_amount).
+REVENUE_STATUSES = ("paid", "partially_refunded", "refunded")
+
+
 class Order(Base, TimestampMixin):
     """Payment order — contains one or more tickets from the same event."""
 
@@ -230,6 +236,11 @@ class Order(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("promo_codes.id", ondelete="SET NULL"), nullable=True
     )
     discount_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    # Cumulative gross amount refunded back to the buyer across all cancelled
+    # items in this order. Subtract from net_amount/total_amount to get what
+    # the organizer actually retains — the platform fee is not returned on
+    # refund, so this is not simply proportional to net_amount.
+    refunded_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     # UTM / referral tracking
     utm_source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     utm_medium: Mapped[str | None] = mapped_column(String(255), nullable=True)

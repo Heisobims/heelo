@@ -36,6 +36,9 @@ class Organization(Base, TimestampMixin):
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Hex color e.g. "#00FFF3" — accents checkout and the public event page;
+    # falls back to the platform default cyan when unset
+    brand_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     website: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # Public-facing contact — shown in campaign email footers, distinct from the owner's login email
