@@ -150,23 +150,16 @@
       x-data="{
         open: false,
         dropUp: false,
-        dropdownStyle: '',
         toggle(e) {
           if (!this.open) {
             const btn = e.currentTarget;
             const rect = btn.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom;
-            const openUp = spaceBelow < 260 && rect.top > 260;
-            const top = openUp ? '' : (rect.bottom + 6) + 'px';
-            const bottom = openUp ? (window.innerHeight - rect.top + 6) + 'px' : '';
-            const right = Math.max(12, window.innerWidth - rect.right) + 'px';
-            this.dropUp = openUp;
-            this.dropdownStyle = 'position:fixed !important; z-index:99999 !important; right:' + right + '; ' + (openUp ? 'bottom:' + bottom + '; top:auto;' : 'top:' + top + '; bottom:auto;');
+            this.dropUp = spaceBelow < 250 && rect.top > 250;
           }
           this.open = !this.open;
         }
       }"
-      @scroll.window="open = false"
     >
 
       <!-- Thumb -->
@@ -227,7 +220,6 @@
             @click.away="open = false"
             class="ev-actions-dropdown"
             :class="{ 'drop-up': dropUp }"
-            :style="dropdownStyle"
             style="display:none;"
           >
             <a href="/org/{{ org.slug }}/events/{{ ev.id }}" class="user-menu-item">View dashboard</a>
