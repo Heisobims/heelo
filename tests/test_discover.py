@@ -1,4 +1,4 @@
-"""Feed-style event discovery (/discover) — ranking, pagination, HTMX partials."""
+"""Feed-style event discovery (/discover) - ranking, pagination, HTMX partials."""
 
 from __future__ import annotations
 

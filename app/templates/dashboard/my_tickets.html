@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}My Tickets — Heelo{% endblock %}
+{% block title %}My Tickets | Heelo{% endblock %}
 {% set active_page = 'my_tickets' %}
 
 {% block head %}
@@ -7,12 +7,13 @@
 <style>
   .mt-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 24px;
+    margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
   }
   .mt-header h1 {
-    font-family: 'STK Bureau Serif', Georgia, serif;
-    font-size: 22px; font-weight: 700;
+    font-family: var(--font-serif);
+    font-size: 24px; font-weight: 700;
     color: var(--text-primary); letter-spacing: -0.02em; margin: 0;
+    display: flex; align-items: center;
   }
   .mt-section-label {
     font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
@@ -70,6 +71,9 @@
   .mt-badge.confirmed { background: #e6faf5; color: #0a7a5a; }
   .mt-badge.pending   { background: #fff8e6; color: #9a6600; }
   .mt-badge.transferred { background: #f0f0ff; color: #5b5bd6; }
+  .mt-badge.transfer_pending { background: #fff8e6; color: #9a6600; }
+  .mt-transfer-link { display: flex; align-items: center; gap: 8px; background: var(--bg-light); border: 1px solid var(--border-light); border-radius: 8px; padding: 8px 10px; margin-top: 10px; font-size: 12.5px; }
+  .mt-transfer-link input { flex: 1; border: none; background: none; font-size: 12px; font-family: var(--font-mono); outline: none; }
   .mt-actions {
     display: flex; flex-direction: column; gap: 6px;
     align-items: flex-end; justify-content: center; padding: 16px;
@@ -106,12 +110,12 @@
 {% endblock %}
 
 {% block main_content %}
-<div style="max-width:780px; margin:0 auto; padding:28px 20px;">
+<div class="dash-content">
 
   <div class="mt-header">
-    <h1><span class="material-symbols-outlined" style="color:var(--cyan);margin-right:8px;">confirmation_number</span>My Tickets</h1>
-    <a href="/events" class="mt-btn">
-      <span class="material-symbols-outlined">explore</span> Discover Events
+    <h1><span class="material-symbols-outlined" style="color:var(--primary, #E85938);margin-right:8px;font-size:26px;">confirmation_number</span>My Tickets</h1>
+    <a href="/events" class="vd-btn vd-btn-outline vd-btn-sm" style="text-decoration:none;">
+      <span class="material-symbols-outlined" style="font-size:16px;">explore</span> Discover Events
     </a>
   </div>
 
@@ -161,6 +165,7 @@
           {% if reg.status == 'confirmed' %}<span class="material-symbols-outlined">check_circle</span> Confirmed
           {% elif reg.status == 'pending' %}<span class="material-symbols-outlined">schedule</span> Pending
           {% elif reg.status == 'transferred' %}<span class="material-symbols-outlined">swap_horiz</span> Transferred
+          {% elif reg.status == 'transfer_pending' %}<span class="material-symbols-outlined">swap_horiz</span> Transfer pending
           {% else %}{{ reg.status | title }}{% endif %}
         </span>
         {% if reg.checked_in_at %}
@@ -171,26 +176,41 @@
       </div>
     </div>
 
-    <div class="mt-actions">
-      {% if reg.qr_code %}
-      <a class="mt-btn primary" href="/my-tickets/{{ reg.id }}">
-        <span class="material-symbols-outlined">confirmation_number</span> View Ticket
-      </a>
-      {% endif %}
-      {% if reg.status in ('confirmed', 'checked_in') %}
-      <a class="mt-btn" href="/api/v1/registrations/{{ reg.id }}/calendar.ics" download>
-        <span class="material-symbols-outlined">calendar_add_on</span> Add to Calendar
-      </a>
-      {% endif %}
-      <a class="mt-btn" href="/e/{{ reg.event.slug }}">
-        <span class="material-symbols-outlined">open_in_new</span> Event
-      </a>
-      {% if reg.status == 'confirmed' %}
-      <a href="#" class="mt-btn" style="color:#dc2626;border-color:#dc2626;"
-         onclick="event.preventDefault(); cancelMyTicket('{{ reg.id }}')">
-        <span class="material-symbols-outlined">cancel</span> Cancel Ticket
-      </a>
-      {% endif %}
+    <div x-data="{ transferUrl: {{ (mt_transfer_urls or {}).get(reg.id | string) | tojson }} }">
+      <div class="mt-actions">
+        {% if reg.qr_code %}
+        <a class="mt-btn primary" href="/my-tickets/{{ reg.id }}">
+          <span class="material-symbols-outlined">confirmation_number</span> View Ticket
+        </a>
+        {% endif %}
+        {% if reg.status in ('confirmed', 'checked_in') %}
+        <a class="mt-btn" href="/api/v1/registrations/{{ reg.id }}/calendar.ics" download>
+          <span class="material-symbols-outlined">calendar_add_on</span> Add to Calendar
+        </a>
+        {% endif %}
+        <a class="mt-btn" href="/e/{{ reg.event.slug }}">
+          <span class="material-symbols-outlined">open_in_new</span> Event
+        </a>
+        {% if reg.status == 'confirmed' %}
+        <a href="#" class="mt-btn" x-show="!transferUrl"
+           onclick="event.preventDefault(); transferMyTicket('{{ reg.id }}').then(url => { if (url) $data.transferUrl = url; })">
+          <span class="material-symbols-outlined">swap_horiz</span> Transfer Ticket
+        </a>
+        <a href="#" class="mt-btn" style="color:#dc2626;border-color:#dc2626;"
+           onclick="event.preventDefault(); cancelMyTicket('{{ reg.id }}')">
+          <span class="material-symbols-outlined">cancel</span> Cancel Ticket
+        </a>
+        {% elif reg.status == 'transfer_pending' %}
+        <a href="#" class="mt-btn" style="color:#dc2626;border-color:#dc2626;"
+           onclick="event.preventDefault(); if(confirm('Cancel this transfer and keep the ticket?')) cancelMyTransfer('{{ reg.id }}', this)">
+          <span class="material-symbols-outlined">undo</span> Cancel Transfer
+        </a>
+        {% endif %}
+      </div>
+      <div class="mt-transfer-link" x-show="transferUrl" x-cloak>
+        <input type="text" readonly :value="transferUrl" @click="$el.select()">
+        <a href="#" style="font-size:12px; white-space:nowrap;" @click.prevent="navigator.clipboard.writeText(transferUrl)">Copy link</a>
+      </div>
     </div>
   </div>
   {% endfor %}
@@ -283,7 +303,42 @@ async function cancelMyTicket(regId) {
     }
     location.reload();
   } catch {
-    alert('Network error — please try again.');
+    alert('Network error. Please try again.');
+  }
+}
+
+async function transferMyTicket(regId) {
+  try {
+    const res = await fetch(`/api/v1/registrations/${regId}/transfer`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.detail || data.error?.message || 'Could not start a transfer for this ticket.');
+      return null;
+    }
+    return data.data.transfer_url;
+  } catch {
+    alert('Network error. Please try again.');
+    return null;
+  }
+}
+
+async function cancelMyTransfer(regId, el) {
+  try {
+    const res = await fetch(`/api/v1/registrations/${regId}/transfer/cancel`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.detail || data.error?.message || 'Could not cancel this transfer.');
+      return;
+    }
+    location.reload();
+  } catch {
+    alert('Network error. Please try again.');
   }
 }
 </script>

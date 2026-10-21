@@ -1,4 +1,4 @@
-"""Save-and-remind ('interested') — lightweight non-binary RSVP short of buying a ticket."""
+"""Save-and-remind ('interested') - lightweight non-binary RSVP short of buying a ticket."""
 
 from __future__ import annotations
 

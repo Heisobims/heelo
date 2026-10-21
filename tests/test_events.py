@@ -1,4 +1,4 @@
-"""Event CRUD — create, update, publish, list, delete."""
+"""Event CRUD - create, update, publish, list, delete."""
 
 from __future__ import annotations
 
@@ -25,6 +25,21 @@ async def test_create_event(client: AsyncClient, org, user_headers):
     data = resp.json()["data"]
     assert data["title"] == "Afrobeats Night Lagos"
     assert data["status"] == "draft"
+    assert data["pass_fees_to_buyer"] is True
+
+
+async def test_create_event_with_absorbed_fees(client: AsyncClient, org, user_headers):
+    payload = dict(_EVENT_PAYLOAD)
+    payload["title"] = "Exclusive Gala Dinner"
+    payload["pass_fees_to_buyer"] = False
+    resp = await client.post(
+        f"/api/v1/organizations/{org.slug}/events",
+        json=payload,
+        headers=user_headers,
+    )
+    assert resp.status_code == 201
+    data = resp.json()["data"]
+    assert data["pass_fees_to_buyer"] is False
 
 
 async def test_create_event_requires_auth(client: AsyncClient, org):
@@ -260,3 +275,62 @@ async def test_generate_series_caps_instance_count(client: AsyncClient, org, eve
     )
     assert resp.status_code == 201
     assert resp.json()["data"]["count"] == MAX_RECURRING_INSTANCES
+
+
+# ── QR code ──────────────────────────────────────────────────────────────────
+
+
+async def test_event_qr_code_returns_png(client: AsyncClient, org, published_event, user_headers):
+    resp = await client.get(
+        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/qr.png",
+        headers=user_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "image/png"
+    assert resp.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+async def test_event_qr_code_requires_auth(client: AsyncClient, org, published_event):
+    resp = await client.get(f"/api/v1/organizations/{org.slug}/events/{published_event.id}/qr.png")
+    assert resp.status_code == 401
+
+
+async def test_event_qr_code_rejects_non_member(
+    client: AsyncClient, org, published_event, other_headers
+):
+    resp = await client.get(
+        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/qr.png",
+        headers=other_headers,
+    )
+    assert resp.status_code == 403
+
+
+async def test_event_qr_code_404_for_event_in_another_org(
+    client: AsyncClient, org, event, user_headers
+):
+    """Regression test: the event lookup must be scoped to the org in the
+    URL, not just any event the caller happens to have access to."""
+    import uuid
+
+    resp = await client.get(
+        f"/api/v1/organizations/{org.slug}/events/{uuid.uuid4()}/qr.png",
+        headers=user_headers,
+    )
+    assert resp.status_code == 404
+
+
+# ── Event Embed Widget ────────────────────────────────────────────────────────
+
+
+async def test_event_widget_renders_correctly(client: AsyncClient, published_event):
+    resp = await client.get(f"/e/{published_event.slug}/widget")
+    assert resp.status_code == 200
+    assert "frame-ancestors *" in resp.headers.get("content-security-policy", "")
+    assert published_event.title in resp.text
+    assert "--cyan:" in resp.text
+    assert "Choose tickets" in resp.text
+
+
+async def test_event_widget_404_for_draft_event(client: AsyncClient, event):
+    resp = await client.get(f"/e/{event.slug}/widget")
+    assert resp.status_code == 404

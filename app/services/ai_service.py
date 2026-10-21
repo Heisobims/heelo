@@ -2,7 +2,7 @@
 Anthropic AI helpers used by the AI router (async, FastAPI)
 and the ai_tasks Celery task (sync).
 
-All functions degrade gracefully when ANTHROPIC_API_KEY is not set —
+All functions degrade gracefully when ANTHROPIC_API_KEY is not set -
 they return empty strings / empty generators so the rest of the app keeps working.
 """
 
@@ -64,7 +64,7 @@ Requirements:
 - Start with a hook that captures why this event matters
 - Mention what attendees will learn, experience, or gain
 - End with a clear call to action (register now, secure your spot, etc.)
-- No markdown headers, no bullet lists — flowing prose only
+- No markdown headers, no bullet lists: flowing prose only
 - Suitable for an African audience but globally professional
 
 Write the description now:"""
@@ -95,7 +95,7 @@ async def stream_campaign_copy(
 
     goal_labels = {
         "reminder": "remind registered attendees about the upcoming event",
-        "last_tickets": "create urgency — tickets are almost sold out",
+        "last_tickets": "create urgency: tickets are almost sold out",
         "thank_you": "thank attendees after the event and keep them engaged",
         "early_bird": "promote early-bird ticket pricing",
         "announcement": "announce the event and drive registrations",
@@ -159,14 +159,14 @@ Stats:
 - Net revenue: {summary.get('net_revenue', 0)} ({summary.get('currency', 'NGN')})
 - Check-in rate: {summary.get('checkin_rate', 0)}%
 - Avg order value: {summary.get('avg_order_value', 0)}
-{f"- Top ticket: {top_ticket.get('name')} — {top_ticket.get('sold', 0)} sold ({top_ticket.get('sold_pct', 0)}% of capacity)" if top_ticket else ""}
+{f"- Top ticket: {top_ticket.get('name')} - {top_ticket.get('sold', 0)} sold ({top_ticket.get('sold_pct', 0)}% of capacity)" if top_ticket else ""}
 
 Give exactly 3 bullet points, each on its own line starting with "•":
 • What's going well (be specific with numbers)
 • What needs attention or is a concern
 • One concrete actionable recommendation the organizer can do right now
 
-Be direct, specific, and practical. No intro text, no headers — just the 3 bullets."""
+Be direct, specific, and practical. No intro text, no headers: just the 3 bullets."""
 
     response = await _async_client().messages.create(
         model=_MODEL_SMART,

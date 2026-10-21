@@ -1,6 +1,6 @@
 """Add event vibe tags and event_interests table.
 
-Note: `connections` already exists (migrated in 0001_initial_schema) — the model
+Note: `connections` already exists (migrated in 0001_initial_schema) - the model
 just has no API/router wired up yet. Nothing to migrate there.
 """
 
@@ -46,7 +46,7 @@ def upgrade() -> None:
     op.create_index("ix_event_interests_event", "event_interests", ["event_id"])
     op.create_index("ix_event_interests_user", "event_interests", ["user_id"])
 
-    # notifications.metadata already exists (0001_initial_schema) — reused as-is for
+    # notifications.metadata already exists (0001_initial_schema) - reused as-is for
     # connection_request rows, no schema change needed there.
 
 

@@ -3,7 +3,7 @@
 .gitignore
 .gitattributes
 
-# Secrets — never in the image
+# Secrets - never in the image
 .env
 .env.*
 *.env

@@ -8,8 +8,10 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.dependencies import DBSession, OrgAccess
+from app import plans
+from app.dependencies import DBSession
 from app.permissions import Permission, require_permission
+from app.plans import PlanFeature
 from app.services import crm_service as crm_svc
 
 router_crm = APIRouter(
@@ -24,7 +26,7 @@ CrmManageAccess = Annotated[tuple, Depends(require_permission(Permission.CRM_MAN
 async def export_registrations_csv(
     slug: str,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CrmManageAccess,
     event_id: str | None = Query(None),
     status: str | None = Query(None),
     q: str | None = Query(None),
@@ -60,11 +62,16 @@ async def import_contacts_csv(
     Returns count of imported / skipped rows.
     """
     org, role, _ = org_access
+    plans.require_feature(org.plan, PlanFeature.CRM_IMPORT)
 
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(422, "File must be a .csv")
 
-    content = await file.read()
+    _MAX_CSV_BYTES = 10 * 1024 * 1024  # 10 MB limit
+    content = await file.read(_MAX_CSV_BYTES + 1)
+    if len(content) > _MAX_CSV_BYTES:
+        raise HTTPException(413, "CSV file is too large. Maximum file size is 10 MB.")
+
     try:
         text = content.decode("utf-8-sig")  # handles BOM
     except UnicodeDecodeError:
@@ -77,13 +84,15 @@ async def import_contacts_csv(
 
     imported = 0
     skipped = 0
-    errors: list[str] = []
 
     from sqlalchemy import select
 
     from app.models.crm import Contact
 
-    for i, row in enumerate(reader, start=2):
+    raw_rows = []
+    emails_to_check = set()
+
+    for row in reader:
         name = (row.get("name") or "").strip()
         email = (row.get("email") or "").strip().lower() or None
         phone = (row.get("phone") or "").strip() or None
@@ -95,31 +104,46 @@ async def import_contacts_csv(
         if not name:
             name = email or "Unknown"
 
-        # De-duplicate within org by email
+        raw_rows.append({"name": name, "email": email, "phone": phone, "whatsapp": whatsapp})
         if email:
-            exists = await db.scalar(
-                select(Contact.id).where(
-                    Contact.org_id == org.id,
-                    Contact.email == email,
-                )
+            emails_to_check.add(email)
+
+    # Bulk query existing emails in single round-trip instead of 1 query per row
+    existing_emails: set[str] = set()
+    if emails_to_check:
+        email_list = list(emails_to_check)
+        # Query in chunks of 1000 to prevent oversized SQL IN-clauses
+        for chunk_start in range(0, len(email_list), 1000):
+            chunk = email_list[chunk_start : chunk_start + 1000]
+            stmt = select(Contact.email).where(
+                Contact.org_id == org.id,
+                Contact.email.in_(chunk),
             )
-            if exists:
+            found = await db.scalars(stmt)
+            existing_emails.update(found.all())
+
+    seen_emails: set[str] = set()
+
+    for item in raw_rows:
+        email = item["email"]
+        if email:
+            if email in existing_emails or email in seen_emails:
                 skipped += 1
                 continue
+            seen_emails.add(email)
 
         contact = Contact(
             org_id=org.id,
-            name=name,
+            name=item["name"],
             email=email,
-            phone=phone,
-            whatsapp_number=whatsapp,
+            phone=item["phone"],
+            whatsapp_number=item["whatsapp"],
             source="csv_import",
         )
         db.add(contact)
         imported += 1
 
-        # Batch commit every 100 rows to avoid huge transactions
-        if imported % 100 == 0:
+        if imported % 200 == 0:
             await db.flush()
 
     await db.commit()
@@ -164,7 +188,7 @@ async def update_contact_tags(
 async def list_contacts(
     slug: str,
     db: DBSession,
-    org_access: OrgAccess,
+    org_access: CrmManageAccess,
     q: str | None = Query(None),
     page: int = 1,
     per_page: int = 50,

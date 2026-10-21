@@ -1,7 +1,7 @@
 """Tests for app.services.payment_service refund functions.
 
 These exercise refund_order_item() and its per-provider helpers directly
-against an in-memory Order (no DB round-trip needed — the functions only
+against an in-memory Order (no DB round-trip needed - the functions only
 read attributes off the object and call out to the provider API).
 """
 

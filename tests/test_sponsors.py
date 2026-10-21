@@ -1,4 +1,4 @@
-"""Sponsor management — event-scoped `sponsors` table, replacing the old
+"""Sponsor management - event-scoped `sponsors` table, replacing the old
 Event.extras.partners JSON blob.
 """
 

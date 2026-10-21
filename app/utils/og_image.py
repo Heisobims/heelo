@@ -53,7 +53,7 @@ def _load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageF
 # ── Brand colours ─────────────────────────────────────────────────────────────
 _BLACK = (10, 10, 10)
 _WHITE = (255, 255, 255)
-_CYAN = (0, 255, 243)
+_CYAN = (232, 89, 56)
 _GRAY = (173, 173, 173)
 _DIM_GRAY = (80, 80, 80)
 
@@ -99,7 +99,6 @@ def generate_event_og_image(
 
     # ── Left content column ───────────────────────────────────────────────────
     padding_x = 80
-    content_width = W - padding_x * 2
 
     # Format badge (if provided)
     badge_y = 64

@@ -1,4 +1,4 @@
-"""Add portfolio_link to vendors — an alternative to uploading portfolio_urls
+"""Add portfolio_link to vendors - an alternative to uploading portfolio_urls
 images, letting a vendor link to work hosted elsewhere (Instagram, Behance,
 a personal site, etc) instead.
 """

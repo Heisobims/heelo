@@ -55,7 +55,7 @@ TEST_DATABASE_URL = os.getenv(
 # The engine (and the asyncpg connections it hands out) must be function-
 # scoped, matching pytest-asyncio's default per-test event loop. A
 # session-scoped engine gets its connections bound to whichever loop was
-# running the first time it was used — reusing it from a later test's
+# running the first time it was used - reusing it from a later test's
 # (different) loop raises asyncpg's "attached to a different loop"
 # RuntimeError. Schema create/drop is safe as session-scoped autouse work
 # because it opens and fully disposes its own engine within a single fixture
@@ -101,6 +101,20 @@ async def db(engine) -> AsyncGenerator[AsyncSession, None]:
 # ── HTTP client (per test) ─────────────────────────────────────────────────────
 
 
+async def _attach_csrf_header(request) -> None:
+    """Mirrors what app/static/js/main.js's fetch()/HTMX wrapper does in a
+    real browser (app/middleware/csrf.py) - echo the csrf_token cookie the
+    server issued back as a header on every non-GET request. Without this,
+    every existing authenticated POST/PUT/PATCH/DELETE test would 403."""
+    if request.method not in ("GET", "HEAD", "OPTIONS", "TRACE"):
+        token = request.headers.get("cookie", "")
+        for part in token.split(";"):
+            name, _, value = part.strip().partition("=")
+            if name == "csrf_token" and value:
+                request.headers["X-CSRF-Token"] = value
+                break
+
+
 @pytest.fixture
 async def client(db) -> AsyncGenerator[AsyncClient, None]:
     """
@@ -112,7 +126,11 @@ async def client(db) -> AsyncGenerator[AsyncClient, None]:
         yield db
 
     app.dependency_overrides[get_db] = _override_get_db
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        event_hooks={"request": [_attach_csrf_header]},
+    ) as c:
         yield c
     app.dependency_overrides.pop(get_db, None)
 
@@ -124,7 +142,7 @@ async def _truncate_after_test(engine):
     Application service functions frequently call `db.commit()` directly
     (not just the `client` fixture's request cycle), so relying on the
     `client` fixture alone to clean up left data behind for any test that
-    only used `db` — causing UNIQUE-constraint collisions in later tests.
+    only used `db` - causing UNIQUE-constraint collisions in later tests.
     """
     yield
     async with engine.begin() as conn:
@@ -146,11 +164,18 @@ def mock_celery_tasks():
 def mock_email():
     """
     email_service.py calls the Resend REST API directly via httpx (no `resend`
-    SDK package is used or installed) — patch the actual send functions.
+    SDK package is used or installed) - patch the actual send functions.
+
+    app.utils.email.send_smtp (OTP/welcome/password-reset/team-invite/vendor-
+    lead emails) is a *separate* sender using real smtplib against whatever
+    SMTP_HOST is in .env - patched here too, otherwise these tests silently
+    make real outbound SMTP connections instead of the documented "no real
+    network calls" guarantee above.
     """
     with (
         patch("app.services.email_service.send_sync"),
         patch("app.services.email_service.send_async", new_callable=AsyncMock),
+        patch("app.utils.email.send_smtp"),
     ):
         yield
 
@@ -164,6 +189,51 @@ def mock_whatsapp():
         patch("app.services.whatsapp_service.send_image_async", new_callable=AsyncMock),
     ):
         yield
+
+
+class _FakeRedis:
+    def __init__(self):
+        self.data: dict[str, str] = {}
+        self.sets: dict[str, set[str]] = {}
+
+    def get(self, key: str) -> str | None:
+        return self.data.get(key)
+
+    def set(self, key: str, value: str, ex: int | None = None) -> None:
+        self.data[key] = str(value)
+
+    def incr(self, key: str) -> int:
+        val = int(self.data.get(key, 0)) + 1
+        self.data[key] = str(val)
+        return val
+
+    def expire(self, key: str, seconds: int) -> None:
+        pass
+
+    def delete(self, *keys: str) -> None:
+        for k in keys:
+            self.data.pop(k, None)
+            self.sets.pop(k, None)
+
+    def smembers(self, key: str) -> set[str]:
+        return self.sets.get(key, set())
+
+    def sadd(self, key: str, *members: str) -> None:
+        s = self.sets.setdefault(key, set())
+        for m in members:
+            s.add(m)
+
+
+@pytest.fixture(autouse=True)
+def mock_redis():
+    """Ensure test rate limits and cache keys never pollute or read from live Redis."""
+    fake = _FakeRedis()
+    with (
+        patch("app.services.auth_service._login_redis", return_value=fake),
+        patch("app.utils.rate_limit._redis", return_value=fake),
+        patch("app.utils.cache._redis", return_value=fake),
+    ):
+        yield fake
 
 
 # ── User fixtures ─────────────────────────────────────────────────────────────
@@ -243,7 +313,11 @@ async def org(db, user):
         owner_id=user.id,
         name="Test Org",
         slug="test-org",
-        plan="starter",
+        # Enterprise so existing feature-behavior tests aren't incidentally
+        # blocked by plan gates - plan-gating itself has its own dedicated
+        # tests (test_plan_enforcement.py) using fixtures that set a
+        # specific lower plan on purpose.
+        plan="enterprise",
         currency="NGN",
     )
     db.add(o)
@@ -252,7 +326,7 @@ async def org(db, user):
 
 
 async def _make_member(db, org, user, role: str):
-    """Add `user` to `org` as an active team member with the given role — for
+    """Add `user` to `org` as an active team member with the given role - for
     testing the per-org permission matrix (owner/admin is covered by `org` +
     `user` already, since the owner always resolves to role="admin")."""
     from app.models.organization import OrganizationMember
@@ -273,7 +347,7 @@ async def _make_member(db, org, user, role: str):
 
 @pytest.fixture
 async def organizer_member(db, org, other_user):
-    """A non-owner team member with role="organizer" — distinct from the
+    """A non-owner team member with role="organizer" - distinct from the
     owner (always role="admin") and from `other_user` alone (not a member)."""
     return await _make_member(db, org, other_user, "organizer")
 
@@ -373,6 +447,7 @@ async def registration(db, published_event, ticket_type):
         attendee_phone="+2348012345678",
         qr_code=f"test-qr-{_uuid.uuid4()}",
         status="confirmed",
+        referral_token=f"test-ref-{_uuid.uuid4().hex[:12]}",
     )
     db.add(r)
     await db.flush()
@@ -384,15 +459,17 @@ async def order(db, published_event, ticket_type, user):
     import uuid as _uuid
 
     from app.models.ticketing import Order
+    from app.services import payment_service as pay_svc
 
+    fee_rate = float(pay_svc.PLATFORM_FEE_PERCENT)
     o = Order(
         user_id=user.id,
         event_id=published_event.id,
         buyer_name="Jane Doe",
         buyer_email="jane@example.com",
         total_amount=float(ticket_type.price),
-        net_amount=float(ticket_type.price) * 0.97,
-        platform_fee=float(ticket_type.price) * 0.03,
+        net_amount=float(ticket_type.price) * (1 - fee_rate),
+        platform_fee=float(ticket_type.price) * fee_rate,
         currency=ticket_type.currency,
         payment_provider="paystack",
         payment_reference=f"test-ref-{_uuid.uuid4()}",

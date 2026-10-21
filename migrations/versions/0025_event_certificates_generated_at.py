@@ -1,4 +1,4 @@
-"""Add certificates_generated_at to events — gates attendee certificate
+"""Add certificates_generated_at to events - gates attendee certificate
 downloads behind an explicit organizer action, per the same on-the-fly
 generation pattern as badges/OG-images (nothing is stored, this is purely
 an availability flag).

@@ -1,4 +1,4 @@
-"""Tests for admin vendor/venue moderation (suspend/reinstate) — service and router layers."""
+"""Tests for admin vendor/venue moderation (suspend/reinstate) - service and router layers."""
 
 from __future__ import annotations
 

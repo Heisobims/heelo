@@ -180,13 +180,20 @@ async def _build_recipients(db: AsyncSession, campaign: Campaign) -> int:
 # ── Send / schedule ───────────────────────────────────────────────────────────
 
 
-async def send_now(db: AsyncSession, campaign: Campaign) -> Campaign:
+async def send_now(db: AsyncSession, campaign: Campaign, *, org_plan: str = "free") -> Campaign:
     if campaign.status not in ("draft", "scheduled"):
         raise HTTPException(400, f"Cannot send a campaign with status '{campaign.status}'.")
 
     await _build_recipients(db, campaign)
     if campaign.recipient_count == 0:
         raise HTTPException(400, "No recipients match the audience filter. Add attendees first.")
+
+    if campaign.type == "whatsapp":
+        from app import plans
+
+        plans.check_and_consume_whatsapp_quota(
+            campaign.org_id, org_plan, count=campaign.recipient_count
+        )
 
     campaign.status = "sending"
     campaign.scheduled_at = None

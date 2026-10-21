@@ -1,13 +1,13 @@
 """
-Email sending service — used by Celery tasks for registration confirmations,
+Email sending service - used by Celery tasks for registration confirmations,
 reminders, and waitlist notices.
 
 Sends over SMTP via app.utils.email.send_smtp (the same transport used for
-OTP/password-reset/welcome/invite emails) rather than a separate provider —
+OTP/password-reset/welcome/invite emails) rather than a separate provider -
 one SMTP account configures every outbound email in the app.
 
-send_sync()  — synchronous, for Celery tasks
-send_async() — async, for direct use in FastAPI request handlers (runs the
+send_sync()  - synchronous, for Celery tasks
+send_async() - async, for direct use in FastAPI request handlers (runs the
                blocking smtplib call in a thread so it doesn't block the loop)
 
 Template rendering uses a dedicated Jinja2 Environment
@@ -48,10 +48,10 @@ def gcal_url(event) -> str:
 
 
 def send_sync(to: str | list[str], subject: str, html: str) -> None:
-    """Blocking send via smtplib — for use inside Celery tasks."""
+    """Blocking send via smtplib - for use inside Celery tasks."""
     send_smtp(to, subject, html)
 
 
 async def send_async(to: str | list[str], subject: str, html: str) -> None:
-    """Non-blocking send — for use inside async FastAPI handlers."""
+    """Non-blocking send - for use inside async FastAPI handlers."""
     await asyncio.to_thread(send_smtp, to, subject, html)

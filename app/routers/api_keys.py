@@ -6,7 +6,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.dependencies import CurrentUser, DBSession, OrgAccess
+from app import plans
+from app.dependencies import CurrentUser, DBSession
 from app.permissions import Permission, require_permission
 from app.services import api_key_service as ak_svc
 
@@ -23,7 +24,7 @@ class CreateKeyIn(BaseModel):
 
 
 @router_api_keys.get("")
-async def list_keys(slug: str, db: DBSession, org_access: OrgAccess):
+async def list_keys(slug: str, db: DBSession, org_access: ApiKeysManageAccess):
     org, role, is_owner = org_access
     keys = await ak_svc.list_api_keys(db, org.id)
     return {
@@ -52,6 +53,10 @@ async def create_key(
     current_user: CurrentUser,
 ):
     org, role, is_owner = org_access
+
+    existing = await ak_svc.list_api_keys(db, org.id)
+    active_count = sum(1 for k in existing if k.is_active)
+    plans.check_api_key_limit(active_count, org.plan)
 
     raw, key = await ak_svc.create_api_key(
         db, org_id=org.id, created_by=current_user.id, name=body.name

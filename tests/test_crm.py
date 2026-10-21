@@ -1,4 +1,4 @@
-"""CRM — attendee list, search, filter, CSV export."""
+"""CRM - attendee list, search, filter, CSV export."""
 
 from __future__ import annotations
 
@@ -47,5 +47,26 @@ async def test_crm_export_requires_org_membership(client: AsyncClient, org, othe
     resp = await client.get(
         f"/api/v1/organizations/{org.slug}/registrations/export.csv",
         headers=other_headers,
+    )
+    assert resp.status_code == 403
+
+
+async def test_crm_export_rejects_checkin_staff(
+    client: AsyncClient, org, registration, checkin_staff_headers
+):
+    """Regression test: the attendee CSV export (name/email/phone) used to
+    accept any org member, including a low-trust checkin_staff login. Now
+    gated on CRM_MANAGE."""
+    resp = await client.get(
+        f"/api/v1/organizations/{org.slug}/registrations/export.csv",
+        headers=checkin_staff_headers,
+    )
+    assert resp.status_code == 403
+
+
+async def test_list_contacts_rejects_checkin_staff(client: AsyncClient, org, checkin_staff_headers):
+    resp = await client.get(
+        f"/api/v1/organizations/{org.slug}/contacts",
+        headers=checkin_staff_headers,
     )
     assert resp.status_code == 403

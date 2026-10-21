@@ -33,6 +33,15 @@ migrate:
 dev:
 	uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
+dev-all:
+	./scripts/dev.sh
+
+worker:
+	./scripts/worker.sh
+
+beat:
+	./scripts/beat.sh
+
 # ── Docker ───────────────────────────────────────────────────────────────────
 docker-build:
 	docker compose build
@@ -56,7 +65,7 @@ prod-up:
 prod-down:
 	docker compose -f docker-compose.yml down
 
-# ── SSL — run once to issue a Let's Encrypt cert ─────────────────────────────
+# ── SSL - run once to issue a Let's Encrypt cert ─────────────────────────────
 # Usage: make certbot-init DOMAIN=heelo.io EMAIL=you@example.com
 certbot-init:
 	docker compose -f docker-compose.yml run --rm certbot \

@@ -1,0 +1,140 @@
+{% extends "base.html" %} {% block subject %}Receipt: Heelo {{ plan | capitalize
+}} plan{% endblock %} {% block content %}
+<h1
+  style="
+    margin: 0 0 8px;
+    font-family: Georgia, serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: #000000;
+    line-height: 1.2;
+  "
+>
+  Payment received
+</h1>
+<p
+  style="
+    margin: 0 0 28px;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
+    font-size: 16px;
+    color: #555555;
+    line-height: 1.5;
+  "
+>
+  Thanks! <strong style="color: #000">{{ org_display_name }}</strong> is now on
+  the <strong>{{ plan | capitalize }}</strong> plan through
+  <strong>{{ period_end_date }}</strong>.
+</p>
+
+<table
+  border="0"
+  cellpadding="0"
+  cellspacing="0"
+  width="100%"
+  style="
+    border: 2px solid #000;
+    border-radius: 12px;
+    margin-bottom: 28px;
+    overflow: hidden;
+  "
+>
+  <tr>
+    <td style="background: #000; padding: 20px 24px">
+      <p
+        style="
+          margin: 0;
+          font-family: Georgia, serif;
+          font-size: 20px;
+          font-weight: 900;
+          color: #e85938;
+        "
+      >
+        {{ plan | capitalize }} plan (30 days)
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 20px 24px">
+      <p
+        style="
+          margin: 0;
+          font-family:
+            system-ui,
+            -apple-system,
+            sans-serif;
+          font-size: 14px;
+          color: #666666;
+        "
+      >
+        Plan price: {{ currency }} {{ list_price }}
+      </p>
+      <p
+        style="
+          margin: 4px 0 0;
+          font-family:
+            system-ui,
+            -apple-system,
+            sans-serif;
+          font-size: 14px;
+          color: #666666;
+        "
+      >
+        Processing fee: {{ currency }} {{ gateway_fee_amount }}
+      </p>
+      <p
+        style="
+          margin: 10px 0 0;
+          font-family:
+            system-ui,
+            -apple-system,
+            sans-serif;
+          font-size: 15px;
+          color: #444444;
+        "
+      >
+        Total charged: <strong>{{ currency }} {{ amount }}</strong>
+      </p>
+      <p
+        style="
+          margin: 10px 0 0;
+          font-family:
+            system-ui,
+            -apple-system,
+            sans-serif;
+          font-size: 15px;
+          color: #444444;
+        "
+      >
+        Renews or expires: <strong>{{ period_end_date }}</strong>
+      </p>
+    </td>
+  </tr>
+</table>
+
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="background: #e85938; border-radius: 8px">
+      <a
+        href="{{ frontend_url }}/org/{{ org_slug }}/plan"
+        style="
+          display: inline-block;
+          padding: 13px 28px;
+          font-family:
+            system-ui,
+            -apple-system,
+            sans-serif;
+          font-size: 14px;
+          font-weight: 700;
+          color: #ffffff;
+          text-decoration: none;
+        "
+      >
+        View billing
+      </a>
+    </td>
+  </tr>
+</table>
+{% endblock %}

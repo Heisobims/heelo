@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Analytics · {{ event.title }} — Heelo{% endblock %}
+{% block title %}Analytics · {{ event.title }} | Heelo{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -31,7 +31,7 @@
   .stat-label { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 0.375rem; letter-spacing: 0.02em; }
   .stat-value { font-size: 2rem; font-weight: 800; line-height: 1.1; transition: color 300ms; }
   .stat-sub { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
-  .stat-card.highlight { border-color: var(--cyan); background: rgba(0,255,243,0.03); }
+  .stat-card.highlight { border-color: var(--cyan); background: rgba(232,89,56,0.04); }
   .stat-card.highlight .stat-value { color: var(--cyan); }
   .stat-updating .stat-value { color: var(--cyan); }
 
@@ -76,7 +76,7 @@
   .badge { display: inline-flex; align-items: center; padding: 0.175rem 0.5rem; border-radius: 100px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; }
   .badge-vip { background: rgba(168,85,247,0.1); color: #9333ea; }
   .badge-free { background: rgba(34,197,94,0.1); color: #16a34a; }
-  .badge-general { background: rgba(0,255,243,0.1); color: var(--cyan-dark, #00b3a9); }
+  .badge-general { background: rgba(232,89,56,0.1); color: var(--cyan-dark, #C84729); }
   .badge-early { background: rgba(245,158,11,0.1); color: #b45309; }
   .badge-active { background: rgba(34,197,94,0.1); color: #16a34a; }
   .badge-inactive { background: var(--surface-alt, #f0f0f0); color: var(--text-secondary); }
@@ -114,16 +114,16 @@
         <span id="liveBadgeText">Live</span>
       </span>
       <span class="an-updated" id="lastUpdated"></span>
-      <button id="aiInsightsBtn" onclick="loadAiInsights()" style="display:inline-flex;align-items:center;gap:0.375rem;padding:0.375rem 0.875rem;border-radius:8px;border:1.5px solid var(--cyan);background:rgba(0,255,243,0.06);color:var(--cyan-dark,#00b3a9);font-size:0.8125rem;font-weight:600;cursor:pointer;">
+      <button id="aiInsightsBtn" onclick="loadAiInsights()" style="display:inline-flex;align-items:center;gap:0.375rem;padding:0.375rem 0.875rem;border-radius:8px;border:1.5px solid var(--cyan);background:rgba(232,89,56,0.06);color:var(--cyan-dark,#C84729);font-size:0.8125rem;font-weight:600;cursor:pointer;">
         <span class="material-symbols-outlined">auto_awesome</span> AI Insights
       </button>
     </div>
   </div>
 
   <!-- ── AI Insights panel ─────────────────────────────────────────────────── -->
-  <div id="aiInsightsPanel" style="display:none;background:linear-gradient(135deg,rgba(0,255,243,0.04) 0%,rgba(124,58,237,0.04) 100%);border:1px solid var(--cyan);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+  <div id="aiInsightsPanel" style="display:none;background:linear-gradient(135deg,rgba(232,89,56,0.04) 0%,rgba(124,58,237,0.04) 100%);border:1px solid var(--cyan);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
     <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.875rem;">
-      <span class="material-symbols-outlined" style="color:var(--cyan-dark,#00b3a9);">auto_awesome</span>
+      <span class="material-symbols-outlined" style="color:var(--cyan-dark,#C84729);">auto_awesome</span>
       <span style="font-weight:700;font-size:0.9375rem;">AI Insights</span>
       <span style="font-size:0.75rem;color:var(--text-secondary);margin-left:auto;">Powered by Claude</span>
     </div>
@@ -275,7 +275,7 @@
             <td class="td-dim td-mono">{{ row.medium }}</td>
             <td style="text-align:right;">{{ row.orders }}</td>
             <td style="text-align:right;" class="td-mono">
-              {% if row.revenue > 0 %}{{ currency }} {{ "{:,.0f}".format(row.revenue) }}{% else %}—{% endif %}
+              {% if row.revenue > 0 %}{{ currency }} {{ "{:,.0f}".format(row.revenue) }}{% else %}-{% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -400,7 +400,7 @@
 
   connectSSE();
 
-  // ── Chart.js — Sales over time ──────────────────────────────────────────────
+  // ── Chart.js - Sales over time ──────────────────────────────────────────────
   const salesRaw = {{ sales_json | safe }};
   const regRaw   = {{ reg_over_time_json | safe }};
 
@@ -419,6 +419,8 @@
 
   const ctx = document.getElementById('salesChart');
   if (ctx && allDates.length > 0) {
+    const cyan = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || getComputedStyle(document.documentElement).getPropertyValue('--cyan').trim() || '#E85938';
+    const textSecondary = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() || '#6B6B6B';
     new Chart(ctx, {
       type: 'line',
       data: {
@@ -427,8 +429,8 @@
           {
             label: 'Registrations',
             data: regCounts,
-            borderColor: '#00FFF3',
-            backgroundColor: 'rgba(0,255,243,0.07)',
+            borderColor: cyan,
+            backgroundColor: cyan + '12',
             borderWidth: 2.5,
             pointRadius: allDates.length > 30 ? 0 : 3,
             pointHoverRadius: 5,
@@ -470,13 +472,13 @@
         scales: {
           x: {
             grid: { display: false },
-            ticks: { font: { size: 11 }, maxTicksLimit: 10, color: '#888' },
+            ticks: { font: { size: 11 }, maxTicksLimit: 10, color: textSecondary },
           },
           yLeft: {
             position: 'left',
             beginAtZero: true,
             grid: { color: 'rgba(0,0,0,0.05)' },
-            ticks: { font: { size: 11 }, precision: 0, color: '#888' },
+            ticks: { font: { size: 11 }, precision: 0, color: textSecondary },
           },
           yRight: {
             position: 'right',
@@ -484,7 +486,7 @@
             grid: { drawOnChartArea: false },
             ticks: {
               font: { size: 11 },
-              color: '#888',
+              color: textSecondary,
               callback: (v) => fmtRevenue(v),
             },
           },
@@ -493,7 +495,7 @@
     });
   } else if (ctx) {
     ctx.closest('.chart-wrap').innerHTML =
-      '<div class="empty-state" style="padding:4rem 1rem;"><p>No data yet — registrations will appear here once your event goes live.</p></div>';
+      '<div class="empty-state" style="padding:4rem 1rem;"><p>No data yet: registrations will appear here once your event goes live.</p></div>';
   }
 })();
 

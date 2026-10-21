@@ -1,4 +1,4 @@
-"""Sponsor self-service portal — organizer invites a sponsor's contact email,
+"""Sponsor self-service portal - organizer invites a sponsor's contact email,
 they claim the listing with a real Heelo account, and can then edit their own
 logo/website/description. Also covers exhibitor fields, which reuse the
 Sponsor model instead of a separate table.

@@ -1,4 +1,4 @@
-"""Speaker management — org-level speaker roster (real `speakers` table) plus
+"""Speaker management - org-level speaker roster (real `speakers` table) plus
 the event <-> speaker link (`event_speakers`) that replaced the old
 Event.extras.people.* JSON blob.
 """

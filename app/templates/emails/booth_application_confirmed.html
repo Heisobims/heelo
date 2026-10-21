@@ -1,0 +1,166 @@
+{% extends "base.html" %} {% block subject %}Receipt & Confirmation: Booth
+Confirmed for {{ event.title }}!{% endblock %} {% block content %}
+<h1
+  style="
+    margin: 0 0 12px;
+    font-family: Georgia, serif;
+    font-size: 24px;
+    font-weight: 900;
+    color: #000000;
+    line-height: 1.2;
+  "
+>
+  Booth Space Confirmed!
+</h1>
+<p
+  style="
+    margin: 0 0 20px;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
+    font-size: 15px;
+    color: #555555;
+    line-height: 1.5;
+  "
+>
+  Hi {{ contact_name }}, your payment for <strong>{{ business_name }}</strong>'s
+  booth at <strong>{{ event.title }}</strong> has been confirmed. Your exhibitor
+  space is officially reserved!
+</p>
+
+<!-- Confirmation Card -->
+<table
+  border="0"
+  cellpadding="0"
+  cellspacing="0"
+  width="100%"
+  style="
+    background: #f0fdf4;
+    border: 2px solid #16a34a;
+    border-radius: 12px;
+    margin-bottom: 28px;
+    overflow: hidden;
+  "
+>
+  <tr>
+    <td style="background: #16a34a; padding: 16px 20px">
+      <span
+        style="
+          font-size: 12px;
+          text-transform: uppercase;
+          color: #ffffff;
+          opacity: 0.9;
+          font-weight: 600;
+          display: block;
+        "
+        >Confirmed Exhibitor</span
+      >
+      <strong style="font-size: 18px; color: #ffffff"
+        >{{ business_name }}</strong
+      >
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 20px">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%">
+        {% if package_name %}
+        <tr>
+          <td
+            style="
+              padding-bottom: 10px;
+              color: #4b5563;
+              font-size: 14px;
+              width: 40%;
+            "
+          >
+            Package:
+          </td>
+          <td
+            style="
+              padding-bottom: 10px;
+              color: #111827;
+              font-size: 14px;
+              font-weight: 600;
+            "
+          >
+            {{ package_name }}
+          </td>
+        </tr>
+        {% endif %} {% if assigned_booth_number %}
+        <tr>
+          <td style="padding-bottom: 10px; color: #4b5563; font-size: 14px">
+            Booth Number:
+          </td>
+          <td
+            style="
+              padding-bottom: 10px;
+              color: #111827;
+              font-size: 15px;
+              font-weight: 700;
+            "
+          >
+            {{ assigned_booth_number }}
+          </td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td style="padding-bottom: 10px; color: #4b5563; font-size: 14px">
+            Amount Paid:
+          </td>
+          <td
+            style="
+              padding-bottom: 10px;
+              color: #111827;
+              font-size: 15px;
+              font-weight: 700;
+            "
+          >
+            {{ currency }} {{ "{:,.2f}".format(price) }}
+          </td>
+        </tr>
+        {% if payment_reference %}
+        <tr>
+          <td style="color: #4b5563; font-size: 14px">Payment Ref:</td>
+          <td style="color: #111827; font-size: 13px; font-family: monospace">
+            {{ payment_reference }}
+          </td>
+        </tr>
+        {% endif %}
+      </table>
+    </td>
+  </tr>
+</table>
+
+<p
+  style="
+    margin: 0 0 24px;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
+    font-size: 14px;
+    color: #555555;
+    line-height: 1.5;
+  "
+>
+  You are now listed in the official event exhibitor guide. The organizer will
+  be in touch with move-in and setup schedules prior to the event.
+</p>
+
+<p
+  style="
+    margin: 0;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
+    font-size: 14px;
+    color: #333333;
+    line-height: 1.6;
+  "
+>
+  Warm regards,<br />
+  <strong>The {{ org_name or 'Event' }} Team</strong>
+</p>
+{% endblock %}

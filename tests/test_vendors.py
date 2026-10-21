@@ -1,4 +1,4 @@
-"""Vendor signup — image upload endpoint, required profile image, and the
+"""Vendor signup - image upload endpoint, required profile image, and the
 portfolio_urls/portfolio_link fields."""
 
 from __future__ import annotations
@@ -103,7 +103,7 @@ async def test_upload_vendor_image_rejects_bad_content_type(client: AsyncClient,
 async def test_update_vendor_profile_can_set_images(
     client: AsyncClient, user_headers, vendor, user
 ):
-    # `vendor` fixture belongs to `other_user`, not `user` — create a fresh
+    # `vendor` fixture belongs to `other_user`, not `user` - create a fresh
     # profile owned by `user` instead so PATCH /me resolves to it.
     create = await client.post(
         "/api/v1/vendors",
@@ -124,3 +124,138 @@ async def test_update_vendor_profile_can_set_images(
     data = resp.json()["data"]
     assert data["cover_image_url"] == "https://example.com/new-cover.jpg"
     assert data["portfolio_link"] == "https://behance.net/studiotwo"
+
+
+# ── QR code ──────────────────────────────────────────────────────────────────
+
+
+async def test_vendor_qr_code_returns_png(client: AsyncClient, vendor, other_headers):
+    resp = await client.get("/api/v1/vendors/me/qr.png", headers=other_headers)
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "image/png"
+    assert resp.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+async def test_vendor_qr_code_requires_auth(client: AsyncClient, vendor):
+    resp = await client.get("/api/v1/vendors/me/qr.png")
+    assert resp.status_code == 401
+
+
+async def test_vendor_qr_code_404_without_a_vendor_profile(client: AsyncClient, user_headers):
+    resp = await client.get("/api/v1/vendors/me/qr.png", headers=user_headers)
+    assert resp.status_code == 404
+
+
+def _access_cookie(user_id) -> dict:
+    from datetime import UTC, datetime, timedelta
+
+    from jose import jwt
+
+    from app.config import settings
+
+    token = jwt.encode(
+        {"sub": str(user_id), "exp": datetime.now(UTC) + timedelta(hours=1), "type": "access"},
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
+    )
+    return {"heelo_access": token}
+
+
+async def test_vendor_detail_page_shows_qr_section_to_owner(
+    client: AsyncClient, vendor, other_user
+):
+    resp = await client.get(f"/vendors/{vendor.slug}", cookies=_access_cookie(other_user.id))
+    assert resp.status_code == 200
+    assert b"Your QR code" in resp.content
+
+
+async def test_vendor_detail_page_hides_qr_section_from_anonymous_visitor(
+    client: AsyncClient, vendor
+):
+    resp = await client.get(f"/vendors/{vendor.slug}")
+    assert resp.status_code == 200
+    assert b"Your QR code" not in resp.content
+
+
+async def test_vendor_detail_page_hides_qr_section_from_a_different_logged_in_user(
+    client: AsyncClient, vendor, user
+):
+    """Regression test: is_owner must compare against the actual vendor's
+    user_id, not just "is someone logged in" - otherwise any logged-in
+    visitor would see another vendor's QR download link."""
+    resp = await client.get(f"/vendors/{vendor.slug}", cookies=_access_cookie(user.id))
+    assert resp.status_code == 200
+    assert b"Your QR code" not in resp.content
+
+
+async def test_my_vendor_dashboard_page_for_owner(
+    client: AsyncClient, vendor, other_user
+):
+    resp = await client.get("/my-vendor-dashboard", cookies=_access_cookie(other_user.id))
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/html")
+    assert vendor.business_name.encode() in resp.content
+    assert b"Vendor Command Center" in resp.content
+    assert b"Withdraw Earnings" in resp.content
+    # Verify that the 3 interactive action modals are rendered within Alpine scope
+    assert b"showPayoutModal" in resp.content
+    assert b"showServiceModal" in resp.content
+    assert b"showQuoteModal" in resp.content
+    assert b"Add Service Package" in resp.content
+    assert b"Withdraw Payable Earnings" in resp.content
+    assert b"Submit Quotation" in resp.content
+    # Confirm modals are enclosed before </script> and within component
+    content = resp.text
+    modal_idx = content.find("showPayoutModal")
+    script_idx = content.find("function vendorHub()")
+    assert modal_idx < script_idx
+
+
+
+async def test_my_vendor_dashboard_redirects_unauthenticated(client: AsyncClient):
+    resp = await client.get("/my-vendor-dashboard", follow_redirects=False)
+    assert resp.status_code == 302
+    assert "/login" in resp.headers["location"]
+
+
+async def test_my_vendor_dashboard_redirects_user_without_vendor(client: AsyncClient, user):
+    resp = await client.get("/my-vendor-dashboard", cookies=_access_cookie(user.id), follow_redirects=False)
+    assert resp.status_code == 302
+    assert resp.headers["location"] == "/vendor-signup"
+
+
+async def test_upload_vendor_document_success(client: AsyncClient, user_headers):
+    # Test PDF upload
+    pdf_resp = await client.post(
+        "/api/v1/vendors/upload-document",
+        files={"file": ("quote_proposal.pdf", b"%PDF-1.4 mock quotation pdf", "application/pdf")},
+        headers=user_headers,
+    )
+    assert pdf_resp.status_code == 200
+    pdf_data = pdf_resp.json()["data"]
+    assert pdf_data["filename"] == "quote_proposal.pdf"
+    assert pdf_data["url"].endswith(".pdf")
+
+    # Test Image upload (JPEG)
+    img_resp = await client.post(
+        "/api/v1/vendors/upload-document",
+        files={"file": ("estimate_scan.jpg", _jpeg_bytes(), "image/jpeg")},
+        headers=user_headers,
+    )
+    assert img_resp.status_code == 200
+    img_data = img_resp.json()["data"]
+    assert img_data["filename"] == "estimate_scan.jpg"
+    assert img_data["url"].endswith(".jpg")
+
+
+async def test_upload_vendor_document_rejects_invalid_format(client: AsyncClient, user_headers):
+    resp = await client.post(
+        "/api/v1/vendors/upload-document",
+        files={"file": ("malicious.exe", b"binary content", "application/x-msdownload")},
+        headers=user_headers,
+    )
+    assert resp.status_code == 400
+    body = resp.json()
+    err_msg = body.get("detail") or body.get("error", {}).get("message", "")
+    assert "Unsupported file format" in err_msg
+

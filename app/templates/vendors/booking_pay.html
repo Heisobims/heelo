@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+{% block title %}Checkout · {{ booking.event_name or 'Vendor Booking' }} | Heelo{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<style>
+  body { background: var(--bg-secondary); }
+  .bp-container { max-width: 680px; margin: 80px auto; padding: 0 24px 64px; }
+  .bp-card { background: #fff; border: 1px solid var(--border-light); border-radius: 20px; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); }
+  .bp-header { border-bottom: 1px solid var(--border-light); padding-bottom: 20px; margin-bottom: 24px; }
+  .bp-title { font-family: var(--font-serif); font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+  .bp-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 14.5px; }
+  .bp-row.total { border-bottom: none; border-top: 2px solid var(--border-light); margin-top: 12px; padding-top: 18px; font-size: 18px; font-weight: 800; }
+  .bp-badge { padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+  .bp-badge.pending { background: rgba(245,158,11,0.1); color: #b45309; }
+  .bp-badge.confirmed { background: rgba(34,197,94,0.1); color: #15803d; }
+  .bp-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: var(--text-primary); color: #fff; border-radius: 12px; font-weight: 700; font-size: 15px; border: none; cursor: pointer; text-decoration: none; transition: all 160ms ease; margin-top: 24px; }
+  .bp-btn:hover { background: #233029; transform: translateY(-1px); }
+  .bp-trust-box { margin-top: 24px; padding: 16px; border-radius: 12px; background: rgba(232,89,56,0.05); border: 1px solid rgba(232,89,56,0.15); display: flex; gap: 12px; font-size: 13px; line-height: 1.5; }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include "partials/site_nav.html" %}
+
+<div class="bp-container" x-data="checkoutPage()">
+  <div class="bp-card">
+    
+    {% if booking.status == 'delivered' %}
+    <div style="text-align:center; padding:12px 0;">
+      <span class="material-symbols-outlined" style="font-size:56px; color:#2563eb; margin-bottom:12px;">verified</span>
+      <h2 style="font-size:24px; font-weight:800; margin-bottom:8px;">Service Marked as Delivered!</h2>
+      <p style="color:var(--text-secondary); font-size:15px; line-height:1.6; margin-bottom:24px;">
+        {{ vendor.business_name if vendor else 'The vendor' }} has signaled service completion. Please verify that everything was delivered according to your agreement.
+      </p>
+
+      {% if booking.fulfillment_proof_notes %}
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:14px 18px; text-align:left; margin-bottom:20px; font-size:13.5px; color:#1e40af;">
+        <strong>Vendor Notes:</strong> {{ booking.fulfillment_proof_notes }}
+      </div>
+      {% endif %}
+
+      <div style="background:#fffbeb; border:1px solid #fef3c7; border-radius:12px; padding:14px 18px; text-align:left; margin-bottom:24px; font-size:13px; color:#92400e; line-height:1.5;">
+        <strong>48-Hour Auto-Release:</strong> If no dispute is raised, the escrow funds ({{ booking.currency | currency_symbol }}{{ "{:,.2f}".format(booking.total_amount) }}) will automatically release to the vendor on <strong>{{ booking.auto_release_deadline.strftime('%B %d, %Y at %H:%M UTC') if booking.auto_release_deadline else 'within 48 hours' }}</strong>.
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button type="button" @click="releaseEscrow()" :disabled="actionLoading" class="bp-btn" style="background:#15803d; margin-top:0; flex:1;">
+          <span class="material-symbols-outlined" style="font-size:18px;">lock_open</span> Confirm &amp; Release Payment
+        </button>
+        <button type="button" @click="showDisputeModal = true" :disabled="actionLoading" class="bp-btn" style="background:var(--bg-secondary); color:#b91c1c; border:1px solid #fecaca; margin-top:0; flex:1;">
+          <span class="material-symbols-outlined" style="font-size:18px;">report_problem</span> Report an Issue
+        </button>
+      </div>
+
+      <!-- Dispute Modal -->
+      <div x-show="showDisputeModal" x-cloak style="position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:100; display:flex; align-items:center; justify-content:center; padding:16px;">
+        <div style="background:#fff; border-radius:16px; max-width:480px; width:100%; padding:24px; text-align:left; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+          <h3 style="font-size:18px; font-weight:800; margin-bottom:8px;">Report an Issue with Booking</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+            Submitting a dispute immediately freezes all escrow funds. Our Trust &amp; Safety team will review the contract and contact both parties.
+          </p>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:12px; font-weight:700; text-transform:uppercase; color:var(--text-secondary); display:block; margin-bottom:6px;">Issue Details *</label>
+            <textarea x-model="disputeReason" rows="4" placeholder="Describe what was not delivered or unmet expectations..." style="width:100%; border:1px solid var(--border-light); border-radius:8px; padding:10px; font-size:14px; box-sizing:border-box;"></textarea>
+          </div>
+          <div style="display:flex; justify-content:flex-end; gap:8px;">
+            <button type="button" @click="showDisputeModal = false" style="padding:10px 16px; border-radius:8px; border:1px solid var(--border-light); background:#fff; font-size:13px; font-weight:600; cursor:pointer;">Cancel</button>
+            <button type="button" @click="submitDispute()" :disabled="actionLoading" style="padding:10px 16px; border-radius:8px; border:none; background:#b91c1c; color:#fff; font-size:13px; font-weight:700; cursor:pointer;">Submit Dispute &amp; Freeze Escrow</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% elif booking.status == 'disputed' %}
+    <div style="text-align:center; padding:20px 0;">
+      <span class="material-symbols-outlined" style="font-size:56px; color:#b91c1c; margin-bottom:12px;">gavel</span>
+      <h2 style="font-size:24px; font-weight:800; margin-bottom:8px;">Booking Under Dispute Review</h2>
+      <p style="color:var(--text-secondary); font-size:15px; line-height:1.6; margin-bottom:24px;">
+        A dispute has been lodged for this booking. The escrow payment is safely frozen in trust while our team mediates.
+      </p>
+      {% if booking.dispute_reason %}
+      <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:12px; padding:14px 18px; text-align:left; margin-bottom:24px; font-size:13px; color:#991b1b;">
+        <strong>Dispute Details:</strong> {{ booking.dispute_reason }}
+      </div>
+      {% endif %}
+      <a href="/my-bookings" class="bp-btn" style="max-width:280px; margin:0 auto;">
+        Back to My Bookings &rarr;
+      </a>
+    </div>
+    {% elif verified or booking.status == 'confirmed' or booking.status == 'completed' %}
+    <div style="text-align:center; padding:20px 0;">
+      <span class="material-symbols-outlined" style="font-size:56px; color:#22c55e; margin-bottom:12px;">check_circle</span>
+      <h2 style="font-size:24px; font-weight:800; margin-bottom:8px;">
+        {% if booking.status == 'completed' %}Booking Completed!{% else %}Booking Confirmed &amp; Protected!{% endif %}
+      </h2>
+      <p style="color:var(--text-secondary); font-size:15px; line-height:1.6; margin-bottom:24px;">
+        {% if booking.status == 'completed' %}
+        Service has been delivered and payment was successfully released to {{ vendor.business_name if vendor else 'the vendor' }}.
+        {% else %}
+        Your payment of <strong>{{ booking.currency | currency_symbol }}{{ "{:,.2f}".format(booking.total_amount) }}</strong> is safely held in escrow. {{ vendor.business_name if vendor else 'The vendor' }} has received your confirmed booking.
+        {% endif %}
+      </p>
+      
+      <div style="background:var(--bg-secondary); border-radius:12px; padding:18px; text-align:left; margin-bottom:24px; font-size:14px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="color:var(--text-muted);">Reference:</span>
+          <strong>{{ booking.booking_reference }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="color:var(--text-muted);">Vendor:</span>
+          <strong>{{ vendor.business_name if vendor else 'Vendor' }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="color:var(--text-muted);">Escrow Status:</span>
+          <strong style="text-transform:capitalize; color:#15803d;">{{ booking.escrow_status | replace('_', ' ') }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--text-muted);">Event Date:</span>
+          <strong>{{ booking.event_date.strftime('%B %d, %Y') if booking.event_date else 'Scheduled upon contact' }}</strong>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px;">
+        <a href="/vendors/{{ vendor.slug if vendor else '' }}" class="bp-btn" style="background:var(--bg-secondary); color:var(--text-primary); border:1px solid var(--border-light); margin-top:0;">
+          Back to Vendor Profile
+        </a>
+        <a href="/my-bookings" class="bp-btn" style="margin-top:0;">
+          View My Bookings &rarr;
+        </a>
+      </div>
+    </div>
+    {% else %}
+
+    <div class="bp-header">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span class="bp-badge pending">
+          <span class="material-symbols-outlined" style="font-size:14px;">hourglass_empty</span> Pending Payment
+        </span>
+        <span style="font-size:13px; color:var(--text-muted);">Ref: {{ booking.booking_reference }}</span>
+      </div>
+      <h1 class="bp-title">{{ booking.event_name or 'Event Service Booking' }}</h1>
+      <div style="font-size:14px; color:var(--text-muted);">
+        Provider: <strong>{{ vendor.business_name if vendor else 'Vetted Vendor' }}</strong>
+      </div>
+    </div>
+
+    <!-- Booking Details -->
+    <div style="margin-bottom:24px;">
+      <div class="bp-row">
+        <span style="color:var(--text-muted);">Event Location</span>
+        <strong>{{ booking.event_location or 'TBD' }}</strong>
+      </div>
+      <div class="bp-row">
+        <span style="color:var(--text-muted);">Event Date</span>
+        <strong>{{ booking.event_date.strftime('%B %d, %Y') if booking.event_date else 'To be confirmed with vendor' }}</strong>
+      </div>
+      <div class="bp-row">
+        <span style="color:var(--text-muted);">Cancellation Policy</span>
+        <strong style="text-transform:capitalize;">{{ booking.cancellation_policy }}</strong>
+      </div>
+      {% if booking.service_summary %}
+      <div style="padding:14px 0; border-bottom:1px solid rgba(0,0,0,0.04);">
+        <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;">Service Scope:</div>
+        <div style="font-size:13.5px; color:var(--text-secondary); line-height:1.5;">{{ booking.service_summary }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Payment Summary -->
+    <div>
+      <div class="bp-row">
+        <span style="color:var(--text-muted);">Service Total</span>
+        <span>{{ booking.currency | currency_symbol }}{{ "{:,.2f}".format(booking.total_amount) }}</span>
+      </div>
+      <div class="bp-row">
+        <span style="color:var(--text-muted);">Processing Fee</span>
+        <span style="color:#22c55e; font-weight:600;">Covered by Platform</span>
+      </div>
+      <div class="bp-row total">
+        <span>Total Amount Due</span>
+        <span>{{ booking.currency | currency_symbol }}{{ "{:,.2f}".format(booking.total_amount) }}</span>
+      </div>
+    </div>
+
+    <div class="bp-trust-box">
+      <span class="material-symbols-outlined" style="color:var(--cyan); font-size:24px; flex-shrink:0;">security</span>
+      <div>
+        <strong>Heelo Escrow Protection</strong>
+        <div>Your funds are held securely until the event is fulfilled. Release is guaranteed according to agreed contract terms.</div>
+      </div>
+    </div>
+
+    <div x-show="errorMsg" x-text="errorMsg" style="color:#dc2626; font-size:13.5px; margin-top:16px;"></div>
+
+    <button type="button" @click="payWithPaystack()" :disabled="loading" class="bp-btn">
+      <span x-show="!loading">Pay {{ booking.currency | currency_symbol }}{{ "{:,.2f}".format(booking.total_amount) }} securely &rarr;</span>
+      <span x-show="loading">Securing transaction...</span>
+    </button>
+
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+function checkoutPage() {
+  return {
+    loading: false,
+    actionLoading: false,
+    showDisputeModal: false,
+    disputeReason: '',
+    errorMsg: '',
+    async payWithPaystack() {
+      this.loading = true;
+      this.errorMsg = '';
+      try {
+        const res = await fetch('/api/v1/vendors/bookings/{{ booking.id }}/initialize-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to initialize payment.');
+        if (j.data && j.data.checkout_url) {
+          window.location.href = j.data.checkout_url;
+        } else {
+          throw new Error('Payment gateway url not returned.');
+        }
+      } catch (err) {
+        this.errorMsg = err.message;
+        this.loading = false;
+      }
+    },
+    async releaseEscrow() {
+      if (!confirm('Confirm that the vendor completed this service and release payment from escrow?')) return;
+      this.actionLoading = true;
+      try {
+        const res = await fetch('/api/v1/vendors/bookings/{{ booking.id }}/release-escrow', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to release escrow.');
+        window.location.reload();
+      } catch (err) {
+        alert(err.message);
+        this.actionLoading = false;
+      }
+    },
+    async submitDispute() {
+      if (!this.disputeReason.trim()) return alert('Please describe the reason for disputing this booking.');
+      this.actionLoading = true;
+      try {
+        const res = await fetch('/api/v1/vendors/bookings/{{ booking.id }}/dispute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ reason: this.disputeReason.trim() }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to lodge dispute.');
+        window.location.reload();
+      } catch (err) {
+        alert(err.message);
+        this.actionLoading = false;
+      }
+    },
+  };
+}
+</script>
+{% endblock %}
+

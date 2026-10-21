@@ -12,13 +12,15 @@ from app.models.payment import PaymentAccount
 from app.permissions import Permission, require_permission
 from app.schemas.payment import (
     FlutterwaveSubaccountRequest,
+    ManualAccountRequest,
     PaymentAccountOut,
     PaystackSubaccountRequest,
 )
+from app.services import billing_service as billing_svc
 from app.services import payment_account_service as acc_svc
 from app.services import payment_service as pay_svc
 
-# ── Webhooks — raw body, no JSON body parsing by FastAPI ─────────────────────
+# ── Webhooks - raw body, no JSON body parsing by FastAPI ─────────────────────
 
 router_webhooks = APIRouter(prefix="/api/v1/webhooks", tags=["webhooks"])
 
@@ -41,8 +43,167 @@ async def paystack_webhook(request: Request, db: DBSession):
 
     if event == "charge.success":
         reference = data.get("reference", "")
-        if reference.startswith("heelo_"):
+        if reference.startswith("heelo_plan_"):
+            invoice = await pay_svc.verify_paystack_plan(db, reference)
+            if invoice:
+                await billing_svc.confirm_plan_invoice(db, invoice)
+        elif reference.startswith("booth_"):
+            from sqlalchemy import select
+
+            from app.models.vendor import BoothApplication
+            from app.services import vendor_service as vsvc
+
+            app_record = await db.scalar(
+                select(BoothApplication).where(BoothApplication.payment_reference == reference)
+            )
+            if app_record and app_record.status != "paid":
+                await vsvc.confirm_booth_payment(db, app_record, payment_reference=reference)
+                try:
+                    from app.tasks.email import send_booth_application_confirmed
+
+                    send_booth_application_confirmed.delay(str(app_record.id))
+                except Exception:
+                    pass
+        elif reference.startswith("vbook_"):
+            from sqlalchemy import select
+            from app.models.vendor import VendorBooking
+            from app.services import vendor_service as vsvc
+
+            booking = await db.scalar(
+                select(VendorBooking).where(VendorBooking.payment_reference == reference)
+            )
+            if booking and booking.status == "pending_payment":
+                await vsvc.confirm_booking_payment(
+                    db, booking, payment_reference=reference, payment_method="paystack"
+                )
+        elif reference.startswith("vsub_"):
+            from sqlalchemy import select
+            from app.models.vendor import Vendor, VendorSubscription
+            from app.services import vendor_service as vsvc
+
+            sub = await db.scalar(
+                select(VendorSubscription).where(VendorSubscription.payment_reference == reference)
+            )
+            if sub and sub.status != "active":
+                vendor = await db.get(Vendor, sub.vendor_id)
+                if vendor:
+                    await vsvc.activate_vendor_subscription(
+                        db, vendor, tier=sub.tier, payment_reference=reference
+                    )
+        elif reference.startswith("vfeat_"):
+            from sqlalchemy import select
+            from app.models.vendor import Vendor, VendorFeaturedCampaign
+
+            camp = await db.scalar(
+                select(VendorFeaturedCampaign).where(
+                    VendorFeaturedCampaign.payment_reference == reference
+                )
+            )
+            if camp and camp.status != "active":
+                camp.status = "active"
+                vendor = await db.get(Vendor, camp.vendor_id)
+                if vendor:
+                    vendor.is_featured = True
+                    vendor.featured_until = camp.end_date
+                await db.commit()
+        elif reference.startswith("vlead_"):
+            from sqlalchemy import select
+            from app.models.vendor import Vendor, VendorLeadCreditPurchase
+
+            lcp = await db.scalar(
+                select(VendorLeadCreditPurchase).where(
+                    VendorLeadCreditPurchase.payment_reference == reference
+                )
+            )
+            if lcp and lcp.status != "completed":
+                lcp.status = "completed"
+                vendor = await db.get(Vendor, lcp.vendor_id)
+                if vendor:
+                    vendor.lead_credits_balance += lcp.credits_purchased
+                await db.commit()
+        elif reference.startswith("heelo_"):
             await pay_svc.verify_paystack(db, reference)
+    elif event == "transfer.success":
+        reference = data.get("reference", "")
+        if reference.startswith("payout_"):
+            try:
+                payout_id = uuid.UUID(reference[7:])
+                from app.models.payment import Payout
+                from app.services import payout_service as payout_svc
+
+                payout = await db.get(Payout, payout_id)
+                if payout and payout.status != "paid":
+                    await payout_svc.mark_payout_paid(
+                        db, payout, provider_reference=data.get("transfer_code") or reference
+                    )
+            except ValueError:
+                pass
+        elif reference.startswith("aff_payout_"):
+            try:
+                payout_id = uuid.UUID(reference[11:])
+                from app.models.affiliate import AffiliatePayout, EventAffiliate
+
+                aff_payout = await db.get(AffiliatePayout, payout_id)
+                if aff_payout and aff_payout.status != "completed":
+                    aff_payout.status = "completed"
+                    aff_payout.transfer_code = data.get("transfer_code") or reference
+                    aff = await db.get(EventAffiliate, aff_payout.affiliate_id)
+                    if aff:
+                        aff.commission_paid = float(aff.commission_paid) + float(aff_payout.amount)
+                        if aff.commission_paid >= aff.commission_earned:
+                            aff.payout_status = "paid"
+                        else:
+                            aff.payout_status = "partial"
+                    await db.commit()
+            except Exception as err:
+                logger.warning("affiliate.webhook_transfer_failed", error=str(err))
+        elif reference.startswith("vpayout_"):
+            try:
+                payout_id = uuid.UUID(reference[8:])
+                from app.models.vendor import VendorPayout
+                from app.services import vendor_service as vsvc
+
+                payout = await db.get(VendorPayout, payout_id)
+                if payout and payout.status != "completed":
+                    await vsvc.disburse_vendor_payout(
+                        db,
+                        payout,
+                        provider_reference=reference,
+                        transfer_code=data.get("transfer_code"),
+                    )
+            except ValueError:
+                pass
+    elif event in ("transfer.failed", "transfer.reversed"):
+        reference = data.get("reference", "")
+        if reference.startswith("payout_"):
+            try:
+                payout_id = uuid.UUID(reference[7:])
+                from app.models.payment import Payout
+                from app.services import payout_service as payout_svc
+
+                payout = await db.get(Payout, payout_id)
+                if payout and payout.status != "paid":
+                    await payout_svc.mark_payout_failed(
+                        db, payout, reason=data.get("reason") or "Transfer failed or reversed"
+                    )
+            except ValueError:
+                pass
+        elif reference.startswith("vpayout_"):
+            try:
+                payout_id = uuid.UUID(reference[8:])
+                from app.models.vendor import Vendor, VendorPayout
+
+                payout = await db.get(VendorPayout, payout_id)
+                if payout and payout.status != "failed":
+                    payout.status = "failed"
+                    payout.failure_reason = data.get("reason") or "Transfer failed or reversed"
+                    vendor = await db.get(Vendor, payout.vendor_id)
+                    if vendor:
+                        vendor.payable_balance = float(vendor.payable_balance) + float(payout.amount)
+                        vendor.total_withdrawn = max(0.0, float(vendor.total_withdrawn) - float(payout.amount))
+                    await db.commit()
+            except ValueError:
+                pass
 
     return {"status": "ok"}
 
@@ -64,7 +225,11 @@ async def flutterwave_webhook(request: Request, db: DBSession):
         tx_data = payload.get("data", {})
         tx_id = tx_data.get("id")
         tx_ref = tx_data.get("tx_ref", "")
-        if tx_id and tx_ref.startswith("heelo_"):
+        if tx_id and tx_ref.startswith("heelo_plan_"):
+            invoice = await pay_svc.verify_flutterwave_plan(db, int(tx_id))
+            if invoice:
+                await billing_svc.confirm_plan_invoice(db, invoice)
+        elif tx_id and tx_ref.startswith("heelo_"):
             await pay_svc.verify_flutterwave(db, int(tx_id))
 
     return {"status": "ok"}
@@ -98,7 +263,24 @@ async def stripe_webhook(request: Request, db: DBSession):
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-        order_id_str = (session.get("metadata") or {}).get("order_id")
+        metadata = session.get("metadata") or {}
+
+        if metadata.get("kind") == "plan_invoice":
+            invoice_id_str = metadata.get("invoice_id")
+            if invoice_id_str:
+                try:
+                    invoice_id = uuid.UUID(invoice_id_str)
+                except ValueError:
+                    return {"status": "ok"}
+                from app.models.payment import PlanInvoice
+
+                invoice = await db.get(PlanInvoice, invoice_id)
+                if invoice and invoice.status != "paid":
+                    invoice.provider_reference = session.get("payment_intent") or session["id"]
+                    await billing_svc.confirm_plan_invoice(db, invoice)
+            return {"status": "ok"}
+
+        order_id_str = metadata.get("order_id")
         if order_id_str:
             try:
                 oid = uuid.UUID(order_id_str)
@@ -110,6 +292,20 @@ async def stripe_webhook(request: Request, db: DBSession):
             if order and order.payment_status != "paid":
                 order.payment_reference = session.get("payment_intent") or session["id"]
                 await pay_svc.confirm_order(db, order)
+
+    elif event["type"] == "account.updated":
+        acct = event["data"]["object"]
+        account = await db.scalar(
+            select(PaymentAccount).where(
+                PaymentAccount.provider == "stripe",
+                PaymentAccount.provider_account_id == acct["id"],
+            )
+        )
+        if account:
+            account.is_verified = bool(
+                acct.get("details_submitted") and acct.get("payouts_enabled")
+            )
+            await db.commit()
 
     return {"status": "ok"}
 
@@ -154,6 +350,28 @@ async def resolve_account(
     return {"success": True, "data": result}
 
 
+@router_payment_accounts.get("/flutterwave/banks")
+async def get_flutterwave_banks(slug: str, org_access: OrgAccess, country: str = "NG"):
+    org_access  # auth check only
+    banks = await acc_svc.list_flutterwave_banks(country=country)
+    return {"success": True, "data": banks}
+
+
+@router_payment_accounts.get("/flutterwave/resolve")
+async def resolve_flutterwave_account_route(
+    slug: str,
+    account_number: str,
+    bank_code: str,
+    db: DBSession,
+    org_access: OrgAccess,
+):
+    org_access  # auth check only
+    result = await acc_svc.resolve_flutterwave_account(account_number, bank_code)
+    if not result:
+        raise HTTPException(422, "Could not resolve account. Check the account number and bank.")
+    return {"success": True, "data": result}
+
+
 @router_payment_accounts.post("/paystack", response_model=PaymentAccountOut, status_code=201)
 async def connect_paystack(
     slug: str,
@@ -175,6 +393,29 @@ async def connect_flutterwave(
 ):
     org, role, is_owner = org_access
     account = await acc_svc.create_flutterwave_subaccount(db, org.id, data, org)
+    return account
+
+
+@router_payment_accounts.post("/stripe/connect")
+async def connect_stripe(
+    slug: str,
+    db: DBSession,
+    org_access: PaymentAccountsManageAccess,
+):
+    org, role, is_owner = org_access
+    url = await acc_svc.create_stripe_connect_account(db, org.id, org)
+    return {"success": True, "data": {"url": url}}
+
+
+@router_payment_accounts.post("/manual", response_model=PaymentAccountOut, status_code=201)
+async def connect_manual_account(
+    slug: str,
+    data: ManualAccountRequest,
+    db: DBSession,
+    org_access: PaymentAccountsManageAccess,
+):
+    org, role, is_owner = org_access
+    account = await acc_svc.add_manual_account(db, org.id, data, org.currency or "NGN")
     return account
 
 

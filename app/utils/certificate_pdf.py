@@ -1,5 +1,5 @@
 """
-Certificate of Attendance PDF generation via reportlab — same engine and
+Certificate of Attendance PDF generation via reportlab - same engine and
 same "pure drawing logic, no I/O" separation as badge_pdf.py, for the same
 reason (no native system libraries required, unlike weasyprint).
 """
@@ -29,6 +29,7 @@ class CertificateData:
     org_name: str
     event_date: datetime
     brand_color: str | None = None
+    show_powered_by: bool = True
 
 
 def _accent(data: CertificateData):
@@ -71,7 +72,7 @@ def _draw_certificate(c: canvas.Canvas, data: CertificateData) -> None:
     c.setFont("Times-Italic", 14)
     c.drawCentredString(center_x, PAGE_HEIGHT - 2.85 * inch, "This certifies that")
 
-    # Attendee name — the focal point
+    # Attendee name - the focal point
     c.setFillColor(_INK)
     name_font = "Times-Bold"
     name_size = 36
@@ -101,6 +102,12 @@ def _draw_certificate(c: canvas.Canvas, data: CertificateData) -> None:
     c.setFillColor(_MUTED)
     c.setFont("Times-Roman", 13)
     c.drawCentredString(center_x, PAGE_HEIGHT - 5.5 * inch, data.event_date.strftime("%B %-d, %Y"))
+
+    # "Powered by Heelo" footer - omitted for orgs on the full-white-label tier
+    if data.show_powered_by:
+        c.setFillColor(HexColor("#B5B5B5"))
+        c.setFont("Helvetica", 8)
+        c.drawCentredString(center_x, margin + 0.18 * inch, "Generated with Heelo | heelo.io")
 
 
 def generate_certificate_pdf(certificates: list[CertificateData]) -> bytes:

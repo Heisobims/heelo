@@ -22,11 +22,11 @@
 
         <!-- Org header -->
         <tr>
-          <td align="center" style="background-color:{{ org.brand_color or '#111111' }};padding:28px 40px;border-radius:16px 16px 0 0;">
-            {% if org.logo_url %}
-            <img src="{{ org.logo_url }}" alt="{{ org.name }}" width="48" height="48" style="border-radius:10px;display:block;margin:0 auto 8px;object-fit:cover;">
+          <td align="center" style="background-color:{{ org.display_brand_color or '#111111' }};padding:28px 40px;border-radius:16px 16px 0 0;">
+            {% if org.display_logo_url %}
+            <img src="{{ org.display_logo_url }}" alt="{{ org.name }}" width="48" height="48" style="border-radius:10px;display:block;margin:0 auto 8px;object-fit:cover;">
             {% endif %}
-            <span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:{{ org.brand_color | contrast_text('#ffffff') }};letter-spacing:-0.02em;">{{ org.name }}</span>
+            <span style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:{{ org.display_brand_color | contrast_text('#ffffff') }};letter-spacing:-0.02em;">{{ org.name }}</span>
           </td>
         </tr>
 
@@ -66,7 +66,7 @@
             <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:11px;color:#b5b5b5;text-align:center;line-height:1.6;">
               You're receiving this because you registered for an event hosted by {{ org.name }}.
               <a href="{{ unsubscribe_url }}" style="color:#b5b5b5;text-decoration:underline;">Unsubscribe</a>
-              &middot; Sent via <a href="{{ frontend_url }}" style="color:#b5b5b5;text-decoration:underline;">Heelo</a>
+              {% if org.show_powered_by %}&middot; Sent via <a href="{{ frontend_url }}" style="color:#b5b5b5;text-decoration:underline;">Heelo</a>{% endif %}
             </p>
           </td>
         </tr>

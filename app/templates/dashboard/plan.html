@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Plan & Billing — {{ org.name }} — Heelo{% endblock %}
+{% block title %}Plan & Billing | {{ org.name }} | Heelo{% endblock %}
 {% set active_page = 'plan' %}
 
 {% block head %}
@@ -31,11 +31,11 @@
   }
   .plan-card.current {
     border-color: var(--cyan);
-    box-shadow: 0 0 0 4px rgba(0,255,243,0.1);
+    box-shadow: 0 0 0 4px rgba(232,89,56,0.12);
   }
   .plan-card.popular {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 4px rgba(99,102,241,0.08);
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 4px rgba(232,89,56,0.1);
   }
   .plan-badge {
     position: absolute;
@@ -46,7 +46,7 @@
     white-space: nowrap;
   }
   .plan-badge.current-badge { background: var(--cyan); color: #000; }
-  .plan-badge.popular-badge { background: #6366f1; color: #fff; }
+  .plan-badge.popular-badge { background: #000; color: var(--cyan); }
 
   .plan-name {
     font-size: 15px;
@@ -54,7 +54,7 @@
     margin-bottom: 4px;
   }
   .plan-price {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 800;
     letter-spacing: -0.02em;
     margin-bottom: 2px;
@@ -91,6 +91,26 @@
   .plan-feature .cross { color: var(--border-color); font-size: 11px; margin-top: 1px; flex-shrink: 0; }
   .plan-cta { margin-top: auto; padding-top: 16px; }
 
+  .usage-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 560px) { .usage-grid { grid-template-columns: 1fr; } }
+  .usage-card {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .usage-card .lbl { font-size: 12.5px; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .usage-card .lbl b { color: var(--text-primary); font-weight: 600; }
+  .usage-bar { height: 6px; border-radius: 100px; background: var(--bg-secondary); overflow: hidden; }
+  .usage-bar-fill { height: 100%; background: var(--cyan); border-radius: 100px; }
+  .usage-bar-fill.warn { background: #f59e0b; }
+  .usage-bar-fill.full { background: #ef4444; }
+
   .plan-compare-table {
     background: #fff;
     border: 1px solid var(--border-light);
@@ -120,43 +140,119 @@
   .compare-val { text-align: center; font-weight: 500; }
   .compare-val.yes { color: #22c55e; }
   .compare-val.no { color: var(--border-color); }
+
+  .plan-banner {
+    border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px; font-size: 13.5px;
+  }
+  .plan-banner.info { background: rgba(232,89,56,0.06); border: 1px solid rgba(232,89,56,0.25); }
+  .plan-banner.warn { background: #fff8e6; border: 1px solid #f5deA6; }
+  .plan-banner.error { background: var(--danger-bg, rgba(240,48,48,0.08)); border: 1px solid rgba(240,48,48,0.25); }
+  .plan-banner .material-symbols-outlined { font-size: 20px; flex-shrink: 0; }
+
+  .invoice-table { background: #fff; border: 1px solid var(--border-light); border-radius: 12px; overflow: hidden; margin-top: 12px; }
+  .invoice-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; padding: 11px 20px; font-size: 13px; border-bottom: 1px solid var(--border-light); align-items: center; }
+  .invoice-row:last-child { border-bottom: none; }
+  .invoice-head { font-weight: 600; background: var(--bg-secondary); color: var(--text-muted); font-size: 12px; }
+  .invoice-status { display: inline-flex; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+  .invoice-status.paid { background: var(--success-bg); color: var(--success); }
+  .invoice-status.pending { background: #fff8e6; color: #9a6600; }
+  .invoice-status.failed { background: var(--danger-bg); color: var(--danger); }
 </style>
 {% endblock %}
 
 {% block main_content %}
-<div class="dash-content" style="max-width:1000px; padding-bottom:48px;">
+<div class="dash-content" style="max-width:1080px; padding-bottom:48px;">
 
   <div style="margin-bottom:8px; font-size:13px; color:var(--text-muted);">Organization</div>
   <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
     <div class="dash-greeting" style="margin:0;">Plan & billing</div>
   </div>
-  <p style="font-size:14px; color:var(--text-muted); margin-bottom:28px;">
+  <p style="font-size:14px; color:var(--text-muted); margin-bottom:24px;">
     You're currently on the <strong style="color:var(--text-primary);">{{ org.plan | capitalize }}</strong> plan.
-    {% if org.plan == 'starter' %}Scale up to unlock more events, team members, and features.{% endif %}
+    {% if org.plan == 'free' %}Unlimited events, always free: upgrade for team seats, your own branding, and higher usage limits.{% endif %}
+    The 5% fee on paid tickets (separate from payment gateway processing costs) stays the same on every plan; upgrading is about capability and headroom, not a cheaper way to sell a ticket.
   </p>
 
+  {% if request.query_params.get('upgraded') %}
+  <div class="plan-banner info"><span class="material-symbols-outlined" style="color:var(--cyan);">check_circle</span> Payment received: your plan is now active.</div>
+  {% elif request.query_params.get('payment_failed') %}
+  <div class="plan-banner error"><span class="material-symbols-outlined" style="color:var(--danger,#F03030);">error</span> That payment couldn't be started or didn't go through. Nothing was charged, try again below.</div>
+  {% elif request.query_params.get('downgrade_scheduled') %}
+  <div class="plan-banner info"><span class="material-symbols-outlined" style="color:var(--cyan);">event_available</span> Downgrade scheduled, see below.</div>
+  {% elif request.query_params.get('downgrade_cancelled') %}
+  <div class="plan-banner info"><span class="material-symbols-outlined" style="color:var(--cyan);">check_circle</span> Downgrade cancelled, you'll stay on {{ org.plan | capitalize }}.</div>
+  {% endif %}
+
+  {% if org.pending_plan_change %}
+  <div class="plan-banner warn">
+    <span class="material-symbols-outlined" style="color:#9a6600;">schedule</span>
+    <div style="flex:1;">
+      Downgrading to Free on <strong>{{ org.plan_expires_at.strftime('%B %-d, %Y') }}</strong>, you'll keep {{ org.plan | capitalize }} until then.
+    </div>
+    <button
+      type="button"
+      class="btn btn-secondary btn-sm"
+      onclick="heeloPlanAction('/org/{{ org.slug }}/plan/downgrade/cancel')"
+    >Cancel downgrade</button>
+  </div>
+  {% elif org.plan_expires_at %}
+  <div class="plan-banner info">
+    <span class="material-symbols-outlined" style="color:var(--cyan);">event</span>
+    Your {{ org.plan | capitalize }} plan is active through <strong>{{ org.plan_expires_at.strftime('%B %-d, %Y') }}</strong>. We'll email you a reminder before it expires.
+  </div>
+  {% endif %}
+
+  {% if usage %}
+  <!-- ── This month's usage ─────────────────────────────── -->
+  <div class="usage-grid">
+    <div class="usage-card">
+      <div class="lbl"><span>WhatsApp messages this month</span><b>{{ usage.whatsapp_used }}{% if usage.whatsapp_limit %} / {{ usage.whatsapp_limit }}{% else %} / Unlimited{% endif %}</b></div>
+      {% if usage.whatsapp_limit %}
+      <div class="usage-bar"><div class="usage-bar-fill {% if usage.whatsapp_pct >= 100 %}full{% elif usage.whatsapp_pct >= 80 %}warn{% endif %}" style="width:{{ usage.whatsapp_pct }}%;"></div></div>
+      {% endif %}
+    </div>
+    <div class="usage-card">
+      <div class="lbl"><span>AI generations this month</span><b>{{ usage.ai_used }}{% if usage.ai_limit %} / {{ usage.ai_limit }}{% else %} / Unlimited{% endif %}</b></div>
+      {% if usage.ai_limit %}
+      <div class="usage-bar"><div class="usage-bar-fill {% if usage.ai_pct >= 100 %}full{% elif usage.ai_pct >= 80 %}warn{% endif %}" style="width:{{ usage.ai_pct }}%;"></div></div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- ── Plan cards ─────────────────────────────────────── -->
+  {% set plan_rank = {'free': 0, 'growth': 1, 'pro': 2, 'enterprise': 3} %}
+  {% set current_rank = plan_rank[org.plan] %}
+  {% set downgrade_until = org.plan_expires_at.strftime('%B %-d, %Y') if org.plan_expires_at else 'your current period ends' %}
   <div class="plan-grid">
 
-    <!-- Starter -->
-    <div class="plan-card {% if org.plan == 'starter' %}current{% endif %}">
-      {% if org.plan == 'starter' %}<div class="plan-badge current-badge">Your plan</div>{% endif %}
-      <div class="plan-name">Starter</div>
-      <div class="plan-price">Free <sub>forever</sub></div>
-      <div class="plan-tagline">Perfect for individuals and small community events.</div>
+    <!-- Free -->
+    <div class="plan-card {% if org.plan == 'free' %}current{% endif %}">
+      {% if org.plan == 'free' %}<div class="plan-badge current-badge">Your plan</div>{% endif %}
+      <div class="plan-name">Free</div>
+      <div class="plan-price">{% if org.currency in ("USD", "CAD", "AUD") %}$0{% elif org.currency == "EUR" %}€0{% elif org.currency == "GBP" %}£0{% elif org.currency in ("KES", "GHS", "ZAR") %}{{ org.currency }} 0{% else %}₦0{% endif %} <sub>forever</sub></div>
+      <div class="plan-tagline">Everything needed to run one complete, professional event.</div>
       <hr class="plan-divider">
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>3 active events</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>100 tickets / event</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>2 team members</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Basic analytics</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Heelo-branded pages</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">WhatsApp campaigns</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">API access</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited events, paid tickets included</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>1 seat, 1 organization</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>QR check-in, kiosk mode, certificates</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>WhatsApp: 100 messages/mo</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>AI tools: 5 generations/mo</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">Custom branding: shows Heelo's</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">Speakers, agenda, sponsors</span></div>
       <div class="plan-cta">
-        {% if org.plan == 'starter' %}
+        {% if org.plan == 'free' %}
         <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
+        {% elif org.pending_plan_change == 'free' %}
+        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Downgrade scheduled</button>
         {% else %}
-        <a href="mailto:hello@heelo.io?subject=Downgrade to Starter" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Downgrade</a>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          style="width:100%;"
+          onclick="if (confirm('Downgrade to Free? You keep {{ org.plan | capitalize }} until {{ downgrade_until }}.')) { heeloPlanAction('/org/{{ org.slug }}/plan/downgrade'); }"
+        >Downgrade</button>
         {% endif %}
       </div>
     </div>
@@ -167,21 +263,24 @@
         {% if org.plan == 'growth' %}Your plan{% else %}Most popular{% endif %}
       </div>
       <div class="plan-name">Growth</div>
-      <div class="plan-price">$49 <sub>/ mo</sub></div>
-      <div class="plan-tagline">For growing event businesses ready to scale.</div>
+      <div class="plan-price">{% if org.currency == 'USD' %}$19{% elif org.currency == 'EUR' %}€18{% elif org.currency == 'GBP' %}£15{% elif org.currency == 'CAD' %}CA$25{% elif org.currency == 'AUD' %}AU$29{% elif org.currency == 'KES' %}KES 2,500{% elif org.currency == 'GHS' %}GHS 250{% elif org.currency == 'ZAR' %}ZAR 350{% else %}₦7,500{% endif %} <sub>/ mo</sub></div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">+ payment processing fee at checkout</div>
+      <div class="plan-tagline">For organizers who run this more than once.</div>
       <hr class="plan-divider">
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited events</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>2,000 tickets / event</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>10 team members</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Full analytics & exports</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>WhatsApp campaigns</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Heelo branding removed</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">Custom domain</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>3 seats, 3 organizations</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Your logo & brand color everywhere</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Recurring series, templates, duplication</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>CRM import, unlimited promo codes</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Speakers & agenda builder</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>WhatsApp 1,000/mo · AI 50/mo</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">Sponsors, live polls & Q&A</span></div>
       <div class="plan-cta">
         {% if org.plan == 'growth' %}
-        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
+        <a href="/org/{{ org.slug }}/plan/upgrade/growth" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Renew now</a>
+        {% elif current_rank < plan_rank['growth'] %}
+        <a href="/org/{{ org.slug }}/plan/upgrade/growth" class="btn btn-primary btn-sm" style="width:100%; text-align:center;">Upgrade to Growth</a>
         {% else %}
-        <a href="mailto:hello@heelo.io?subject=Upgrade to Growth" class="btn btn-primary btn-sm" style="width:100%; text-align:center; background:#6366f1; border-color:#6366f1;">Upgrade to Growth</a>
+        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Included in your plan</button>
         {% endif %}
       </div>
     </div>
@@ -190,21 +289,24 @@
     <div class="plan-card {% if org.plan == 'pro' %}current{% endif %}">
       {% if org.plan == 'pro' %}<div class="plan-badge current-badge">Your plan</div>{% endif %}
       <div class="plan-name">Pro</div>
-      <div class="plan-price">$149 <sub>/ mo</sub></div>
-      <div class="plan-tagline">Advanced features for professional event teams.</div>
+      <div class="plan-price">{% if org.currency == 'USD' %}$49{% elif org.currency == 'EUR' %}€45{% elif org.currency == 'GBP' %}£39{% elif org.currency == 'CAD' %}CA$65{% elif org.currency == 'AUD' %}AU$75{% elif org.currency == 'KES' %}KES 6,500{% elif org.currency == 'GHS' %}GHS 650{% elif org.currency == 'ZAR' %}ZAR 900{% else %}₦25,000{% endif %} <sub>/ mo</sub></div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:-8px; margin-bottom:12px;">+ payment processing fee at checkout</div>
+      <div class="plan-tagline">For producers who sell sponsorships and prove ROI.</div>
       <hr class="plan-divider">
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited everything</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited team members</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Custom domain</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>API access + webhooks</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Dedicated check-in app</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Priority support</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Multi-event campaigns</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>10 seats, 10 organizations</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Sponsor management + self-service portal</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Live polls, Q&A, livestream embed</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Full analytics: UTM, live stream, exports</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>1 custom domain</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>WhatsApp 5,000/mo · AI 250/mo</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>5 API keys, 10 webhooks, priority support</span></div>
       <div class="plan-cta">
         {% if org.plan == 'pro' %}
-        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
+        <a href="/org/{{ org.slug }}/plan/upgrade/pro" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Renew now</a>
+        {% elif current_rank < plan_rank['pro'] %}
+        <a href="/org/{{ org.slug }}/plan/upgrade/pro" class="btn btn-primary btn-sm" style="width:100%; text-align:center;">Upgrade to Pro</a>
         {% else %}
-        <a href="mailto:hello@heelo.io?subject=Upgrade to Pro" class="btn btn-primary btn-sm" style="width:100%; text-align:center;">Upgrade to Pro</a>
+        <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Included in your plan</button>
         {% endif %}
       </div>
     </div>
@@ -214,20 +316,19 @@
       {% if org.plan == 'enterprise' %}<div class="plan-badge current-badge">Your plan</div>{% endif %}
       <div class="plan-name">Enterprise</div>
       <div class="plan-price" style="font-size:20px;">Custom</div>
-      <div class="plan-tagline">White-label, SLA, and dedicated infrastructure for large organisations.</div>
+      <div class="plan-tagline">Heelo as infrastructure, with the guarantees procurement asks for.</div>
       <hr class="plan-divider">
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Everything in Pro</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>White-label platform</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>SSO / SAML</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Dedicated account manager</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>99.9% SLA</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Custom integrations</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Onboarding & training</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited seats & organizations</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>SSO</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited WhatsApp & AI usage</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Full white-label, incl. emails & receipts</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Dedicated account manager & SLA</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Multiple custom domains</span></div>
       <div class="plan-cta">
         {% if org.plan == 'enterprise' %}
         <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
         {% else %}
-        <a href="mailto:hello@heelo.io?subject=Enterprise enquiry" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Contact sales</a>
+        <a href="mailto:hello@heelo.io?subject=Enterprise enquiry for {{ org.slug }}" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Contact sales</a>
         {% endif %}
       </div>
     </div>
@@ -238,52 +339,91 @@
   <div class="plan-compare-table">
     <div class="compare-head">
       <div>Feature</div>
-      <div style="text-align:center;">Starter</div>
+      <div style="text-align:center;">Free</div>
       <div style="text-align:center;">Growth</div>
       <div style="text-align:center;">Pro</div>
       <div style="text-align:center;">Enterprise</div>
     </div>
     {% set rows = [
-      ('Active events',           '3',          'Unlimited', 'Unlimited', 'Unlimited'),
-      ('Tickets per event',       '100',        '2,000',     'Unlimited', 'Unlimited'),
-      ('Team members',            '2',          '10',        'Unlimited', 'Unlimited'),
-      ('Analytics & exports',     'Basic',      'Full',      'Full',      'Full'),
-      ('WhatsApp campaigns',      '✗',          '✓',         '✓',         '✓'),
-      ('Remove Heelo branding',   '✗',          '✓',         '✓',         '✓'),
-      ('Custom domain',           '✗',          '✗',         '✓',         '✓'),
-      ('API access & webhooks',   '✗',          '✗',         '✓',         '✓'),
-      ('Dedicated check-in app',  '✗',          '✗',         '✓',         '✓'),
-      ('White-label platform',    '✗',          '✗',         '✗',         '✓'),
-      ('SSO / SAML',              '✗',          '✗',         '✗',         '✓'),
-      ('Dedicated SLA',           '✗',          '✗',         '✗',         '✓'),
+      ('Events & paid ticketing',   'Unlimited', 'Unlimited', 'Unlimited', 'Unlimited'),
+      ('Seats',                     '1',         '3',         '10',        'Unlimited'),
+      ('Organizations',             '1',         '3',         '10',        'Unlimited'),
+      ('WhatsApp campaigns',        '100/mo',    '1,000/mo',  '5,000/mo',  'Unlimited'),
+      ('AI tools',                  '5/mo',      '50/mo',     '250/mo',    'Unlimited'),
+      ('Active promo codes',        '1',         'Unlimited', 'Unlimited', 'Unlimited'),
+      ('Custom branding',           'no',        'yes',       'yes',       'yes'),
+      ('Recurring events & CRM import', 'no',    'yes',       'yes',       'yes'),
+      ('Speakers & agenda',         'no',        'yes',       'yes',       'yes'),
+      ('Sponsors & live engagement', 'no',       'no',        'yes',       'yes'),
+      ('Full analytics & feedback', 'no',        'no',        'yes',       'yes'),
+      ('API keys / webhooks',       'no',        '1 / 3',     '5 / 10',    'Unlimited'),
+      ('Custom domain',             'no',        'no',        '1',         'Multiple'),
+      ('SSO',                       'no',        'no',        'no',        'yes'),
+      ('Full white-label',          'no',        'no',        'no',        'yes'),
     ] %}
     {% macro feature_val(v) %}
-      {%- if v == '✓' %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>
-      {%- elif v == '✗' %}<span class="material-symbols-outlined" style="color:var(--text-muted,#aaa);">close</span>
+      {%- if v == 'yes' %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>
+      {%- elif v == 'no' %}<span class="material-symbols-outlined" style="color:var(--text-muted,#aaa);">close</span>
       {%- else %}{{ v }}{%- endif %}
     {% endmacro %}
     {% for feature, s, g, p, e in rows %}
     <div class="compare-row">
       <div class="feature-label">{{ feature }}</div>
-      <div class="compare-val {% if s == '✓' %}yes{% elif s == '✗' %}no{% endif %}">{{ feature_val(s) }}</div>
-      <div class="compare-val {% if g == '✓' %}yes{% elif g == '✗' %}no{% endif %}">{{ feature_val(g) }}</div>
-      <div class="compare-val {% if p == '✓' %}yes{% elif p == '✗' %}no{% endif %}">{{ feature_val(p) }}</div>
-      <div class="compare-val {% if e == '✓' %}yes{% elif e == '✗' %}no{% endif %}">{{ feature_val(e) }}</div>
+      <div class="compare-val {% if s == 'yes' %}yes{% elif s == 'no' %}no{% endif %}">{{ feature_val(s) }}</div>
+      <div class="compare-val {% if g == 'yes' %}yes{% elif g == 'no' %}no{% endif %}">{{ feature_val(g) }}</div>
+      <div class="compare-val {% if p == 'yes' %}yes{% elif p == 'no' %}no{% endif %}">{{ feature_val(p) }}</div>
+      <div class="compare-val {% if e == 'yes' %}yes{% elif e == 'no' %}no{% endif %}">{{ feature_val(e) }}</div>
     </div>
     {% endfor %}
   </div>
 
-  <!-- ── Africa-first note ──────────────────────────────── -->
-  <div style="background:rgba(0,255,243,0.06); border:1px solid rgba(0,255,243,0.2); border-radius:12px; padding:20px 24px; display:flex; align-items:flex-start; gap:14px;">
+  <!-- ── Billing history ─────────────────────────────────── -->
+  {% if invoices %}
+  <div style="margin-top:32px; margin-bottom:8px; font-size:15px; font-weight:700;">Billing history</div>
+  <div class="invoice-table">
+    <div class="invoice-row invoice-head">
+      <div>Plan</div>
+      <div>Amount</div>
+      <div>Date</div>
+      <div>Status</div>
+    </div>
+    {% for inv in invoices %}
+    <div class="invoice-row">
+      <div>{{ inv.plan | capitalize }}</div>
+      <div>{{ inv.currency }} {{ '{:,.2f}'.format(inv.amount) }}</div>
+      <div>{{ inv.created_at.strftime('%b %-d, %Y') }}</div>
+      <div><span class="invoice-status {{ inv.status }}">{{ inv.status | capitalize }}</span></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── Global infrastructure note ──────────────────────────────── -->
+  <div style="background:rgba(232,89,56,0.06); border:1px solid rgba(232,89,56,0.2); border-radius:12px; padding:20px 24px; display:flex; align-items:flex-start; gap:14px; margin-top:20px;">
     <span class="material-symbols-outlined" style="font-size:20px; color:var(--cyan); margin-top:2px; flex-shrink:0;">public</span>
     <div>
-      <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Built for Africa, ready for the world</div>
+      <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Global ticketing infrastructure, automated local payouts</div>
       <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">
-        All plans support Paystack and local currency payouts for NGN, GHS, KES, ZAR and more.
-        Need flexible payment terms or local invoicing? <a href="mailto:hello@heelo.io" style="color:var(--cyan); text-decoration:none;">Reach out</a> — we work with you.
+        All plans support multi-currency checkouts and automated payouts via Stripe Connect (USD, EUR, GBP, CAD) as well as Paystack &amp; Flutterwave (NGN, GHS, KES, ZAR, and more).
+        Need custom enterprise terms or international wire settlement? <a href="mailto:hello@heelo.io" style="color:var(--cyan); text-decoration:none;">Reach out</a>: we work with you.
       </div>
     </div>
   </div>
 
 </div>
+
+<script>
+  // These POSTs carry no body - a plain native <form> submit can't attach
+  // the X-CSRF-Token header the CSRF middleware requires, so this goes
+  // through the app's normal fetch() wrapper (app/static/js/main.js) instead,
+  // which attaches it automatically.
+  async function heeloPlanAction(url) {
+    const res = await fetch(url, { method: 'POST', credentials: 'include' });
+    if (res.redirected) {
+      window.location.href = res.url;
+    } else {
+      window.location.reload();
+    }
+  }
+</script>
 {% endblock %}

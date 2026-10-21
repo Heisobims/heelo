@@ -1,54 +1,139 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#00FFF3">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#E85938" />
 
-  <title>{% block title %}Heelo — Every great event starts here{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}The all-in-one event management platform built for Africa and the world.{% endblock %}">
+    <title>
+      {% block title %}Heelo | Every great event starts here{% endblock %}
+    </title>
+    <meta
+      name="description"
+      content="{% block meta_description %}The modern all-in-one event ticketing and intelligence platform for organizers worldwide. Host with multi-currency checkouts, verified tickets, and instant payouts.{% endblock %}"
+    />
+    {% block robots_meta %}{% endblock %} {% set _canonical_url =
+    request.url.scheme ~ "://" ~ request.url.netloc ~ request.url.path %}
+    <link rel="canonical" href="{% block canonical %}{{ _canonical_url }}{% endblock %}">
 
-  <!-- OG / Social -->
-  <meta property="og:site_name" content="Heelo">
-  <meta property="og:title" content="{% block og_title %}Heelo{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}Every great event starts with heelo.{% endblock %}">
-  <meta property="og:image" content="{% block og_image %}/static/icons/og-default.png{% endblock %}">
-  <meta name="twitter:card" content="summary_large_image">
+    <!-- OG / Social -->
+    <meta property="og:site_name" content="Heelo" />
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
+    <meta property="og:url" content="{% block og_url %}{{ _canonical_url }}{% endblock %}" />
+    <meta property="og:title" content="{% block og_title %}Heelo{% endblock %}" />
+    <meta property="og:description" content="{% block og_description %}Every great event starts with heelo.{% endblock %}" />
+    <meta property="og:image" content="{% block og_image %}/static/icons/og-default.png{% endblock %}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="{{ self.og_title() }}" />
+    <meta name="twitter:description" content="{{ self.og_description() }}" />
+    <meta name="twitter:image" content="{{ self.og_image() }}" />
 
-  <!-- Preconnect for Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+    {% if settings.GOOGLE_SITE_VERIFICATION %}
+    <meta
+      name="google-site-verification"
+      content="{{ settings.GOOGLE_SITE_VERIFICATION }}"
+    />
+    {% endif %} {% if settings.GA_MEASUREMENT_ID %}
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      try {
+        var _c = localStorage.getItem("heelo_cookie_consent");
+        if (_c) {
+          var _p = JSON.parse(_c);
+          gtag("consent", "default", {
+            analytics_storage: _p.analytics ? "granted" : "denied",
+            ad_storage: _p.marketing ? "granted" : "denied",
+          });
+        } else {
+          gtag("consent", "default", {
+            analytics_storage: "denied",
+            ad_storage: "denied",
+          });
+        }
+      } catch (e) {}
+    </script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id={{ settings.GA_MEASUREMENT_ID }}"
+    ></script>
+    <script>
+      gtag("js", new Date());
+      gtag("config", "{{ settings.GA_MEASUREMENT_ID }}");
+    </script>
+    {% endif %}
 
-  <!-- Icons -->
-  <style>.material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;font-size:1em;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;word-wrap:normal;direction:ltr;-webkit-font-smoothing:antialiased;vertical-align:-0.125em;font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24}</style>
+    <!-- Preconnect for Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- Design system -->
-  <link rel="stylesheet" href="/static/css/main.css?v=3">
+    <!-- Icons -->
+    <style>
+      .material-symbols-outlined {
+        font-family: "Material Symbols Outlined";
+        font-weight: normal;
+        font-style: normal;
+        font-size: 1em;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        -webkit-font-smoothing: antialiased;
+        vertical-align: -0.125em;
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+    </style>
 
-  <!-- PWA manifest -->
-  <link rel="manifest" href="/static/manifest.json">
-  <link rel="icon" type="image/svg+xml" href="/static/icons/favicon.svg">
-  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
 
-  {% block head %}{% endblock %}
-</head>
-<body {% block body_attrs %}{% endblock %}>
+    <!-- Design system -->
+    <link rel="stylesheet" href="/static/css/main.css?v=14" />
 
-  <!-- main.js must load before Alpine so alpine:init listener is registered in time -->
-  <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
-  <script src="/static/js/main.js" defer></script>
-  <script src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/static/icons/favicon.svg" />
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png" />
 
-  {% block body %}{% endblock %}
+    {% block head %}{% endblock %}
+  </head>
+  <body {% block body_attrs %}{% endblock %}>
+    <!-- main.js must load before Alpine so alpine:init listener is registered in time -->
+    <script
+      src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"
+      defer
+    ></script>
+    <script src="/static/js/main.js?v=13" defer></script>
+    <script
+      src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"
+      defer
+    ></script>
 
-  {% block scripts %}{% endblock %}
+    {% block body %}{% endblock %} {% block scripts %}{% endblock %} {% include
+    "partials/cookie_consent.html" %}
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/sw.js', { scope: '/' })
-        .catch(() => {});
-    }
-  </script>
-</body>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/static/sw.js", { scope: "/" })
+          .catch(() => {});
+      }
+    </script>
+  </body>
 </html>

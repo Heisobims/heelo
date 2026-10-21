@@ -1,4 +1,4 @@
-"""Check-in — QR token, manual, undo, stats."""
+"""Check-in - QR token, manual, undo, stats."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ async def test_check_in_already_checked_in_returns_409(
         json={"registration_id": str(registration.id)},
         headers=user_headers,
     )
-    # Second check-in — should be 409
+    # Second check-in - should be 409
     resp = await client.post(
         f"/api/v1/organizations/{org.slug}/events/{published_event.id}/check-in",
         json={"registration_id": str(registration.id)},
@@ -46,6 +46,66 @@ async def test_check_in_nonexistent_registration(
         headers=user_headers,
     )
     assert resp.status_code == 404
+
+
+async def test_check_in_by_id_rejects_registration_from_a_different_event(
+    client: AsyncClient, db, org, published_event, user_headers, other_user
+):
+    """Regression test: check_in_by_id() used to look up a registration by id
+    alone, with no event_id filter - a checkin_staff member of one event
+    could check in (and see the name/email of) a registration belonging to a
+    completely different org's event by simply passing its id."""
+    from app.models.event import Event
+    from app.models.organization import Organization
+    from app.models.ticketing import Registration, TicketType
+
+    other_org = Organization(
+        owner_id=other_user.id, name="Other Org", slug="other-org", plan="free", currency="NGN"
+    )
+    db.add(other_org)
+    await db.flush()
+
+    from datetime import UTC, datetime, timedelta
+
+    other_event = Event(
+        org_id=other_org.id,
+        title="Other Org's Event",
+        slug="other-orgs-event",
+        status="published",
+        format="in_person",
+        venue_city="Nairobi",
+        start_datetime=datetime.now(UTC) + timedelta(days=7),
+        end_datetime=datetime.now(UTC) + timedelta(days=7, hours=3),
+    )
+    db.add(other_event)
+    await db.flush()
+
+    other_tt = TicketType(event_id=other_event.id, name="GA", price=0, currency="NGN")
+    db.add(other_tt)
+    await db.flush()
+
+    other_reg = Registration(
+        event_id=other_event.id,
+        ticket_type_id=other_tt.id,
+        attendee_name="Victim Attendee",
+        attendee_email="victim@example.com",
+        qr_code=f"test-qr-{uuid.uuid4()}",
+        status="confirmed",
+    )
+    db.add(other_reg)
+    await db.flush()
+
+    # user_headers belongs to `org`/`published_event`, not `other_org` - try
+    # to check in the *other* org's registration through this event's endpoint.
+    resp = await client.post(
+        f"/api/v1/organizations/{org.slug}/events/{published_event.id}/check-in",
+        json={"registration_id": str(other_reg.id)},
+        headers=user_headers,
+    )
+    assert resp.status_code == 404
+
+    await db.refresh(other_reg)
+    assert other_reg.status == "confirmed"  # untouched
 
 
 async def test_undo_check_in(client: AsyncClient, org, published_event, registration, user_headers):
@@ -126,7 +186,7 @@ async def test_checked_in_ids_includes_checked_in_registration(
     assert resp.json()["data"] == [str(registration.id)]
 
 
-# ── Virtual join link — /registrations/{id}/join ────────────────────────────────
+# ── Virtual join link - /registrations/{id}/join ────────────────────────────────
 
 
 async def _make_virtual_registration(db, org, *, status="confirmed"):

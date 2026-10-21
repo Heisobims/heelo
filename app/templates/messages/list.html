@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Messages — Heelo{% endblock %}
+{% block title %}Messages | Heelo{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/dashboard.css">
@@ -12,7 +12,7 @@
     display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
   }
   .ml-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
-  .ml-nav-logo span { color: var(--cyan-dark, #00b3a9); }
+  .ml-nav-logo span { color: var(--cyan-dark, #C84729); }
   .ml-wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
   .ml-title { font-family: var(--font-serif, 'STK Bureau Serif', Georgia, serif); font-size: 1.6rem; font-weight: 700; margin: 0 0 1.5rem; }
 
@@ -20,7 +20,7 @@
   .thread-item:first-child { border-radius: 12px 12px 0 0; }
   .thread-item:last-child { border-radius: 0 0 12px 12px; border-bottom: none; }
   .thread-item:hover { background: var(--bg-secondary); }
-  .thread-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #00FFF3 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; color: #000; overflow: hidden; }
+  .thread-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, var(--cyan) 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; color: #000; overflow: hidden; }
   .thread-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .thread-meta { flex: 1; min-width: 0; }
   .thread-name { font-weight: 600; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

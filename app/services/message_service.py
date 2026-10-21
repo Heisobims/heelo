@@ -1,11 +1,11 @@
 """
-Attendee-to-attendee direct messages. No separate conversation table — a
+Attendee-to-attendee direct messages. No separate conversation table - a
 thread is just every DirectMessage row between two user ids, grouped
 in Python (mirrors inbox_service's phone-keyed threads, but the "other
 party" here depends on which side of sender/recipient the current user is
 on, so it isn't a single GROUP BY column the way phone number is).
 
-Sending requires an accepted Connection between the two users — DMs are
+Sending requires an accepted Connection between the two users - DMs are
 gated behind mutual connection, not open to any two attendees.
 """
 
@@ -61,7 +61,7 @@ async def send_message(
 
 
 async def list_threads(db: AsyncSession, user_id: uuid.UUID) -> list[dict]:
-    """One entry per person this user has exchanged messages with — last
+    """One entry per person this user has exchanged messages with - last
     message + unread count, most recent thread first."""
     rows = await db.scalars(
         select(DirectMessage)

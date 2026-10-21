@@ -1,5 +1,5 @@
 """
-Root conftest.py — sets required environment variables before app import.
+Root conftest.py - sets required environment variables before app import.
 Override TEST_DATABASE_URL env var to point to your test PostgreSQL instance.
 """
 import os

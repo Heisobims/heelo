@@ -1,0 +1,91 @@
+{% set _signed_in = is_logged_in or user %}
+{% set _is_home = (request is defined and request.url.path == '/') or is_landing_page %}
+{% set _is_light = (nav_theme == 'light') or (nav_theme != 'dark' and not _is_home) %}
+<!-- ── Shared site nav ────────────────────────────────────────────
+     Included on every public, non-dashboard page for a consistent
+     menu bar. Behavior (scroll shadow, mobile hamburger) lives in
+     initSiteNav() in main.js. Reads either `is_logged_in` or `user`
+     from context (routers use both conventions) - falls back to
+     logged-out state if neither is passed.
+     Renders dark mode on the homepage hero, and crisp warm-sand
+     light mode (.site-nav-light) across all other pages. -->
+<nav class="site-nav {% if _is_light %}site-nav-light{% endif %}" id="site-nav">
+  <div class="site-nav-inner">
+    <a href="/" class="site-nav-logo">heelo</a>
+
+    <!-- Dual Pill Search Bar (Search events | Your Location) -->
+    <form action="/events" method="GET" class="site-nav-search" role="search">
+      <div class="nav-search-field nav-search-query">
+        <i class="fa-solid fa-magnifying-glass nav-search-icon" aria-hidden="true"></i>
+        <input
+          type="text"
+          name="q"
+          class="nav-search-input"
+          placeholder="Search events"
+          autocomplete="off"
+          value="{{ request.query_params.get('q', '') if request is defined else '' }}"
+        >
+      </div>
+
+      <div class="nav-search-divider" aria-hidden="true"></div>
+
+      <div class="nav-search-field nav-search-location">
+        <i class="fa-solid fa-location-dot nav-search-icon" aria-hidden="true"></i>
+        <input
+          type="text"
+          name="city"
+          class="nav-search-input"
+          placeholder="Your Location"
+          autocomplete="off"
+          value="{{ request.query_params.get('city', '') if request is defined else '' }}"
+        >
+      </div>
+
+      <button type="submit" class="nav-search-btn" aria-label="Search events">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      </button>
+    </form>
+
+    <div class="site-nav-actions">
+      <div class="site-nav-links">
+        <a href="/events" class="site-nav-link">Find Events</a>
+        <a href="/vendors" class="site-nav-link">Find Vendor</a>
+        <a href="/venues" class="site-nav-link">Find Venue</a>
+        <a href="/pricing" class="site-nav-link">Pricing</a>
+        <a href="/host" class="site-nav-link">Host an event</a>
+      </div>
+
+      {% if _signed_in %}
+      <a href="/dashboard" class="site-nav-cta">Dashboard</a>
+      {% else %}
+      <a href="/login" class="site-nav-login">Sign in</a>
+      <a href="/register" class="site-nav-cta">Sign up</a>
+      {% endif %}
+
+      <button class="site-nav-hamburger" id="site-nav-hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="site-nav-mobile-menu" id="site-nav-mobile-menu">
+    <div class="site-nav-mobile-segments">
+      <a href="/" class="site-nav-mobile-seg active">For Attendees</a>
+      <a href="{% if _signed_in %}/dashboard{% else %}/host{% endif %}" class="site-nav-mobile-seg">For Organizers</a>
+      <a href="/vendors" class="site-nav-mobile-seg">For Venues</a>
+    </div>
+    <a href="/events">Find Events</a>
+    <a href="/vendors">Find Vendor</a>
+    <a href="/venues">Find Venue</a>
+    <a href="/discover">Categories</a>
+    <a href="/pricing">Pricing</a>
+    <a href="/my-tickets">Find my ticket</a>
+    <a href="/host">Host an event</a>
+    {% if _signed_in %}
+    <a href="/dashboard" class="site-nav-mobile-cta">Go to dashboard</a>
+    {% else %}
+    <a href="/login">Sign in</a>
+    <a href="/register" class="site-nav-mobile-cta">Sign up</a>
+    {% endif %}
+  </div>
+</nav>

@@ -35,7 +35,7 @@ class SponsorUpdateRequest(BaseModel):
 
 
 class SponsorPortalUpdateRequest(BaseModel):
-    """Self-service fields a claimed sponsor may edit themselves — tier,
+    """Self-service fields a claimed sponsor may edit themselves - tier,
     booth number, category, and exhibitor status stay organizer-controlled."""
 
     logo_url: str | None = None

@@ -1,16 +1,16 @@
 """
 Centralized per-org team-role permission matrix.
 
-Two separate role systems exist in this codebase — don't confuse them:
-  - `User.role`      — platform-level account type: attendee | organizer | admin
+Two separate role systems exist in this codebase - don't confuse them:
+  - `User.role`      - platform-level account type: attendee | organizer | admin
                         (checked directly in app/routers/admin.py / admin_pages.py
                         for platform-staff-only routes; out of scope here.)
-  - `OrganizationMember.role` — per-org team role: admin | organizer | finance |
+  - `OrganizationMember.role` - per-org team role: admin | organizer | finance |
                         checkin_staff. THIS is what this module governs: what a
                         given team role is allowed to do within one organization.
 
 Before this module, every router did its own inline
-`if role not in ("admin", "organizer"): raise HTTPException(403, ...)` check —
+`if role not in ("admin", "organizer"): raise HTTPException(403, ...)` check -
 duplicated ~45 times across a dozen files, inconsistent, and two of the four
 roles ("finance", "checkin_staff") were either checked in exactly one place or
 never checked at all despite existing in the schema and the team-management UI.
@@ -31,6 +31,7 @@ class Permission(str, Enum):
     TEAM_MANAGE = "team.manage"  # invite/remove members, change roles
     PAYMENT_ACCOUNTS_MANAGE = "payment_accounts.manage"  # connect/remove payout accounts
     API_KEYS_MANAGE = "api_keys.manage"
+    WEBHOOKS_MANAGE = "webhooks.manage"
     EVENTS_DELETE = "events.delete"
 
     # ── Operational (admin + organizer) ─────────────────────────────────────
@@ -107,7 +108,7 @@ def require_permission(permission: Permission):
 def require_page_permission(permission: Permission, role: str, org) -> None:
     """
     For HTML page routes (app/routers/pages.py), which resolve auth via
-    `_org_page_ctx` — a plain function call, not a FastAPI dependency — rather
+    `_org_page_ctx` - a plain function call, not a FastAPI dependency - rather
     than OrgAccess. Raises 403 the same way the API dependency does.
     """
     if not org or not has_permission(role, permission):

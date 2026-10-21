@@ -1,4 +1,4 @@
-"""Structlog configuration — call configure_logging() at app startup."""
+"""Structlog configuration - call configure_logging() at app startup."""
 
 from __future__ import annotations
 

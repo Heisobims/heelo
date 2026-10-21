@@ -5,18 +5,24 @@ import csv
 import io as _io
 import json
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
+from app import plans
 from app.database import AsyncSessionLocal
-from app.dependencies import DBSession, OrgAccess
+from app.dependencies import DBSession
+from app.permissions import Permission, require_permission
+from app.plans import PlanFeature
 from app.services import analytics_service as an_svc
 
 router_analytics = APIRouter(
     prefix="/api/v1/organizations/{slug}/events/{event_id}",
     tags=["analytics"],
 )
+
+FinanceViewAccess = Annotated[tuple, Depends(require_permission(Permission.FINANCE_VIEW))]
 
 
 async def _get_event(db, event_id_str: str, org_id: uuid.UUID):
@@ -35,7 +41,7 @@ async def _get_event(db, event_id_str: str, org_id: uuid.UUID):
 
 
 @router_analytics.get("/analytics/summary")
-async def analytics_summary(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+async def analytics_summary(slug: str, event_id: str, db: DBSession, org_access: FinanceViewAccess):
     org, role, is_owner = org_access
     event = await _get_event(db, event_id, org.id)
     data = await an_svc.get_event_summary(db, event.id)
@@ -44,7 +50,7 @@ async def analytics_summary(slug: str, event_id: str, db: DBSession, org_access:
 
 @router_analytics.get("/analytics/ticket-breakdown")
 async def analytics_ticket_breakdown(
-    slug: str, event_id: str, db: DBSession, org_access: OrgAccess
+    slug: str, event_id: str, db: DBSession, org_access: FinanceViewAccess
 ):
     org, role, is_owner = org_access
     event = await _get_event(db, event_id, org.id)
@@ -53,8 +59,11 @@ async def analytics_ticket_breakdown(
 
 
 @router_analytics.get("/analytics/sales-chart")
-async def analytics_sales_chart(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+async def analytics_sales_chart(
+    slug: str, event_id: str, db: DBSession, org_access: FinanceViewAccess
+):
     org, role, is_owner = org_access
+    plans.require_feature(org.plan, PlanFeature.ADVANCED_ANALYTICS)
     event = await _get_event(db, event_id, org.id)
     sales = await an_svc.get_sales_over_time(db, event.id)
     registrations = await an_svc.get_registration_over_time(db, event.id)
@@ -62,25 +71,30 @@ async def analytics_sales_chart(slug: str, event_id: str, db: DBSession, org_acc
 
 
 @router_analytics.get("/analytics/utm-breakdown")
-async def analytics_utm_breakdown(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+async def analytics_utm_breakdown(
+    slug: str, event_id: str, db: DBSession, org_access: FinanceViewAccess
+):
     org, role, is_owner = org_access
+    plans.require_feature(org.plan, PlanFeature.ADVANCED_ANALYTICS)
     event = await _get_event(db, event_id, org.id)
     data = await an_svc.get_utm_breakdown(db, event.id)
     return {"success": True, "data": data}
 
 
 @router_analytics.get("/analytics/promos")
-async def analytics_promos(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+async def analytics_promos(slug: str, event_id: str, db: DBSession, org_access: FinanceViewAccess):
     org, role, is_owner = org_access
+    plans.require_feature(org.plan, PlanFeature.ADVANCED_ANALYTICS)
     event = await _get_event(db, event_id, org.id)
     data = await an_svc.get_promo_breakdown(db, event.id)
     return {"success": True, "data": data}
 
 
 @router_analytics.get("/analytics/stream")
-async def analytics_stream(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
-    """SSE endpoint — pushes live stats every 10 s. Nginx must have proxy_buffering off."""
+async def analytics_stream(slug: str, event_id: str, db: DBSession, org_access: FinanceViewAccess):
+    """SSE endpoint - pushes live stats every 10 s. Nginx must have proxy_buffering off."""
     org, role, is_owner = org_access
+    plans.require_feature(org.plan, PlanFeature.ADVANCED_ANALYTICS)
     event = await _get_event(db, event_id, org.id)
     eid = event.id
 
@@ -106,7 +120,9 @@ async def analytics_stream(slug: str, event_id: str, db: DBSession, org_access: 
 
 
 @router_analytics.get("/analytics/export.csv")
-async def analytics_export_csv(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
+async def analytics_export_csv(
+    slug: str, event_id: str, db: DBSession, org_access: FinanceViewAccess
+):
     """Download all registrations for this event as a CSV file."""
     from sqlalchemy import select
     from sqlalchemy.orm import selectinload

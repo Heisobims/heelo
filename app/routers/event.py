@@ -4,11 +4,23 @@ import uuid
 from io import BytesIO
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
 from PIL import Image
 
+from app import plans
 from app.dependencies import CurrentUser, CurrentUserID, DBSession, OrgAccess
 from app.permissions import Permission, require_permission
+from app.plans import PlanFeature
 from app.schemas.event import (
     EventCreateRequest,
     EventListItem,
@@ -18,6 +30,7 @@ from app.schemas.event import (
     RecurrenceGenerateRequest,
 )
 from app.services import event_service as svc
+from app.utils.qr_code import generate_qr_png
 
 router_org = APIRouter(prefix="/api/v1/organizations/{slug}/events", tags=["events"])
 router_public = APIRouter(prefix="/api/v1/events", tags=["events-public"])
@@ -92,7 +105,7 @@ async def list_events(
 @router_org.get("/templates")
 async def list_templates(access: OrgAccess, db: DBSession):
     """
-    Registered before GET /{event_id} — FastAPI matches routes in registration
+    Registered before GET /{event_id} - FastAPI matches routes in registration
     order, and "/templates" would otherwise be captured by the {event_id} path
     parameter, fail UUID parsing, and 422.
     """
@@ -127,6 +140,30 @@ async def get_event(
     return _ok(out)
 
 
+@router_org.get("/{event_id}/qr.png", include_in_schema=False)
+async def event_qr_image(
+    event_id: uuid.UUID,
+    access: OrgAccess,
+    db: DBSession,
+    request: Request,
+):
+    """QR code encoding the event's public page URL - same info already
+    shown via the "Copy link" button, so any org member who can view the
+    event can also fetch this, no extra permission needed."""
+    org, _, _ = access
+    event = await svc.get_event_by_id(db, event_id)
+    if not event or str(event.org_id) != str(org.id):
+        raise HTTPException(404, "Event not found.")
+
+    url = f"{str(request.base_url).rstrip('/')}/e/{event.slug}"
+    qr_bytes = generate_qr_png(url)
+    return Response(
+        content=qr_bytes,
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
 @router_org.patch("/{event_id}")
 async def update_event(
     event_id: uuid.UUID,
@@ -158,7 +195,7 @@ async def update_event(
                 changes.append(
                     {
                         "field": label,
-                        "old": str(old_val) if old_val else "—",
+                        "old": str(old_val) if old_val else "-",
                         "new": str(new_val),
                     }
                 )
@@ -267,6 +304,7 @@ async def duplicate_event(
     db: DBSession,
 ):
     org, role, _ = access
+    plans.require_feature(org.plan, PlanFeature.RECURRING_EVENTS)
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")
@@ -283,6 +321,7 @@ async def generate_recurring_series(
     db: DBSession,
 ):
     org, role, _ = access
+    plans.require_feature(org.plan, PlanFeature.RECURRING_EVENTS)
     event = await svc.get_event_by_id(db, event_id)
     if not event or str(event.org_id) != str(org.id):
         raise HTTPException(404, "Event not found.")

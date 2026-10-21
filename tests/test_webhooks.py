@@ -1,4 +1,4 @@
-"""Webhook subscriptions — CRUD, signing, delivery."""
+"""Webhook subscriptions - CRUD, signing, delivery."""
 
 from __future__ import annotations
 
@@ -125,3 +125,21 @@ async def test_webhook_delivery_log_endpoint(client: AsyncClient, org, user_head
     )
     assert resp.status_code == 200
     assert isinstance(resp.json()["data"], list)
+
+
+async def test_webhooks_reject_checkin_staff(client: AsyncClient, org, checkin_staff_headers):
+    """Regression test: webhook subscription management (including secrets
+    and delivery payloads containing attendee PII) used to accept any org
+    member, including checkin_staff - letting them register a webhook
+    pointed at an attacker-controlled URL. Now gated on WEBHOOKS_MANAGE."""
+    resp = await client.get(
+        f"/api/v1/organizations/{org.slug}/webhooks", headers=checkin_staff_headers
+    )
+    assert resp.status_code == 403
+
+    resp = await client.post(
+        f"/api/v1/organizations/{org.slug}/webhooks",
+        json=_VALID_SUB,
+        headers=checkin_staff_headers,
+    )
+    assert resp.status_code == 403

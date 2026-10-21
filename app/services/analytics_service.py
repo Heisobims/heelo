@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime
 
@@ -7,9 +8,30 @@ from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ticketing import REVENUE_STATUSES, Order, PromoCode, Registration, TicketType
+from app.utils.cache import cache_get, cache_set
+
+_SUMMARY_CACHE_TTL_SECONDS = 30
 
 
 async def get_event_summary(db: AsyncSession, event_id: uuid.UUID) -> dict:
+    """The dashboard's headline numbers (registrations, revenue, check-in
+    rate) - hit on every dashboard page load, so cached briefly. A dashboard
+    summary being up to ~30s stale is an acceptable trade for not re-running
+    two aggregate queries on every request."""
+    cache_key = f"event_summary:{event_id}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        try:
+            return json.loads(cached)
+        except ValueError:
+            pass  # corrupt/stale cache entry - fall through to a live query
+
+    summary = await _compute_event_summary(db, event_id)
+    cache_set(cache_key, json.dumps(summary), ttl_seconds=_SUMMARY_CACHE_TTL_SECONDS)
+    return summary
+
+
+async def _compute_event_summary(db: AsyncSession, event_id: uuid.UUID) -> dict:
     reg_rows = await db.execute(
         select(Registration.status, func.count(Registration.id).label("n"))
         .where(Registration.event_id == event_id)
@@ -140,7 +162,7 @@ async def get_utm_breakdown(db: AsyncSession, event_id: uuid.UUID) -> list[dict]
     return [
         {
             "source": row.source,
-            "medium": row.medium or "—",
+            "medium": row.medium or "-",
             "orders": row.orders,
             "revenue": float(row.revenue),
         }

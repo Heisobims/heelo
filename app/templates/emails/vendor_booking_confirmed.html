@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block subject %}New Confirmed Booking: {{ event_name }} (Ref: {{ booking_reference }}){% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;font-weight:900;color:#000000;line-height:1.2;">
+  New Confirmed Booking!
+</h1>
+<p style="margin:0 0 24px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#555555;line-height:1.6;">
+  Congratulations <strong>{{ business_name }}</strong>!<br />
+  <strong>{{ client_name }}</strong> has officially booked and paid for your event services for <strong>{{ event_name }}</strong>.
+</p>
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-radius:12px;background:#FAF7F2;border:1px solid #EFEAE3;margin-bottom:24px;">
+  <tr>
+    <td style="padding:20px 24px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#131B17;line-height:1.8;">
+        <tr>
+          <td style="color:#56625C;width:140px;"><strong>Booking Reference:</strong></td>
+          <td><strong style="font-family:monospace;">{{ booking_reference }}</strong></td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Event:</strong></td>
+          <td><strong>{{ event_name }}</strong></td>
+        </tr>
+        {% if event_date %}
+        <tr>
+          <td style="color:#56625C;"><strong>Event Date:</strong></td>
+          <td>{{ event_date }}</td>
+        </tr>
+        {% endif %}
+        {% if event_location %}
+        <tr>
+          <td style="color:#56625C;"><strong>Location:</strong></td>
+          <td>{{ event_location }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td style="color:#56625C;"><strong>Client Name:</strong></td>
+          <td>{{ client_name }}</td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Client Email:</strong></td>
+          <td><a href="mailto:{{ client_email }}" style="color:#131B17;">{{ client_email }}</a></td>
+        </tr>
+        {% if client_phone %}
+        <tr>
+          <td style="color:#56625C;"><strong>Client Phone:</strong></td>
+          <td><a href="tel:{{ client_phone }}" style="color:#131B17;">{{ client_phone }}</a></td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td style="color:#56625C;"><strong>Gross Amount:</strong></td>
+          <td>₦{{ "{:,.2f}".format(total_amount) }}</td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Platform Fee ({{ commission_rate }}%):</strong></td>
+          <td style="color:#b91c1c;">-₦{{ "{:,.2f}".format(commission_amount) }}</td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Your Net Earnings:</strong></td>
+          <td><strong style="font-size:17px;color:#15803d;">₦{{ "{:,.2f}".format(vendor_earnings) }}</strong></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:16px;margin-bottom:24px;font-family:system-ui,-apple-system,sans-serif;font-size:13.5px;color:#065f46;line-height:1.5;">
+  <strong>Escrow Status: Secured.</strong> The client's payment is held securely in Heelo Escrow. As soon as you fulfill the service, mark the booking as completed in your Command Center to release your net payout to your payable balance.
+</div>
+
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="background:#131B17;border-radius:9999px;">
+      <a href="{{ frontend_url }}/my-vendor-dashboard?tab=bookings" style="display:inline-block;padding:14px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">
+        Open Vendor Command Center →
+      </a>
+    </td>
+  </tr>
+</table>
+{% endblock %}
+

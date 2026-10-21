@@ -1,4 +1,4 @@
-"""Org branding — brand_color accent color, plus the update_organization fix
+"""Org branding - brand_color accent color, plus the update_organization fix
 that makes explicitly clearing a field (e.g. removing the brand color) via
 the settings form actually persist instead of being silently ignored.
 """

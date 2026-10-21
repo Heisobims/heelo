@@ -1,5 +1,5 @@
 """Live audience engagement during an event: polls (organizer-run, live
-results) and Q&A (anonymous, free-for-all — no submission approval queue,
+results) and Q&A (anonymous, free-for-all - no submission approval queue,
 organizer can only delete/mark-answered after the fact, per product
 decision)."""
 
@@ -58,7 +58,7 @@ class PollOption(Base, TimestampMixin):
 
 
 class Question(Base, TimestampMixin):
-    """An anonymous, audience-submitted Q&A question. No approval queue —
+    """An anonymous, audience-submitted Q&A question. No approval queue -
     visible immediately; organizer can hide/delete after the fact."""
 
     __tablename__ = "questions"
@@ -69,7 +69,7 @@ class Question(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    # Optional display name — still anonymous if left blank, no account required
+    # Optional display name - still anonymous if left blank, no account required
     author_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     upvotes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_answered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

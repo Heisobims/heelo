@@ -46,7 +46,7 @@ class AttendeeProfile(Base, TimestampMixin):
 
 
 class Connection(Base, TimestampMixin):
-    """Peer-to-peer connection between two attendees — typically formed at an event."""
+    """Peer-to-peer connection between two attendees - typically formed at an event."""
 
     __tablename__ = "connections"
     __table_args__ = (
@@ -85,7 +85,7 @@ class Connection(Base, TimestampMixin):
 
 class DirectMessage(Base, TimestampMixin):
     """A single message in an attendee-to-attendee DM thread. There's no
-    separate conversation/thread table — a thread is just every message
+    separate conversation/thread table - a thread is just every message
     between two user ids, the same lightweight approach WhatsAppMessage
     uses (thread key = phone number there, = the other user's id here)."""
 
@@ -136,7 +136,7 @@ class OrganizerFollower(Base, TimestampMixin):
 
 class EventInterest(Base, TimestampMixin):
     """
-    Lightweight non-binary RSVP — 'I'm interested' short of buying a ticket.
+    Lightweight non-binary RSVP - 'I'm interested' short of buying a ticket.
     Nudges toward purchase via a single reminder before the event.
     """
 
@@ -197,7 +197,7 @@ class WhatsAppMessage(Base, TimestampMixin):
     is_read_by_org: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # AI-generated suggested reply (for outbound drafts)
     ai_suggested_reply: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # User who sent (outbound) — null for inbound
+    # User who sent (outbound) - null for inbound
     sent_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

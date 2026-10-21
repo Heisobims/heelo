@@ -36,12 +36,12 @@ class Organization(Base, TimestampMixin):
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     logo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # Hex color e.g. "#00FFF3" — accents checkout and the public event page;
-    # falls back to the platform default cyan when unset
+    # Hex color e.g. "#E85938" - accents checkout and the public event page;
+    # falls back to the platform default brand color when unset
     brand_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     website: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    # Public-facing contact — shown in campaign email footers, distinct from the owner's login email
+    # Public-facing contact - shown in campaign email footers, distinct from the owner's login email
     contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     instagram_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     twitter_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
@@ -49,15 +49,56 @@ class Organization(Base, TimestampMixin):
     linkedin_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # ISO 3166-1 alpha-2 country code
     country: Mapped[str | None] = mapped_column(String(2), nullable=True)
-    # ISO 4217 currency code — used as default for new events
+    # ISO 4217 currency code - used as default for new events
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="NGN")
-    # Custom domain for white-label — e.g. events.mycompany.com
+    # Custom domain for white-label - e.g. events.mycompany.com
     custom_domain: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
     custom_domain_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    # starter | growth | pro | enterprise
-    plan: Mapped[str] = mapped_column(String(20), nullable=False, default="starter")
+    # Expected TXT record value at _heelo-verify.{custom_domain} - proves
+    # domain ownership before it's allowed to go live.
+    custom_domain_verification_token: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Domain-restricted SSO (Enterprise) - members whose email matches this
+    # domain must sign in via Google Workspace once sso_enforced is set,
+    # proven via the same TXT-record ownership check as custom_domain.
+    sso_domain: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
+    sso_domain_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    sso_verification_token: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    sso_enforced: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # free | growth | pro | enterprise
+    plan: Mapped[str] = mapped_column(String(20), nullable=False, default="free")
     plan_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Set when a downgrade is scheduled (e.g. "free") - org keeps its current
+    # plan/limits until plan_expires_at, then the renewal task applies this.
+    pending_plan_change: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Dedup marker so the renewal-reminder task sends at most one reminder
+    # per expiry window, not once per day for the whole 3-day window.
+    plan_reminder_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # ── Plan-gated branding ──────────────────────────────────────────────────
+    # Custom branding (logo + brand color) is a Growth+ feature - templates
+    # rendering attendee-facing pages/emails should read these, not the raw
+    # brand_color/logo_url columns, so a Free-tier org can't bypass the gate
+    # just by having a value stored in the database.
+    @property
+    def display_brand_color(self) -> str | None:
+        from app.plans import PlanFeature, has_feature
+
+        return self.brand_color if has_feature(self.plan, PlanFeature.CUSTOM_BRANDING) else None
+
+    @property
+    def display_logo_url(self) -> str | None:
+        from app.plans import PlanFeature, has_feature
+
+        return self.logo_url if has_feature(self.plan, PlanFeature.CUSTOM_BRANDING) else None
+
+    @property
+    def show_powered_by(self) -> bool:
+        from app.plans import PlanFeature, has_feature
+
+        return not has_feature(self.plan, PlanFeature.FULL_WHITE_LABEL)
 
     # ── Relationships ─────────────────────────────────────────────────────────
     owner: Mapped[User] = relationship(

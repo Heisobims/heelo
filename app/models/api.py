@@ -31,7 +31,7 @@ class ApiKey(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    # SHA-256 hash of the raw key — the raw key is shown once and never stored
+    # SHA-256 hash of the raw key - the raw key is shown once and never stored
     key_hash: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     # Key prefix shown in the UI e.g. "hlo_live_aBcD..."
     key_prefix: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -78,7 +78,7 @@ class WebhookSubscription(Base, TimestampMixin):
 
 
 class WebhookDelivery(Base, TimestampMixin):
-    """A single delivery attempt for a webhook event — retained for 30 days."""
+    """A single delivery attempt for a webhook event - retained for 30 days."""
 
     __tablename__ = "webhook_deliveries"
     __table_args__ = (

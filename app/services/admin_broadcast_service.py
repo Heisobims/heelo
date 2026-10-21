@@ -12,13 +12,13 @@ from app.models.notification import AdminBroadcast
 from app.models.user import User
 
 # Personal Gmail accounts cap outbound mail at ~500/day (Workspace: ~2000/day).
-# Not enforced here — just surfaced to the admin so they don't get surprised
+# Not enforced here - just surfaced to the admin so they don't get surprised
 # by a suspended account mid-send.
 GMAIL_DAILY_SOFT_LIMIT = 500
 
 
 def render_personalized(body: str, user: User) -> str:
-    """Merge-tag substitution — deliberately minimal: only fields the admin
+    """Merge-tag substitution - deliberately minimal: only fields the admin
     already sees in the Users list, nothing that requires extra context."""
     rendered = body.replace("{{name}}", user.full_name or "there")
     rendered = rendered.replace("{{email}}", user.email)
@@ -26,7 +26,7 @@ def render_personalized(body: str, user: User) -> str:
 
 
 async def get_audience(db: AsyncSession, category: str) -> list[User]:
-    """All users matching a category — no pagination, this is for sending, not display."""
+    """All users matching a category - no pagination, this is for sending, not display."""
     from app.services.admin_service import apply_category_filter
 
     q = select(User).where(User.deleted_at.is_(None))

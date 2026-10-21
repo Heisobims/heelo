@@ -53,7 +53,7 @@ def create_raw_refresh_token() -> str:
 
 
 def hash_token(raw: str) -> str:
-    """SHA-256 hash of any raw token string — used for refresh & reset tokens."""
+    """SHA-256 hash of any raw token string - used for refresh & reset tokens."""
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
@@ -87,14 +87,14 @@ def generate_api_key() -> tuple[str, str, str]:
 
 # ── Ticket QR JWT ─────────────────────────────────────────────────────────────
 def create_ticket_qr_token(registration_id: str, event_id: str) -> str:
-    """Signed JWT embedded in QR codes — verified at check-in."""
+    """Signed JWT embedded in QR codes - verified at check-in."""
     payload = {
         "type": "ticket",
         "rid": registration_id,
         "eid": event_id,
         "iat": datetime.now(tz=UTC),
     }
-    # No expiry — tickets are valid until the event ends (enforced at check-in)
+    # No expiry - tickets are valid until the event ends (enforced at check-in)
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
@@ -108,12 +108,15 @@ def decode_ticket_qr_token(token: str) -> dict[str, Any]:
 
 
 def create_unsubscribe_token(org_id: str, email: str) -> str:
-    """Signed, no-login-required link embedded in campaign email footers."""
+    """Signed, no-login-required link embedded in campaign email footers.
+    Long-lived (not permanent) so an old email's unsubscribe link keeps
+    working, but a leaked/logged link doesn't stay valid forever."""
     payload = {
         "type": "unsubscribe",
         "org_id": org_id,
         "email": email.lower(),
         "iat": datetime.now(tz=UTC),
+        "exp": datetime.now(tz=UTC) + timedelta(days=730),
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
@@ -123,7 +126,6 @@ def decode_unsubscribe_token(token: str) -> dict[str, Any]:
         token,
         settings.SECRET_KEY,
         algorithms=[settings.ALGORITHM],
-        options={"verify_exp": False},
     )
     if payload.get("type") != "unsubscribe":
         raise ValueError("Invalid unsubscribe token.")

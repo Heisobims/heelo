@@ -128,6 +128,29 @@ def _send_campaign_recipients(db: Session, campaign) -> tuple[int, int]:
                 rec.error_message = str(exc)[:255]
                 failed += 1
 
+    elif campaign.type == "sms":
+        from app.utils.sms import send_sms_sync
+
+        for rec in recipients:
+            phone_target = rec.phone or rec.whatsapp_number
+            if not phone_target:
+                rec.status = "failed"
+                rec.error_message = "No phone number"
+                failed += 1
+                continue
+            rec_ctx = {**ctx, "name": rec.name or "there"}
+            text = _render(campaign.body or "", rec_ctx)
+            try:
+                res = send_sms_sync(phone_target, text)
+                rec.status = "sent"
+                rec.sent_at = now
+                rec.provider_message_id = res.get("message_id")
+                sent += 1
+            except Exception as exc:
+                rec.status = "failed"
+                rec.error_message = str(exc)[:255]
+                failed += 1
+
     else:
         for rec in recipients:
             rec.status = "failed"
@@ -159,7 +182,7 @@ def send_campaign(campaign_id: str) -> None:
             db.commit()
         except Exception:
             # A partial per-recipient failure is tracked per-row above and never
-            # reaches here — this only catches catastrophic failures (e.g. a
+            # reaches here - this only catches catastrophic failures (e.g. a
             # dropped DB connection). Without this, `status` would stay stuck on
             # "sending" forever since this task has max_retries=0.
             db.rollback()

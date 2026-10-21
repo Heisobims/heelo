@@ -19,7 +19,7 @@ _LOGO_FETCH_TIMEOUT = 5.0
 
 
 async def _fetch_logo_bytes(logo_url: str | None) -> bytes | None:
-    """Best-effort — a badge with a missing/unreachable logo still renders
+    """Best-effort - a badge with a missing/unreachable logo still renders
     fine without one, so failures here are logged and swallowed, not raised."""
     if not logo_url:
         return None
@@ -41,9 +41,11 @@ async def _badge_data_for_registration(
         ticket_type_name=reg.ticket_type.name if reg.ticket_type else "General",
         event_title=reg.event.title if reg.event else "",
         org_name=org.name,
-        brand_color=org.brand_color,
+        brand_color=org.display_brand_color,
         logo_bytes=logo_bytes,
         qr_bytes=generate_qr_png(reg.qr_code),
+        show_powered_by=org.show_powered_by,
+        attendee_email=reg.attendee_email,
     )
 
 
@@ -54,7 +56,7 @@ async def get_badge_pdf_for_registration(db: AsyncSession, reg: Registration) ->
     if not org:
         raise HTTPException(404, "Organization not found.")
 
-    logo_bytes = await _fetch_logo_bytes(org.logo_url)
+    logo_bytes = await _fetch_logo_bytes(org.display_logo_url)
     data = await _badge_data_for_registration(reg, org, logo_bytes)
     return generate_badge_pdf([data])
 
@@ -74,6 +76,6 @@ async def get_badges_pdf_for_event(
     if not registrations:
         raise HTTPException(404, "No matching registrations to print badges for.")
 
-    logo_bytes = await _fetch_logo_bytes(org.logo_url)
+    logo_bytes = await _fetch_logo_bytes(org.display_logo_url)
     badges = [await _badge_data_for_registration(r, org, logo_bytes) for r in registrations]
     return generate_badge_pdf(badges)

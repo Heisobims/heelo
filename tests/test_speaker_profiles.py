@@ -1,4 +1,4 @@
-"""Public speaker profile pages (GET /speakers/{slug}) — unlocked now that
+"""Public speaker profile pages (GET /speakers/{slug}) - unlocked now that
 Speaker is a real, slug-addressable record instead of a JSON blob entry.
 """
 

@@ -1,4 +1,4 @@
-"""Initial schema — all Heelo tables
+"""Initial schema - all Heelo tables
 
 Revision ID: 0001
 Revises:

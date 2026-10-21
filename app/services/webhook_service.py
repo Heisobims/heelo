@@ -147,11 +147,11 @@ async def fire_event(
     if not deliveries:
         return
 
-    # Commit before dispatching — the Celery worker queries this row from a
+    # Commit before dispatching - the Celery worker queries this row from a
     # separate DB connection, which can't see it until this transaction
     # commits. Dispatching first is a race: a fast worker finds nothing,
     # returns silently, and (since next_retry_at is still unset) the retry
-    # beat task never picks it up either — the delivery is stuck forever.
+    # beat task never picks it up either - the delivery is stuck forever.
     await db.commit()
 
     from app.tasks.webhooks import deliver_webhook
@@ -164,7 +164,7 @@ async def fire_event(
             failed_ids.append(delivery.id)
 
     if failed_ids:
-        # Celery unavailable — set next_retry_at so the beat task picks these up.
+        # Celery unavailable - set next_retry_at so the beat task picks these up.
         await db.execute(
             update(WebhookDelivery)
             .where(WebhookDelivery.id.in_(failed_ids))
@@ -201,7 +201,7 @@ def fire_event_sync(
     if not deliveries:
         return
 
-    # Commit before dispatching — see the comment in fire_event() above.
+    # Commit before dispatching - see the comment in fire_event() above.
     db.commit()
 
     from app.tasks.webhooks import deliver_webhook

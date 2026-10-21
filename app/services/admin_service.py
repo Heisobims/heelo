@@ -13,7 +13,7 @@ from app.models.ticketing import REVENUE_STATUSES, Order
 from app.models.user import User
 from app.models.vendor import Vendor
 
-# Display names for the country codes users/orgs can pick — mirrors the
+# Display names for the country codes users/orgs can pick - mirrors the
 # select options offered in org_create.html / profile.html.
 COUNTRY_NAMES = {
     "NG": "Nigeria",
@@ -34,7 +34,7 @@ COUNTRY_NAMES = {
     "FR": "France",
 }
 
-# (label, min_age, max_age) — max_age is inclusive, None means no upper bound.
+# (label, min_age, max_age) - max_age is inclusive, None means no upper bound.
 AGE_BRACKETS = [
     ("Under 18", 0, 17),
     ("18-24", 18, 24),
@@ -46,19 +46,77 @@ AGE_BRACKETS = [
 
 
 async def platform_stats(db: AsyncSession) -> dict:
+    from app.models.payment import Payout, PlanInvoice
+    from app.models.ticketing import Registration
+    from app.models.vendor import VendorBooking, VendorPayout, VendorVerificationRequest
+
     total_users = await db.scalar(select(func.count()).where(User.deleted_at.is_(None)))
     total_orgs = await db.scalar(select(func.count()).select_from(Organization))
     total_events = await db.scalar(select(func.count()).select_from(Event))
+    total_tickets_sold = await db.scalar(
+        select(func.count()).select_from(Registration).where(Registration.status == "confirmed")
+    )
     total_revenue = await db.scalar(
         select(func.coalesce(func.sum(Order.net_amount - Order.refunded_amount), 0)).where(
             Order.payment_status.in_(REVENUE_STATUSES)
         )
     )
+    total_gmv = await db.scalar(
+        select(func.coalesce(func.sum(Order.total_amount), 0)).where(
+            Order.payment_status.in_(REVENUE_STATUSES)
+        )
+    )
+    total_platform_fees = await db.scalar(
+        select(func.coalesce(func.sum(Order.platform_fee), 0)).where(
+            Order.payment_status.in_(REVENUE_STATUSES)
+        )
+    )
+    total_subscription_revenue = await db.scalar(
+        select(func.coalesce(func.sum(PlanInvoice.amount), 0)).where(
+            PlanInvoice.status == "paid"
+        )
+    )
+    active_subscriptions = await db.scalar(
+        select(func.count()).select_from(Organization).where(
+            Organization.plan.in_(["growth", "pro", "enterprise"])
+        )
+    )
+    total_marketplace_volume = await db.scalar(
+        select(func.coalesce(func.sum(VendorBooking.total_amount), 0)).where(
+            VendorBooking.status.in_(["confirmed", "in_progress", "completed"])
+        )
+    )
+    total_marketplace_commission = await db.scalar(
+        select(func.coalesce(func.sum(VendorBooking.commission_amount), 0)).where(
+            VendorBooking.status.in_(["confirmed", "in_progress", "completed"])
+        )
+    )
+    pending_verifications = await db.scalar(
+        select(func.count()).select_from(VendorVerificationRequest).where(
+            VendorVerificationRequest.status == "pending"
+        )
+    )
+    pending_org_payouts = await db.scalar(
+        select(func.count()).select_from(Payout).where(Payout.status == "pending")
+    )
+    pending_vendor_payouts = await db.scalar(
+        select(func.count()).select_from(VendorPayout).where(VendorPayout.status == "pending")
+    )
+
     return {
         "total_users": total_users or 0,
         "total_orgs": total_orgs or 0,
         "total_events": total_events or 0,
+        "total_tickets_sold": total_tickets_sold or 0,
         "total_net_revenue": float(total_revenue or 0),
+        "total_gmv": float(total_gmv or 0),
+        "total_platform_fees": float(total_platform_fees or 0),
+        "total_subscription_revenue": float(total_subscription_revenue or 0),
+        "active_subscriptions": active_subscriptions or 0,
+        "total_marketplace_volume": float(total_marketplace_volume or 0),
+        "total_marketplace_commission": float(total_marketplace_commission or 0),
+        "pending_verifications": pending_verifications or 0,
+        "pending_payouts": (pending_org_payouts or 0) + (pending_vendor_payouts or 0),
     }
 
 
@@ -146,6 +204,7 @@ async def get_org_detail(db: AsyncSession, org_id: uuid.UUID) -> dict | None:
         .where(Event.org_id == org.id, Order.payment_status.in_(REVENUE_STATUSES))
     )
     from app.models.organization import OrganizationMember
+    from app.models.payment import PlanInvoice
 
     members = list(
         (
@@ -157,10 +216,22 @@ async def get_org_detail(db: AsyncSession, org_id: uuid.UUID) -> dict | None:
         ).all()
     )
 
+    plan_invoices = list(
+        (
+            await db.scalars(
+                select(PlanInvoice)
+                .where(PlanInvoice.org_id == org.id)
+                .order_by(PlanInvoice.created_at.desc())
+                .limit(10)
+            )
+        ).all()
+    )
+
     return {
         "org": org,
         "events": events,
         "members": members,
+        "plan_invoices": plan_invoices,
         "net_revenue": float(revenue or 0),
         "total_orders": reg_count or 0,
     }
@@ -285,7 +356,7 @@ def apply_audience_filters(
 
 
 async def audience_insights(db: AsyncSession) -> dict:
-    """Aggregate audience data — region, age, interests, event vibes — for admin insights."""
+    """Aggregate audience data - region, age, interests, event vibes - for admin insights."""
     current_year = datetime.now(UTC).year
 
     total_users = await db.scalar(select(func.count()).where(User.deleted_at.is_(None))) or 0
@@ -386,8 +457,8 @@ def apply_category_filter(q, category: str | None):
     """
     Category is a broader, more useful grouping than raw `role` for admin
     purposes: 'organizer'/'attendee' include role='both' (they're genuinely
-    both), and 'vendor' is a separate profile any user can have — not a role
-    value at all — so it requires a join instead of a simple equality check.
+    both), and 'vendor' is a separate profile any user can have - not a role
+    value at all - so it requires a join instead of a simple equality check.
     """
     from app.models.vendor import Vendor
 
@@ -458,7 +529,7 @@ async def get_user_category_counts(db: AsyncSession) -> dict[str, int]:
 
 
 async def batch_vendor_user_ids(db: AsyncSession, user_ids: list[uuid.UUID]) -> set[uuid.UUID]:
-    """Which of these users also have a vendor profile — for a badge in list views."""
+    """Which of these users also have a vendor profile - for a badge in list views."""
     if not user_ids:
         return set()
     from app.models.vendor import Vendor
@@ -477,7 +548,8 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> dict | None:
             await db.scalars(select(Organization).where(Organization.owner_id == user_id).limit(20))
         ).all()
     )
-    from app.models.ticketing import Registration
+    from app.models.ticketing import Registration, Order
+    from app.models.vendor import Vendor
 
     reg_count = await db.scalar(
         select(func.count()).where(
@@ -485,9 +557,27 @@ async def get_user_detail(db: AsyncSession, user_id: uuid.UUID) -> dict | None:
             Registration.status == "confirmed",
         )
     )
+
+    vendor = await db.scalar(select(Vendor).where(Vendor.user_id == user_id))
+
+    recent_orders = list(
+        (
+            await db.scalars(
+                select(Order)
+                .where(or_(Order.user_id == user_id, Order.buyer_email == user.email))
+                .options(selectinload(Order.event))
+                .order_by(Order.created_at.desc())
+                .limit(5)
+            )
+        ).all()
+    )
+
     return {
         "user": user,
         "owned_orgs": orgs,
+        "vendor": vendor,
+        "recent_orders": recent_orders,
+        "country_name": COUNTRY_NAMES.get(user.country or "", user.country or ""),
         "confirmed_registration_count": reg_count or 0,
     }
 
@@ -526,7 +616,8 @@ async def set_user_role(db: AsyncSession, user_id: uuid.UUID, role: str) -> User
 
 
 async def set_org_plan(db: AsyncSession, org_id: uuid.UUID, plan: str) -> Organization:
-    allowed = {"starter", "growth", "pro", "enterprise"}
+    plan = (plan or "").strip().lower()
+    allowed = {"free", "growth", "pro", "enterprise"}
     if plan not in allowed:
         raise ValueError(f"Invalid plan: {plan}")
     org = await db.scalar(select(Organization).where(Organization.id == org_id))
@@ -536,3 +627,181 @@ async def set_org_plan(db: AsyncSession, org_id: uuid.UUID, plan: str) -> Organi
     await db.commit()
     await db.refresh(org)
     return org
+
+
+async def toggle_event_featured(db: AsyncSession, event_id: uuid.UUID) -> Event:
+    event = await db.scalar(select(Event).where(Event.id == event_id))
+    if not event:
+        raise ValueError("Event not found")
+    event.is_featured = not bool(event.is_featured)
+    await db.commit()
+    await db.refresh(event)
+    return event
+
+
+async def set_event_status(db: AsyncSession, event_id: uuid.UUID, status: str) -> Event:
+    allowed = {"draft", "published", "ended", "cancelled"}
+    if status not in allowed:
+        raise ValueError(f"Invalid status: {status}")
+    event = await db.scalar(select(Event).where(Event.id == event_id))
+    if not event:
+        raise ValueError("Event not found")
+    event.status = status
+    await db.commit()
+    await db.refresh(event)
+    return event
+
+
+async def set_org_custom_domain_verified(
+    db: AsyncSession, org_id: uuid.UUID, verified: bool
+) -> Organization:
+    org = await db.scalar(select(Organization).where(Organization.id == org_id))
+    if not org:
+        raise ValueError("Organization not found")
+    org.custom_domain_verified = verified
+    await db.commit()
+    await db.refresh(org)
+    return org
+
+
+async def set_org_sso_verified(
+    db: AsyncSession, org_id: uuid.UUID, verified: bool, enforced: bool | None = None
+) -> Organization:
+    org = await db.scalar(select(Organization).where(Organization.id == org_id))
+    if not org:
+        raise ValueError("Organization not found")
+    org.sso_domain_verified = verified
+    if enforced is not None:
+        org.sso_enforced = enforced
+    await db.commit()
+    await db.refresh(org)
+    return org
+
+
+async def list_orders_admin(
+    db: AsyncSession,
+    *,
+    search: str | None = None,
+    status: str | None = None,
+    page: int = 1,
+    per_page: int = 30,
+) -> tuple[list[Order], int]:
+    q = (
+        select(Order)
+        .options(
+            selectinload(Order.event),
+            selectinload(Order.user),
+        )
+    )
+    if search:
+        q = q.where(
+            or_(
+                Order.payment_reference.ilike(f"%{search}%"),
+                Order.buyer_name.ilike(f"%{search}%"),
+                Order.buyer_email.ilike(f"%{search}%"),
+            )
+        )
+    if status:
+        q = q.where(Order.payment_status == status)
+
+    total = await db.scalar(select(func.count()).select_from(q.subquery()))
+    rows = await db.scalars(
+        q.order_by(Order.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+    )
+    return list(rows.all()), total or 0
+
+
+async def list_plan_invoices_admin(
+    db: AsyncSession,
+    *,
+    status: str | None = None,
+    page: int = 1,
+    per_page: int = 30,
+) -> tuple[list, int]:
+    from app.models.payment import PlanInvoice
+
+    q = select(PlanInvoice).options(selectinload(PlanInvoice.organization))
+    if status:
+        q = q.where(PlanInvoice.status == status)
+
+    total = await db.scalar(select(func.count()).select_from(q.subquery()))
+    rows = await db.scalars(
+        q.order_by(PlanInvoice.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+    )
+    return list(rows.all()), total or 0
+
+
+async def list_marketplace_bookings_admin(
+    db: AsyncSession,
+    *,
+    search: str | None = None,
+    status: str | None = None,
+    page: int = 1,
+    per_page: int = 30,
+) -> tuple[list, int]:
+    from app.models.vendor import VendorBooking
+
+    q = select(VendorBooking).options(
+        selectinload(VendorBooking.vendor),
+        selectinload(VendorBooking.requester),
+    )
+    if search:
+        q = q.where(
+            or_(
+                VendorBooking.booking_reference.ilike(f"%{search}%"),
+                VendorBooking.event_name.ilike(f"%{search}%"),
+            )
+        )
+    if status:
+        q = q.where(VendorBooking.status == status)
+
+    total = await db.scalar(select(func.count()).select_from(q.subquery()))
+    rows = await db.scalars(
+        q.order_by(VendorBooking.created_at.desc()).offset((page - 1) * per_page).limit(per_page)
+    )
+    return list(rows.all()), total or 0
+
+
+async def financial_overview_stats(db: AsyncSession) -> dict:
+    from app.models.payment import PlanInvoice
+    from app.models.vendor import VendorBooking
+
+    ticket_gmv = await db.scalar(
+        select(func.coalesce(func.sum(Order.total_amount), 0)).where(
+            Order.payment_status.in_(REVENUE_STATUSES)
+        )
+    )
+    platform_fees = await db.scalar(
+        select(func.coalesce(func.sum(Order.platform_fee), 0)).where(
+            Order.payment_status.in_(REVENUE_STATUSES)
+        )
+    )
+    gateway_fees = await db.scalar(
+        select(func.coalesce(func.sum(Order.gateway_fee_amount), 0)).where(
+            Order.payment_status.in_(REVENUE_STATUSES)
+        )
+    )
+    subscription_revenue = await db.scalar(
+        select(func.coalesce(func.sum(PlanInvoice.amount), 0)).where(
+            PlanInvoice.status == "paid"
+        )
+    )
+    marketplace_volume = await db.scalar(
+        select(func.coalesce(func.sum(VendorBooking.total_amount), 0)).where(
+            VendorBooking.status.in_(["confirmed", "in_progress", "completed"])
+        )
+    )
+    marketplace_commission = await db.scalar(
+        select(func.coalesce(func.sum(VendorBooking.commission_amount), 0)).where(
+            VendorBooking.status.in_(["confirmed", "in_progress", "completed"])
+        )
+    )
+
+    return {
+        "ticket_gmv": float(ticket_gmv or 0),
+        "platform_fees": float(platform_fees or 0),
+        "gateway_fees": float(gateway_fees or 0),
+        "subscription_revenue": float(subscription_revenue or 0),
+        "marketplace_volume": float(marketplace_volume or 0),
+        "marketplace_commission": float(marketplace_commission or 0),
+    }

@@ -1,144 +1,357 @@
-{% extends "base.html" %}
-{% block title %}{{ event.title }} — Your Ticket{% endblock %}
-
-{% block head %}
+{% extends "base.html" %} {% block title %}{{ event.title }} | Your Ticket{%
+endblock %} {% block head %}
 <style>
-  html, body { background: var(--bg-secondary, #F7F7F5); }
+  html,
+  body {
+    background: var(--bg-secondary, #faf9f7);
+  }
 
   .tv-nav {
-    display: flex; align-items: center; gap: 16px; padding: 16px 24px;
-    max-width: 640px; margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    max-width: 640px;
+    margin: 0 auto;
   }
-  .tv-nav a { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
-  .tv-nav a:hover { color: var(--text-primary); }
+  .tv-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .tv-nav a:hover {
+    color: var(--text-primary);
+  }
 
-  .tv-wrap { max-width: 460px; margin: 0 auto; padding: 8px 20px 60px; }
+  .tv-wrap {
+    max-width: 460px;
+    margin: 0 auto;
+    padding: 8px 20px 60px;
+  }
 
-  .tv-actions { display: flex; gap: 10px; margin-bottom: 20px; }
+  .tv-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
   .tv-btn {
-    flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 11px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 700;
-    text-decoration: none; cursor: pointer; border: 1.5px solid var(--border-light);
-    background: #fff; color: var(--text-primary); transition: opacity .12s;
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1.5px solid var(--border-light);
+    background: #fff;
+    color: var(--text-primary);
+    transition: opacity 0.12s;
   }
-  .tv-btn:hover { opacity: .75; }
-  .tv-btn.primary { background: var(--cyan, #00FFF3); border-color: var(--cyan, #00FFF3); color: #000; }
+  .tv-btn:hover {
+    opacity: 0.75;
+  }
+  .tv-btn.primary {
+    background: var(--primary, #e85938);
+    border-color: var(--primary, #e85938);
+    color: #fff;
+  }
 
-  /* ── The ticket itself ─────────────────────────────────────────────── */
+  /* ── The ticket itself - light card, terracotta as accent not fill ─────────── */
   .ticket {
-    background: #0A0A0A; color: #fff; border-radius: 20px; overflow: hidden;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+    background: #fff;
+    color: var(--text-primary);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--border-light);
     position: relative;
   }
-  .ticket-cover { width: 100%; aspect-ratio: 16/7; object-fit: cover; display: block; }
+  .ticket-cover {
+    width: 100%;
+    aspect-ratio: 16/7;
+    object-fit: cover;
+    display: block;
+  }
   .ticket-cover-placeholder {
-    width: 100%; aspect-ratio: 16/7; background: linear-gradient(135deg,#151515,#0A0A0A);
-    display: flex; align-items: center; justify-content: center;
+    width: 100%;
+    aspect-ratio: 16/7;
+    background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .ticket-cover-placeholder span {
-    font-family: var(--font-serif, Georgia, serif); font-size: 64px; font-weight: 700;
-    color: rgba(255,255,255,0.08);
+    font-family: var(--font-serif, Georgia, serif);
+    font-size: 64px;
+    font-weight: 700;
+    color: rgba(232, 89, 56, 0.22);
   }
 
-  .ticket-head { padding: 22px 26px 18px; }
-  .ticket-org { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan, #00FFF3); margin-bottom: 8px; }
-  .ticket-title { font-family: var(--font-serif, Georgia, serif); font-size: 24px; font-weight: 700; line-height: 1.2; margin-bottom: 14px; }
-  .ticket-meta-row { display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; color: rgba(255,255,255,0.75); margin-bottom: 6px; }
-  .ticket-meta-row .material-symbols-outlined { font-size: 17px; color: rgba(255,255,255,0.4); flex-shrink: 0; margin-top: 1px; }
-
-  /* Perforated divider — classic ticket-stub cutout */
-  .ticket-perf { position: relative; height: 0; border-top: 2px dashed rgba(255,255,255,0.15); margin: 4px 0; }
-  .ticket-perf::before, .ticket-perf::after {
-    content: ''; position: absolute; top: -12px; width: 24px; height: 24px; border-radius: 50%;
-    background: var(--bg-secondary, #F7F7F5);
+  .ticket-head {
+    padding: 22px 26px 18px;
+    border-bottom: 3px solid var(--primary, #e85938);
   }
-  .ticket-perf::before { left: -12px; }
-  .ticket-perf::after { right: -12px; }
+  .ticket-org {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--primary, #e85938);
+    margin-bottom: 8px;
+  }
+  .ticket-title {
+    font-family: var(--font-serif, Georgia, serif);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 14px;
+    color: var(--text-primary);
+  }
+  .ticket-meta-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .ticket-meta-row .material-symbols-outlined {
+    font-size: 17px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
 
-  .ticket-stub { padding: 22px 26px 26px; text-align: center; }
-  .ticket-attendee { font-size: 17px; font-weight: 700; margin-bottom: 2px; }
-  .ticket-tier { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.55); margin-bottom: 20px; }
+  /* Perforated divider - classic ticket-stub cutout */
+  .ticket-perf {
+    position: relative;
+    height: 0;
+    border-top: 2px dashed var(--border-light);
+    margin: 4px 0;
+  }
+  .ticket-perf::before,
+  .ticket-perf::after {
+    content: "";
+    position: absolute;
+    top: -12px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--bg-secondary, #faf9f7);
+  }
+  .ticket-perf::before {
+    left: -12px;
+  }
+  .ticket-perf::after {
+    right: -12px;
+  }
 
-  .ticket-qr-frame { background: #fff; border-radius: 16px; padding: 16px; display: inline-block; margin-bottom: 14px; }
-  .ticket-qr-frame img { width: 190px; height: 190px; display: block; }
+  .ticket-stub {
+    padding: 22px 26px 26px;
+    text-align: center;
+  }
+  .ticket-attendee {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: var(--text-primary);
+  }
+  .ticket-tier {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
 
-  .ticket-code { font-family: var(--font-mono, monospace); font-size: 11px; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); word-break: break-all; }
+  .ticket-qr-frame {
+    background: #fff;
+    border: 1.5px solid var(--border-light);
+    border-radius: 16px;
+    padding: 16px;
+    display: inline-block;
+    margin-bottom: 14px;
+  }
+  .ticket-qr-frame img {
+    width: 190px;
+    height: 190px;
+    display: block;
+  }
+
+  .ticket-code {
+    font-family: var(--font-mono, monospace);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    word-break: break-all;
+  }
 
   .ticket-status {
-    display: inline-flex; align-items: center; gap: 5px; margin-top: 16px;
-    padding: 5px 14px; border-radius: 100px; font-size: 12px; font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 16px;
+    padding: 5px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 700;
   }
-  .ticket-status.confirmed { background: rgba(0,255,243,0.12); color: var(--cyan, #00FFF3); }
-  .ticket-status.checked_in { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .ticket-status.confirmed {
+    background: rgba(232, 89, 56, 0.12);
+    color: #c84729;
+  }
+  .ticket-status.checked_in {
+    background: var(--success-bg, rgba(0, 200, 83, 0.12));
+    color: var(--success, #00c853);
+  }
 
-  .tv-footer-note { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 20px; line-height: 1.6; }
+  .tv-footer-note {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 20px;
+    line-height: 1.6;
+  }
 
   @media print {
-    .tv-nav, .tv-actions, .tv-footer-note { display: none !important; }
-    html, body { background: #fff !important; }
-    .tv-wrap { max-width: 100%; padding: 0; }
-    .ticket { box-shadow: none; border: 1px solid #ddd; }
+    .tv-nav,
+    .tv-actions,
+    .tv-footer-note,
+    .tv-referral-card {
+      display: none !important;
+    }
+    html,
+    body {
+      background: #fff !important;
+    }
+    .tv-wrap {
+      max-width: 100%;
+      padding: 0;
+    }
+    .ticket {
+      box-shadow: none;
+      border: 1px solid #ddd;
+    }
+    .ticket-cover-placeholder {
+      background: #f2f2f0 !important;
+    }
+    .ticket-cover-placeholder span {
+      color: #ddd !important;
+    }
   }
 </style>
-{% endblock %}
-
-{% block body %}
+{% endblock %} {% block body %}
 <nav class="tv-nav">
   <a href="/my-tickets">
-    <span class="material-symbols-outlined" style="font-size:18px;">arrow_back</span> My Tickets
+    <span class="material-symbols-outlined" style="font-size: 18px"
+      >arrow_back</span
+    >
+    My Tickets
   </a>
 </nav>
 
 <div class="tv-wrap">
   <div class="tv-actions">
     <button type="button" class="tv-btn primary" onclick="window.print()">
-      <span class="material-symbols-outlined" style="font-size:16px;">print</span> Print
+      <span class="material-symbols-outlined" style="font-size: 16px"
+        >print</span
+      >
+      Print
     </button>
     <a class="tv-btn" href="{{ gcal_url }}" target="_blank">
-      <span class="material-symbols-outlined" style="font-size:16px;">event</span> Google Calendar
+      <span class="material-symbols-outlined" style="font-size: 16px"
+        >event</span
+      >
+      Google Calendar
     </a>
-    <a class="tv-btn" href="/api/v1/registrations/{{ reg.id }}/calendar.ics" download>
-      <span class="material-symbols-outlined" style="font-size:16px;">calendar_add_on</span> Apple / Outlook (.ics)
+    <a
+      class="tv-btn"
+      href="/api/v1/registrations/{{ reg.id }}/calendar.ics"
+      download
+    >
+      <span class="material-symbols-outlined" style="font-size: 16px"
+        >calendar_add_on</span
+      >
+      Apple / Outlook (.ics)
     </a>
   </div>
   <div class="tv-actions">
-    <a class="tv-btn" href="/api/v1/registrations/{{ reg.id }}/badge.pdf" target="_blank">
-      <span class="material-symbols-outlined" style="font-size:16px;">badge</span> Download badge
+    <a
+      class="tv-btn"
+      href="/api/v1/registrations/{{ reg.id }}/badge.pdf"
+      target="_blank"
+    >
+      <span class="material-symbols-outlined" style="font-size: 16px"
+        >badge</span
+      >
+      Download badge
     </a>
     {% if event.certificates_generated_at and reg.status == 'checked_in' %}
-    <a class="tv-btn" href="/api/v1/registrations/{{ reg.id }}/certificate.pdf" target="_blank">
-      <span class="material-symbols-outlined" style="font-size:16px;">workspace_premium</span> Certificate
+    <a
+      class="tv-btn"
+      href="/api/v1/registrations/{{ reg.id }}/certificate.pdf"
+      target="_blank"
+    >
+      <span class="material-symbols-outlined" style="font-size: 16px"
+        >workspace_premium</span
+      >
+      Certificate
     </a>
     {% endif %}
   </div>
 
   <div class="ticket">
     {% if event.cover_image_url %}
-    <img class="ticket-cover" src="{{ event.cover_image_url }}" alt="{{ event.title }}">
+    <img
+      class="ticket-cover"
+      src="{{ event.cover_image_url }}"
+      alt="{{ event.title }}"
+    />
     {% else %}
-    <div class="ticket-cover-placeholder"><span>{{ event.title[0] }}</span></div>
+    <div class="ticket-cover-placeholder">
+      <span>{{ event.title[0] }}</span>
+    </div>
     {% endif %}
 
     <div class="ticket-head">
-      {% if org %}<div class="ticket-org">{{ org.name }}</div>{% endif %}
+      {% if org %}
+      <div class="ticket-org">{{ org.name }}</div>
+      {% endif %}
       <div class="ticket-title">{{ event.title }}</div>
 
       {% if event.start_datetime %}
       <div class="ticket-meta-row">
         <span class="material-symbols-outlined">calendar_today</span>
-        <span>{{ event.start_datetime.strftime('%A, %B %-d, %Y · %-I:%M %p') }}</span>
+        <span
+          >{{ event.start_datetime.strftime('%A, %B %-d, %Y · %-I:%M %p')
+          }}</span
+        >
       </div>
-      {% endif %}
-
-      {% if event.format == 'virtual' %}
+      {% endif %} {% if event.format == 'virtual' %}
       <div class="ticket-meta-row">
         <span class="material-symbols-outlined">videocam</span>
-        <span>{{ (event.virtual_platform | title) if event.virtual_platform else 'Online' }} event — link shared closer to the date</span>
+        <span
+          >{{ (event.virtual_platform | title) if event.virtual_platform else
+          'Online' }} event: link shared closer to the date</span
+        >
       </div>
       {% elif event.venue_name or event.venue_city %}
       <div class="ticket-meta-row">
         <span class="material-symbols-outlined">location_on</span>
-        <span>{{ event.venue_name or event.venue_city }}{% if event.venue_name and event.venue_city %}, {{ event.venue_city }}{% endif %}</span>
+        <span
+          >{{ event.venue_name or event.venue_city }}{% if event.venue_name and
+          event.venue_city %}, {{ event.venue_city }}{% endif %}</span
+        >
       </div>
       {% endif %}
     </div>
@@ -148,70 +361,133 @@
     <div class="ticket-stub">
       <div class="ticket-attendee">{{ reg.attendee_name }}</div>
       <div class="ticket-tier">
-        <span class="material-symbols-outlined" style="font-size:14px;">sell</span>
+        <span class="material-symbols-outlined" style="font-size: 14px"
+          >sell</span
+        >
         {{ reg.ticket_type.name if reg.ticket_type else 'General Admission' }}
       </div>
 
       <div class="ticket-qr-frame">
-        <img src="/api/v1/registrations/{{ reg.id }}/qr.png" alt="Ticket QR code">
+        <img
+          src="/api/v1/registrations/{{ reg.id }}/qr.png"
+          alt="Ticket QR code"
+        />
       </div>
       <div class="ticket-code">{{ reg.id }}</div>
 
       {% if reg.status == 'checked_in' %}
       <div class="ticket-status checked_in">
-        <span class="material-symbols-outlined" style="font-size:14px;">done_all</span> Checked in
+        <span class="material-symbols-outlined" style="font-size: 14px"
+          >done_all</span
+        >
+        Checked in
       </div>
       {% else %}
       <div class="ticket-status confirmed">
-        <span class="material-symbols-outlined" style="font-size:14px;">check_circle</span> Confirmed
+        <span class="material-symbols-outlined" style="font-size: 14px"
+          >check_circle</span
+        >
+        Confirmed
       </div>
       {% endif %}
     </div>
   </div>
 
   {% if reg.status in ('confirmed', 'checked_in') %}
-  <div class="tv-referral-card" id="referral-card" style="display:none; background:#fff; border:1.5px solid var(--border-light); border-radius:16px; padding:18px 20px; margin-top:16px;">
-    <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Bring a friend</div>
-    <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;" id="referral-sub">Share your link — friends who register through it get a discount.</div>
-    <div style="display:flex; gap:8px;">
-      <input type="text" id="referral-link-input" readonly style="flex:1; min-width:0; font-family:var(--font-mono,monospace); font-size:12px; padding:9px 10px; border:1px solid var(--border-light); border-radius:8px; background:var(--bg-secondary,#F7F7F5); color:var(--text-secondary);">
-      <button type="button" class="tv-btn" id="referral-copy-btn" style="flex:none; padding:9px 14px;" onclick="copyReferralLink()">Copy</button>
+  <div
+    class="tv-referral-card"
+    id="referral-card"
+    style="
+      display: none;
+      background: #fff;
+      border: 1.5px solid var(--border-light);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-top: 16px;
+    "
+  >
+    <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px">
+      Bring a friend
     </div>
-    <div id="referral-count" style="font-size:12px; color:var(--text-muted); margin-top:10px;"></div>
+    <div
+      style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 12px"
+      id="referral-sub"
+    >
+      Share your link: friends who register through it get a discount.
+    </div>
+    <div style="display: flex; gap: 8px">
+      <input
+        type="text"
+        id="referral-link-input"
+        readonly
+        style="
+          flex: 1;
+          min-width: 0;
+          font-family: var(--font-mono, monospace);
+          font-size: 12px;
+          padding: 9px 10px;
+          border: 1px solid var(--border-light);
+          border-radius: 8px;
+          background: var(--bg-secondary, #f7f7f5);
+          color: var(--text-secondary);
+        "
+      />
+      <button
+        type="button"
+        class="tv-btn"
+        id="referral-copy-btn"
+        style="flex: none; padding: 9px 14px"
+        onclick="copyReferralLink()"
+      >
+        Copy
+      </button>
+    </div>
+    <div
+      id="referral-count"
+      style="font-size: 12px; color: var(--text-muted); margin-top: 10px"
+    ></div>
   </div>
   {% endif %}
 
-  <p class="tv-footer-note">Show this QR code at the entrance. Save or print it — you won't need signal to check in.</p>
+  <p class="tv-footer-note">
+    Show this QR code at the entrance. Save or print it: you won't need signal
+    to check in.
+  </p>
 </div>
 
 <script>
-(async function () {
-  try {
-    const res = await fetch('/api/v1/registrations/{{ reg.id }}/referral-stats');
-    const json = await res.json();
-    if (!json.success) return;
-    const { referral_path, referred_count, discount_percent } = json.data;
+  (async function () {
+    try {
+      const res = await fetch(
+        "/api/v1/registrations/{{ reg.id }}/referral-stats",
+      );
+      const json = await res.json();
+      if (!json.success) return;
+      const { referral_path, referred_count, discount_percent } = json.data;
 
-    const card = document.getElementById('referral-card');
-    document.getElementById('referral-sub').textContent =
-      `Share your link — friends who register through it get ${discount_percent}% off their ticket.`;
-    document.getElementById('referral-link-input').value = window.location.origin + referral_path;
-    document.getElementById('referral-count').textContent =
-      referred_count > 0
-        ? `${referred_count} friend${referred_count === 1 ? '' : 's'} joined using your link 🎉`
-        : 'No one has used your link yet.';
-    card.style.display = 'block';
-  } catch {}
-})();
+      const card = document.getElementById("referral-card");
+      document.getElementById("referral-sub").textContent =
+        `Share your link, friends who register through it get ${discount_percent}% off their ticket.`;
+      document.getElementById("referral-link-input").value =
+        window.location.origin + referral_path;
+      document.getElementById("referral-count").textContent =
+        referred_count > 0
+          ? `${referred_count} friend${referred_count === 1 ? "" : "s"} joined using your link`
+          : "No one has used your link yet.";
+      card.style.display = "block";
+    } catch {}
+  })();
 
-function copyReferralLink() {
-  const input = document.getElementById('referral-link-input');
-  navigator.clipboard.writeText(input.value).then(() => {
-    const btn = document.getElementById('referral-copy-btn');
-    const original = btn.textContent;
-    btn.textContent = 'Copied!';
-    setTimeout(() => { btn.textContent = original; }, 1800);
-  });
-}
+  function copyReferralLink() {
+    const input = document.getElementById("referral-link-input");
+    navigator.clipboard.writeText(input.value).then(() => {
+      const btn = document.getElementById("referral-copy-btn");
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => {
+        btn.textContent = original;
+      }, 1800);
+    });
+  }
 </script>
 {% endblock %}

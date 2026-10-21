@@ -11,7 +11,9 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.models.organization import Organization
 from app.models.user import OTPCode, PasswordResetToken, RefreshToken, User
+from app.plans import PlanFeature, has_feature
 from app.schemas.auth import (
     ForgotPasswordRequest,
     LoginRequest,
@@ -39,14 +41,95 @@ logger = structlog.get_logger()
 
 _MAX_OTP_ATTEMPTS = 5
 
+# ── Login rate limiting ───────────────────────────────────────────────────────
+# Defense-in-depth on top of the (unverifiable) Nginx-level limiting - fails
+# open if Redis isn't reachable, same graceful-fallback convention already
+# used for reminder dedup in app/tasks/email.py, so this is a strict
+# improvement with no new hard dependency.
+_LOGIN_MAX_ATTEMPTS = 10
+_LOGIN_WINDOW_SECONDS = 15 * 60
+
+
+def _login_redis():
+    try:
+        from redis import Redis as _Redis
+
+        return _Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    except Exception:
+        return None
+
+
+def _check_login_rate_limit(email: str) -> None:
+    redis = _login_redis()
+    if not redis:
+        return
+    try:
+        attempts = redis.get(f"login_attempts:{email}")
+        if attempts and int(attempts) >= _LOGIN_MAX_ATTEMPTS:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many login attempts. Please try again in a few minutes.",
+            )
+    except HTTPException:
+        raise
+    except Exception as err:
+        logger.warning("auth.login_rate_limit_check_failed", error=str(err))
+
+
+def _record_failed_login(email: str) -> None:
+    redis = _login_redis()
+    if not redis:
+        return
+    try:
+        key = f"login_attempts:{email}"
+        count = redis.incr(key)
+        if count == 1:
+            redis.expire(key, _LOGIN_WINDOW_SECONDS)
+    except Exception as err:
+        logger.warning("auth.login_rate_limit_record_failed", error=str(err))
+
+
+def _clear_login_rate_limit(email: str) -> None:
+    redis = _login_redis()
+    if not redis:
+        return
+    try:
+        redis.delete(f"login_attempts:{email}")
+    except Exception as err:
+        logger.warning("auth.login_rate_limit_clear_failed", error=str(err))
+
 
 class AuthService:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
+    # ── SSO enforcement ───────────────────────────────────────────────────────
+    async def _reject_if_sso_enforced(self, email: str) -> None:
+        """Block password login/registration for an email whose domain an
+        Enterprise org has verified and enforced SSO on. Re-checks the plan
+        feature at call time (not just the stored flag) so enforcement stops
+        the moment an org drops below Enterprise, even if sso_enforced is
+        still set in the database."""
+        domain = email.rsplit("@", 1)[-1].lower()
+        org = await self.db.scalar(
+            select(Organization).where(
+                Organization.sso_domain == domain,
+                Organization.sso_enforced.is_(True),
+            )
+        )
+        if org and has_feature(org.plan, PlanFeature.SSO):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    f"{domain} requires single sign-on. "
+                    "Please sign in with Google instead of a password."
+                ),
+            )
+
     # ── Registration ──────────────────────────────────────────────────────────
     async def register(self, data: RegisterRequest) -> dict:
         """Create an unverified user and send an OTP to their email."""
+        await self._reject_if_sso_enforced(data.email.lower())
         existing = await self.db.scalar(
             select(User).where(User.email == data.email.lower(), User.deleted_at.is_(None))
         )
@@ -97,7 +180,7 @@ class AuthService:
         )
         self.db.add(record)
         await self.db.flush()
-        send_otp_email(email, name, otp)
+        await send_otp_email(email, name, otp)
 
     async def verify_otp(self, data: VerifyOTPRequest) -> TokenResponse:
         """Verify the 6-digit OTP, mark user as verified, return tokens."""
@@ -141,7 +224,7 @@ class AuthService:
         user.is_verified = True
         await self.db.flush()
 
-        send_welcome_email(user.email, user.full_name)
+        await send_welcome_email(user.email, user.full_name)
         logger.info("auth.verified", user_id=str(user.id))
         return await self._issue_tokens(user)
 
@@ -150,7 +233,7 @@ class AuthService:
             select(User).where(User.email == email.lower(), User.deleted_at.is_(None))
         )
         if not user:
-            return  # Silent — don't reveal whether account exists
+            return  # Silent - don't reveal whether account exists
         await self._create_and_send_otp(email.lower(), user.full_name)
         logger.info("auth.otp_resent", email=email)
 
@@ -164,16 +247,22 @@ class AuthService:
 
     # ── Login ─────────────────────────────────────────────────────────────────
     async def login(self, data: LoginRequest) -> TokenResponse:
+        email = data.email.lower()
+        await self._reject_if_sso_enforced(email)
+        _check_login_rate_limit(email)
+
         user = await self.db.scalar(
-            select(User).where(User.email == data.email.lower(), User.deleted_at.is_(None))
+            select(User).where(User.email == email, User.deleted_at.is_(None))
         )
         invalid_exc = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password.",
         )
         if not user or not user.password_hash:
+            _record_failed_login(email)
             raise invalid_exc
         if not verify_password(data.password, user.password_hash):
+            _record_failed_login(email)
             raise invalid_exc
         if not user.is_verified:
             raise HTTPException(
@@ -181,6 +270,7 @@ class AuthService:
                 detail="Please verify your email first.",
             )
 
+        _clear_login_rate_limit(email)
         user.last_seen_at = datetime.now(tz=UTC)
         logger.info("auth.login", user_id=str(user.id))
         return await self._issue_tokens(user, long_lived=data.remember_me)
@@ -221,7 +311,7 @@ class AuthService:
             select(User).where(User.email == data.email.lower(), User.deleted_at.is_(None))
         )
         if not user:
-            return  # Silent — don't reveal existence
+            return  # Silent - don't reveal existence
 
         raw_token = secrets.token_urlsafe(48)
         record = PasswordResetToken(
@@ -233,7 +323,7 @@ class AuthService:
         await self.db.flush()
 
         reset_url = f"{settings.FRONTEND_URL}/reset-password/{raw_token}"
-        send_password_reset_email(user.email, user.full_name, reset_url)
+        await send_password_reset_email(user.email, user.full_name, reset_url)
         logger.info("auth.password_reset_requested", user_id=str(user.id))
 
     async def reset_password(self, data: ResetPasswordRequest) -> None:
@@ -275,7 +365,7 @@ class AuthService:
             )
         )
         if not user:
-            # Fall back to matching by email — links OAuth to existing account
+            # Fall back to matching by email - links OAuth to existing account
             user = await self.db.scalar(
                 select(User).where(User.email == info.email.lower(), User.deleted_at.is_(None))
             )
@@ -300,7 +390,7 @@ class AuthService:
             )
             self.db.add(user)
             await self.db.flush()
-            send_welcome_email(user.email, user.full_name)
+            await send_welcome_email(user.email, user.full_name)
 
         user.last_seen_at = datetime.now(tz=UTC)
         logger.info("auth.oauth", provider=info.provider, user_id=str(user.id))

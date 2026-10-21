@@ -1,310 +1,1117 @@
-{% extends "base.html" %}
-{% block title %}Discover Events — Heelo{% endblock %}
-{% block meta_description %}Find and register for events happening near you and across Africa.{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="/static/css/dashboard.css">
+{% extends "base.html" %} {% block title %}Discover Events | Heelo{% endblock %}
+{% block meta_description %}Find and register for events happening near you and
+across Africa.{% endblock %} {% block head %}
 <style>
-  body { background: var(--bg-secondary); }
-
-  .ev-nav {
-    position: sticky; top: 0; z-index: 40;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-  }
-  .ev-nav-inner { display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px; }
-  .ev-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
-  .ev-nav-logo span { color: var(--cyan-dark, #00b3a9); }
-  .ev-nav-links { display: flex; gap: 4px; margin-left: 16px; }
-  .ev-nav-links a { font-size: 13.5px; font-weight: 500; padding: 5px 12px; border-radius: 7px; text-decoration: none; color: var(--text-muted); transition: background 0.12s, color 0.12s; }
-  .ev-nav-links a:hover, .ev-nav-links a.active { background: var(--bg-secondary); color: var(--text-primary); }
-  .ev-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-  .ev-btn-ghost { padding: 6px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; text-decoration: none; color: var(--text-primary); border: 1px solid var(--border-light); }
-  .ev-btn-primary { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--text-primary); color: #fff; }
-
-  /* Mobile menu toggle — same pattern as the homepage nav */
-  .ev-hamburger {
-    display: none; flex-direction: column; justify-content: center; gap: 5px;
-    background: none; border: none; cursor: pointer; padding: 6px; margin-left: 4px;
-  }
-  .ev-hamburger span {
-    display: block; width: 20px; height: 1.5px; background: var(--text-primary);
-    transition: transform 200ms, opacity 200ms; border-radius: 2px;
-  }
-  .ev-hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-  .ev-hamburger.open span:nth-child(2) { opacity: 0; }
-  .ev-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-  .ev-mobile-menu {
-    display: none; flex-direction: column;
-    background: #fff; border-bottom: 1px solid var(--border-light);
-    padding: 8px 24px 16px;
-  }
-  .ev-mobile-menu.open { display: flex; }
-  .ev-mobile-menu a {
-    font-size: 15px; font-weight: 500; color: var(--text-primary); text-decoration: none;
-    padding: 13px 0; border-bottom: 1px solid var(--border-light);
-  }
-  .ev-mobile-menu a:last-child { border-bottom: none; }
-  .ev-mobile-cta {
-    margin-top: 8px; background: var(--text-primary) !important; color: #fff !important;
-    border-radius: 10px; padding: 13px 20px !important; text-align: center;
-    font-weight: 600 !important; border-bottom: none !important;
+  body {
+    background: var(--bg-secondary);
   }
 
-  @media (max-width: 768px) {
-    .ev-nav-links { display: none; }
-    .ev-hamburger { display: flex; }
+  .ev-hero {
+    padding: 130px 24px 48px;
+    text-align: center;
+    max-width: 660px;
+    margin: 0 auto;
   }
-
-  .ev-hero { padding: 60px 24px 48px; text-align: center; max-width: 660px; margin: 0 auto; }
-  .ev-hero h1 { font-family: var(--font-serif); font-size: clamp(28px, 5vw, 44px); font-weight: 700; margin-bottom: 12px; line-height: 1.15; }
-  .ev-hero p { color: var(--text-muted); font-size: 16px; line-height: 1.6; }
+  .ev-hero h1 {
+    font-family: var(--font-serif);
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 700;
+    margin-bottom: 12px;
+    line-height: 1.15;
+  }
+  .ev-hero p {
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1.6;
+  }
 
   .ev-search-bar {
-    max-width: 860px; margin: 0 auto 32px; padding: 0 24px;
-    display: flex; gap: 10px; flex-wrap: wrap;
+    max-width: 1100px;
+    margin: 0 auto 32px;
+    padding: 0 24px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-sizing: border-box;
   }
   .ev-search-input {
-    flex: 1; min-width: 200px; position: relative;
+    flex: 1 1 240px;
+    min-width: 180px;
+    position: relative;
   }
   .ev-search-input input {
-    width: 100%; padding: 10px 14px 10px 40px;
-    border: 1.5px solid var(--border-light); border-radius: 10px;
-    background: #fff; font-size: 14px; font-family: inherit;
-    outline: none; transition: border-color 0.15s; color: var(--text-primary);
+    width: 100%;
+    height: 46px;
+    padding: 0 16px 0 42px;
+    border: 1.5px solid var(--border-light, #efeae3);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition:
+      border-color 0.18s ease,
+      box-shadow 0.18s ease;
+    color: var(--text-primary);
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   }
-  .ev-search-input input:focus { border-color: var(--cyan); }
-  .ev-search-input .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .ev-search-input input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+  }
+  .ev-search-input .icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
   .ev-filter-select {
-    padding: 10px 12px; border: 1.5px solid var(--border-light); border-radius: 10px;
-    background: #fff; font-size: 13.5px; font-family: inherit; color: var(--text-primary);
-    outline: none; cursor: pointer; transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: auto !important;
+    flex: 0 0 auto;
+    height: 46px;
+    min-width: 130px;
+    max-width: 180px;
+    padding: 0 38px 0 16px;
+    border: 1.5px solid var(--border-light, #efeae3);
+    border-radius: 10px;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2356625C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 14px 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--text-primary);
+    outline: none;
+    cursor: pointer;
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: all 0.16s ease;
   }
-  .ev-filter-select:focus { border-color: var(--cyan); }
+  .ev-filter-select::-ms-expand {
+    display: none;
+  }
+  .ev-filter-select:hover {
+    border-color: rgba(19, 27, 23, 0.35);
+    background-color: #fafaf8;
+  }
+  .ev-filter-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.14);
+    background-color: #fff;
+  }
+  .ev-filter-select option {
+    background: #ffffff;
+    color: var(--text-primary);
+  }
   .ev-search-btn {
-    padding: 10px 22px; background: var(--text-primary); color: #fff;
-    border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
-    cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    flex: 0 0 auto;
+    height: 46px;
+    padding: 0 24px;
+    background: var(--primary-dark, #131b17);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition:
+      opacity 0.15s,
+      transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    white-space: nowrap;
   }
-  .ev-search-btn:hover { opacity: 0.85; }
-
-  .ev-active-filters { max-width: 860px; margin: 0 auto 20px; padding: 0 24px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .ev-filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(0,255,243,0.08); border: 1px solid rgba(0,255,243,0.3); border-radius: 100px; font-size: 12.5px; font-weight: 600; color: var(--cyan-dark, #00b3a9); }
-  .ev-filter-chip a { color: inherit; text-decoration: none; font-size: 13px; opacity: 0.7; }
-
-  .ev-results-header { max-width: 1100px; margin: 0 auto 20px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
-  .ev-results-count { font-size: 13.5px; color: var(--text-muted); }
-
-  /* Bento grid — fixed column count (instead of auto-fill) so the explicit
-     spans below land predictably, with dense packing to fill any gaps left
-     by the wide/tall cards. */
-  .ev-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 230px;
-    grid-auto-flow: dense; gap: 20px; max-width: 1100px; margin: 0 auto; padding: 0 24px;
+  .ev-search-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
   }
-  .ev-card:nth-child(6n+1) { grid-column: span 2; grid-row: span 2; }
-  .ev-card:nth-child(6n+4) { grid-row: span 2; }
-  .ev-card:nth-child(6n)   { grid-column: span 2; }
 
   @media (max-width: 860px) {
-    .ev-grid { grid-template-columns: repeat(2, 1fr); }
-    .ev-card:nth-child(6n+1) { grid-column: span 2; }
-    .ev-card:nth-child(6n)   { grid-column: span 2; }
+    .ev-search-bar {
+      flex-wrap: wrap;
+    }
+    .ev-search-input {
+      flex: 1 1 100%;
+    }
+    .ev-filter-select {
+      flex: 1 1 calc(33.333% - 8px);
+      width: auto !important;
+      max-width: none;
+      min-width: 100px;
+    }
+    .ev-search-btn {
+      flex: 1 1 100%;
+    }
   }
-  @media (max-width: 560px) {
-    .ev-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
-    .ev-card:nth-child(n) { grid-column: span 1 !important; grid-row: span 1 !important; }
-    /* .ev-card-img fills its height via flex:1 against the 230px row height
-       set above — with grid-auto-rows switched to auto here there's no
-       height left to fill into, so it'd collapse to 0. Fall back to a
-       fixed aspect-ratio instead. */
-    .ev-card-img { flex: none; aspect-ratio: 4/3; }
+  @media (max-width: 520px) {
+    .ev-filter-select {
+      flex: 1 1 100%;
+    }
+  }
+
+  .ev-active-filters {
+    max-width: 860px;
+    margin: 0 auto 20px;
+    padding: 0 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .ev-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(232, 89, 56, 0.08);
+    border: 1px solid rgba(232, 89, 56, 0.25);
+    border-radius: 9999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--primary);
+  }
+  .ev-filter-chip a {
+    color: inherit;
+    text-decoration: none;
+    font-size: 13px;
+    opacity: 0.7;
+  }
+
+  .ev-results-header {
+    max-width: 1240px;
+    margin: 0 auto 20px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .ev-results-count {
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+
+  /* Quick nav pills */
+  .ev-quick-nav {
+    max-width: 1240px;
+    margin: 0 auto 36px;
+    padding: 0 24px;
+  }
+  @media (min-width: 1380px) {
+    .ev-quick-nav {
+      max-width: 1400px;
+    }
+  }
+  .ev-quick-nav-pills {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
+  .ev-quick-nav-pills::-webkit-scrollbar {
+    display: none;
+  }
+  .ev-quick-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 18px;
+    background: #ffffff;
+    border: 1.5px solid var(--border-light, #e4e4e7);
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #131b17);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.16s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+  .ev-quick-pill .material-symbols-outlined {
+    font-size: 16px;
+    color: var(--cyan, #e85938);
+  }
+  .ev-quick-pill:hover {
+    border-color: var(--text-primary, #131b17);
+    background: var(--bg-secondary, #f4f4f5);
+    transform: translateY(-1px);
+  }
+
+  /* Section blocks & 4-in-a-row carousel */
+  .ev-section-block {
+    max-width: 1240px;
+    margin: 0 auto 60px;
+    padding: 0 24px;
+    scroll-margin-top: 90px;
+  }
+  @media (min-width: 1380px) {
+    .ev-section-block {
+      max-width: 1400px;
+    }
+  }
+  .ev-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .ev-section-title {
+    font-size: clamp(20px, 2.4vw, 24px);
+    font-weight: 700;
+    color: #131b17;
+    margin: 0;
+    letter-spacing: -0.015em;
+  }
+
+  .ev-carousel-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ev-nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-light, #e4e4e7);
+    background: #ffffff;
+    color: var(--text-muted, #71717a);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    padding: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
+  .ev-nav-btn:hover {
+    border-color: var(--text-primary, #131b17);
+    color: var(--text-primary, #131b17);
+    background: var(--bg-secondary, #f4f4f5);
+    transform: scale(1.05);
+  }
+  .ev-nav-btn:active {
+    transform: scale(0.95);
+  }
+
+  .ev-carousel-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+  }
+  .ev-carousel-track {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 4px 2px 14px;
+    margin: 0 -2px;
+  }
+  .ev-carousel-track::-webkit-scrollbar {
+    display: none;
+  }
+  /* Exactly 4 items visible per row on desktop */
+  .ev-carousel-item {
+    flex: 0 0 calc((100% - 60px) / 4);
+    min-width: calc((100% - 60px) / 4);
+    max-width: calc((100% - 60px) / 4);
+    scroll-snap-align: start;
+    box-sizing: border-box;
+  }
+  @media (max-width: 1100px) {
+    .ev-carousel-item {
+      flex: 0 0 calc((100% - 36px) / 3);
+      min-width: calc((100% - 36px) / 3);
+      max-width: calc((100% - 36px) / 3);
+    }
+  }
+  @media (max-width: 768px) {
+    .ev-carousel-item {
+      flex: 0 0 calc((100% - 16px) / 2);
+      min-width: calc((100% - 16px) / 2);
+      max-width: calc((100% - 16px) / 2);
+    }
+  }
+  @media (max-width: 480px) {
+    .ev-carousel-item {
+      flex: 0 0 85%;
+      min-width: 85%;
+      max-width: 85%;
+    }
+  }
+
+  /* Single View All Events Button after all categories */
+  .ev-all-events-cta-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 32px auto 48px;
+    padding: 0 24px;
+    max-width: 1240px;
+  }
+  .ev-main-view-all-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 14px 44px;
+    border-radius: 9999px;
+    background: #131b17;
+    border: 2px solid #131b17;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 14px rgba(19, 27, 23, 0.16);
+  }
+  .ev-main-view-all-btn:hover {
+    background: #233029;
+    border-color: #233029;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(19, 27, 23, 0.22);
+  }
+  .ev-main-view-all-btn:hover svg {
+    transform: translateX(4px);
+  }
+  .ev-main-view-all-btn svg {
+    stroke: #ffffff;
+    transition: transform 0.2s ease;
+  }
+  .ev-main-view-all-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  /* Filtered view specific styles */
+  .ev-filtered-view-wrap {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  @media (min-width: 1380px) {
+    .ev-filtered-view-wrap {
+      max-width: 1400px;
+    }
+  }
+
+  .ev-results-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .ev-results-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-muted, #71717a);
+    margin-bottom: 6px;
+  }
+  .ev-results-breadcrumb a {
+    color: var(--text-muted, #71717a);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .ev-results-breadcrumb a:hover {
+    color: var(--text-primary, #131b17);
+    text-decoration: underline;
+  }
+  .ev-results-breadcrumb .ev-bc-sep {
+    color: #d4d4d8;
+    font-size: 11px;
+  }
+  .ev-results-breadcrumb .ev-bc-cur {
+    color: var(--text-primary, #131b17);
+    font-weight: 600;
+  }
+  .ev-results-title {
+    font-size: clamp(24px, 2.6vw, 28px);
+    font-weight: 700;
+    color: #131b17;
+    margin: 0 0 4px;
+    letter-spacing: -0.015em;
+  }
+  .ev-results-subtitle {
+    font-size: 14px;
+    color: var(--text-muted, #71717a);
+    margin: 0;
+  }
+  .ev-results-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ev-back-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 15px;
+    border-radius: 9999px;
+    border: 1.5px solid var(--border-light, #e4e4e7);
+    background: #ffffff;
+    color: var(--text-primary, #131b17);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+  .ev-back-pill:hover {
+    background: var(--bg-secondary, #f4f4f5);
+    border-color: var(--text-primary, #131b17);
+    transform: translateX(-2px);
+  }
+
+  /* Multi-column uniform grid: 4 columns on desktop, 5 columns on widescreen */
+  .ev-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 28px 20px;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .ev-section-block .ev-grid,
+  .ev-filtered-view-wrap .ev-grid {
+    padding: 0;
+  }
+  @media (min-width: 1380px) {
+    .ev-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      max-width: 1400px;
+    }
+    .ev-results-header {
+      max-width: 1400px;
+    }
+  }
+  @media (max-width: 1080px) {
+    .ev-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px 18px;
+    }
+  }
+  @media (max-width: 768px) {
+    .ev-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px 14px;
+    }
+  }
+  @media (max-width: 480px) {
+    .ev-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
   }
 
   .ev-card {
-    background: transparent; border: none; border-radius: 0;
-    text-decoration: none; color: inherit; display: flex; flex-direction: column;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .ev-card-img { width: 100%; flex: 1; min-height: 0; background: linear-gradient(135deg,#0A0A0A,#1a1a1a); position: relative; overflow: hidden; border-radius: 10px; }
-  .ev-card-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; transition: transform 0.35s ease; }
-  .ev-card:hover .ev-card-img img { transform: scale(1.035); }
-  .ev-card-img::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.05); border-radius: 10px; pointer-events: none; }
-  .ev-card-img-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-size: 32px; font-weight: 700; color: rgba(255,255,255,0.12); z-index: 1; }
-  .ev-card-badge { position: absolute; top: 12px; left: 12px; z-index: 2; font-size: 10.5px; font-weight: 600; padding: 4px 11px; border-radius: 100px; background: var(--cyan); border: none; color: #000; letter-spacing: 0.02em; text-transform: capitalize; }
-  .ev-card-body { flex-shrink: 0; padding: 14px 2px 0; }
+  .ev-card:hover {
+    transform: translateY(-3px);
+  }
+  .ev-card-img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f4f4f5;
+  }
+  .ev-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 12px;
+    transition: transform 0.35s ease;
+  }
+  .ev-card:hover .ev-card-img img {
+    transform: scale(1.03);
+  }
+  .ev-card-img-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #18181b, #27272a);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 28px;
+    font-weight: 700;
+  }
+  .ev-card-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3.5px 11px;
+    border-radius: 9999px;
+    background: rgba(19, 27, 23, 0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #ffffff;
+    letter-spacing: 0.01em;
+  }
+  .ev-badge-dot {
+    display: inline-block;
+    width: 6.5px;
+    height: 6.5px;
+    border-radius: 50%;
+    background: #10b981;
+    margin-right: 5px;
+    vertical-align: 1px;
+  }
+  .ev-card-body {
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ev-card-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+  }
+  .ev-verified-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
   .ev-card-title {
-    font-family: var(--font-serif); font-size: 18px; font-weight: 700; letter-spacing: -0.01em;
-    line-height: 1.25; margin-bottom: 8px;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    font-size: 16.5px;
+    font-weight: 700;
+    color: #131b17;
+    line-height: 1.32;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.015em;
+    min-width: 0;
   }
-  .ev-card-meta { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
-  .ev-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
-  .ev-card-location { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
+  .ev-card-location {
+    font-size: 14px;
+    color: #52525b;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+  }
+  .ev-card-date {
+    font-size: 13.5px;
+    color: #52525b;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+  }
+  .ev-card-price {
+    margin-top: 4px;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #047857;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    line-height: 1.35;
+  }
+  .ev-card-price-free {
+    color: #047857;
+  }
 
-  .ev-empty { max-width: 420px; margin: 48px auto; text-align: center; padding: 0 24px; }
-  .ev-empty-icon { width: 56px; height: 56px; background: var(--bg-secondary); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-  .ev-empty h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
-  .ev-empty p { color: var(--text-muted); font-size: 14px; line-height: 1.6; }
+  .ev-empty {
+    max-width: 420px;
+    margin: 48px auto;
+    text-align: center;
+    padding: 0 24px;
+  }
+  .ev-empty-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--bg-secondary);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .ev-empty h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .ev-empty p {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
 
-  .ev-pagination { display: flex; gap: 8px; align-items: center; justify-content: center; padding: 40px 24px; }
-  .ev-pagination a { padding: 7px 14px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 13.5px; text-decoration: none; color: var(--text-muted); transition: all 0.12s; background: #fff; }
-  .ev-pagination a:hover { border-color: var(--text-primary); color: var(--text-primary); }
-  .ev-pagination .current { background: var(--text-primary); color: #fff; border-color: var(--text-primary); padding: 7px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 700; }
+  .ev-pagination {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+  }
+  .ev-pagination a {
+    padding: 7px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 13.5px;
+    text-decoration: none;
+    color: var(--text-muted);
+    transition: all 0.12s;
+    background: #fff;
+  }
+  .ev-pagination a:hover {
+    border-color: var(--text-primary);
+    color: var(--text-primary);
+  }
+  .ev-pagination .current {
+    background: var(--text-primary);
+    color: #fff;
+    border-color: var(--text-primary);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+  }
 </style>
-{% endblock %}
-
-{% block body %}
-<!-- Nav -->
-<nav class="ev-nav">
-  <div class="ev-nav-inner">
-    <a href="/" class="ev-nav-logo">heelo<span>.</span></a>
-    <div class="ev-nav-links">
-      <a href="/events" class="active">Events</a>
-      <a href="/vendors">Vendors</a>
-      <a href="/venues">Venues</a>
-    </div>
-    <div class="ev-nav-right">
-      {% if user %}
-      <a href="/home" class="ev-btn-ghost">Dashboard</a>
-      {% else %}
-      <a href="/login" class="ev-btn-ghost">Sign in</a>
-      <a href="/register" class="ev-btn-primary">Sign up</a>
-      {% endif %}
-      <button class="ev-hamburger" id="ev-hamburger" aria-label="Toggle menu">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </div>
-  <div class="ev-mobile-menu" id="ev-mobile-menu">
-    <a href="/events">Events</a>
-    <a href="/vendors">Vendors</a>
-    <a href="/venues">Venues</a>
-    {% if user %}
-    <a href="/home" class="ev-mobile-cta">Dashboard</a>
+{% endblock %} {% macro render_event_card(event) %} {% set price_info =
+event.min_price_info %}
+<a href="/e/{{ event.slug }}" class="ev-card">
+  <div class="ev-card-img">
+    {% if event.cover_image_url %}
+    <img
+      src="{{ event.cover_image_url }}"
+      alt="{{ event.title }}"
+      loading="lazy"
+    />
     {% else %}
-    <a href="/login">Sign in</a>
-    <a href="/register" class="ev-mobile-cta">Sign up →</a>
+    <div class="ev-card-img-placeholder">
+      {{ event.title[0] if event.title else 'E' }}
+    </div>
+    {% endif %} {% if event.is_new %}
+    <span class="ev-card-badge"
+      ><span class="ev-badge-dot"></span>New Event</span
+    >
+    {% elif event.format == 'virtual' %}
+    <span class="ev-card-badge">Virtual</span>
+    {% elif event.format %}
+    <span class="ev-card-badge"
+      >{{ event.format | replace('_', ' ') | title }}</span
+    >
     {% endif %}
   </div>
-</nav>
+  <div class="ev-card-body">
+    <div class="ev-card-title-row">
+      {% if event.is_featured or (event.organization and event.organization.plan
+      != 'free') %}
+      <span class="ev-verified-icon" title="Verified Organizer">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="#7C3AED"
+          style="vertical-align: middle"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path
+            d="m8.5 12 2.5 2.5 4.5-4.5"
+            stroke="#ffffff"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"
+          />
+        </svg>
+      </span>
+      {% endif %}
+      <span class="ev-card-title" title="{{ event.title }}"
+        >{{ event.title }}</span
+      >
+    </div>
+    <div class="ev-card-location">
+      {% if event.format == 'virtual' %} Online {% else %} {{ [event.venue_name,
+      event.venue_city]|reject('none')|join(', ') or event.venue_address or
+      'Location TBA' }} {% endif %}
+    </div>
+    <div class="ev-card-date">{{ event.formatted_date_range }}</div>
+    <div class="ev-card-price">
+      {% if price_info[0] is not none and price_info[0] > 0 %}
+      <svg
+        width="13"
+        height="13"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        style="flex-shrink: 0"
+      >
+        <path
+          d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"
+        />
+        <path d="M13 5v2" />
+        <path d="M13 17v2" />
+        <path d="M13 11v2" />
+      </svg>
+      From {{ '₦' if price_info[1] == 'NGN' else (price_info[1] ~ ' ') }}{{
+      "{:,.2f}".format(price_info[0]) }} {% else %} Free Entry {% endif %}
+    </div>
+  </div>
+</a>
+{% endmacro %} {% block body %} {% include "partials/site_nav.html" %}
 
 <!-- Hero -->
 <div class="ev-hero">
   <h1>Discover events near you</h1>
-  <p>Browse thousands of events across Africa and beyond — concerts, tech meetups, workshops, and more.</p>
+  <p>
+    Browse thousands of events across Africa and beyond: concerts, tech meetups,
+    workshops, and more.
+  </p>
 </div>
 
 <!-- Search & filters -->
 <form method="GET" action="/events" class="ev-search-bar">
+  {% if active_section %}
+  <input type="hidden" name="category_section" value="{{ active_section }}" />
+  {% endif %}
   <div class="ev-search-input">
-    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="search" name="q" placeholder="Search events, cities, categories…" value="{{ q or '' }}">
+    <svg
+      class="icon"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--text-muted)"
+      stroke-width="2"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+    <input
+      type="search"
+      name="q"
+      placeholder="Search events, cities, categories…"
+      value="{{ q or '' }}"
+    />
   </div>
   <select name="city" class="ev-filter-select">
     <option value="">All cities</option>
     {% for c in cities %}
-    <option value="{{ c }}" {% if city == c %}selected{% endif %}>{{ c }}</option>
+    <option value="{{ c }}" {% if city == c %}selected{% endif %}>
+      {{ c }}
+    </option>
     {% endfor %}
   </select>
   <select name="format" class="ev-filter-select">
     <option value="">All formats</option>
-    <option value="in_person" {% if format == 'in_person' %}selected{% endif %}>In person</option>
-    <option value="virtual" {% if format == 'virtual' %}selected{% endif %}>Virtual</option>
-    <option value="hybrid" {% if format == 'hybrid' %}selected{% endif %}>Hybrid</option>
+    <option value="in_person" {% if format == 'in_person' %}selected{% endif %}>
+      In person
+    </option>
+    <option value="virtual" {% if format == 'virtual' %}selected{% endif %}>
+      Virtual
+    </option>
+    <option value="hybrid" {% if format == 'hybrid' %}selected{% endif %}>
+      Hybrid
+    </option>
+  </select>
+  <select name="category" class="ev-filter-select">
+    <option value="">All categories</option>
+    {% for c in categories %}
+    <option value="{{ c.slug }}" {% if category == c.slug %}selected{% endif %}>
+      {{ c.name }}
+    </option>
+    {% endfor %}
   </select>
   <button type="submit" class="ev-search-btn">Search</button>
 </form>
 
-<!-- Active filters -->
-{% if q or city or format %}
-<div class="ev-active-filters">
-  {% if q %}<span class="ev-filter-chip">{{ q }} <a href="?{{ query_string_without('q') }}">×</a></span>{% endif %}
-  {% if city %}<span class="ev-filter-chip">{{ city }} <a href="?{{ query_string_without('city') }}">×</a></span>{% endif %}
-  {% if format %}<span class="ev-filter-chip">{{ format | replace('_', ' ') | title }} <a href="?{{ query_string_without('format') }}">×</a></span>{% endif %}
+{% if not is_filtered_view %}
+<!-- Quick category jump pills -->
+<div class="ev-quick-nav">
+  <div class="ev-quick-nav-pills">
+    {% for section in sections %} {% if section.events %}
+    <a href="#{{ section.anchor }}" class="ev-quick-pill">
+      <span class="material-symbols-outlined">{{ section.icon }}</span> {{
+      section.title }}
+    </a>
+    {% endif %} {% endfor %}
+  </div>
 </div>
-{% endif %}
 
-<!-- Results -->
-<div class="ev-results-header">
-  <span class="ev-results-count">{{ total }} event{{ 's' if total != 1 }} found</span>
-</div>
+<!-- Curated category carousels: 4 in a row with < > navigation -->
+{% for section in sections %} {% if section.events %}
+<section class="ev-section-block" id="{{ section.anchor }}">
+  <div class="ev-section-header">
+    <h2 class="ev-section-title">{{ section.title }}</h2>
+    <div class="ev-carousel-nav">
+      <button
+        type="button"
+        class="ev-nav-btn prev"
+        onclick="scrollCarousel('{{ section.anchor }}', -1)"
+        aria-label="Previous events"
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        class="ev-nav-btn next"
+        onclick="scrollCarousel('{{ section.anchor }}', 1)"
+        aria-label="Next events"
+      >
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </button>
+    </div>
+  </div>
 
-{% if events %}
-<div class="ev-grid">
-  {% for event in events %}
-  <a href="/e/{{ event.slug }}" class="ev-card">
-    <div class="ev-card-img">
-      {% if event.cover_image_url %}
-      <img src="{{ event.cover_image_url }}" alt="{{ event.title }}">
-      {% else %}
-      <div class="ev-card-img-placeholder">{{ event.title[0] }}</div>
-      {% endif %}
-      <span class="ev-card-badge">{{ event.format | replace('_', ' ') }}</span>
+  <div class="ev-carousel-container">
+    <div class="ev-carousel-track" id="carousel-{{ section.anchor }}">
+      {% for event in section.events %}
+      <div class="ev-carousel-item">{{ render_event_card(event) }}</div>
+      {% endfor %}
     </div>
-    <div class="ev-card-body">
-      <div class="ev-card-title">{{ event.title }}</div>
-      <div class="ev-card-meta">
-        {% if event.start_datetime %}{{ event.start_datetime.strftime('%a, %d %b %Y · %H:%M') }}{% endif %}
-      </div>
-      <div class="ev-card-footer">
-        <div class="ev-card-location">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          {{ event.venue_city or ('Online' if event.format == 'virtual' else 'TBA') }}
-        </div>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>
-    </div>
+  </div>
+</section>
+{% endif %} {% endfor %}
+
+<!-- Single View All Events Button after all categories -->
+<div class="ev-all-events-cta-wrap">
+  <a href="/events?view=all" class="ev-main-view-all-btn">
+    <span>View All Events</span>
+    {% if total_all_events %}
+    <span class="ev-main-view-all-badge">{{ total_all_events }}</span>
+    {% endif %}
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M5 12h14" />
+      <path d="m12 5 7 7-7 7" />
+    </svg>
   </a>
-  {% endfor %}
 </div>
 
-<!-- Pagination -->
-{% if total_pages > 1 %}
-<div class="ev-pagination">
-  {% if page > 1 %}
-  <a href="?{{ query_string_with_page(page - 1) }}">← Prev</a>
-  {% endif %}
-  {% for p in range(1, total_pages + 1) %}
-    {% if p == page %}
+{% else %}
+<!-- Filtered category / Search results view / All Events -->
+<div class="ev-filtered-view-wrap">
+  <!-- Active filters -->
+  <div class="ev-active-filters" style="padding: 0; margin-bottom: 16px">
+    {% if is_view_all %}
+    <span class="ev-filter-chip">
+      <span
+        class="material-symbols-outlined"
+        style="font-size: 14px; vertical-align: -2px"
+        >calendar_month</span
+      >
+      All Events
+      <a href="/events">×</a>
+    </span>
+    {% elif active_section_info %}
+    <span class="ev-filter-chip">
+      <span
+        class="material-symbols-outlined"
+        style="font-size: 14px; vertical-align: -2px"
+        >{{ active_section_info.icon }}</span
+      >
+      {{ active_section_info.title }}
+      <a href="?{{ query_string_without('category_section') }}">×</a>
+    </span>
+    {% endif %} {% if q %}<span class="ev-filter-chip"
+      >{{ q }} <a href="?{{ query_string_without('q') }}">×</a></span
+    >{% endif %} {% if city %}<span class="ev-filter-chip"
+      >{{ city }} <a href="?{{ query_string_without('city') }}">×</a></span
+    >{% endif %} {% if format %}<span class="ev-filter-chip"
+      >{{ format | replace('_', ' ') | title }}
+      <a href="?{{ query_string_without('format') }}">×</a></span
+    >{% endif %} {% if category %}<span class="ev-filter-chip"
+      >{{ category_name }}
+      <a href="?{{ query_string_without('category') }}">×</a></span
+    >{% endif %}
+  </div>
+
+  <div class="ev-results-header">
+    <div>
+      <div class="ev-results-breadcrumb">
+        <a href="/events">Events</a>
+        <span class="ev-bc-sep">/</span>
+        <span class="ev-bc-cur">
+          {% if is_view_all %}All Events{% elif active_section_info %}{{
+          active_section_info.title }}{% elif q %}Search: "{{ q }}"{% elif
+          category_name %}{{ category_name }}{% else %}All{% endif %}
+        </span>
+      </div>
+      <h2 class="ev-results-title">
+        {% if is_view_all %} All Events {% elif active_section_info %} {{
+        active_section_info.title }} {% elif q %} Search: "{{ q }}" {% elif
+        category_name %} {{ category_name }} Events {% else %} Events {% endif
+        %}
+      </h2>
+      <p class="ev-results-subtitle">
+        {% if is_view_all %} Browse all upcoming events across Africa and beyond
+        {% elif active_section_info %} {{ active_section_info.subtitle }} {%
+        else %} Browse all matching events on Heelo {% endif %}
+      </p>
+    </div>
+    <div class="ev-results-header-right">
+      <span class="ev-results-count"
+        >{{ total }} event{{ 's' if total != 1 }} found</span
+      >
+      <a
+        href="/events"
+        class="ev-back-pill"
+        title="Return to categorized event rows"
+      >
+        <svg
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <path d="M19 12H5" />
+          <path d="m12 19-7-7 7-7" />
+        </svg>
+        <span>All Categories</span>
+      </a>
+    </div>
+  </div>
+
+  {% if events %}
+  <div class="ev-grid">
+    {% for event in events %} {{ render_event_card(event) }} {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="ev-pagination">
+    {% if page > 1 %}
+    <a href="?{{ query_string_with_page(page - 1) }}">← Prev</a>
+    {% endif %} {% for p in range(1, total_pages + 1) %} {% if p == page %}
     <span class="current">{{ p }}</span>
     {% elif (p - page)|abs <= 2 %}
     <a href="?{{ query_string_with_page(p) }}">{{ p }}</a>
+    {% endif %} {% endfor %} {% if page < total_pages %}
+    <a href="?{{ query_string_with_page(page + 1) }}">Next →</a>
     {% endif %}
-  {% endfor %}
-  {% if page < total_pages %}
-  <a href="?{{ query_string_with_page(page + 1) }}">Next →</a>
+  </div>
+  {% endif %} {% else %}
+  <div class="ev-empty">
+    <div class="ev-empty-icon">
+      <svg
+        width="26"
+        height="26"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="var(--text-muted)"
+        stroke-width="1.5"
+      >
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+    </div>
+    <h2>No events found</h2>
+    <p>Try adjusting your search or filters, or view all categories.</p>
+    <a href="/events" class="ev-main-view-all-btn" style="margin-top: 14px"
+      >Browse all categories</a
+    >
+  </div>
   {% endif %}
 </div>
 {% endif %}
 
-{% else %}
-<div class="ev-empty">
-  <div class="ev-empty-icon">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-  </div>
-  <h2>No events found</h2>
-  <p>Try adjusting your search or filters. New events are added every day.</p>
-</div>
-{% endif %}
-
-<div style="height: 60px;"></div>
+<div style="height: 60px"></div>
 
 <script>
-(function () {
-  var btn = document.getElementById('ev-hamburger');
-  var menu = document.getElementById('ev-mobile-menu');
-  if (btn && menu) {
-    btn.addEventListener('click', function () {
-      btn.classList.toggle('open');
-      menu.classList.toggle('open');
-    });
-    menu.querySelectorAll('a').forEach(function (a) {
-      a.addEventListener('click', function () {
-        btn.classList.remove('open');
-        menu.classList.remove('open');
-      });
+  function scrollCarousel(sectionId, direction) {
+    const track = document.getElementById("carousel-" + sectionId);
+    if (!track) return;
+    const item = track.querySelector(".ev-carousel-item");
+    const cardWidth = item ? item.offsetWidth : 280;
+    const gap = 20;
+    // Scroll by 4 cards or container width
+    const scrollDistance =
+      (cardWidth + gap) *
+      Math.max(1, Math.floor(track.clientWidth / (cardWidth + gap)));
+    track.scrollBy({
+      left: direction * scrollDistance,
+      behavior: "smooth",
     });
   }
-})();
 </script>
+
+<div style="height: 60px"></div>
 {% endblock %}

@@ -1,6 +1,6 @@
 """Resolve an organizer-pasted stream URL (YouTube, Vimeo, a raw HLS
 playlist, or any other embeddable link) into what the live page needs to
-render a player. Pure function, no I/O — easy to unit test and reuse from
+render a player. Pure function, no I/O - easy to unit test and reuse from
 both the page route and anywhere else that needs it.
 """
 

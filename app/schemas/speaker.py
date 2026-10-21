@@ -40,7 +40,7 @@ class SpeakerOut(BaseModel):
 
 
 class EventSpeakerLinkRequest(BaseModel):
-    """Add a person to an event's People roster — either by linking an
+    """Add a person to an event's People roster - either by linking an
     existing org speaker (`speaker_id`) or by creating a new one inline
     (`name` + optional profile fields), matching how the event form's
     "add person" UI works (no separate reuse-existing-speaker picker yet)."""

@@ -1,7 +1,309 @@
 {% extends "base.html" %}
 
+{% block robots_meta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
 {% block head %}
-<link rel="stylesheet" href="/static/css/dashboard.css">
+<link rel="stylesheet" href="/static/css/dashboard.css?v=7">
+<style>
+/* ── Centered Modal Design System (Vendor Hub Style) ── */
+.vd-modal-overlay { 
+  position: fixed; 
+  inset: 0; 
+  background: rgba(19, 27, 23, 0.65); 
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  z-index: 99999; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  padding: 20px; 
+  box-sizing: border-box;
+}
+.vd-modal { 
+  background: #ffffff; 
+  width: 100%; 
+  max-width: 560px; 
+  max-height: 90vh; 
+  overflow-y: auto; 
+  border-radius: 20px; 
+  padding: 32px; 
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.24); 
+  position: relative;
+  box-sizing: border-box;
+  animation: vdModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes vdModalFadeIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.vd-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.vd-modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-primary, #131B17);
+  letter-spacing: -0.3px;
+}
+.vd-modal-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  color: var(--text-muted, #71717A);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 140ms ease;
+}
+.vd-modal-close:hover {
+  color: var(--text-primary, #131B17);
+  background: var(--bg-secondary, #FAF7F2);
+}
+.vd-form-group {
+  margin-bottom: 18px;
+}
+.vd-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, #131B17);
+  margin-bottom: 7px;
+}
+.vd-form-input, .vd-form-textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-light, #EFEAE3);
+  background: #ffffff;
+  padding: 11px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-primary, #131B17);
+  outline: none;
+  box-sizing: border-box;
+  transition: all 160ms ease;
+}
+.vd-form-input:focus, .vd-form-textarea:focus {
+  border-color: var(--cyan, #E85938);
+  box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+}
+
+/* ── Select Dropdown Menu & Select Event Field Bar ── */
+select,
+.form-select,
+.vd-form-select,
+.vd-event-select,
+.aff-event-select,
+.filter-select,
+.ev-filter-select,
+.vm-filter-select,
+.goal-select,
+.plan-select,
+.bc-select {
+  height: 44px;
+  min-height: 44px;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 0 42px 0 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-light, #EFEAE3);
+  background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2356625C' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 14px center;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  color: var(--text-primary, #131B17);
+  outline: none;
+  box-sizing: border-box;
+  font-family: inherit;
+  box-shadow: 0 1px 2px rgba(19, 27, 23, 0.03);
+  transition: all 160ms ease;
+}
+.form-select,
+.vd-form-select,
+.vd-event-select {
+  width: 100%;
+}
+.ev-filter-select,
+.vm-filter-select,
+.filter-select {
+  width: auto;
+  max-width: 100%;
+}
+select::-ms-expand,
+.form-select::-ms-expand {
+  display: none;
+}
+select:hover,
+.form-select:hover,
+.vd-form-select:hover,
+.vd-event-select:hover,
+.aff-event-select:hover,
+.filter-select:hover,
+.ev-filter-select:hover,
+.vm-filter-select:hover {
+  border-color: rgba(19, 27, 23, 0.28);
+  background-color: var(--bg-secondary, #FAF7F2);
+}
+select:focus,
+.form-select:focus,
+.vd-form-select:focus,
+.vd-event-select:focus,
+.aff-event-select:focus,
+.filter-select:focus,
+.ev-filter-select:focus,
+.vm-filter-select:focus {
+  border-color: var(--cyan, #E85938);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+}
+.vd-event-select {
+  font-weight: 600;
+}
+select option,
+.form-select option,
+.vd-form-select option,
+.vd-event-select option,
+.aff-event-select option,
+.filter-select option,
+.ev-filter-select option,
+.vm-filter-select option {
+  font-size: 13.5px;
+  color: var(--text-primary, #131B17);
+  background: #ffffff;
+  padding: 8px 12px;
+}
+
+/* ── Page-Level Event Filter Toolbar ── */
+.aff-event-filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.aff-filter-label {
+  font-size: 12.5px;
+  color: var(--text-muted, #56625C);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.aff-event-select {
+  height: 38px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 36px 0 14px;
+  border-radius: 9px;
+  border: 1.5px solid var(--border-light, #EFEAE3);
+  background: var(--bg-secondary, #FAF7F2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2356625C' stroke-width='2.2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  color: var(--text-primary, #131B17);
+  min-width: 190px;
+  max-width: 290px;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+  font-family: inherit;
+  outline: none;
+  transition: all 160ms ease;
+}
+.aff-event-select:hover {
+  border-color: rgba(19, 27, 23, 0.25);
+  background-color: #ffffff;
+}
+.aff-event-select:focus {
+  border-color: var(--cyan, #E85938);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+}
+.aff-event-select.active {
+  border-color: var(--cyan, #E85938);
+  background-color: rgba(232, 89, 56, 0.06);
+  color: var(--cyan-dark, #C84729);
+  font-weight: 700;
+}
+.vd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill, 9999px);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+  box-sizing: border-box;
+}
+.vd-btn:hover {
+  transform: translateY(-1px);
+}
+.vd-btn:active {
+  transform: scale(0.98);
+}
+.vd-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.25);
+}
+.vd-btn:disabled, .vd-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+  box-shadow: none !important;
+}
+.vd-btn-accent {
+  background: var(--primary, #E85938);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(232, 89, 56, 0.2);
+}
+.vd-btn-accent:hover {
+  background: var(--primary-hover, #D44727);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(232, 89, 56, 0.28);
+}
+.vd-btn-accent:active {
+  background: #C84729;
+}
+.vd-btn-primary {
+  background: var(--primary-dark, #131B17);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(19, 27, 23, 0.12);
+}
+.vd-btn-primary:hover {
+  background: #233029;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(19, 27, 23, 0.2);
+}
+.vd-btn-primary:active {
+  background: #0E1411;
+}
+.vd-btn-outline, .vd-btn-secondary {
+  background: #ffffff;
+  border: 1.5px solid var(--border-light, #EFEAE3);
+  color: var(--text-primary, #131B17);
+}
+.vd-btn-outline:hover, .vd-btn-secondary:hover {
+  background: var(--bg-secondary, #FAF7F2);
+  border-color: rgba(19, 27, 23, 0.25);
+  box-shadow: 0 2px 8px rgba(19, 27, 23, 0.05);
+}
+.vd-btn-outline:active, .vd-btn-secondary:active {
+  background: #EFEAE3;
+}
+</style>
 {% endblock %}
 
 {% block body %}
@@ -91,8 +393,38 @@
     </div>
     {% endif %}
 
+    <!-- Contextual dashboard menu tabs -->
+    {% set _active = active_page | default('') %}
+    <nav class="dash-topnav-links" aria-label="Dashboard navigation">
+      {% if org %}
+      <a href="/org/{{ org.slug }}" class="dash-topnav-link {% if _active == 'overview' %}active{% endif %}">Overview</a>
+      <a href="/org/{{ org.slug }}/events" class="dash-topnav-link {% if _active == 'events' %}active{% endif %}">Events</a>
+      <a href="/org/{{ org.slug }}/contacts" class="dash-topnav-link {% if _active == 'contacts' %}active{% endif %}">Contacts</a>
+      <a href="/org/{{ org.slug }}/finance" class="dash-topnav-link {% if _active == 'finance' %}active{% endif %}">Finance</a>
+      <a href="/org/{{ org.slug }}/settings" class="dash-topnav-link {% if _active == 'settings' %}active{% endif %}">Settings</a>
+      {% else %}
+      <a href="/my-tickets" class="dash-topnav-link {% if _active == 'my_tickets' %}active{% endif %}">My Tickets</a>
+      <a href="/events" class="dash-topnav-link">Find Events</a>
+      <a href="/vendors" class="dash-topnav-link">Find Vendor</a>
+      <a href="/venues" class="dash-topnav-link">Find Venue</a>
+      <a href="/pricing" class="dash-topnav-link">Pricing</a>
+      {% endif %}
+    </nav>
+
     <!-- Right actions -->
     <div class="dash-topnav-actions">
+      {% if org %}
+      <a href="/org/{{ org.slug }}/events/new" class="dash-topnav-cta" title="New event">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="dash-topnav-cta-label">New event</span>
+      </a>
+      {% else %}
+      <a href="/org/new" class="dash-topnav-cta" title="Host an event">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="dash-topnav-cta-label">Host an event</span>
+      </a>
+      {% endif %}
+
       <!-- Notifications -->
       <div style="position:relative;" x-data="notifCenter()">
         <button class="topnav-icon-btn" title="Notifications" @click="toggle()" type="button">
@@ -180,7 +512,8 @@
     <div
       x-show="sidebarOpen"
       @click="sidebarOpen = false"
-      style="position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:29;display:none;"
+      class="dash-sidebar-overlay"
+      style="display:none;"
       x-transition:enter="transition-opacity ease"
       x-transition:enter-start="opacity-0"
       x-transition:enter-end="opacity-100"
@@ -188,7 +521,13 @@
 
     <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
     <aside class="dash-sidebar" :class="{ 'open': sidebarOpen, 'collapsed': sidebarCollapsed }">
-    <nav class="sidebar-nav">
+      <div class="mobile-sidebar-header">
+        <span class="mobile-sidebar-title">heelo</span>
+        <button type="button" class="mobile-sidebar-close" @click="sidebarOpen = false" aria-label="Close sidebar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <nav class="sidebar-nav">
       {% if org %}
       {% set active = active_page | default('') %}
 
@@ -205,12 +544,12 @@
       </a>
 
       {% if sidebar_state and sidebar_state.has_events %}
-      <!-- Registrations — shown after first event -->
+      <!-- Registrations - shown after first event -->
       <a href="/org/{{ org.slug }}/registrations" class="sidebar-link {% if active == 'registrations' %}active{% endif %}" title="Registrations">
         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <span class="sidebar-label">Registrations</span>
       </a>
-      <!-- Check-in — Kiosk + dashboard are event-scoped; this is the org-wide jumping-off point -->
+      <!-- Check-in - Kiosk + dashboard are event-scoped; this is the org-wide jumping-off point -->
       <a href="/org/{{ org.slug }}/checkin" class="sidebar-link {% if active == 'checkin' %}active{% endif %}" title="Check-in">
         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         <span class="sidebar-label">Check-in</span>
@@ -244,6 +583,18 @@
       </a>
       {% endif %}
 
+      <!-- Vendors & Booths -->
+      <a href="/org/{{ org.slug }}/vendors" class="sidebar-link {% if active == 'vendors' %}active{% endif %}" title="Vendors & Booths">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <span class="sidebar-label">Vendors & Booths</span>
+      </a>
+
+      <!-- Affiliates & Promoters -->
+      <a href="/org/{{ org.slug }}/affiliates" class="sidebar-link {% if active == 'affiliates' %}active{% endif %}" title="Affiliates & Promoters">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="sidebar-label">Affiliates</span>
+      </a>
+
       <div style="border-top:1px solid var(--border-light);margin:8px 0;"></div>
 
       <!-- Team -->
@@ -254,7 +605,7 @@
 
       <!-- Settings -->
       <a href="/org/{{ org.slug }}/settings" class="sidebar-link {% if active == 'settings' %}active{% endif %}" title="Settings">
-        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9z"/></svg>
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06-.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span class="sidebar-label">Settings</span>
       </a>
 
@@ -281,9 +632,13 @@
         <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         <span class="sidebar-label">Find Vendors</span>
       </a>
+      <a href="/venues" class="sidebar-link {% if active == 'venues' %}active{% endif %}" title="Find Venues">
+        <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <span class="sidebar-label">Find Venues</span>
+      </a>
     </nav>
 
-      <!-- Collapse toggle (desktop only) — pinned outside the scrollable nav
+      <!-- Collapse toggle (desktop only) - pinned outside the scrollable nav
            above so it's always reachable, even when there are enough links
            to overflow the sidebar's height. -->
       <button type="button" class="sidebar-collapse-btn" @click="toggleSidebarCollapse()" :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
@@ -323,7 +678,7 @@
       <a href="/org/{{ org.slug }}/events/new" class="onboarding-item {% if onboarding.has_event %}done{% endif %}">
         <div class="onboarding-item-check">
           {% if onboarding.has_event %}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
           {% endif %}
         </div>
         <div class="onboarding-item-text">
@@ -336,7 +691,7 @@
       <a href="/org/{{ org.slug }}/settings#payments" class="onboarding-item {% if onboarding.has_payment_account %}done{% endif %}">
         <div class="onboarding-item-check">
           {% if onboarding.has_payment_account %}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
           {% endif %}
         </div>
         <div class="onboarding-item-text">
@@ -349,7 +704,7 @@
       <a href="/org/{{ org.slug }}/team" class="onboarding-item {% if onboarding.has_team_member %}done{% endif %}">
         <div class="onboarding-item-check">
           {% if onboarding.has_team_member %}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
           {% endif %}
         </div>
         <div class="onboarding-item-text">
@@ -362,7 +717,7 @@
       <a href="/org/{{ org.slug }}/settings#whatsapp" class="onboarding-item {% if onboarding.has_whatsapp %}done{% endif %}">
         <div class="onboarding-item-check">
           {% if onboarding.has_whatsapp %}
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
           {% endif %}
         </div>
         <div class="onboarding-item-text">

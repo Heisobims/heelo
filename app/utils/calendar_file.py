@@ -8,7 +8,7 @@ from app.models.event import Event
 
 
 def _fold(line: str) -> str:
-    """RFC 5545 line folding — lines over 75 octets get continued with a leading space."""
+    """RFC 5545 line folding - lines over 75 octets get continued with a leading space."""
     if len(line) <= 75:
         return line
     parts = [line[:75]]
@@ -62,7 +62,7 @@ def build_ics(event: Event, *, uid: uuid.UUID) -> bytes:
 
 
 def google_calendar_url(event: Event) -> str:
-    """Build a 'https://calendar.google.com/...' add-event link — no file download needed."""
+    """Build a 'https://calendar.google.com/...' add-event link - no file download needed."""
     fmt = "%Y%m%dT%H%M%SZ"
     start = event.start_datetime.astimezone(UTC).strftime(fmt)
     end = event.end_datetime.astimezone(UTC).strftime(fmt)

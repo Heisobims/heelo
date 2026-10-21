@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}{{ org.name }} — Heelo{% endblock %}
+{% block title %}{{ org.name }} | Heelo{% endblock %}
 
 {% set active_page = 'overview' %}
 
@@ -49,7 +49,7 @@
         {% if metrics.total_revenue > 0 %}
           {{ org.currency }} {{ "{:,.0f}".format(metrics.total_revenue) }}
         {% else %}
-          —
+          -
         {% endif %}
       </div>
       <div class="metric-change">net collected</div>
@@ -58,7 +58,7 @@
       <div class="metric-label">Plan</div>
       <div class="metric-value" style="font-size:22px;text-transform:capitalize;">{{ org.plan }}</div>
       <div class="metric-change">
-        {% if org.plan == 'starter' %}
+        {% if org.plan == 'free' %}
         <a href="/org/{{ org.slug }}/settings#plan" style="color:var(--cyan); text-decoration:none; font-weight:600;">Upgrade →</a>
         {% else %}
         active
@@ -76,7 +76,7 @@
       </div>
       <h2 class="empty-state-title">Your first event is one click away</h2>
       <p class="empty-state-body">
-        Create your event, set up tickets, and start selling — all in under 5 minutes.
+        Create your event, set up tickets, and start selling: all in under 5 minutes.
       </p>
       <a href="/org/{{ org.slug }}/events/new" class="btn btn-primary">
         Create first event

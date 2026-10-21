@@ -1,5 +1,5 @@
 """
-WhatsApp inbox service — thread listing, message history, reply sending.
+WhatsApp inbox service - thread listing, message history, reply sending.
 All functions are async (FastAPI). Sync helpers live in tasks/whatsapp.py.
 """
 
@@ -17,7 +17,7 @@ from app.models.community import WhatsAppMessage
 
 async def list_threads(db: AsyncSession, org_id: uuid.UUID) -> list[dict]:
     """
-    Return one entry per unique phone number — last message body/time + unread count.
+    Return one entry per unique phone number - last message body/time + unread count.
     Ordered by most recent message first.
     """
     # Subquery: last message time per phone

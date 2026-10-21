@@ -1,7 +1,7 @@
-"""Add section_order to events — lets an organizer reorder and show/hide the
+"""Add section_order to events - lets an organizer reorder and show/hide the
 public event page's content sections (About, Agenda, People, Partners,
 Gallery, Discussion) via drag-and-drop. Deliberately scoped to reordering
-existing sections rather than a full block-based page composer — see the
+existing sections rather than a full block-based page composer - see the
 build-order discussion; a block composer stays a possible future upgrade.
 """
 

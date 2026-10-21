@@ -1,17 +1,20 @@
 """
 WhatsApp Business Cloud API webhook endpoints.
 
-GET  /api/v1/webhooks/whatsapp  — Meta verification handshake
-POST /api/v1/webhooks/whatsapp  — Incoming messages & status updates
+GET  /api/v1/webhooks/whatsapp  - Meta verification handshake
+POST /api/v1/webhooks/whatsapp  - Incoming messages & status updates
 """
 
 from __future__ import annotations
+
+import json
 
 import structlog
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 
 from app.config import settings
+from app.services.whatsapp_service import verify_whatsapp_signature
 
 logger = structlog.get_logger()
 
@@ -51,8 +54,13 @@ async def whatsapp_incoming(request: Request) -> dict:
     Handle incoming WhatsApp messages and status updates.
     Respond with 200 immediately; dispatch bot replies via Celery.
     """
+    body = await request.body()
+    signature = request.headers.get("x-hub-signature-256", "")
+    if not verify_whatsapp_signature(body, signature):
+        raise HTTPException(403, "Invalid signature.")
+
     try:
-        payload = await request.json()
+        payload = json.loads(body)
     except Exception:
         return {"status": "ok"}  # Meta requires 200 even on bad payloads
 
@@ -70,13 +78,13 @@ async def whatsapp_incoming(request: Request) -> dict:
                 from_phone = msg.get("from", "")
                 text = msg.get("text", {}).get("body", "")
                 if from_phone and text:
-                    # Dispatch to Celery — never block the 200 response
+                    # Dispatch to Celery - never block the 200 response
                     try:
                         from app.tasks.whatsapp import handle_incoming_message
 
                         handle_incoming_message.delay(from_phone, text)
                     except Exception as err:
-                        # Celery not available — still respond 200 to Meta, but log the drop.
+                        # Celery not available - still respond 200 to Meta, but log the drop.
                         logger.warning("whatsapp.incoming_message_enqueue_failed", error=str(err))
 
     return {"status": "ok"}

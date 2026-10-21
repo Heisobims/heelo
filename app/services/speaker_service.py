@@ -203,7 +203,7 @@ async def update_event_speaker(
 async def remove_event_speaker(db: AsyncSession, link: EventSpeaker) -> None:
     """Unlink the person from this event. Since the current UI has no
     "reuse an existing speaker across events" picker, every link is created
-    from a freshly-typed person — so if this was their only event, drop the
+    from a freshly-typed person - so if this was their only event, drop the
     underlying Speaker row too rather than leaving an orphaned roster entry."""
     speaker_id = link.speaker_id
     await db.delete(link)

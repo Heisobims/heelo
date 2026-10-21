@@ -8,20 +8,23 @@
     display: inline-flex; align-items: center; gap: 7px;
     padding: 8px 16px; border-radius: 9px; font-size: 0.85rem; font-weight: 600;
     text-decoration: none; color: var(--text-muted, #71717a);
-    background: var(--surface, #18181b); border: 1px solid var(--border, rgba(255,255,255,0.08));
+    background: var(--admin-surface); border: 1.5px solid var(--admin-border);
+    transition: all 0.15s ease;
   }
-  .cat-tab:hover { color: var(--text, #f5f5f5); }
-  .cat-tab.active { color: #000; background: var(--cyan, #00FFF3); border-color: var(--cyan, #00FFF3); }
+  .cat-tab:hover { color: var(--text); background: var(--admin-surface-raised); border-color: var(--admin-accent); }
+  .cat-tab.active { color: #fff; background: var(--admin-accent); border-color: var(--admin-accent); }
   .cat-tab .count {
     font-size: 0.75rem; padding: 1px 7px; border-radius: 100px;
-    background: rgba(255,255,255,0.1); color: inherit;
+    background: rgba(0,0,0,0.06); color: inherit;
   }
-  .cat-tab.active .count { background: rgba(0,0,0,0.15); }
+  [data-theme="dark"] .cat-tab .count { background: rgba(255,255,255,0.12); }
+  .cat-tab.active .count { background: rgba(0,0,0,0.18); color: #fff; }
   .vendor-badge {
     display: inline-flex; align-items: center; gap: 3px; font-size: 0.7rem; font-weight: 600;
-    padding: 1px 7px; border-radius: 100px; background: rgba(168,85,247,0.15); color: #a855f7;
+    padding: 1px 7px; border-radius: 100px; background: rgba(168,85,247,0.15); color: #9333ea;
     margin-left: 6px;
   }
+  [data-theme="dark"] .vendor-badge { color: #c084fc; background: rgba(168,85,247,0.22); }
 </style>
 {% endblock %}
 
@@ -99,8 +102,8 @@
           {% if u.role == 'admin' %}<span class="badge badge-admin">admin</span>
           {% else %}<span style="color:var(--text-muted,#71717a);font-size:0.8rem;">{{ u.role }}</span>{% endif %}
         </td>
-        <td style="font-size:0.82rem;">{% if u.is_verified %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>{% else %}—{% endif %}</td>
-        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">{{ u.last_seen_at.strftime('%Y-%m-%d') if u.last_seen_at else '—' }}</td>
+        <td style="font-size:0.82rem;">{% if u.is_verified %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>{% else %}<span class="material-symbols-outlined" style="color:var(--text-muted,#71717a); font-size:16px;">remove</span>{% endif %}</td>
+        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">{{ u.last_seen_at.strftime('%Y-%m-%d') if u.last_seen_at else '' }}</td>
         <td>
           <span class="badge {{ 'badge-suspended' if u.deleted_at else 'badge-active' }}" id="u-badge-{{ u.id }}">
             {{ 'Banned' if u.deleted_at else 'Active' }}
@@ -143,8 +146,13 @@
 <script>
 async function banUser(id, name) {
   if (!confirm(`Ban "${name}"? They will lose access immediately.`)) return;
-  const r = await fetch(`/api/v1/admin/users/${id}/ban`, { method: 'POST' });
+  const csrf = getAdminCsrfToken();
+  const r = await fetch(`/api/v1/admin/users/${id}/ban`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf }
+  });
   if (r.ok) {
+    showAdminToast(`"${name}" banned successfully.`);
     document.getElementById(`u-badge-${id}`).className = 'badge badge-suspended';
     document.getElementById(`u-badge-${id}`).textContent = 'Banned';
     const row = document.getElementById(`user-row-${id}`);
@@ -152,13 +160,21 @@ async function banUser(id, name) {
     btns[0].textContent = 'Unban';
     btns[0].className = 'btn btn-sm btn-accent';
     btns[0].setAttribute('onclick', `unbanUser('${id}','${name}')`);
-  } else { alert('Failed to ban user.'); }
+  } else {
+    const err = await r.json().catch(() => ({}));
+    showAdminToast(err?.error?.message || 'Failed to ban user.', 'error');
+  }
 }
 
 async function unbanUser(id, name) {
   if (!confirm(`Unban "${name}"?`)) return;
-  const r = await fetch(`/api/v1/admin/users/${id}/unban`, { method: 'POST' });
+  const csrf = getAdminCsrfToken();
+  const r = await fetch(`/api/v1/admin/users/${id}/unban`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf }
+  });
   if (r.ok) {
+    showAdminToast(`"${name}" unbanned successfully.`);
     document.getElementById(`u-badge-${id}`).className = 'badge badge-active';
     document.getElementById(`u-badge-${id}`).textContent = 'Active';
     const row = document.getElementById(`user-row-${id}`);
@@ -166,23 +182,44 @@ async function unbanUser(id, name) {
     btns[0].textContent = 'Ban';
     btns[0].className = 'btn btn-sm btn-danger';
     btns[0].setAttribute('onclick', `banUser('${id}','${name}')`);
-  } else { alert('Failed to unban user.'); }
+  } else {
+    const err = await r.json().catch(() => ({}));
+    showAdminToast(err?.error?.message || 'Failed to unban user.', 'error');
+  }
 }
 
 async function promoteAdmin(id, name) {
   if (!confirm(`Make "${name}" a platform admin?`)) return;
+  const csrf = getAdminCsrfToken();
   const r = await fetch(`/api/v1/admin/users/${id}/role`, {
-    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({role:'admin'}),
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json', 'X-CSRF-Token': csrf},
+    body: JSON.stringify({role:'admin'}),
   });
-  if (r.ok) { location.reload(); } else { alert('Failed to update role.'); }
+  if (r.ok) {
+    showAdminToast(`"${name}" promoted to Admin.`);
+    setTimeout(() => location.reload(), 700);
+  } else {
+    const err = await r.json().catch(() => ({}));
+    showAdminToast(err?.error?.message || 'Failed to update role.', 'error');
+  }
 }
 
 async function demoteAdmin(id, name) {
   if (!confirm(`Remove admin role from "${name}"? They will become an organizer.`)) return;
+  const csrf = getAdminCsrfToken();
   const r = await fetch(`/api/v1/admin/users/${id}/role`, {
-    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({role:'organizer'}),
+    method: 'PATCH',
+    headers: {'Content-Type':'application/json', 'X-CSRF-Token': csrf},
+    body: JSON.stringify({role:'organizer'}),
   });
-  if (r.ok) { location.reload(); } else { alert('Failed to update role.'); }
+  if (r.ok) {
+    showAdminToast(`Admin role removed from "${name}".`);
+    setTimeout(() => location.reload(), 700);
+  } else {
+    const err = await r.json().catch(() => ({}));
+    showAdminToast(err?.error?.message || 'Failed to update role.', 'error');
+  }
 }
 </script>
 {% endblock %}

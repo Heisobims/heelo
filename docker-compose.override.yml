@@ -1,4 +1,4 @@
-# Development overrides — automatically loaded by `docker compose up`.
+# Development overrides - automatically loaded by `docker compose up`.
 # In production, use only docker-compose.yml:
 #   docker compose -f docker-compose.yml up -d
 version: "3.9"

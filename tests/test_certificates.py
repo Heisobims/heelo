@@ -1,4 +1,4 @@
-"""Certificate of Attendance generation — organizer-triggered (not automatic)
+"""Certificate of Attendance generation - organizer-triggered (not automatic)
 per the confirmed scope: an explicit "Generate certificates" action gates
 attendee downloads, and only checked-in attendees (proof of attendance) can
 download. Certificates are rendered on-the-fly, nothing is stored.

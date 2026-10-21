@@ -1,0 +1,317 @@
+{% extends "admin/layout.html" %}
+{% block title %}Finances &amp; Orders{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 style="font-size:1.45rem; font-weight:700;">Platform Finances &amp; Orders</h1>
+    <p style="color:var(--text-muted,#71717a); font-size:0.85rem; margin-top:4px;">
+      Monitor ticket sales volume, Heelo platform fees, recurring plan invoices, and marketplace escrow transactions.
+    </p>
+  </div>
+  <div>
+    <a href="/admin/payouts" class="btn btn-primary btn-sm">
+      <span class="material-symbols-outlined" style="font-size:16px;">payments</span>
+      Payouts &amp; Withdrawals
+    </a>
+  </div>
+</div>
+
+<!-- Top-level Financial Metrics -->
+<div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom:24px;">
+  <div class="stat-card">
+    <div class="stat-label">Total Ticket GMV</div>
+    <div class="stat-value" style="color:var(--text);">₦{{ "{:,.2f}".format(fin_stats.ticket_gmv) }}</div>
+    <div style="font-size:0.75rem; color:var(--text-muted,#71717a); margin-top:4px;">Gross ticket transactions</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Heelo Ticket Fees</div>
+    <div class="stat-value" style="color:var(--admin-accent);">₦{{ "{:,.2f}".format(fin_stats.platform_fees) }}</div>
+    <div style="font-size:0.75rem; color:var(--text-muted,#71717a); margin-top:4px;">Ticketing revenue collected</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Subscription MRR (Invoices)</div>
+    <div class="stat-value" style="color:#047857;">₦{{ "{:,.2f}".format(fin_stats.subscription_revenue) }}</div>
+    <div style="font-size:0.75rem; color:var(--text-muted,#71717a); margin-top:4px;">Growth &amp; Pro plan invoices</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Marketplace Escrow Volume</div>
+    <div class="stat-value" style="color:var(--text);">₦{{ "{:,.2f}".format(fin_stats.marketplace_volume) }}</div>
+    <div style="font-size:0.75rem; color:var(--text-muted,#71717a); margin-top:4px;">₦{{ "{:,.2f}".format(fin_stats.marketplace_commission) }} commission</div>
+  </div>
+</div>
+
+<!-- Sub-navigation Tabs -->
+<div style="display:flex; gap:8px; border-bottom:1.5px solid var(--admin-border); margin-bottom:24px; padding-bottom:4px; flex-wrap:wrap;">
+  <a href="/admin/finance?tab=orders" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px; font-size:0.85rem; font-weight:600; text-decoration:none; transition:all 0.15s; {% if tab == 'orders' or not tab %}background:var(--admin-accent); color:#fff;{% else %}color:var(--text-muted,#71717a); background:transparent;{% endif %}">
+    <span>Ticket Orders</span>
+    {% if tab == 'orders' or not tab %}<span style="font-size:0.75rem; opacity:0.85; padding:2px 6px; border-radius:10px; background:rgba(0,0,0,0.15);">{{ total }}</span>{% endif %}
+  </a>
+  <a href="/admin/finance?tab=invoices" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px; font-size:0.85rem; font-weight:600; text-decoration:none; transition:all 0.15s; {% if tab == 'invoices' %}background:var(--admin-accent); color:#fff;{% else %}color:var(--text-muted,#71717a); background:transparent;{% endif %}">
+    <span>Plan Subscription Invoices</span>
+    {% if tab == 'invoices' %}<span style="font-size:0.75rem; opacity:0.85; padding:2px 6px; border-radius:10px; background:rgba(0,0,0,0.15);">{{ total }}</span>{% endif %}
+  </a>
+  <a href="/admin/finance?tab=marketplace" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px; font-size:0.85rem; font-weight:600; text-decoration:none; transition:all 0.15s; {% if tab == 'marketplace' %}background:var(--admin-accent); color:#fff;{% else %}color:var(--text-muted,#71717a); background:transparent;{% endif %}">
+    <span>Vendor Escrow &amp; Bookings</span>
+    {% if tab == 'marketplace' %}<span style="font-size:0.75rem; opacity:0.85; padding:2px 6px; border-radius:10px; background:rgba(0,0,0,0.15);">{{ total }}</span>{% endif %}
+  </a>
+</div>
+
+{% if tab == 'orders' or not tab %}
+<!-- TAB 1: TICKET ORDERS -->
+<div class="section-card">
+  <form method="get" action="/admin/finance">
+    <input type="hidden" name="tab" value="orders" />
+    <div class="search-bar">
+      <input name="q" value="{{ q }}" placeholder="Search by payment ref, buyer name or email..." />
+      <select name="status">
+        <option value="">All payment statuses</option>
+        {% for s in ['paid', 'pending', 'refunded', 'failed'] %}
+        <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-accent">Filter</button>
+    </div>
+  </form>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Reference &amp; Event</th>
+          <th>Buyer Details</th>
+          <th>Total Charged</th>
+          <th>Platform Fee</th>
+          <th>Gateway Fee</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ord in orders %}
+        <tr>
+          <td>
+            <span style="font-family:monospace; font-weight:700; font-size:0.85rem;">{{ ord.payment_reference or ord.id|string|truncate(12) }}</span>
+            <br>
+            {% if ord.event %}
+            <a href="/e/{{ ord.event.slug }}" target="_blank" style="font-size:0.78rem;">{{ ord.event.title }}</a>
+            {% else %}
+            <span style="color:var(--text-muted,#71717a); font-size:0.75rem;">Unknown Event</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-weight:600; font-size:0.82rem;">{{ ord.buyer_name or 'Anonymous' }}</span>
+            <br><span style="color:var(--text-muted,#71717a); font-size:0.74rem;">{{ ord.buyer_email }}</span>
+            {% if ord.buyer_phone %}<br><span style="color:var(--text-muted,#71717a); font-size:0.7rem;">{{ ord.buyer_phone }}</span>{% endif %}
+          </td>
+          <td style="font-weight:700; font-size:0.88rem;">{{ ord.currency or 'NGN' }} {{ "{:,.2f}".format(ord.total_amount) }}</td>
+          <td style="color:var(--admin-accent); font-weight:700; font-size:0.82rem;">{{ ord.currency or 'NGN' }} {{ "{:,.2f}".format(ord.platform_fee) }}</td>
+          <td style="color:var(--text-muted,#71717a); font-size:0.8rem;">{{ ord.currency or 'NGN' }} {{ "{:,.2f}".format(ord.gateway_fee_amount or 0) }}</td>
+          <td>
+            <span class="badge {{ 'badge-active' if ord.payment_status == 'paid' else ('badge-suspended' if ord.payment_status == 'refunded' else 'badge-pending') }}">
+              {{ ord.payment_status|capitalize }}
+            </span>
+          </td>
+          <td style="color:var(--text-muted,#71717a); font-size:0.75rem;">
+            {{ ord.created_at.strftime('%Y-%m-%d %H:%M') if ord.created_at else '' }}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not orders %}
+        <tr>
+          <td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted,#71717a);">
+            No ticket orders match your search criteria.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?tab=orders&q={{ q }}&status={{ selected_status }}&page={{ page - 1 }}">&larr; Prev</a>
+    {% endif %}
+    <span class="current">{{ page }}</span>
+    {% if page * per_page < total %}
+    <a href="?tab=orders&q={{ q }}&status={{ selected_status }}&page={{ page + 1 }}">Next &rarr;</a>
+    {% endif %}
+    <span class="info">{{ total }} total orders</span>
+  </div>
+</div>
+
+{% elif tab == 'invoices' %}
+<!-- TAB 2: SUBSCRIPTION PLAN INVOICES -->
+<div class="section-card">
+  <form method="get" action="/admin/finance">
+    <input type="hidden" name="tab" value="invoices" />
+    <div class="search-bar">
+      <select name="status">
+        <option value="">All invoice statuses</option>
+        {% for s in ['paid', 'pending', 'failed'] %}
+        <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s|capitalize }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-accent">Filter</button>
+    </div>
+  </form>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Organization</th>
+          <th>Plan Tier</th>
+          <th>Amount Charged</th>
+          <th>Gateway Fee</th>
+          <th>Provider</th>
+          <th>Status</th>
+          <th>Created Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in invoices %}
+        <tr>
+          <td>
+            <span style="font-family:monospace; font-weight:700; font-size:0.82rem;">{{ inv.provider_reference or inv.id|string|truncate(12) }}</span>
+          </td>
+          <td>
+            {% if inv.organization %}
+            <a href="/admin/organizations/{{ inv.organization.id }}">{{ inv.organization.name }}</a>
+            <br><span style="color:var(--text-muted,#71717a); font-size:0.72rem;">/{{ inv.organization.slug }}</span>
+            {% else %}
+            <span style="color:var(--text-muted,#71717a); font-size:0.78rem;">Org {{ inv.org_id|string|truncate(8) }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-plan-{{ inv.plan }}">{{ inv.plan|capitalize }}</span>
+          </td>
+          <td style="font-weight:700; font-size:0.88rem;">{{ inv.currency }} {{ "{:,.2f}".format(inv.amount) }}</td>
+          <td style="color:var(--text-muted,#71717a); font-size:0.8rem;">{{ inv.currency }} {{ "{:,.2f}".format(inv.gateway_fee_amount or 0) }}</td>
+          <td style="font-size:0.82rem; text-transform:capitalize;">{{ inv.provider or 'Manual' }}</td>
+          <td>
+            <span class="badge {{ 'badge-active' if inv.status == 'paid' else ('badge-suspended' if inv.status == 'failed' else 'badge-pending') }}">
+              {{ inv.status|capitalize }}
+            </span>
+          </td>
+          <td style="color:var(--text-muted,#71717a); font-size:0.75rem;">
+            {{ inv.created_at.strftime('%Y-%m-%d %H:%M') if inv.created_at else '' }}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not invoices %}
+        <tr>
+          <td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted,#71717a);">
+            No subscription plan invoices found.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?tab=invoices&status={{ selected_status }}&page={{ page - 1 }}">&larr; Prev</a>
+    {% endif %}
+    <span class="current">{{ page }}</span>
+    {% if page * per_page < total %}
+    <a href="?tab=invoices&status={{ selected_status }}&page={{ page + 1 }}">Next &rarr;</a>
+    {% endif %}
+    <span class="info">{{ total }} total invoices</span>
+  </div>
+</div>
+
+{% elif tab == 'marketplace' %}
+<!-- TAB 3: VENDOR ESCROW & BOOKINGS -->
+<div class="section-card">
+  <form method="get" action="/admin/finance">
+    <input type="hidden" name="tab" value="marketplace" />
+    <div class="search-bar">
+      <input name="q" value="{{ q }}" placeholder="Search by booking reference or event name..." />
+      <select name="status">
+        <option value="">All booking statuses</option>
+        {% for s in ['pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'disputed'] %}
+        <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s|replace('_', ' ')|capitalize }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-accent">Filter</button>
+    </div>
+  </form>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Reference &amp; Event</th>
+          <th>Vendor</th>
+          <th>Client</th>
+          <th>Total Amount</th>
+          <th>Commission</th>
+          <th>Vendor Payout</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td>
+            <span style="font-family:monospace; font-weight:700; font-size:0.82rem;">{{ b.booking_reference }}</span>
+            <br><span style="font-size:0.75rem; color:var(--text-muted,#71717a);">{{ b.event_name or 'Direct Hire' }}</span>
+          </td>
+          <td>
+            {% if b.vendor %}
+            <a href="/vendors/{{ b.vendor.slug }}" target="_blank" style="font-weight:600;">{{ b.vendor.business_name }}</a>
+            <br><span style="font-size:0.72rem; color:var(--text-muted,#71717a); text-transform:capitalize;">{{ b.vendor.category|replace('_', ' ') }}</span>
+            {% else %}
+            <span>Vendor</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if b.requester %}
+            <a href="/admin/users/{{ b.requester.id }}">{{ b.requester.full_name }}</a>
+            <br><span style="font-size:0.72rem; color:var(--text-muted,#71717a);">{{ b.requester.email }}</span>
+            {% else %}
+            <span style="color:var(--text-muted,#71717a); font-size:0.78rem;">Client</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:700; font-size:0.85rem;">{{ b.currency }} {{ "{:,.2f}".format(b.total_amount) }}</td>
+          <td style="color:var(--admin-accent); font-weight:600; font-size:0.82rem;">{{ b.currency }} {{ "{:,.2f}".format(b.commission_amount) }}</td>
+          <td style="color:#047857; font-weight:600; font-size:0.82rem;">{{ b.currency }} {{ "{:,.2f}".format(b.vendor_earnings) }}</td>
+          <td>
+            <span class="badge {{ 'badge-active' if b.status == 'completed' else ('badge-suspended' if b.status in ['cancelled', 'disputed'] else 'badge-pending') }}">
+              {{ b.status|replace('_', ' ')|capitalize }}
+            </span>
+          </td>
+          <td style="color:var(--text-muted,#71717a); font-size:0.75rem;">
+            {{ b.created_at.strftime('%Y-%m-%d') if b.created_at else '' }}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not bookings %}
+        <tr>
+          <td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted,#71717a);">
+            No marketplace bookings recorded yet.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?tab=marketplace&q={{ q }}&status={{ selected_status }}&page={{ page - 1 }}">&larr; Prev</a>
+    {% endif %}
+    <span class="current">{{ page }}</span>
+    {% if page * per_page < total %}
+    <a href="?tab=marketplace&q={{ q }}&status={{ selected_status }}&page={{ page + 1 }}">Next &rarr;</a>
+    {% endif %}
+    <span class="info">{{ total }} total bookings</span>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+

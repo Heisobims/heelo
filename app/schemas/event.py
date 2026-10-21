@@ -62,6 +62,7 @@ class EventCreateRequest(BaseModel):
     password: str | None = None
     category_ids: list[uuid.UUID] = Field(default_factory=list)
     vibe_tags: list[str] = Field(default_factory=list, max_length=8)
+    pass_fees_to_buyer: bool = True
     extras: dict | None = None
 
     @field_validator("vibe_tags")
@@ -108,6 +109,7 @@ class EventUpdateRequest(BaseModel):
     password: str | None = None
     category_ids: list[uuid.UUID] | None = None
     vibe_tags: list[str] | None = Field(None, max_length=8)
+    pass_fees_to_buyer: bool | None = None
     extras: dict | None = None
     is_template: bool | None = None
     section_order: list[SectionConfig] | None = None
@@ -153,6 +155,7 @@ class EventOut(BaseModel):
     is_private: bool
     is_featured: bool
     is_template: bool
+    pass_fees_to_buyer: bool = True
     created_at: datetime
     categories: list[CategoryOut] = Field(default_factory=list)
     vibe_tags: list[str] = Field(default_factory=list)

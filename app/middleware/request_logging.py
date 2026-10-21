@@ -15,7 +15,7 @@ _SKIP_PATHS = {"/health", "/favicon.ico"}
 
 class RequestLoggingMiddleware:
     """
-    Pure ASGI (not BaseHTTPMiddleware) — BaseHTTPMiddleware runs the downstream
+    Pure ASGI (not BaseHTTPMiddleware) - BaseHTTPMiddleware runs the downstream
     app in a separate anyio task, which breaks anything that depends on
     request-scoped async context being on the same task (e.g. a test suite
     sharing one AsyncSession/event-loop context across the request).

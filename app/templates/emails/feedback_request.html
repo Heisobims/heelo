@@ -3,18 +3,18 @@
 
 {% block content %}
 <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:900;color:#000000;line-height:1.2;">
-  How was it? ⭐
+  How was it?
 </h1>
 <p style="margin:0 0 28px;font-family:system-ui,-apple-system,sans-serif;font-size:16px;color:#555555;line-height:1.5;">
-  Hey {{ attendee_name }} — thanks for coming to <strong style="color:#000;">{{ event.title }}</strong>. A quick rating helps {{ org_name }} make the next one even better.
+  Hey {{ attendee_name }}, thanks for coming to <strong style="color:#000;">{{ event.title }}</strong>. A quick rating helps {{ org_name }} make the next one even better.
 </p>
 
 <table border="0" cellpadding="0" cellspacing="0" width="100%">
   <tr>
     <td align="center" style="padding-bottom:12px;">
       <a href="{{ frontend_url }}/feedback/{{ registration_id }}"
-         style="display:inline-block;background-color:{{ brand_color or '#000000' }};color:{{ brand_color | contrast_text('#00FFF3') }};font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;text-decoration:none;padding:14px 28px;border-radius:10px;">
-        Rate this event — takes 10 seconds
+         style="display:inline-block;background-color:{{ brand_color or '#E85938' }};color:{{ brand_color | contrast_text('#FFFFFF') }};font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;text-decoration:none;padding:14px 28px;border-radius:10px;">
+        Rate this event (takes 10 seconds)
       </a>
     </td>
   </tr>

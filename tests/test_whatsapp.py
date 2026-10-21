@@ -6,14 +6,22 @@ Q&A bot, and consent persistence through registration.
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import json
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from httpx import AsyncClient
 
+from app.config import settings
 from app.services import whatsapp_service as wa
 from app.tasks import whatsapp as wa_tasks
+
+
+def _sign(secret: str, body: bytes) -> str:
+    return "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
 
 
 def _fake_event(**overrides) -> SimpleNamespace:
@@ -31,7 +39,7 @@ def _fake_event(**overrides) -> SimpleNamespace:
     return SimpleNamespace(**defaults)
 
 
-# ── location_label / date_label — regression tests for the event.location bug ─
+# ── location_label / date_label - regression tests for the event.location bug ─
 
 
 def test_location_label_in_person_uses_venue_fields():
@@ -51,7 +59,7 @@ def test_location_label_virtual_event():
 
 def test_location_label_virtual_no_platform_defaults_to_online():
     event = _fake_event(format="virtual", venue_name=None, venue_city=None)
-    assert wa.location_label(event) == "Online event — link shared closer to the date"
+    assert wa.location_label(event) == "Online event - link shared closer to the date"
 
 
 def test_location_label_no_venue_data_returns_tba():
@@ -79,11 +87,36 @@ def test_send_registration_confirmation_does_not_raise(monkeypatch):
 
     wa.send_registration_confirmation_sync(
         phone="+2348012345678",
-        buyer_name="Jane",
+        buyer_name="Bob Buyer",
         event=_fake_event(),
-        registrations=[{"registration_id": "r1", "attendee_name": "Jane", "ticket_type": "GA"}],
+        registrations=[{"registration_id": "r1", "attendee_name": "Ada Attendee", "ticket_type": "VIP"}],
     )
-    assert "Eko Hotel, Lagos" in sent["text"]
+    text = sent["text"]
+    assert "Hi Ada Attendee," in text
+    assert "Date:" in text
+    assert "Venue: Eko Hotel, Lagos" in text
+    assert "Time:" in text
+    assert "Your QR code is below - show it at the entrance." in text
+    # Verify emojis removed
+    for emoji in ["🎟️", "📅", "📍", "⏰"]:
+        assert emoji not in text
+
+
+def test_send_registration_confirmation_multi_ticket(monkeypatch):
+    sent = {}
+    monkeypatch.setattr(wa, "send_text_sync", lambda to, body: sent.update(text=body))
+    monkeypatch.setattr(wa, "send_image_sync", lambda *a, **k: None)
+
+    wa.send_registration_confirmation_sync(
+        phone="+2348012345678",
+        buyer_name="Bob Buyer",
+        event=_fake_event(),
+        registrations=[
+            {"registration_id": "r1", "attendee_name": "Ada Attendee", "ticket_type": "VIP"},
+            {"registration_id": "r2", "attendee_name": "Chidi Okeke", "ticket_type": "VIP"},
+        ],
+    )
+    assert "Your QR codes are below - one per ticket. Show them at the entrance." in sent["text"]
 
 
 def test_send_event_reminder_headline_varies_by_offset(monkeypatch):
@@ -110,7 +143,7 @@ def test_send_event_reminder_headline_varies_by_offset(monkeypatch):
     assert "tomorrow" in sent["text"]
 
 
-# ── send_event_reminder_sync — virtual join link delivery ──────────────────────
+# ── send_event_reminder_sync - virtual join link delivery ──────────────────────
 
 
 def test_send_event_reminder_includes_virtual_link(monkeypatch):
@@ -319,3 +352,70 @@ async def test_register_defaults_whatsapp_consent_false(
 
     order = await db.scalar(select(Order).where(Order.buyer_email == "grace@example.com"))
     assert order.whatsapp_consent is False
+
+
+# ── Inbound webhook signature verification ────────────────────────────────────
+
+
+def test_verify_whatsapp_signature_accepts_valid_signature(monkeypatch):
+    monkeypatch.setattr(settings, "WHATSAPP_APP_SECRET", "shh")
+    body = b'{"object":"whatsapp_business_account"}'
+    sig = _sign("shh", body)
+    assert wa.verify_whatsapp_signature(body, sig) is True
+
+
+def test_verify_whatsapp_signature_rejects_wrong_secret(monkeypatch):
+    monkeypatch.setattr(settings, "WHATSAPP_APP_SECRET", "shh")
+    body = b'{"object":"whatsapp_business_account"}'
+    sig = _sign("wrong-secret", body)
+    assert wa.verify_whatsapp_signature(body, sig) is False
+
+
+def test_verify_whatsapp_signature_fails_closed_when_unconfigured(monkeypatch):
+    monkeypatch.setattr(settings, "WHATSAPP_APP_SECRET", "")
+    body = b'{"object":"whatsapp_business_account"}'
+    assert wa.verify_whatsapp_signature(body, "sha256=anything") is False
+
+
+async def test_whatsapp_webhook_rejects_forged_payload(client: AsyncClient, monkeypatch):
+    """Regression test: the inbound webhook used to accept any POST body with
+    no signature check at all, so anyone could forge a message with a spoofed
+    sender phone number straight into handle_incoming_message.delay()."""
+    monkeypatch.setattr(settings, "WHATSAPP_APP_SECRET", "test-app-secret")
+    payload = {
+        "object": "whatsapp_business_account",
+        "entry": [
+            {
+                "changes": [
+                    {
+                        "value": {
+                            "messages": [{"type": "text", "from": "234000", "text": {"body": "hi"}}]
+                        }
+                    }
+                ]
+            }
+        ],
+    }
+    resp = await client.post(
+        "/api/v1/webhooks/whatsapp",
+        content=json.dumps(payload),
+        headers={
+            "content-type": "application/json",
+            "x-hub-signature-256": "sha256=deadbeef",
+        },
+    )
+    assert resp.status_code == 403
+
+
+async def test_whatsapp_webhook_accepts_correctly_signed_payload(client: AsyncClient, monkeypatch):
+    monkeypatch.setattr(settings, "WHATSAPP_APP_SECRET", "test-app-secret")
+    body = json.dumps({"object": "whatsapp_business_account", "entry": []}).encode()
+    resp = await client.post(
+        "/api/v1/webhooks/whatsapp",
+        content=body,
+        headers={
+            "content-type": "application/json",
+            "x-hub-signature-256": _sign("test-app-secret", body),
+        },
+    )
+    assert resp.status_code == 200

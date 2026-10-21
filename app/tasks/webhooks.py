@@ -127,7 +127,7 @@ def deliver_webhook(delivery_id: str) -> None:
 
 @shared_task(name="app.tasks.webhooks.retry_failed_webhooks")
 def retry_failed_webhooks() -> None:
-    """Beat task — retries pending deliveries whose next_retry_at has passed."""
+    """Beat task - retries pending deliveries whose next_retry_at has passed."""
     from app.models.api import WebhookDelivery
 
     now = datetime.now(UTC)

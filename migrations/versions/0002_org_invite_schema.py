@@ -25,7 +25,7 @@ def upgrade() -> None:
     # Allow user_id to be NULL for pending invites of unregistered users
     op.alter_column("organization_members", "user_id", nullable=True)
 
-    # Add invited_email column — stores the email the invite was sent to
+    # Add invited_email column - stores the email the invite was sent to
     op.add_column(
         "organization_members",
         sa.Column("invited_email", sa.String(255), nullable=True),

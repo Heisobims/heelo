@@ -1,4 +1,4 @@
-"""Registration form field management — update endpoint (previously only
+"""Registration form field management - update endpoint (previously only
 create/delete existed despite the update schema already being defined),
 plus applies_to_ticket_type_ids scoping and its enforcement at checkout.
 """
@@ -105,7 +105,7 @@ class TestCheckoutFieldScoping:
         self, client: AsyncClient, org, published_event, ticket_type, user, user_headers
     ):
         # Page routes (app/routers/pages.py) authenticate via the heelo_access
-        # cookie, not an Authorization header — unlike the JSON API.
+        # cookie, not an Authorization header - unlike the JSON API.
         from tests.conftest import _make_token
 
         await client.post(

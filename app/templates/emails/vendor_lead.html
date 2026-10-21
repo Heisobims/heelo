@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block subject %}New enquiry for {{ business_name }}{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:900;color:#000000;line-height:1.2;">
+  New enquiry for {{ business_name }}
+</h1>
+<p style="margin:0 0 28px;font-family:system-ui,-apple-system,sans-serif;font-size:16px;color:#555555;line-height:1.5;">
+  <strong style="color:#000;">{{ requester_name }}</strong> reached out to you{% if event_name %} for <strong style="color:#000;">{{ event_name }}</strong>{% endif %} on Heelo.
+</p>
+
+{% if message %}
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-radius:12px;background:#F7F7F5;margin-bottom:28px;">
+  <tr>
+    <td style="padding:20px 24px;">
+      <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#0A0A0A;line-height:1.5;">
+        {{ message }}
+      </p>
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="background:#E85938;border-radius:8px;">
+      <a href="{{ frontend_url }}/my-vendor-profile/leads" style="display:inline-block;padding:13px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">
+        View enquiry
+      </a>
+    </td>
+  </tr>
+</table>
+{% endblock %}

@@ -1,4 +1,4 @@
-"""Add polls, poll_options, and questions — live audience engagement during
+"""Add polls, poll_options, and questions - live audience engagement during
 an event. Q&A has no approval queue (anonymous free-for-all, per product
 decision); organizer can only hide/delete after the fact.
 """

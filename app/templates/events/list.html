@@ -1,22 +1,88 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Events — {{ org.name }} — Heelo{% endblock %}
+{% block title %}Events · {{ org.name }} | Heelo{% endblock %}
 {% set active_page = active_page %}
 
 {% block head %}
 {{ super() }}
 <style>
+  .ev-list-card {
+    overflow: visible !important;
+    position: relative;
+  }
   .ev-row {
     display: flex; align-items: center; gap: 14px; padding: 14px 20px;
     border-bottom: 1px solid var(--border-light); transition: background 0.12s;
     flex-wrap: wrap;
+    position: relative;
+  }
+  .ev-row:first-child {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+  }
+  .ev-row:last-child {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-bottom: none;
+  }
+  .ev-row.dropdown-active {
+    z-index: 50;
+    position: relative;
+    background: var(--bg-secondary) !important;
   }
   .ev-row-thumb-link { flex-shrink: 0; }
   .ev-row-info { flex: 1; min-width: 0; }
   .ev-row-trailing { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-  .ev-row-actions { position: relative; }
+  .ev-row-actions {
+    position: relative;
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .ev-actions-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+  }
+  .ev-actions-btn:hover,
+  .ev-row.dropdown-active .ev-actions-btn {
+    border-color: rgba(19, 27, 23, 0.35);
+    color: var(--text-primary);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+  .ev-actions-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+    min-width: 175px;
+    z-index: 100;
+    padding: 6px;
+  }
+  .ev-actions-dropdown.drop-up {
+    top: auto;
+    bottom: calc(100% + 6px);
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.14), 0 -2px 8px rgba(0, 0, 0, 0.06);
+  }
+  .ev-actions-dropdown .user-menu-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-weight: 500;
+  }
 
   /* The row's trailing cluster (stats/capacity/status/actions) doesn't fit
-     next to the thumbnail+title on narrow screens — wrap it onto its own
+     next to the thumbnail+title on narrow screens: wrap it onto its own
      full-width row instead of forcing horizontal overflow. */
   @media (max-width: 640px) {
     .ev-row { padding: 12px 16px; }
@@ -75,10 +141,33 @@
 
   {% else %}
   <!-- Events list -->
-  <div class="section-card animate-in">
+  <div class="section-card ev-list-card animate-in">
     {% for entry in events %}
     {% set ev = entry.event %}
-    <div class="ev-row" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background=''">
+    <div
+      class="ev-row"
+      :class="{ 'dropdown-active': open }"
+      x-data="{
+        open: false,
+        dropUp: false,
+        dropdownStyle: '',
+        toggle(e) {
+          if (!this.open) {
+            const btn = e.currentTarget;
+            const rect = btn.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const openUp = spaceBelow < 260 && rect.top > 260;
+            const top = openUp ? '' : (rect.bottom + 6) + 'px';
+            const bottom = openUp ? (window.innerHeight - rect.top + 6) + 'px' : '';
+            const right = Math.max(12, window.innerWidth - rect.right) + 'px';
+            this.dropUp = openUp;
+            this.dropdownStyle = 'position:fixed !important; z-index:99999 !important; right:' + right + '; ' + (openUp ? 'bottom:' + bottom + '; top:auto;' : 'top:' + top + '; bottom:auto;');
+          }
+          this.open = !this.open;
+        }
+      }"
+      @scroll.window="open = false"
+    >
 
       <!-- Thumb -->
       <a href="/org/{{ org.slug }}/events/{{ ev.id }}" class="ev-row-thumb-link">
@@ -123,15 +212,28 @@
         <span class="status-badge {{ ev.status }}" style="flex-shrink:0;">{{ ev.status | capitalize }}</span>
 
         <!-- Actions -->
-        <div class="ev-row-actions" style="display:flex; gap:4px; flex-shrink:0;" x-data="{ open: false }">
-          <button @click="open = !open" style="width:32px;height:32px;border:1px solid var(--border-light);border-radius:6px;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);" type="button">
+        <div class="ev-row-actions" :class="{ 'dropdown-active': open }">
+          <button
+            @click="toggle($event)"
+            class="ev-actions-btn"
+            type="button"
+            aria-label="Event options"
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
           </button>
-          <div x-show="open" x-transition @click.away="open=false" style="position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid var(--border-light);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.1);min-width:160px;z-index:20;overflow:hidden;display:none;">
+          <div
+            x-show="open"
+            x-transition
+            @click.away="open = false"
+            class="ev-actions-dropdown"
+            :class="{ 'drop-up': dropUp }"
+            :style="dropdownStyle"
+            style="display:none;"
+          >
             <a href="/org/{{ org.slug }}/events/{{ ev.id }}" class="user-menu-item">View dashboard</a>
             <a href="/org/{{ org.slug }}/events/{{ ev.id }}/edit" class="user-menu-item">Edit</a>
             {% if ev.status in ('published', 'live', 'ended') %}
-            <a href="/e/{{ ev.slug }}" target="_blank" class="user-menu-item">Public page ↗</a>
+            <a href="/e/{{ ev.slug }}" target="_blank" class="user-menu-item">Public page <span class="material-symbols-outlined" style="font-size:13px; vertical-align:-2px;">open_in_new</span></a>
             {% endif %}
             <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
             <button
@@ -169,5 +271,6 @@
   {% endif %}
   {% endif %}
 
+  <div style="height: 60px;"></div>
 </div>
 {% endblock %}

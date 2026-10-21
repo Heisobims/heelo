@@ -6,15 +6,18 @@
   <a href="/admin/organizations" style="color:var(--text-muted,#71717a);font-size:0.82rem;text-decoration:none;">&larr; Organizations</a>
 </div>
 
-<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap;">
   <div>
     <h1 style="font-size:1.4rem;font-weight:700;">{{ detail.org.name }}</h1>
     <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">
       /{{ detail.org.slug }} &middot;
-      <span class="badge badge-plan-{{ detail.org.plan }}">{{ detail.org.plan }}</span> &middot;
+      <span class="badge badge-plan-{{ detail.org.plan }}" id="org-plan-badge">{{ detail.org.plan }}</span> &middot;
       <span class="badge {{ 'badge-active' if detail.org.is_active else 'badge-suspended' }}" id="org-status-badge">
         {{ 'Active' if detail.org.is_active else 'Suspended' }}
       </span>
+      {% if detail.org.custom_domain %}
+      &middot; <span class="badge {{ 'badge-active' if detail.org.custom_domain_verified else 'badge-pending' }}">{{ detail.org.custom_domain }}</span>
+      {% endif %}
     </p>
   </div>
   <div style="display:flex;gap:8px;">
@@ -33,7 +36,7 @@
     <div class="stat-value">{{ detail.events|length }}</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Net Revenue</div>
+    <div class="stat-label">Net Ticket Revenue</div>
     <div class="stat-value" style="color:var(--admin-accent);">₦{{ "{:,.0f}".format(detail.net_revenue) }}</div>
   </div>
   <div class="stat-card">
@@ -42,9 +45,10 @@
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:24px;margin-bottom:24px;">
+  <!-- Owner & Plan Card -->
   <div class="section-card">
-    <div class="section-header"><span class="section-title">Owner</span></div>
+    <div class="section-header"><span class="section-title">Owner &amp; Plan Tier</span></div>
     {% if detail.org.owner %}
     <p style="font-size:0.9rem;font-weight:600;">{{ detail.org.owner.full_name }}</p>
     <p style="color:var(--text-muted,#71717a);font-size:0.82rem;margin-top:4px;">{{ detail.org.owner.email }}</p>
@@ -55,21 +59,100 @@
     {% endif %}
 
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--admin-border);">
-      <p style="font-size:0.8rem;font-weight:600;margin-bottom:10px;">Change Plan</p>
+      <p style="font-size:0.8rem;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);">Change Plan</p>
       <div style="display:flex;gap:8px;align-items:center;">
-        <select id="plan-sel" style="background:var(--admin-surface-raised);border:1px solid var(--admin-border);color:var(--text,#e4e4e7);border-radius:6px;padding:6px 10px;font-size:0.8rem;">
-          {% for p in ['starter','growth','pro','enterprise'] %}
-          <option value="{{ p }}" {% if detail.org.plan == p %}selected{% endif %}>{{ p }}</option>
+        <select id="plan-sel" style="background:var(--admin-surface) url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2371717a%27 stroke-width=%272.5%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E') no-repeat right 10px center; border:1.5px solid var(--admin-border); color:var(--text); border-radius:8px; padding:6px 30px 6px 12px; font-size:13px; font-weight:600; appearance:none; -webkit-appearance:none; cursor:pointer;">
+          {% for p in ['free','growth','pro','enterprise'] %}
+          <option value="{{ p }}" {% if detail.org.plan == p %}selected{% endif %}>{{ p|capitalize }}</option>
           {% endfor %}
         </select>
-        <button class="btn btn-accent btn-sm" onclick="updatePlan()">Apply</button>
+        <button class="btn btn-accent btn-sm" onclick="updatePlan()">Apply Plan</button>
       </div>
     </div>
   </div>
 
+  <!-- Custom Domain & SSO Card -->
+  <div class="section-card">
+    <div class="section-header"><span class="section-title">Domains &amp; Enterprise SSO</span></div>
+    
+    <!-- Custom Domain -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.82rem; font-weight:600;">Custom Domain</span>
+        {% if detail.org.custom_domain %}
+        <span class="badge {{ 'badge-active' if detail.org.custom_domain_verified else 'badge-pending' }}" id="domain-badge">
+          {{ 'Verified' if detail.org.custom_domain_verified else 'Pending DNS' }}
+        </span>
+        {% else %}
+        <span style="font-size:0.75rem; color:var(--text-muted,#71717a);">None configured</span>
+        {% endif %}
+      </div>
+      {% if detail.org.custom_domain %}
+      <p style="font-size:0.82rem; font-family:monospace; margin-top:4px; font-weight:600;">{{ detail.org.custom_domain }}</p>
+      {% if detail.org.custom_domain_verification_token %}
+      <p style="font-size:0.72rem; color:var(--text-muted,#71717a); margin-top:2px;">
+        TXT Token: <code>heelo-verify={{ detail.org.custom_domain_verification_token }}</code>
+      </p>
+      {% endif %}
+      <div style="margin-top:8px;">
+        <button 
+          type="button" 
+          onclick="toggleCustomDomain()" 
+          id="toggle-domain-btn"
+          class="btn btn-sm {% if detail.org.custom_domain_verified %}btn-ghost{% else %}btn-accent{% endif %}"
+          style="font-size:12px;"
+        >
+          {{ 'Revoke Verification' if detail.org.custom_domain_verified else 'Approve & Verify Domain' }}
+        </button>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- SSO Domain -->
+    <div style="padding-top:14px; border-top:1px solid var(--admin-border);">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.82rem; font-weight:600;">SSO Domain (SAML/Okta)</span>
+        {% if detail.org.sso_domain %}
+        <span class="badge {{ 'badge-active' if detail.org.sso_domain_verified else 'badge-pending' }}" id="sso-badge">
+          {{ 'Verified' if detail.org.sso_domain_verified else 'Pending Verification' }}
+        </span>
+        {% else %}
+        <span style="font-size:0.75rem; color:var(--text-muted,#71717a);">None</span>
+        {% endif %}
+      </div>
+      {% if detail.org.sso_domain %}
+      <p style="font-size:0.82rem; font-family:monospace; margin-top:4px; font-weight:600;">@{{ detail.org.sso_domain }}</p>
+      <p style="font-size:0.72rem; color:var(--text-muted,#71717a); margin-top:2px;">
+        SSO Enforced: <strong id="sso-enforced-label">{{ 'Yes' if detail.org.sso_enforced else 'No (Optional)' }}</strong>
+      </p>
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <button 
+          type="button" 
+          onclick="toggleSSOVerification()" 
+          id="toggle-sso-btn"
+          class="btn btn-sm btn-ghost"
+          style="font-size:12px;"
+        >
+          {{ 'Revoke SSO' if detail.org.sso_domain_verified else 'Verify SSO Domain' }}
+        </button>
+        <button 
+          type="button" 
+          onclick="toggleSSOEnforcement()" 
+          id="toggle-enforce-btn"
+          class="btn btn-sm btn-secondary"
+          style="font-size:12px;"
+        >
+          {{ 'Disable Force SSO' if detail.org.sso_enforced else 'Enforce SSO Login' }}
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Team Members Card -->
   <div class="section-card">
     <div class="section-header"><span class="section-title">Team Members ({{ detail.members|length }})</span></div>
-    {% for m in detail.members[:10] %}
+    {% for m in detail.members[:8] %}
     <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--admin-border)50;">
       <div style="width:32px;height:32px;border-radius:50%;background:var(--admin-accent)30;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;color:var(--admin-accent);">
         {{ m.user.full_name[0].upper() if m.user else '?' }}
@@ -81,12 +164,53 @@
     </div>
     {% endfor %}
     {% if detail.members|length == 0 %}
-    <p style="color:var(--text-muted,#71717a);font-size:0.82rem;">No team members.</p>
+    <p style="color:var(--text-muted,#71717a);font-size:0.82rem;">No additional team members.</p>
     {% endif %}
   </div>
 </div>
 
-<div class="section-card" style="margin-top:24px;">
+<!-- Subscription Plan Invoices History -->
+<div class="section-card" style="margin-bottom:24px;">
+  <div class="section-header">
+    <span class="section-title">Subscription Billing History ({{ detail.plan_invoices|length }})</span>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Reference</th>
+        <th>Tier</th>
+        <th>Amount</th>
+        <th>Gateway Fee</th>
+        <th>Provider</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for inv in detail.plan_invoices %}
+      <tr>
+        <td><span style="font-family:monospace; font-weight:700; font-size:0.82rem;">{{ inv.provider_reference or inv.id|string|truncate(12) }}</span></td>
+        <td><span class="badge badge-plan-{{ inv.plan }}">{{ inv.plan|capitalize }}</span></td>
+        <td style="font-weight:700;">{{ inv.currency }} {{ "{:,.2f}".format(inv.amount) }}</td>
+        <td style="color:var(--text-muted,#71717a);">{{ inv.currency }} {{ "{:,.2f}".format(inv.gateway_fee_amount or 0) }}</td>
+        <td style="text-transform:capitalize;">{{ inv.provider or 'Manual' }}</td>
+        <td>
+          <span class="badge {{ 'badge-active' if inv.status == 'paid' else ('badge-suspended' if inv.status == 'failed' else 'badge-pending') }}">
+            {{ inv.status|capitalize }}
+          </span>
+        </td>
+        <td style="color:var(--text-muted,#71717a); font-size:0.75rem;">{{ inv.created_at.strftime('%Y-%m-%d %H:%M') if inv.created_at else '' }}</td>
+      </tr>
+      {% endfor %}
+      {% if not detail.plan_invoices %}
+      <tr><td colspan="7" style="text-align:center;color:var(--text-muted,#71717a);padding:18px;">No subscription invoices generated.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Events Table -->
+<div class="section-card">
   <div class="section-header"><span class="section-title">Events</span></div>
   <table class="data-table">
     <thead>
@@ -97,8 +221,8 @@
       <tr>
         <td><a href="/e/{{ ev.slug }}" target="_blank">{{ ev.title }}</a></td>
         <td><span class="badge badge-{{ 'active' if ev.status == 'published' else 'suspended' }}">{{ ev.status }}</span></td>
-        <td style="font-size:0.78rem;color:var(--text-muted,#71717a);">{{ ev.start_datetime.strftime('%Y-%m-%d') if ev.start_datetime else '—' }}</td>
-        <td style="font-size:0.78rem;color:var(--text-muted,#71717a);">{{ ev.location_name or ('Virtual' if ev.is_virtual else '—') }}</td>
+        <td style="font-size:0.78rem;color:var(--text-muted,#71717a);">{{ ev.start_datetime.strftime('%Y-%m-%d') if ev.start_datetime else '' }}</td>
+        <td style="font-size:0.78rem;color:var(--text-muted,#71717a);">{{ ev.location_name or ('Virtual' if ev.is_virtual else '') }}</td>
       </tr>
       {% endfor %}
       {% if not detail.events %}
@@ -112,39 +236,171 @@
 {% block scripts %}
 <script>
 const _orgId = "{{ detail.org.id }}";
+let _ssoEnforced = {{ 'true' if detail.org.sso_enforced else 'false' }};
+let _ssoVerified = {{ 'true' if detail.org.sso_domain_verified else 'false' }};
+let _domainVerified = {{ 'true' if detail.org.custom_domain_verified else 'false' }};
 
 async function suspendOrg(id) {
   if (!confirm("Suspend this organization?")) return;
-  const r = await fetch(`/api/v1/admin/organizations/${id}/suspend`, { method: 'POST' });
+  const csrf = getAdminCsrfToken();
+  const r = await fetch(`/api/v1/admin/organizations/${id}/suspend`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf }
+  });
   if (r.ok) {
+    showAdminToast("Organization suspended.");
     document.getElementById('org-status-badge').className = 'badge badge-suspended';
     document.getElementById('org-status-badge').textContent = 'Suspended';
     document.getElementById('suspend-btn').textContent = 'Reinstate Org';
     document.getElementById('suspend-btn').className = 'btn btn-accent';
     document.getElementById('suspend-btn').setAttribute('onclick', `reinstateOrg('${id}')`);
-  } else { alert('Failed to suspend.'); }
+  } else {
+    const err = await r.json().catch(() => ({}));
+    showAdminToast(err?.error?.message || 'Failed to suspend.', 'error');
+  }
 }
 
 async function reinstateOrg(id) {
   if (!confirm("Reinstate this organization?")) return;
-  const r = await fetch(`/api/v1/admin/organizations/${id}/reinstate`, { method: 'POST' });
+  const csrf = getAdminCsrfToken();
+  const r = await fetch(`/api/v1/admin/organizations/${id}/reinstate`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf }
+  });
   if (r.ok) {
+    showAdminToast("Organization reinstated successfully.");
     document.getElementById('org-status-badge').className = 'badge badge-active';
     document.getElementById('org-status-badge').textContent = 'Active';
     document.getElementById('suspend-btn').textContent = 'Suspend Org';
     document.getElementById('suspend-btn').className = 'btn btn-danger';
     document.getElementById('suspend-btn').setAttribute('onclick', `suspendOrg('${id}')`);
-  } else { alert('Failed to reinstate.'); }
+  } else {
+    const err = await r.json().catch(() => ({}));
+    showAdminToast(err?.error?.message || 'Failed to reinstate.', 'error');
+  }
 }
 
 async function updatePlan() {
   const plan = document.getElementById('plan-sel').value;
-  const r = await fetch(`/api/v1/admin/organizations/${_orgId}/plan`, {
-    method: 'PATCH',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ plan }),
-  });
-  if (r.ok) { alert(`Plan updated to ${plan}.`); } else { alert('Failed to update plan.'); }
+  const csrf = getAdminCsrfToken();
+  try {
+    const r = await fetch(`/api/v1/admin/organizations/${_orgId}/plan`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ plan }),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (r.ok) {
+      showAdminToast(`Plan successfully updated to ${plan.toUpperCase()}!`, 'success');
+      const badge = document.getElementById('org-plan-badge');
+      if (badge) {
+        badge.className = `badge badge-plan-${plan}`;
+        badge.textContent = plan;
+      }
+    } else {
+      showAdminToast(data?.error?.message || 'Failed to update plan.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error updating plan.', 'error');
+  }
+}
+
+async function toggleCustomDomain() {
+  const csrf = getAdminCsrfToken();
+  const nextVal = !_domainVerified;
+  try {
+    const r = await fetch(`/api/v1/admin/organizations/${_orgId}/verify-domain`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ verified: nextVal })
+    });
+    const json = await r.json();
+    if (r.ok && json.success) {
+      _domainVerified = json.data.custom_domain_verified;
+      showAdminToast(_domainVerified ? 'Custom domain verified!' : 'Domain verification revoked.', 'success');
+      const badge = document.getElementById('domain-badge');
+      if (badge) {
+        badge.className = `badge ${_domainVerified ? 'badge-active' : 'badge-pending'}`;
+        badge.textContent = _domainVerified ? 'Verified' : 'Pending DNS';
+      }
+      const btn = document.getElementById('toggle-domain-btn');
+      if (btn) {
+        btn.textContent = _domainVerified ? 'Revoke Verification' : 'Approve & Verify Domain';
+        btn.className = `btn btn-sm ${_domainVerified ? 'btn-ghost' : 'btn-accent'}`;
+      }
+    } else {
+      showAdminToast(json.error?.message || 'Failed to update domain verification.', 'error');
+    }
+  } catch (e) {
+    showAdminToast('Network error updating domain verification.', 'error');
+  }
+}
+
+async function toggleSSOVerification() {
+  const csrf = getAdminCsrfToken();
+  const nextVal = !_ssoVerified;
+  try {
+    const r = await fetch(`/api/v1/admin/organizations/${_orgId}/toggle-sso`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ verified: nextVal })
+    });
+    const json = await r.json();
+    if (r.ok && json.success) {
+      _ssoVerified = json.data.sso_domain_verified;
+      showAdminToast(_ssoVerified ? 'SSO domain verified!' : 'SSO domain unverified.', 'success');
+      const badge = document.getElementById('sso-badge');
+      if (badge) {
+        badge.className = `badge ${_ssoVerified ? 'badge-active' : 'badge-pending'}`;
+        badge.textContent = _ssoVerified ? 'Verified' : 'Pending Verification';
+      }
+      const btn = document.getElementById('toggle-sso-btn');
+      if (btn) {
+        btn.textContent = _ssoVerified ? 'Revoke SSO' : 'Verify SSO Domain';
+      }
+    } else {
+      showAdminToast(json.error?.message || 'Failed to update SSO status.', 'error');
+    }
+  } catch (e) {
+    showAdminToast('Network error updating SSO status.', 'error');
+  }
+}
+
+async function toggleSSOEnforcement() {
+  const csrf = getAdminCsrfToken();
+  const nextEnforce = !_ssoEnforced;
+  try {
+    const r = await fetch(`/api/v1/admin/organizations/${_orgId}/toggle-sso`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ enforced: nextEnforce })
+    });
+    const json = await r.json();
+    if (r.ok && json.success) {
+      _ssoEnforced = json.data.sso_enforced;
+      showAdminToast(_ssoEnforced ? 'SSO login is now ENFORCED for members.' : 'SSO enforcement disabled.', 'success');
+      const label = document.getElementById('sso-enforced-label');
+      if (label) label.textContent = _ssoEnforced ? 'Yes' : 'No (Optional)';
+      const btn = document.getElementById('toggle-enforce-btn');
+      if (btn) btn.textContent = _ssoEnforced ? 'Disable Force SSO' : 'Enforce SSO Login';
+    } else {
+      showAdminToast(json.error?.message || 'Failed to toggle SSO enforcement.', 'error');
+    }
+  } catch (e) {
+    showAdminToast('Network error toggling SSO enforcement.', 'error');
+  }
 }
 </script>
 {% endblock %}

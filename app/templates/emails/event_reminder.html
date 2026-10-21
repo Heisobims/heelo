@@ -3,10 +3,10 @@
 
 {% block content %}
 <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:900;color:#000000;line-height:1.2;">
-  Your event {{ reminder_headline or 'is coming up' }} ⏰
+  Your event {{ reminder_headline or 'is coming up' }}
 </h1>
 <p style="margin:0 0 28px;font-family:system-ui,-apple-system,sans-serif;font-size:16px;color:#555555;line-height:1.5;">
-  Hey {{ attendee_name }}, just a reminder — <strong style="color:#000;">{{ event.title }}</strong> is almost here.
+  Hey {{ attendee_name }}, just a reminder: <strong style="color:#000;">{{ event.title }}</strong> is almost here.
 </p>
 
 <!-- Event card -->
@@ -20,20 +20,20 @@
     <td style="padding:20px 24px;">
       {% if event.start_datetime %}
       <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
-        📅&nbsp; <strong>{{ event.start_datetime.strftime('%A, %B %-d, %Y at %-I:%M %p') }}</strong>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><strong>{{ event.start_datetime.strftime('%A, %B %-d, %Y at %-I:%M %p') }}</strong>
       </p>
       {% endif %}
       {% if event.format != 'in_person' %}
       <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
-        📍&nbsp; <strong>{{ (event.virtual_platform | title) if event.virtual_platform else 'Online' }} event</strong>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><strong>{{ (event.virtual_platform | title) if event.virtual_platform else 'Online' }} event</strong>
         {% if event.virtual_url %}
-        &mdash; <a href="{{ frontend_url }}/api/v1/registrations/{{ registration_id }}/join" style="color:#0066cc;">{{ event.virtual_url }}</a>
+        - <a href="{{ frontend_url }}/api/v1/registrations/{{ registration_id }}/join" style="color:#0066cc;">{{ event.virtual_url }}</a>
         {% endif %}
       </p>
       {% endif %}
       {% if event.format != 'virtual' and (event.venue_name or event.venue_city) %}
       <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
-        📍&nbsp; <strong>{{ event.venue_name or event.venue_city }}{% if event.venue_name and event.venue_city %}, {{ event.venue_city }}{% endif %}</strong>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><strong>{{ event.venue_name or event.venue_city }}{% if event.venue_name and event.venue_city %}, {{ event.venue_city }}{% endif %}</strong>
       </p>
       {% endif %}
       <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#777777;">
@@ -65,16 +65,26 @@
 <table border="0" cellpadding="0" cellspacing="0" width="100%">
   <tr>
     <td align="center" style="padding-bottom:12px;">
+      <a href="{{ frontend_url }}/api/v1/registrations/{{ registration_id }}/ticket.pdf"
+         style="display:inline-block;background-color:{{ brand_color or '#E85938' }};color:{{ brand_color | contrast_text('#FFFFFF') }};font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:10px;margin:4px 6px;">
+        Download Ticket (PDF)
+      </a>
+      {% if venue_directions_url %}
+      <a href="{{ venue_directions_url }}"
+         style="display:inline-block;background-color:#f3f4f6;color:#111827;border:1px solid #d1d5db;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:10px;margin:4px 6px;">
+        Get Venue Directions
+      </a>
+      {% endif %}
       <a href="{{ gcal_url }}"
-         style="display:inline-block;background-color:{{ brand_color or '#000000' }};color:{{ brand_color | contrast_text('#00FFF3') }};font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:700;text-decoration:none;padding:14px 28px;border-radius:10px;">
-        View on Google Maps
+         style="display:inline-block;background-color:#ffffff;color:#4b5563;border:1px solid #e5e7eb;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:600;text-decoration:none;padding:12px 20px;border-radius:10px;margin:4px 6px;">
+        Add to Calendar
       </a>
     </td>
   </tr>
 </table>
 
 <p style="margin:24px 0 0;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#333333;line-height:1.6;">
-  See you there! 🎉<br />
+  See you there!<br />
   <strong>The {{ org_name }} team</strong>
 </p>
 {% endblock %}

@@ -1,106 +1,246 @@
-{% extends "base.html" %}
-{% block title %}My sponsorships — Heelo{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="/static/css/dashboard.css">
+{% extends "base.html" %} {% block title %}My sponsorships | Heelo{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex, nofollow" />{%
+endblock %} {% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css" />
 <style>
-  body { background: var(--bg-secondary); }
-  .ms-nav {
-    position: sticky; top: 0; z-index: 40;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
+  body {
+    background: var(--bg-secondary);
   }
-  .ms-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
-  .ms-nav-logo span { color: var(--cyan-dark, #00b3a9); }
-  .ms-wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
-  .ms-title { font-family: var(--font-serif, 'STK Bureau Serif', Georgia, serif); font-size: 1.6rem; font-weight: 700; margin: 0 0 1.5rem; }
-  .ms-card { background: #fff; border: 1px solid var(--border-light); border-radius: 14px; padding: 1.5rem; margin-bottom: 1rem; }
-  .ms-card-hd { display: flex; align-items: center; gap: 12px; margin-bottom: 1rem; }
-  .ms-logo { width: 44px; height: 44px; border-radius: 8px; background: var(--bg-secondary); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-  .ms-logo img { width: 100%; height: 100%; object-fit: contain; }
-  .ms-name { font-size: 15px; font-weight: 700; }
-  .ms-event { font-size: 12px; color: var(--text-muted); }
-  .ms-tier { display: inline-flex; padding: 2px 8px; border-radius: 100px; font-size: 10px; font-weight: 700; background: rgba(0,255,243,0.1); color: var(--cyan-dark,#00b3a9); text-transform: capitalize; margin-top: 3px; }
-  .ms-field { margin-bottom: 10px; }
-  .ms-field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--text-secondary); }
-  .ms-field input, .ms-field textarea { width: 100%; padding: 9px 12px; border: 1.5px solid var(--border-light); border-radius: 8px; font-size: 13.5px; font-family: inherit; }
-  .ms-field textarea { resize: vertical; min-height: 60px; }
-  .ms-save-btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 700; border: none; background: var(--text-primary); color: #fff; cursor: pointer; }
-  .ms-save-btn:disabled { opacity: 0.6; cursor: default; }
-  .ms-saved { font-size: 12px; color: #15803d; margin-left: 10px; }
-  .ms-empty { text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary); background: #fff; border: 1px solid var(--border-light); border-radius: 14px; font-size: 0.9rem; }
+  .ms-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    height: 56px;
+  }
+  .ms-nav-logo {
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.04em;
+    text-decoration: none;
+    color: var(--text-primary);
+  }
+  .ms-nav-logo span {
+    color: var(--cyan-dark, #c84729);
+  }
+  .ms-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  .ms-title {
+    font-family: var(--font-serif, "STK Bureau Serif", Georgia, serif);
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0 0 1.5rem;
+  }
+  .ms-card {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .ms-card-hd {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1rem;
+  }
+  .ms-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .ms-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .ms-name {
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .ms-event {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .ms-tier {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(232, 89, 56, 0.1);
+    color: var(--cyan-dark, #c84729);
+    text-transform: capitalize;
+    margin-top: 3px;
+  }
+  .ms-field {
+    margin-bottom: 10px;
+  }
+  .ms-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+  }
+  .ms-field input,
+  .ms-field textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 13.5px;
+    font-family: inherit;
+  }
+  .ms-field textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+  .ms-save-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    background: var(--text-primary);
+    color: #fff;
+    cursor: pointer;
+  }
+  .ms-save-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+  .ms-saved {
+    font-size: 12px;
+    color: #15803d;
+    margin-left: 10px;
+  }
+  .ms-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-secondary);
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    font-size: 0.9rem;
+  }
 </style>
-{% endblock %}
-
-{% block body %}
-<nav class="ms-nav"><a href="/" class="ms-nav-logo">heelo<span>.</span></a></nav>
+{% endblock %} {% block body %}
+<nav class="ms-nav">
+  <a href="/" class="ms-nav-logo">heelo<span>.</span></a>
+</nav>
 
 <div class="ms-wrap">
   <h1 class="ms-title">My sponsorships</h1>
 
-  {% if sponsors %}
-  {% for sponsor in sponsors %}
-  {% set event = events.get(sponsor.event_id) %}
-  <div class="ms-card" x-data="sponsorEditForm('{{ sponsor.id }}', {
+  {% if sponsors %} {% for sponsor in sponsors %} {% set event =
+  events.get(sponsor.event_id) %}
+  <div
+    class="ms-card"
+    x-data="sponsorEditForm('{{ sponsor.id }}', {
       logo_url: {{ (sponsor.logo_url or '') | tojson }},
       website: {{ (sponsor.website or '') | tojson }},
       description: {{ (sponsor.description or '') | tojson }},
-    })">
+    })"
+  >
     <div class="ms-card-hd">
       <div class="ms-logo">
-        <img :src="form.logo_url" alt="" x-show="form.logo_url" style="display:none;">
-        <span class="material-symbols-outlined" style="color:var(--text-muted);" x-show="!form.logo_url">business</span>
+        <img
+          :src="form.logo_url"
+          alt=""
+          x-show="form.logo_url"
+          style="display: none"
+        />
+        <span
+          class="material-symbols-outlined"
+          style="color: var(--text-muted)"
+          x-show="!form.logo_url"
+          >business</span
+        >
       </div>
       <div>
         <div class="ms-name">{{ sponsor.name }}</div>
         <div class="ms-event">{{ event.title if event else 'Event' }}</div>
-        <span class="ms-tier">{{ 'Exhibitor' if sponsor.is_exhibitor else sponsor.tier }}{% if sponsor.booth_number %} · Booth {{ sponsor.booth_number }}{% endif %}</span>
+        <span class="ms-tier"
+          >{{ 'Exhibitor' if sponsor.is_exhibitor else sponsor.tier }}{% if
+          sponsor.booth_number %} · Booth {{ sponsor.booth_number }}{% endif
+          %}</span
+        >
       </div>
     </div>
 
     <div class="ms-field">
       <label>Logo URL</label>
-      <input type="url" x-model="form.logo_url" placeholder="https://...">
+      <input type="url" x-model="form.logo_url" placeholder="https://..." />
     </div>
     <div class="ms-field">
       <label>Website</label>
-      <input type="url" x-model="form.website" placeholder="https://...">
+      <input type="url" x-model="form.website" placeholder="https://..." />
     </div>
     <div class="ms-field">
       <label>Description</label>
-      <textarea x-model="form.description" placeholder="Tell attendees about your company"></textarea>
+      <textarea
+        x-model="form.description"
+        placeholder="Tell attendees about your company"
+      ></textarea>
     </div>
 
-    <button class="ms-save-btn" @click="save()" :disabled="saving" x-text="saving ? 'Saving…' : 'Save changes'"></button>
+    <button
+      class="ms-save-btn"
+      @click="save()"
+      :disabled="saving"
+      x-text="saving ? 'Saving…' : 'Save changes'"
+    ></button>
     <span class="ms-saved" x-show="saved" x-transition>Saved</span>
   </div>
-  {% endfor %}
-  {% else %}
-  <div class="ms-empty">No sponsorships claimed yet. Ask the event organizer to send you a sponsor invite link.</div>
+  {% endfor %} {% else %}
+  <div class="ms-empty">
+    No sponsorships claimed yet. Ask the event organizer to send you a sponsor
+    invite link.
+  </div>
   {% endif %}
 </div>
 
 <script>
-function sponsorEditForm(sponsorId, initial) {
-  return {
-    form: { ...initial },
-    saving: false,
-    saved: false,
-    async save() {
-      this.saving = true;
-      this.saved = false;
-      try {
-        const res = await fetch(`/api/v1/sponsor-portal/me/${sponsorId}`, {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-          body: JSON.stringify(this.form),
-        });
-        if (res.ok) { this.saved = true; setTimeout(() => this.saved = false, 2000); }
-      } finally {
-        this.saving = false;
-      }
-    },
-  };
-}
+  function sponsorEditForm(sponsorId, initial) {
+    return {
+      form: { ...initial },
+      saving: false,
+      saved: false,
+      async save() {
+        this.saving = true;
+        this.saved = false;
+        try {
+          const res = await fetch(`/api/v1/sponsor-portal/me/${sponsorId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(this.form),
+          });
+          if (res.ok) {
+            this.saved = true;
+            setTimeout(() => (this.saved = false), 2000);
+          }
+        } finally {
+          this.saving = false;
+        }
+      },
+    };
+  }
 </script>
 {% endblock %}

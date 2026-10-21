@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block subject %}Update: {{ event.title }} — details have changed{% endblock %}
+{% block subject %}Update: {{ event.title }} - details have changed{% endblock %}
 
 {% block content %}
 <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:900;color:#000000;line-height:1.2;">
@@ -36,12 +36,12 @@
     <td style="padding:20px 24px;">
       {% if event.start_datetime %}
       <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
-        📅&nbsp; <strong>{{ event.start_datetime.strftime('%A, %B %d, %Y at %-I:%M %p') }}</strong>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><strong>{{ event.start_datetime.strftime('%A, %B %d, %Y at %-I:%M %p') }}</strong>
       </p>
       {% endif %}
       {% if event.venue_name %}
       <p style="margin:0 0 10px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#000000;">
-        📍&nbsp; <strong>{{ event.venue_name }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}</strong>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><strong>{{ event.venue_name }}{% if event.venue_city %}, {{ event.venue_city }}{% endif %}</strong>
       </p>
       {% endif %}
     </td>
@@ -51,8 +51,8 @@
 <!-- CTA -->
 <table border="0" cellpadding="0" cellspacing="0">
   <tr>
-    <td style="background:{{ brand_color or '#00FFF3' }};border-radius:8px;">
-      <a href="{{ frontend_url }}/e/{{ event.slug }}" style="display:inline-block;padding:13px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;color:{{ brand_color | contrast_text('#000000') }};text-decoration:none;">
+    <td style="background:{{ brand_color or '#E85938' }};border-radius:8px;">
+      <a href="{{ frontend_url }}/e/{{ event.slug }}" style="display:inline-block;padding:13px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;color:{{ brand_color | contrast_text('#FFFFFF') }};text-decoration:none;">
         View Event
       </a>
     </td>
@@ -60,6 +60,6 @@
 </table>
 
 <p style="margin:24px 0 0;font-family:system-ui,-apple-system,sans-serif;font-size:12px;color:#aaaaaa;line-height:1.5;">
-  Your ticket is still valid. No action required unless you have questions — reach out to the event organiser directly.
+  Your ticket is still valid. No action required unless you have questions - reach out to the event organiser directly.
 </p>
 {% endblock %}

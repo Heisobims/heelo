@@ -1,4 +1,4 @@
-"""Agenda builder — real CRUD on EventSession, replacing the old
+"""Agenda builder - real CRUD on EventSession, replacing the old
 Event.extras.agenda JSON blob, with speaker_ids wired to real Speaker rows
 and drag-and-drop reordering persisted via a bulk reorder endpoint.
 """

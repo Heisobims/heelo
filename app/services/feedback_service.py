@@ -20,7 +20,7 @@ async def submit_feedback(
     comment: str | None,
 ) -> EventFeedback:
     """
-    Record an attendee's post-event rating. Idempotent — resubmitting (e.g. the
+    Record an attendee's post-event rating. Idempotent - resubmitting (e.g. the
     attendee changes their mind) updates the existing row rather than erroring,
     since one registration can only ever have one feedback entry.
     """

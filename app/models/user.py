@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class User(Base, SoftDeleteMixin):
-    """Platform user — can be an organizer, attendee, or both."""
+    """Platform user - can be an organizer, attendee, or both."""
 
     __tablename__ = "users"
     __table_args__ = (
@@ -37,11 +37,11 @@ class User(Base, SoftDeleteMixin):
     oauth_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     whatsapp_number: Mapped[str | None] = mapped_column(String(30), nullable=True)
     whatsapp_opted_in: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    # Public profile slug — e.g. heelo.io/p/<username>
+    # Public profile slug - e.g. heelo.io/p/<username>
     username: Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True, index=True)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    # Opt-in demographics — for audience insights/filtering, never collected at signup.
+    # Opt-in demographics - for audience insights/filtering, never collected at signup.
     # ISO 3166-1 alpha-2, e.g. "NG"
     country: Mapped[str | None] = mapped_column(String(2), nullable=True, index=True)
     birth_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -70,7 +70,7 @@ class OTPCode(Base, TimestampMixin):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    # Hashed — never stored plain
+    # Hashed - never stored plain
     code_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     # email_verification | login | whatsapp_verification
     purpose: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -102,7 +102,7 @@ class PasswordResetToken(Base, TimestampMixin):
 
 
 class RefreshToken(Base, TimestampMixin):
-    """Long-lived JWT refresh token — one per device/session."""
+    """Long-lived JWT refresh token - one per device/session."""
 
     __tablename__ = "refresh_tokens"
     __table_args__ = (Index("ix_refresh_tokens_user_revoked", "user_id", "revoked_at"),)

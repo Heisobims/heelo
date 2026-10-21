@@ -1,198 +1,1134 @@
 {% extends "dashboard/layout.html" %}
+{% block title %}Developer & API · {{ org.name }} | Heelo{% endblock %}
+{% set active_page = 'developer' %}
 
-{% block head %}{{ super() }}
+{% block head %}
+{{ super() }}
 <style>
-  .dev-section { background: var(--surface-raised); border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-  .dev-section h2 { font-family: 'STK Bureau Serif', serif; font-size: 1.1rem; margin: 0 0 4px; }
-  .dev-section p.desc { color: var(--text-muted); font-size: 0.85rem; margin: 0 0 20px; }
-  .key-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
-  .key-row:last-child { border-bottom:none; }
-  .key-prefix { font-family:monospace; font-size:0.85rem; background:var(--surface); padding:4px 8px; border-radius:6px; flex:1; }
-  .badge-active { background:#00FFF320; color:#00FFF3; font-size:0.7rem; padding:2px 8px; border-radius:20px; }
-  .badge-revoked { background:#ff444420; color:#ff6b6b; font-size:0.7rem; padding:2px 8px; border-radius:20px; }
-  .webhook-row { padding:14px 0; border-bottom:1px solid var(--border); }
-  .webhook-row:last-child { border-bottom:none; }
-  .webhook-url { font-family:monospace; font-size:0.8rem; color:var(--text-muted); word-break:break-all; }
-  .event-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-  .event-pill { background:var(--surface); border:1px solid var(--border); border-radius:20px; font-size:0.7rem; padding:2px 8px; }
-  .btn-sm { padding:6px 14px; font-size:0.8rem; border-radius:8px; border:none; cursor:pointer; font-weight:600; }
-  .btn-primary { background:#00FFF3; color:#000; }
-  .btn-primary:hover { opacity:0.85; }
-  .btn-danger { background:transparent; border:1px solid #ff6b6b; color:#ff6b6b; }
-  .btn-danger:hover { background:#ff6b6b20; }
-  .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text-muted); }
-  .copy-key-box { background:#000; border:1px solid #00FFF3; border-radius:8px; padding:16px; font-family:monospace; font-size:0.85rem; color:#00FFF3; word-break:break-all; margin-top:12px; }
-  .form-row { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
-  .form-row label { font-size:0.8rem; color:var(--text-muted); font-weight:600; }
-  .form-row input, .form-row select { background:var(--surface); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 12px; font-size:0.85rem; }
-  .form-row input:focus, .form-row select:focus { outline:none; border-color:#00FFF3; }
-  .checkbox-group { display:flex; flex-wrap:wrap; gap:8px; }
-  .checkbox-group label { display:flex; align-items:center; gap:6px; font-size:0.8rem; cursor:pointer; }
-  .empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); font-size:0.85rem; }
-  .delivery-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:0.8rem; }
-  .delivery-row:last-child { border-bottom:none; }
-  .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-  .dot-success { background:#00FFF3; }
-  .dot-pending { background:#f59e0b; }
-  .dot-failed, .dot-exhausted { background:#ff6b6b; }
+  /* ── Developer Portal Styling ────────────────────────────────────────────── */
+  .dev-header {
+    margin-bottom: 24px;
+  }
+  .dev-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(232, 89, 56, 0.08);
+    color: var(--cyan);
+    margin-bottom: 8px;
+  }
+  .dev-title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary, #131B17);
+    margin: 0 0 6px;
+  }
+  .dev-subtitle {
+    font-size: 14px;
+    color: var(--text-muted, #6B7280);
+    margin: 0;
+    max-width: 680px;
+    line-height: 1.5;
+  }
+
+  /* ── Quick Stats Grid ────────────────────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: #fff;
+    border: 1px solid var(--border-light, #E5E7EB);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+  .stat-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #6B7280);
+    margin-bottom: 4px;
+  }
+  .stat-card-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary, #131B17);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stat-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(19, 27, 23, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary, #131B17);
+  }
+
+  /* ── Tabs ────────────────────────────────────────────────────────────────── */
+  .dev-tabs {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-light, #E5E7EB);
+    margin-bottom: 20px;
+    padding-bottom: 2px;
+  }
+  .dev-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px 8px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted, #6B7280);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: color 140ms ease, background 140ms ease;
+  }
+  .dev-tab:hover {
+    color: var(--text-primary, #131B17);
+    background: rgba(19, 27, 23, 0.03);
+  }
+  .dev-tab.active {
+    color: var(--cyan, #E85938);
+    background: rgba(232, 89, 56, 0.06);
+  }
+  .dev-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--cyan, #E85938);
+  }
+  .tab-count-pill {
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(19, 27, 23, 0.08);
+    color: var(--text-primary, #131B17);
+  }
+  .dev-tab.active .tab-count-pill {
+    background: rgba(232, 89, 56, 0.15);
+    color: var(--cyan, #E85938);
+  }
+
+  /* ── Card Containers ─────────────────────────────────────────────────────── */
+  .dev-card {
+    background: #fff;
+    border: 1px solid var(--border-light, #E5E7EB);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  }
+  .card-top-bar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .card-heading {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary, #131B17);
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: var(--text-muted, #6B7280);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────────── */
+  .btn-dev {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 120ms ease;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-dev-primary {
+    background: var(--cyan, #E85938);
+    color: #fff;
+  }
+  .btn-dev-primary:hover:not(:disabled) {
+    background: var(--cyan-dark, #C84729);
+    transform: translateY(-1px);
+  }
+  .btn-dev-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .btn-dev-ghost {
+    background: #fff;
+    border-color: var(--border-light, #E5E7EB);
+    color: var(--text-primary, #131B17);
+  }
+  .btn-dev-ghost:hover {
+    background: #F9FAFB;
+    border-color: #D1D5DB;
+  }
+  .btn-dev-danger {
+    background: #FFF5F5;
+    border-color: #FED7D7;
+    color: #E53E3E;
+  }
+  .btn-dev-danger:hover {
+    background: #FEE2E2;
+    border-color: #FEB2B2;
+  }
+  .btn-dev-xs {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  /* ── Secret / Key Alert Box ──────────────────────────────────────────────── */
+  .secret-reveal-card {
+    background: #FFFBF9;
+    border: 1.5px solid var(--cyan, #E85938);
+    border-radius: 12px;
+    padding: 18px;
+    margin: 16px 0;
+    box-shadow: 0 4px 14px rgba(232, 89, 56, 0.08);
+  }
+  .secret-reveal-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--cyan-dark, #C84729);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .secret-code-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #111827;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 6px;
+  }
+  .secret-code-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: #F97316;
+    word-break: break-all;
+    flex: 1;
+    letter-spacing: 0.02em;
+  }
+  .copy-feedback-btn {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: background 120ms;
+  }
+  .copy-feedback-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+  }
+
+  /* ── Interactive Form Container ─────────────────────────────────────────── */
+  .slide-form {
+    background: #F9FAFB;
+    border: 1px solid var(--border-light, #E5E7EB);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #131B17);
+    margin-bottom: 6px;
+  }
+  .form-group input, .form-group textarea {
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--border-light, #E5E7EB);
+    border-radius: 8px;
+    padding: 9px 13px;
+    font-size: 13.5px;
+    color: var(--text-primary, #131B17);
+    box-sizing: border-box;
+    transition: border-color 140ms ease;
+  }
+  .form-group input:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--cyan, #E85938);
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+  }
+  .form-help {
+    font-size: 12px;
+    color: var(--text-muted, #6B7280);
+    margin-top: 5px;
+  }
+
+  /* ── Checkbox Event Grid ─────────────────────────────────────────────────── */
+  .event-categories {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .event-category-box {
+    background: #fff;
+    border: 1px solid var(--border-light, #E5E7EB);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .event-category-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #6B7280);
+    margin-bottom: 8px;
+  }
+  .event-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 13px;
+    color: var(--text-primary, #131B17);
+    cursor: pointer;
+  }
+  .event-checkbox-label input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--cyan, #E85938);
+    cursor: pointer;
+  }
+
+  /* ── Key & Webhook Row Items ─────────────────────────────────────────────── */
+  .item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border: 1px solid var(--border-light, #E5E7EB);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: #fff;
+    transition: border-color 140ms, box-shadow 140ms;
+  }
+  .item-row:hover {
+    border-color: #D1D5DB;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  }
+  .item-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+  .item-icon-box {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: rgba(232, 89, 56, 0.08);
+    color: var(--cyan, #E85938);
+  }
+  .item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #131B17);
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .item-meta {
+    font-size: 12px;
+    color: var(--text-muted, #6B7280);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .code-prefix-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    background: #F3F4F6;
+    color: #374151;
+    padding: 2px 8px;
+    border-radius: 5px;
+    border: 1px solid #E5E7EB;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .status-pill.active {
+    background: #ECFDF5;
+    color: #059669;
+  }
+  .status-pill.paused {
+    background: #FEF3C7;
+    color: #D97706;
+  }
+  .status-pill.revoked {
+    background: #F3F4F6;
+    color: #6B7280;
+  }
+
+  /* ── Delivery Logs Table ─────────────────────────────────────────────────── */
+  .delivery-log-drawer {
+    background: #F9FAFB;
+    border: 1px solid var(--border-light, #E5E7EB);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 10px;
+  }
+  .log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  .log-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #6B7280);
+    border-bottom: 1px solid #E5E7EB;
+  }
+  .log-table td {
+    padding: 10px;
+    border-bottom: 1px solid #F3F4F6;
+    color: var(--text-primary, #131B17);
+  }
+  .badge-http {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .badge-http-2xx {
+    background: #DEF7EC;
+    color: #03543F;
+  }
+  .badge-http-4xx, .badge-http-5xx {
+    background: #FDE8E8;
+    color: #9B1C1C;
+  }
+  .badge-http-pending {
+    background: #FEF08A;
+    color: #713F12;
+  }
+
+  /* ── Code Snippet Box ────────────────────────────────────────────────────── */
+  .code-snippet-box {
+    background: #111827;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 14px 0;
+  }
+  .code-snippet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: #1F2937;
+    border-bottom: 1px solid #374151;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #9CA3AF;
+  }
+  .code-snippet-body {
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: #E5E7EB;
+    overflow-x: auto;
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre;
+  }
+
+  /* ── Floating Toast System ───────────────────────────────────────────────── */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast-bubble {
+    pointer-events: auto;
+    background: #1F2937;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: toastSlide 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .toast-success {
+    border-left: 4px solid #10B981;
+  }
+  .toast-error {
+    border-left: 4px solid #EF4444;
+  }
+  @keyframes toastSlide {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner-icon { animation: spin 0.8s linear infinite; }
 </style>
 {% endblock %}
 
 {% block main_content %}
-<div x-data="devSettings()" x-init="init()">
+<div class="dash-content" style="max-width:960px; padding-bottom:56px;" x-data="devPortal()" x-init="init()">
 
-  <div style="margin-bottom:28px;">
-    <h1 style="font-family:'STK Bureau Serif',serif;font-size:1.5rem;margin:0 0 4px;">Developer</h1>
-    <p style="color:var(--text-muted);font-size:0.85rem;margin:0;">API keys and webhook subscriptions for <strong>{{ org.name }}</strong>.</p>
+  <!-- ── Page Header ──────────────────────────────────────────────────────── -->
+  <div class="dev-header">
+    <div style="font-size:13px; color:var(--text-muted); margin-bottom:4px;">Settings &bull; Developer</div>
+    <div class="dev-badge">
+      <span class="material-symbols-outlined" style="font-size:14px;">terminal</span>
+      REST API &bull; v1 &bull; Webhooks
+    </div>
+    <h1 class="dev-title">Developer Platform</h1>
+    <p class="dev-subtitle">
+      Generate secret API keys to authenticate automated scripts, connect real-time webhook endpoints, or build custom attendee apps on top of <strong>{{ org.name }}</strong>.
+    </p>
   </div>
 
-  <!-- ── API Keys ─────────────────────────────────────────────────────────── -->
-  <div class="dev-section">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
+  <!-- ── Top Quick Stats Bar ──────────────────────────────────────────────── -->
+  <div class="stats-grid">
+    <div class="stat-card">
       <div>
-        <h2>API Keys</h2>
-        <p class="desc">Use <code>X-API-Key: hlo_live_...</code> to authenticate requests to <code>/api/public/v1/</code>.</p>
+        <div class="stat-card-title">Public API Base URL</div>
+        <div class="stat-card-value">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text-primary);letter-spacing:-0.02em;">/api/public/v1/</span>
+          <button class="btn-dev btn-dev-ghost btn-dev-xs" @click="copyText('/api/public/v1/', 'Base URL copied')" title="Copy base URL">
+            <span class="material-symbols-outlined" style="font-size:14px;">content_copy</span>
+          </button>
+        </div>
       </div>
-      <button class="btn-sm btn-primary" @click="showCreateKey=true" style="flex-shrink:0;">+ New Key</button>
+      <div class="stat-card-icon">
+        <span class="material-symbols-outlined" style="font-size:20px;">api</span>
+      </div>
     </div>
 
-    <!-- Create form -->
-    <div x-show="showCreateKey" x-transition style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">
-      <div class="form-row">
-        <label>Key name</label>
-        <input x-model="newKeyName" placeholder="e.g. Production server" maxlength="255" />
+    <div class="stat-card">
+      <div>
+        <div class="stat-card-title">Active Credentials</div>
+        <div class="stat-card-value">
+          <span x-text="activeKeysCount + ' Key' + (activeKeysCount !== 1 ? 's' : '')"></span>
+          <span style="color:var(--border-light);">&bull;</span>
+          <span x-text="webhooks.filter(w => w.is_active).length + ' Webhook' + (webhooks.filter(w => w.is_active).length !== 1 ? 's' : '')"></span>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn-sm btn-primary" @click="createKey()" :disabled="!newKeyName.trim() || creatingKey">
-          <span x-show="!creatingKey">Create</span>
-          <span x-show="creatingKey">Creating...</span>
+      <div class="stat-card-icon">
+        <span class="material-symbols-outlined" style="font-size:20px;color:#059669;">check_circle</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div>
+        <div class="stat-card-title">Interactive API Docs</div>
+        <div class="stat-card-value">
+          <a href="/api/docs" target="_blank" class="btn-dev btn-dev-ghost btn-dev-xs" style="color:var(--cyan);font-weight:700;">
+            Swagger UI
+            <span class="material-symbols-outlined" style="font-size:14px;">open_in_new</span>
+          </a>
+        </div>
+      </div>
+      <div class="stat-card-icon">
+        <span class="material-symbols-outlined" style="font-size:20px;">menu_book</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Navigation Tabs ──────────────────────────────────────────────────── -->
+  <div class="dev-tabs">
+    <button class="dev-tab" :class="{ 'active': currentTab === 'keys' }" @click="currentTab = 'keys'">
+      <span class="material-symbols-outlined" style="font-size:18px;">vpn_key</span>
+      API Keys
+      <span class="tab-count-pill" x-text="apiKeys.length"></span>
+    </button>
+    <button class="dev-tab" :class="{ 'active': currentTab === 'webhooks' }" @click="currentTab = 'webhooks'">
+      <span class="material-symbols-outlined" style="font-size:18px;">webhook</span>
+      Webhooks
+      <span class="tab-count-pill" x-text="webhooks.length"></span>
+    </button>
+    <button class="dev-tab" :class="{ 'active': currentTab === 'quickstart' }" @click="currentTab = 'quickstart'">
+      <span class="material-symbols-outlined" style="font-size:18px;">code</span>
+      Quickstart & Code
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 1: API KEYS                                                          -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <div x-show="currentTab === 'keys'">
+    <div class="dev-card">
+      <div class="card-top-bar">
+        <div>
+          <h2 class="card-heading">
+            <span class="material-symbols-outlined" style="font-size:20px;color:var(--cyan);">key</span>
+            Secret API Keys
+          </h2>
+          <p class="card-desc">
+            Use your API key to interact with event listings, attendee rosters, and ticket check-in services via the <code>X-API-Key: hlo_live_...</code> header.
+          </p>
+        </div>
+        <button class="btn-dev btn-dev-primary" @click="showCreateKey = true; newlyCreatedKey = null;">
+          <span class="material-symbols-outlined" style="font-size:16px;">add</span>
+          Generate Key
         </button>
-        <button class="btn-sm btn-ghost" @click="showCreateKey=false;newKeyName=''">Cancel</button>
       </div>
 
-      <!-- Newly created key reveal -->
+      <!-- Create Key Slide Form -->
+      <div x-show="showCreateKey" x-transition class="slide-form">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:var(--text-primary);">Generate New Secret API Key</h3>
+        <div class="form-group">
+          <label>Key Name / Description</label>
+          <input x-model="newKeyName" placeholder="e.g. Production Backend, Zapier Integration, POS Checkin" maxlength="255" @keyup.enter="createKey()" />
+          <div class="form-help">Give this key a recognizable label so you can track its usage.</div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="btn-dev btn-dev-primary" @click="createKey()" :disabled="!newKeyName.trim() || creatingKey">
+            <span x-show="creatingKey" class="material-symbols-outlined spinner-icon" style="font-size:15px;">progress_activity</span>
+            <span x-text="creatingKey ? 'Generating...' : 'Create Key'"></span>
+          </button>
+          <button class="btn-dev btn-dev-ghost" @click="showCreateKey = false; newKeyName = '';">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Secret Reveal Banner (Shown Once upon generation) -->
       <template x-if="newlyCreatedKey">
-        <div>
-          <div class="copy-key-box" x-text="newlyCreatedKey"></div>
-          <p style="color:#f59e0b;font-size:0.78rem;margin:8px 0 0;">Copy this key now — it will not be shown again.</p>
-          <button class="btn-sm btn-ghost" style="margin-top:8px;" @click="copyKey()">Copy to clipboard</button>
-        </div>
-      </template>
-    </div>
-
-    <!-- Key list -->
-    <template x-if="apiKeys.length === 0">
-      <div class="empty-state">No API keys yet. Create one above to get started.</div>
-    </template>
-    <template x-for="k in apiKeys" :key="k.id">
-      <div class="key-row">
-        <span class="key-prefix" x-text="k.key_prefix + '...'"></span>
-        <span x-text="k.name" style="flex:2;font-size:0.85rem;"></span>
-        <span :class="k.is_active ? 'badge-active' : 'badge-revoked'" x-text="k.is_active ? 'Active' : 'Revoked'"></span>
-        <span style="color:var(--text-muted);font-size:0.75rem;" x-text="k.last_used_at ? 'Used ' + relTime(k.last_used_at) : 'Never used'"></span>
-        <button class="btn-sm btn-danger" @click="revokeKey(k)" x-show="k.is_active">Revoke</button>
-      </div>
-    </template>
-  </div>
-
-  <!-- ── Webhooks ───────────────────────────────────────────────────────────── -->
-  <div class="dev-section">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
-      <div>
-        <h2>Webhook Subscriptions</h2>
-        <p class="desc">Heelo will POST a signed JSON payload to your URL when events occur.</p>
-      </div>
-      <button class="btn-sm btn-primary" @click="showCreateWebhook=true" style="flex-shrink:0;">+ Add Endpoint</button>
-    </div>
-
-    <!-- Create webhook form -->
-    <div x-show="showCreateWebhook" x-transition style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">
-      <div class="form-row">
-        <label>Endpoint URL</label>
-        <input x-model="newWebhook.url" placeholder="https://yoursite.com/webhooks/heelo" type="url" />
-      </div>
-      <div class="form-row">
-        <label>Description (optional)</label>
-        <input x-model="newWebhook.description" placeholder="Production order handler" maxlength="500" />
-      </div>
-      <div class="form-row">
-        <label>Events to subscribe</label>
-        <div class="checkbox-group">
-          {% for evt in webhook_events %}
-          <label>
-            <input type="checkbox" :value="'{{ evt }}'" x-model="newWebhook.events" />
-            <span>{{ evt }}</span>
-          </label>
-          {% endfor %}
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn-sm btn-primary" @click="createWebhook()" :disabled="!newWebhook.url || newWebhook.events.length===0 || creatingWebhook">
-          <span x-show="!creatingWebhook">Subscribe</span>
-          <span x-show="creatingWebhook">Saving...</span>
-        </button>
-        <button class="btn-sm btn-ghost" @click="showCreateWebhook=false;resetWebhookForm()">Cancel</button>
-      </div>
-      <template x-if="newlyCreatedSecret">
-        <div>
-          <div class="copy-key-box" x-text="'Secret: ' + newlyCreatedSecret"></div>
-          <p style="color:#f59e0b;font-size:0.78rem;margin:8px 0 0;">Save this signing secret — it won't be shown again. Use it to verify <code>X-Heelo-Signature</code> on incoming requests.</p>
-          <button class="btn-sm btn-ghost" style="margin-top:8px;" @click="copySecret()">Copy to clipboard</button>
-        </div>
-      </template>
-    </div>
-
-    <!-- Webhook list -->
-    <template x-if="webhooks.length === 0">
-      <div class="empty-state">No webhook subscriptions yet.</div>
-    </template>
-    <template x-for="w in webhooks" :key="w.id">
-      <div class="webhook-row">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-          <span :class="w.is_active ? 'badge-active' : 'badge-revoked'" x-text="w.is_active ? 'Active' : 'Paused'"></span>
-          <span class="webhook-url" x-text="w.url"></span>
-          <div style="margin-left:auto;display:flex;gap:6px;">
-            <button class="btn-sm btn-ghost" @click="testWebhook(w)" title="Send test ping">Test</button>
-            <button class="btn-sm btn-ghost" @click="toggleWebhook(w)" x-text="w.is_active ? 'Pause' : 'Resume'"></button>
-            <button class="btn-sm btn-danger" @click="deleteWebhook(w)">Delete</button>
+        <div class="secret-reveal-card">
+          <div class="secret-reveal-title">
+            <span class="material-symbols-outlined" style="font-size:18px;">lock_open</span>
+            Your API Key has been generated!
+          </div>
+          <p style="font-size:12.5px;color:#9A3412;margin:0 0 8px;">
+            Copy your secret key immediately. For security reasons, <strong>Heelo never stores keys in plaintext and will not show it again</strong>.
+          </p>
+          <div class="secret-code-wrapper">
+            <span class="secret-code-text" x-text="newlyCreatedKey"></span>
+            <button class="copy-feedback-btn" @click="copyText(newlyCreatedKey, 'API Key copied!')">
+              <span class="material-symbols-outlined" style="font-size:14px;">content_copy</span>
+              Copy
+            </button>
           </div>
         </div>
-        <div class="event-pills">
-          <template x-for="ev in w.events" :key="ev">
-            <span class="event-pill" x-text="ev"></span>
-          </template>
+      </template>
+
+      <!-- Key Listing -->
+      <template x-if="apiKeys.length === 0">
+        <div style="text-align:center;padding:48px 20px;border:1.5px dashed var(--border-light);border-radius:12px;margin-top:12px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:#F3F4F6;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;color:#9CA3AF;">
+            <span class="material-symbols-outlined" style="font-size:24px;">key_off</span>
+          </div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">No API Keys generated yet</div>
+          <div style="font-size:13px;color:var(--text-muted);max-width:400px;margin:0 auto 16px;">
+            Create an API key to access {{ org.name }}'s events and ticketing platform programmatically.
+          </div>
+          <button class="btn-dev btn-dev-ghost" @click="showCreateKey = true">Generate First Key</button>
         </div>
-        <div style="margin-top:8px;" x-show="w.showDeliveries">
-          <div x-show="w.deliveries === null" style="color:var(--text-muted);font-size:0.8rem;">Loading...</div>
-          <template x-if="w.deliveries && w.deliveries.length === 0">
-            <div style="color:var(--text-muted);font-size:0.8rem;">No deliveries yet.</div>
-          </template>
-          <template x-if="w.deliveries && w.deliveries.length > 0">
-            <div>
-              <template x-for="d in w.deliveries" :key="d.id">
-                <div class="delivery-row">
-                  <div :class="'status-dot dot-' + d.status"></div>
-                  <span x-text="d.event_type" style="flex:1;font-family:monospace;"></span>
-                  <span x-text="d.response_status ? d.response_status : '—'" style="width:50px;text-align:center;"></span>
-                  <span x-text="d.attempts + ' attempt' + (d.attempts!==1?'s':'')" style="color:var(--text-muted);"></span>
-                  <span x-text="relTime(d.created_at)" style="color:var(--text-muted);"></span>
-                </div>
-              </template>
+      </template>
+
+      <template x-for="k in apiKeys" :key="k.id">
+        <div class="item-row">
+          <div class="item-left">
+            <div class="item-icon-box" :style="!k.is_active ? 'background:#F3F4F6;color:#9CA3AF;' : ''">
+              <span class="material-symbols-outlined" style="font-size:20px;">vpn_key</span>
             </div>
-          </template>
+            <div>
+              <div class="item-name">
+                <span x-text="k.name"></span>
+                <span class="code-prefix-pill">
+                  <span x-text="k.key_prefix + '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;'"></span>
+                  <button @click="copyText(k.key_prefix, 'Key prefix copied')" style="background:none;border:none;cursor:pointer;padding:0;color:#6B7280;display:flex;align-items:center;" title="Copy prefix">
+                    <span class="material-symbols-outlined" style="font-size:12px;">content_copy</span>
+                  </button>
+                </span>
+                <span class="status-pill" :class="k.is_active ? 'active' : 'revoked'">
+                  <span style="font-size:13px;line-height:0;">&bull;</span>
+                  <span x-text="k.is_active ? 'Active' : 'Revoked'"></span>
+                </span>
+              </div>
+              <div class="item-meta">
+                <span>Created <strong x-text="formatDate(k.created_at)"></strong></span>
+                <span>&bull;</span>
+                <span x-text="k.last_used_at ? 'Last used ' + relTime(k.last_used_at) : 'Never used'" :style="k.last_used_at ? 'color:#059669;font-weight:600;' : ''"></span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <button class="btn-dev btn-dev-danger btn-dev-xs" @click="revokeKey(k)" x-show="k.is_active">
+              <span class="material-symbols-outlined" style="font-size:14px;">block</span>
+              Revoke
+            </button>
+          </div>
         </div>
-        <button @click="loadDeliveries(w)" style="font-size:0.75rem;color:var(--text-muted);background:none;border:none;cursor:pointer;margin-top:6px;padding:0;" x-text="w.showDeliveries ? '▲ Hide log' : '▾ Show delivery log'"></button>
-      </div>
-    </template>
+      </template>
+    </div>
   </div>
 
-  <!-- ── Docs callout ───────────────────────────────────────────────────────── -->
-  <div style="background:var(--surface-raised);border-radius:12px;padding:20px;display:flex;gap:20px;align-items:center;">
-    <div style="font-size:1.5rem;"><span class="material-symbols-outlined" style="color:var(--text-muted);">menu_book</span></div>
-    <div>
-      <p style="font-weight:600;margin:0 0 4px;font-size:0.9rem;">API Reference</p>
-      <p style="color:var(--text-muted);font-size:0.82rem;margin:0;">Base URL: <code>/api/public/v1/</code> · Authenticate with <code>X-API-Key: &lt;your-key&gt;</code>. Interactive docs at <code>/api/docs</code> (development only).</p>
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 2: WEBHOOKS                                                          -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <div x-show="currentTab === 'webhooks'">
+    <div class="dev-card">
+      <div class="card-top-bar">
+        <div>
+          <h2 class="card-heading">
+            <span class="material-symbols-outlined" style="font-size:20px;color:var(--cyan);">webhook</span>
+            Webhook Subscriptions
+          </h2>
+          <p class="card-desc">
+            Subscribe your servers to real-time events. Heelo delivers signed JSON HTTP POST payloads with automatic retries and HMAC SHA256 integrity verification.
+          </p>
+        </div>
+        <button class="btn-dev btn-dev-primary" @click="showCreateWebhook = true; newlyCreatedSecret = null;">
+          <span class="material-symbols-outlined" style="font-size:16px;">add</span>
+          Add Endpoint
+        </button>
+      </div>
+
+      <!-- Add Webhook Slide Form -->
+      <div x-show="showCreateWebhook" x-transition class="slide-form">
+        <h3 style="font-size:14px;font-weight:700;margin:0 0 12px;color:var(--text-primary);">Add Webhook Endpoint</h3>
+        
+        <div class="form-group">
+          <label>Endpoint URL (HTTPS recommended)</label>
+          <input x-model="newWebhook.url" placeholder="https://api.yourdomain.com/webhooks/heelo" type="url" />
+          <div class="form-help">Must be an accessible HTTP or HTTPS URL capable of accepting JSON POST requests.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Description / Purpose (optional)</label>
+          <input x-model="newWebhook.description" placeholder="e.g. Sync ticket sales to ERP, Trigger Discord bot" maxlength="500" />
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <label style="margin:0;">Events to Subscribe</label>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn-dev btn-dev-ghost btn-dev-xs" @click="selectAllEvents()">Select All</button>
+              <button type="button" class="btn-dev btn-dev-ghost btn-dev-xs" @click="newWebhook.events = []">Clear</button>
+            </div>
+          </div>
+
+          <div class="event-categories">
+            <!-- Orders & Payments -->
+            <div class="event-category-box">
+              <div class="event-category-title">Orders & Payments</div>
+              <label class="event-checkbox-label">
+                <input type="checkbox" value="order.paid" x-model="newWebhook.events" />
+                <span><code>order.paid</code> - Payment successfully processed</span>
+              </label>
+            </div>
+
+            <!-- Registrations & Tickets -->
+            <div class="event-category-box">
+              <div class="event-category-title">Tickets & Registrations</div>
+              <label class="event-checkbox-label">
+                <input type="checkbox" value="registration.created" x-model="newWebhook.events" />
+                <span><code>registration.created</code> - Registration initiated</span>
+              </label>
+              <label class="event-checkbox-label">
+                <input type="checkbox" value="registration.confirmed" x-model="newWebhook.events" />
+                <span><code>registration.confirmed</code> - Ticket confirmed</span>
+              </label>
+              <label class="event-checkbox-label">
+                <input type="checkbox" value="registration.cancelled" x-model="newWebhook.events" />
+                <span><code>registration.cancelled</code> - Ticket cancelled / refunded</span>
+              </label>
+            </div>
+
+            <!-- Attendance & Checkin -->
+            <div class="event-category-box">
+              <div class="event-category-title">Attendance</div>
+              <label class="event-checkbox-label">
+                <input type="checkbox" value="checkin.completed" x-model="newWebhook.events" />
+                <span><code>checkin.completed</code> - Attendee QR scanned at gate</span>
+              </label>
+            </div>
+
+            <!-- Event Lifecycle -->
+            <div class="event-category-box">
+              <div class="event-category-title">Event Lifecycle</div>
+              <label class="event-checkbox-label">
+                <input type="checkbox" value="event.published" x-model="newWebhook.events" />
+                <span><code>event.published</code> - Event went live</span>
+              </label>
+              <label class="event-checkbox-label">
+                <input type="checkbox" value="event.cancelled" x-model="newWebhook.events" />
+                <span><code>event.cancelled</code> - Event cancelled</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn-dev btn-dev-primary" @click="createWebhook()" :disabled="!newWebhook.url.trim() || newWebhook.events.length === 0 || creatingWebhook">
+            <span x-show="creatingWebhook" class="material-symbols-outlined spinner-icon" style="font-size:15px;">progress_activity</span>
+            <span x-text="creatingWebhook ? 'Registering...' : 'Save Endpoint'"></span>
+          </button>
+          <button class="btn-dev btn-dev-ghost" @click="showCreateWebhook = false; resetWebhookForm();">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Secret Reveal Banner (Shown Once upon webhook creation) -->
+      <template x-if="newlyCreatedSecret">
+        <div class="secret-reveal-card">
+          <div class="secret-reveal-title">
+            <span class="material-symbols-outlined" style="font-size:18px;">key</span>
+            Webhook Signing Secret Generated
+          </div>
+          <p style="font-size:12.5px;color:#9A3412;margin:0 0 8px;">
+            Save this signing secret. Every request sent by Heelo includes an <code>X-Heelo-Signature: t=timestamp,v1=signature</code> header signed with this secret.
+          </p>
+          <div class="secret-code-wrapper">
+            <span class="secret-code-text" x-text="newlyCreatedSecret"></span>
+            <button class="copy-feedback-btn" @click="copyText(newlyCreatedSecret, 'Secret copied!')">
+              <span class="material-symbols-outlined" style="font-size:14px;">content_copy</span>
+              Copy
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Webhook Listing -->
+      <template x-if="webhooks.length === 0">
+        <div style="text-align:center;padding:48px 20px;border:1.5px dashed var(--border-light);border-radius:12px;margin-top:12px;">
+          <div style="width:44px;height:44px;border-radius:50%;background:#F3F4F6;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;color:#9CA3AF;">
+            <span class="material-symbols-outlined" style="font-size:24px;">hub</span>
+          </div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">No Webhook Subscriptions</div>
+          <div style="font-size:13px;color:var(--text-muted);max-width:400px;margin:0 auto 16px;">
+            Set up an endpoint to receive real-time notifications whenever tickets are sold, attendees check in, or events update.
+          </div>
+          <button class="btn-dev btn-dev-ghost" @click="showCreateWebhook = true">Add First Endpoint</button>
+        </div>
+      </template>
+
+      <template x-for="w in webhooks" :key="w.id">
+        <div style="border:1px solid var(--border-light);border-radius:10px;margin-bottom:12px;background:#fff;padding:16px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span class="status-pill" :class="w.is_active ? 'active' : 'paused'">
+                  <span style="font-size:13px;line-height:0;">&bull;</span>
+                  <span x-text="w.is_active ? 'Active' : 'Paused'"></span>
+                </span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-all;" x-text="w.url"></span>
+                <button @click="copyText(w.url, 'URL copied')" style="background:none;border:none;cursor:pointer;padding:0;color:#6B7280;display:flex;align-items:center;" title="Copy endpoint URL">
+                  <span class="material-symbols-outlined" style="font-size:13px;">content_copy</span>
+                </button>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);" x-show="w.description" x-text="w.description"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button class="btn-dev btn-dev-ghost btn-dev-xs" @click="testWebhook(w)" :disabled="w.testing">
+                <span x-show="!w.testing" class="material-symbols-outlined" style="font-size:14px;">send</span>
+                <span x-show="w.testing" class="material-symbols-outlined spinner-icon" style="font-size:14px;">progress_activity</span>
+                <span x-text="w.testing ? 'Sending...' : 'Test Ping'"></span>
+              </button>
+              <button class="btn-dev btn-dev-ghost btn-dev-xs" @click="toggleWebhook(w)">
+                <span class="material-symbols-outlined" style="font-size:14px;" x-text="w.is_active ? 'pause' : 'play_arrow'"></span>
+                <span x-text="w.is_active ? 'Pause' : 'Resume'"></span>
+              </button>
+              <button class="btn-dev btn-dev-danger btn-dev-xs" @click="deleteWebhook(w)">
+                <span class="material-symbols-outlined" style="font-size:14px;">delete</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Event Pills -->
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 8px;">
+            <template x-for="ev in w.events" :key="ev">
+              <span style="font-family:'JetBrains Mono',monospace;font-size:11px;background:#F3F4F6;color:#374151;border:1px solid #E5E7EB;border-radius:6px;padding:2px 8px;" x-text="ev"></span>
+            </template>
+          </div>
+
+          <!-- Delivery Log Toggle -->
+          <div style="border-top:1px solid #F3F4F6;padding-top:10px;margin-top:10px;display:flex;align-items:center;justify-content:space-between;">
+            <button @click="loadDeliveries(w)" style="background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:var(--cyan);display:flex;align-items:center;gap:4px;padding:0;">
+              <span class="material-symbols-outlined" style="font-size:16px;" x-text="w.showDeliveries ? 'expand_less' : 'expand_more'"></span>
+              <span x-text="w.showDeliveries ? 'Hide recent delivery logs' : 'View recent delivery logs'"></span>
+            </button>
+            <span style="font-size:11px;color:var(--text-muted);" x-text="'Created ' + formatDate(w.created_at)"></span>
+          </div>
+
+          <!-- Expandable Delivery Logs -->
+          <div x-show="w.showDeliveries" x-transition class="delivery-log-drawer">
+            <div x-show="w.deliveriesLoading" style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px;">
+              <span class="material-symbols-outlined spinner-icon" style="font-size:16px;vertical-align:middle;margin-right:4px;">progress_activity</span>
+              Fetching delivery attempts...
+            </div>
+            <template x-if="!w.deliveriesLoading && (!w.deliveries || w.deliveries.length === 0)">
+              <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px;">
+                No delivery attempts recorded for this webhook yet.
+              </div>
+            </template>
+            <template x-if="!w.deliveriesLoading && w.deliveries && w.deliveries.length > 0">
+              <table class="log-table">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Event</th>
+                    <th>HTTP Code</th>
+                    <th>Attempts</th>
+                    <th>Delivered At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="d in w.deliveries" :key="d.id">
+                    <tr>
+                      <td>
+                        <span class="status-pill" :class="d.status === 'delivered' ? 'active' : (d.status === 'pending' ? 'paused' : 'revoked')">
+                          <span style="font-size:11px;">&bull;</span>
+                          <span x-text="d.status"></span>
+                        </span>
+                      </td>
+                      <td>
+                        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#1F2937;" x-text="d.event_type"></span>
+                      </td>
+                      <td>
+                        <span class="badge-http" :class="(d.response_status >= 200 && d.response_status < 300) ? 'badge-http-2xx' : (d.response_status ? 'badge-http-5xx' : 'badge-http-pending')" x-text="d.response_status || '-'"></span>
+                      </td>
+                      <td style="color:var(--text-muted);" x-text="d.attempts + ' attempt' + (d.attempts !== 1 ? 's' : '')"></td>
+                      <td style="color:var(--text-muted);" x-text="relTime(d.created_at)"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </template>
+          </div>
+        </div>
+      </template>
     </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 3: QUICKSTART & CODE SAMPLES                                         -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <div x-show="currentTab === 'quickstart'">
+    <div class="dev-card">
+      <div class="card-top-bar">
+        <div>
+          <h2 class="card-heading">
+            <span class="material-symbols-outlined" style="font-size:20px;color:var(--cyan);">integration_instructions</span>
+            Integration Quickstart
+          </h2>
+          <p class="card-desc">
+            Copy ready-to-run snippets to authenticate requests and verify webhook payload signatures.
+          </p>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-dev btn-dev-xs" :class="codeLang === 'curl' ? 'btn-dev-primary' : 'btn-dev-ghost'" @click="codeLang = 'curl'">cURL</button>
+          <button class="btn-dev btn-dev-xs" :class="codeLang === 'python' ? 'btn-dev-primary' : 'btn-dev-ghost'" @click="codeLang = 'python'">Python</button>
+          <button class="btn-dev btn-dev-xs" :class="codeLang === 'node' ? 'btn-dev-primary' : 'btn-dev-ghost'" @click="codeLang = 'node'">Node.js</button>
+        </div>
+      </div>
+
+      <!-- Example 1: Authenticated API Call -->
+      <h3 style="font-size:14px;font-weight:700;margin:16px 0 6px;color:var(--text-primary);">1. Authenticate API Requests</h3>
+      <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 8px;">
+        Pass your key via the <code>X-API-Key</code> request header. All responses are formatted as standard JSON.
+      </p>
+
+      <div class="code-snippet-box">
+        <div class="code-snippet-header">
+          <span x-text="codeLang === 'curl' ? 'Terminal (cURL)' : (codeLang === 'python' ? 'main.py' : 'index.js')"></span>
+          <button @click="copySnippet('api_call')" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:11px;display:flex;align-items:center;gap:4px;">
+            <span class="material-symbols-outlined" style="font-size:14px;">content_copy</span>
+            Copy
+          </button>
+        </div>
+        <!-- cURL -->
+        <pre class="code-snippet-body" x-show="codeLang === 'curl'">curl -X GET "https://api.heelo.io/api/public/v1/events" \
+  -H "X-API-Key: hlo_live_YOUR_SECRET_KEY" \
+  -H "Accept: application/json"</pre>
+        <!-- Python -->
+        <pre class="code-snippet-body" x-show="codeLang === 'python'">import requests
+
+API_KEY = "hlo_live_YOUR_SECRET_KEY"
+url = "https://api.heelo.io/api/public/v1/events"
+
+headers = {
+    "X-API-Key": API_KEY,
+    "Accept": "application/json",
+}
+
+response = requests.get(url, headers=headers)
+events = response.json()
+print("Events:", events)</pre>
+        <!-- Node.js -->
+        <pre class="code-snippet-body" x-show="codeLang === 'node'">const API_KEY = "hlo_live_YOUR_SECRET_KEY";
+
+async function fetchEvents() {
+  const response = await fetch("https://api.heelo.io/api/public/v1/events", {
+    headers: {
+      "X-API-Key": API_KEY,
+      "Accept": "application/json",
+    },
+  });
+  const data = await response.json();
+  console.log("Events:", data);
+}
+
+fetchEvents();</pre>
+      </div>
+
+      <!-- Example 2: Verifying Webhooks -->
+      <h3 style="font-size:14px;font-weight:700;margin:24px 0 6px;color:var(--text-primary);">2. Verify Incoming Webhook Signatures</h3>
+      <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 8px;">
+        Heelo signs payloads using HMAC-SHA256 with the subscription secret. Header format: <code>X-Heelo-Signature: t=1697750000,v1=hash</code>.
+      </p>
+
+      <div class="code-snippet-box">
+        <div class="code-snippet-header">
+          <span x-text="codeLang === 'curl' ? 'Verification Concept' : (codeLang === 'python' ? 'webhook_handler.py (Flask/FastAPI)' : 'webhook.js (Express)')"></span>
+          <button @click="copySnippet('webhook_verify')" style="background:none;border:none;cursor:pointer;color:#9CA3AF;font-size:11px;display:flex;align-items:center;gap:4px;">
+            <span class="material-symbols-outlined" style="font-size:14px;">content_copy</span>
+            Copy
+          </button>
+        </div>
+        <!-- cURL / General -->
+        <pre class="code-snippet-body" x-show="codeLang === 'curl'"># Verify incoming X-Heelo-Signature: t=&lt;timestamp&gt;,v1=&lt;signature&gt;
+# 1. Split header into timestamp `t` and signature `v1`
+# 2. Compute HMAC-SHA256 with secret on `&lt;timestamp&gt;.&lt;raw_json_body&gt;`
+# 3. Compare computed digest against `v1` using constant-time comparison.</pre>
+        <!-- Python -->
+        <pre class="code-snippet-body" x-show="codeLang === 'python'">import hmac
+import hashlib
+
+WEBHOOK_SECRET = "whsec_YOUR_SIGNING_SECRET"
+
+def verify_heelo_webhook(raw_payload_bytes: bytes, sig_header: str) -> bool:
+    try:
+        parts = dict(pair.split("=", 1) for pair in sig_header.split(","))
+        timestamp, signature = parts["t"], parts["v1"]
+    except (ValueError, KeyError):
+        return False
+
+    # Signature is calculated on `timestamp.body`
+    signed_payload = f"{timestamp}.".encode() + raw_payload_bytes
+    expected_sig = hmac.new(
+        WEBHOOK_SECRET.encode(),
+        signed_payload,
+        hashlib.sha256
+    ).hexdigest()
+
+    return hmac.compare_digest(expected_sig, signature)</pre>
+        <!-- Node.js -->
+        <pre class="code-snippet-body" x-show="codeLang === 'node'">const crypto = require('crypto');
+
+const WEBHOOK_SECRET = "whsec_YOUR_SIGNING_SECRET";
+
+function verifyHeeloWebhook(rawBodyBuffer, signatureHeader) {
+  try {
+    const parts = Object.fromEntries(
+      signatureHeader.split(',').map(kv => kv.split('='))
+    );
+    const { t: timestamp, v1: signature } = parts;
+
+    const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET);
+    hmac.update(`${timestamp}.`);
+    hmac.update(rawBodyBuffer);
+    const expectedSig = hmac.digest('hex');
+
+    return crypto.timingSafeEqual(
+      Buffer.from(signature, 'hex'),
+      Buffer.from(expectedSig, 'hex')
+    );
+  } catch (err) {
+    return false;
+  }
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Floating In-App Toast System ──────────────────────────────────────── -->
+  <div class="toast-container">
+    <template x-for="t in toasts" :key="t.id">
+      <div class="toast-bubble" :class="'toast-' + t.type">
+        <span class="material-symbols-outlined" style="font-size:18px;" x-text="t.type === 'success' ? 'check_circle' : 'error'"></span>
+        <span x-text="t.message"></span>
+      </div>
+    </template>
   </div>
 
 </div>
@@ -201,11 +1137,21 @@
 {% block scripts %}
 <script>
 const _orgSlug = "{{ org.slug }}";
+const _allWebhookEvents = {{ webhook_events | tojson }};
 
-function devSettings() {
+function devPortal() {
   return {
+    currentTab: 'keys',
+    codeLang: 'curl',
+
     apiKeys: {{ api_keys_json | safe }},
-    webhooks: {{ webhooks_json | safe }}.map(w => ({...w, showDeliveries: false, deliveries: null})),
+    webhooks: {{ webhooks_json | safe }}.map(w => ({
+      ...w,
+      showDeliveries: false,
+      deliveries: null,
+      deliveriesLoading: false,
+      testing: false,
+    })),
 
     showCreateKey: false,
     newKeyName: '',
@@ -217,43 +1163,119 @@ function devSettings() {
     creatingWebhook: false,
     newlyCreatedSecret: null,
 
+    toasts: [],
+
     init() {},
 
+    get activeKeysCount() {
+      return this.apiKeys.filter(k => k.is_active).length;
+    },
+
+    toast(message, type = 'success') {
+      const id = Date.now() + Math.random();
+      this.toasts.push({ id, message, type });
+      setTimeout(() => {
+        this.toasts = this.toasts.filter(t => t.id !== id);
+      }, 3500);
+    },
+
+    copyText(text, successMsg = 'Copied to clipboard!') {
+      navigator.clipboard.writeText(text).then(() => {
+        this.toast(successMsg, 'success');
+      }).catch(() => {
+        this.toast('Failed to copy', 'error');
+      });
+    },
+
+    copySnippet(type) {
+      let code = '';
+      if (type === 'api_call') {
+        if (this.codeLang === 'curl') {
+          code = `curl -X GET "https://api.heelo.io/api/public/v1/events" -H "X-API-Key: hlo_live_YOUR_SECRET_KEY" -H "Accept: application/json"`;
+        } else if (this.codeLang === 'python') {
+          code = `import requests\n\nAPI_KEY = "hlo_live_YOUR_SECRET_KEY"\nurl = "https://api.heelo.io/api/public/v1/events"\nheaders = {"X-API-Key": API_KEY, "Accept": "application/json"}\nresponse = requests.get(url, headers=headers)\nprint(response.json())`;
+        } else {
+          code = `const API_KEY = "hlo_live_YOUR_SECRET_KEY";\n\nasync function fetchEvents() {\n  const res = await fetch("https://api.heelo.io/api/public/v1/events", {\n    headers: { "X-API-Key": API_KEY, "Accept": "application/json" },\n  });\n  console.log(await res.json());\n}\nfetchEvents();`;
+        }
+      }
+      this.copyText(code, 'Code snippet copied!');
+    },
+
+    formatDate(iso) {
+      if (!iso) return '-';
+      return new Date(iso).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    },
+
+    relTime(iso) {
+      if (!iso) return '-';
+      const diff = Date.now() - new Date(iso).getTime();
+      if (diff < 60000) return 'just now';
+      if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+      if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+      return Math.floor(diff / 86400000) + 'd ago';
+    },
+
+    // ── API Key Actions ──────────────────────────────────────────────────────
     async createKey() {
       if (!this.newKeyName.trim()) return;
       this.creatingKey = true;
       this.newlyCreatedKey = null;
+
       try {
         const r = await fetch(`/api/v1/organizations/${_orgSlug}/api-keys`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: this.newKeyName.trim() }),
         });
-        const data = await r.json();
-        if (!r.ok) { alert(data.error?.message || 'Failed to create key.'); return; }
-        this.newlyCreatedKey = data.data.key;
+        const res = await r.json();
+        if (!r.ok) {
+          this.toast(res.error?.message || res.detail || 'Failed to create key.', 'error');
+          return;
+        }
+
+        this.newlyCreatedKey = res.data.key;
         this.apiKeys.unshift({
-          id: data.data.id,
-          name: data.data.name,
-          key_prefix: data.data.key_prefix,
+          id: res.data.id,
+          name: res.data.name,
+          key_prefix: res.data.key_prefix,
           is_active: true,
           last_used_at: null,
-          created_at: data.data.created_at,
+          created_at: res.data.created_at,
         });
         this.newKeyName = '';
+        this.showCreateKey = false;
+        this.toast('API Key generated successfully!', 'success');
+      } catch (err) {
+        this.toast('Network error creating API key.', 'error');
       } finally {
         this.creatingKey = false;
       }
     },
 
     async revokeKey(k) {
-      if (!confirm(`Revoke key "${k.name}"? This is irreversible.`)) return;
-      const r = await fetch(`/api/v1/organizations/${_orgSlug}/api-keys/${k.id}`, { method: 'DELETE' });
-      if (r.ok) { k.is_active = false; } else { alert('Failed to revoke key.'); }
+      if (!confirm(`Are you sure you want to revoke "${k.name}"? This key will immediately stop working.`)) return;
+
+      try {
+        const r = await fetch(`/api/v1/organizations/${_orgSlug}/api-keys/${k.id}`, { method: 'DELETE' });
+        if (r.ok) {
+          k.is_active = false;
+          this.toast('API Key revoked.', 'success');
+        } else {
+          this.toast('Failed to revoke API key.', 'error');
+        }
+      } catch (err) {
+        this.toast('Error revoking key.', 'error');
+      }
     },
 
-    copyKey() { navigator.clipboard.writeText(this.newlyCreatedKey); },
-    copySecret() { navigator.clipboard.writeText(this.newlyCreatedSecret); },
+    // ── Webhook Actions ──────────────────────────────────────────────────────
+    selectAllEvents() {
+      this.newWebhook.events = [..._allWebhookEvents];
+    },
 
     resetWebhookForm() {
       this.newWebhook = { url: '', description: '', events: [] };
@@ -261,59 +1283,111 @@ function devSettings() {
     },
 
     async createWebhook() {
+      if (!this.newWebhook.url.trim() || this.newWebhook.events.length === 0) return;
       this.creatingWebhook = true;
       this.newlyCreatedSecret = null;
+
       try {
         const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks`, {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.newWebhook),
         });
-        const data = await r.json();
-        if (!r.ok) { alert(data.error?.message || 'Failed to create subscription.'); return; }
-        this.newlyCreatedSecret = data.data.secret;
-        const { secret, ...rest } = data.data;
-        this.webhooks.unshift({ ...rest, showDeliveries: false, deliveries: null });
+        const res = await r.json();
+        if (!r.ok) {
+          this.toast(res.error?.message || res.detail || 'Failed to add webhook.', 'error');
+          return;
+        }
+
+        this.newlyCreatedSecret = res.data.secret;
+        const { secret, ...rest } = res.data;
+        this.webhooks.unshift({
+          ...rest,
+          showDeliveries: false,
+          deliveries: null,
+          deliveriesLoading: false,
+          testing: false,
+        });
         this.newWebhook = { url: '', description: '', events: [] };
+        this.showCreateWebhook = false;
+        this.toast('Webhook endpoint subscribed!', 'success');
+      } catch (err) {
+        this.toast('Network error creating webhook.', 'error');
       } finally {
         this.creatingWebhook = false;
       }
     },
 
     async toggleWebhook(w) {
-      const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks/${w.id}`, {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ is_active: !w.is_active }),
-      });
-      if (r.ok) { w.is_active = !w.is_active; } else { alert('Failed to update subscription.'); }
+      try {
+        const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks/${w.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: !w.is_active }),
+        });
+        if (r.ok) {
+          w.is_active = !w.is_active;
+          this.toast(w.is_active ? 'Webhook resumed.' : 'Webhook paused.', 'success');
+        } else {
+          this.toast('Failed to update subscription.', 'error');
+        }
+      } catch (err) {
+        this.toast('Error updating webhook.', 'error');
+      }
     },
 
     async deleteWebhook(w) {
-      if (!confirm('Delete this webhook subscription? All delivery history will be removed.')) return;
-      const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks/${w.id}`, { method: 'DELETE' });
-      if (r.ok) { this.webhooks = this.webhooks.filter(x => x.id !== w.id); } else { alert('Failed to delete.'); }
+      if (!confirm('Delete this webhook endpoint and all its delivery logs?')) return;
+
+      try {
+        const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks/${w.id}`, { method: 'DELETE' });
+        if (r.ok) {
+          this.webhooks = this.webhooks.filter(x => x.id !== w.id);
+          this.toast('Webhook endpoint deleted.', 'success');
+        } else {
+          this.toast('Failed to delete webhook.', 'error');
+        }
+      } catch (err) {
+        this.toast('Error deleting webhook.', 'error');
+      }
     },
 
     async testWebhook(w) {
-      const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks/${w.id}/test`, { method: 'POST' });
-      if (r.ok) { alert('Test delivery queued! Check the delivery log.'); } else { alert('Failed to queue test.'); }
+      w.testing = true;
+      try {
+        const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks/${w.id}/test`, { method: 'POST' });
+        if (r.ok) {
+          this.toast('Test ping dispatched! Check delivery logs.', 'success');
+          if (w.showDeliveries) {
+            await this.loadDeliveries(w, true);
+          }
+        } else {
+          this.toast('Failed to dispatch test ping.', 'error');
+        }
+      } catch (err) {
+        this.toast('Error dispatching test ping.', 'error');
+      } finally {
+        w.testing = false;
+      }
     },
 
-    async loadDeliveries(w) {
-      w.showDeliveries = !w.showDeliveries;
-      if (!w.showDeliveries || w.deliveries !== null) return;
-      const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks/${w.id}/deliveries`);
-      const data = await r.json();
-      w.deliveries = r.ok ? data.data : [];
-    },
+    async loadDeliveries(w, force = false) {
+      if (!force) {
+        w.showDeliveries = !w.showDeliveries;
+      }
+      if (!w.showDeliveries) return;
+      if (w.deliveries !== null && !force) return;
 
-    relTime(iso) {
-      const diff = Date.now() - new Date(iso).getTime();
-      if (diff < 60000) return 'just now';
-      if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
-      if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
-      return Math.floor(diff/86400000) + 'd ago';
+      w.deliveriesLoading = true;
+      try {
+        const r = await fetch(`/api/v1/organizations/${_orgSlug}/webhooks/${w.id}/deliveries`);
+        const res = await r.json();
+        w.deliveries = r.ok ? res.data : [];
+      } catch (err) {
+        w.deliveries = [];
+      } finally {
+        w.deliveriesLoading = false;
+      }
     },
   };
 }

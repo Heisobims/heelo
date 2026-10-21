@@ -1,25 +1,16 @@
 {% extends "base.html" %}
-{% block title %}{{ speaker.name }} — Heelo{% endblock %}
+{% block title %}{{ speaker.name }} | Heelo{% endblock %}
+{% block meta_description %}{{ speaker.bio[:160] if speaker.bio else speaker.name + (' · ' + speaker.title if speaker.title else '') + ' on Heelo' }}{% endblock %}
+{% block og_title %}{{ speaker.name }}{% endblock %}
+{% block og_description %}{{ self.meta_description() }}{% endblock %}
+{% block og_image %}{{ speaker.photo_url or '/static/icons/og-default.png' }}{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
   body { background: var(--bg-secondary); }
 
-  .sp-nav {
-    position: sticky; top: 0; z-index: 40;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
-  }
-  .sp-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
-  .sp-nav-logo span { color: var(--cyan-dark, #00b3a9); }
-  .sp-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-  .sp-btn { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; }
-  .sp-btn-primary { background: var(--text-primary); color: #fff; }
-  .sp-btn-outline { border: 1.5px solid var(--border-light); color: var(--text-primary); }
-
-  .sp-wrap { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+  .sp-wrap { max-width: 760px; margin: 0 auto; padding: 6.5rem 1.5rem 4rem; }
 
   .sp-hero {
     background: #fff; border: 1px solid var(--border-light); border-radius: 16px;
@@ -57,24 +48,14 @@
   .sp-event-body { padding: 12px; }
   .sp-event-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sp-event-date { font-size: 11px; color: var(--text-muted); }
-  .sp-event-role { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; margin-top: 4px; background: rgba(0,255,243,0.1); color: var(--cyan-dark,#00b3a9); text-transform: capitalize; }
+  .sp-event-role { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; margin-top: 4px; background: rgba(232, 89, 56, 0.1); color: var(--cyan-dark,#C84729); text-transform: capitalize; }
 
   .sp-empty { text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary); background: #fff; border: 1px solid var(--border-light); border-radius: 14px; font-size: 0.9rem; }
 </style>
 {% endblock %}
 
 {% block body %}
-<nav class="sp-nav">
-  <a href="/" class="sp-nav-logo">heelo<span>.</span></a>
-  <div class="sp-nav-right">
-    {% if user %}
-    <a href="/home" class="sp-btn sp-btn-primary">Dashboard</a>
-    {% else %}
-    <a href="/login" class="sp-btn sp-btn-outline">Sign in</a>
-    <a href="/register" class="sp-btn sp-btn-primary">Join free</a>
-    {% endif %}
-  </div>
-</nav>
+{% include "partials/site_nav.html" %}
 
 <div class="sp-wrap">
 
@@ -94,7 +75,7 @@
       {% if speaker.social_links %}
       <div class="sp-socials">
         {% if speaker.social_links.twitter %}
-        <a href="{{ speaker.social_links.twitter }}" target="_blank" rel="noopener noreferrer" class="sp-social-link" title="Twitter / X">𝕏</a>
+        <a href="{{ speaker.social_links.twitter }}" target="_blank" rel="noopener noreferrer" class="sp-social-link" title="Twitter / X"><i class="fa-brands fa-x-twitter"></i></a>
         {% endif %}
         {% if speaker.social_links.linkedin %}
         <a href="{{ speaker.social_links.linkedin }}" target="_blank" rel="noopener noreferrer" class="sp-social-link" title="LinkedIn">in</a>

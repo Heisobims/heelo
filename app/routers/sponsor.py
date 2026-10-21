@@ -7,8 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 
+from app import plans
 from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.permissions import Permission, require_permission
+from app.plans import PlanFeature
 from app.schemas.sponsor import (
     SponsorCreateRequest,
     SponsorOut,
@@ -58,6 +60,7 @@ async def create_sponsor(
     org_access: SponsorsManageAccess,
 ):
     org, role, is_owner = org_access
+    plans.require_feature(org.plan, PlanFeature.SPONSORS)
     event = await _get_event_for_org(db, event_id, org.id)
     sponsor = await sp_svc.create_sponsor(db, event.id, data)
     return {"success": True, "data": _sponsor_out(sponsor)}
@@ -144,7 +147,7 @@ router_portal = APIRouter(prefix="/api/v1/sponsor-portal", tags=["sponsor-portal
 
 @router_portal.get("/invite/{token}")
 async def preview_sponsor_invite(token: str, db: DBSession):
-    """Public — lets the claim page show what's being claimed before the
+    """Public - lets the claim page show what's being claimed before the
     visitor signs in or registers."""
     from app.models.event import Event
 

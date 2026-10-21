@@ -5,7 +5,7 @@
   "start_url": "/dashboard",
   "display": "standalone",
   "orientation": "any",
-  "theme_color": "#00FFF3",
+  "theme_color": "#E85938",
   "background_color": "#0a0a0a",
   "categories": ["business", "productivity"],
   "icons": [

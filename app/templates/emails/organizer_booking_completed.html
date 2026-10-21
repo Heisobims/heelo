@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block subject %}Service Completed: How was your experience with {{ vendor_name }}?{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;font-weight:900;color:#000000;line-height:1.2;">
+  Service Completed for {{ event_name }}
+</h1>
+<p style="margin:0 0 24px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#555555;line-height:1.6;">
+  Hello <strong>{{ requester_name }}</strong>,<br />
+  <strong>{{ vendor_name }}</strong> has fulfilled their deliverables for <strong>{{ event_name }}</strong>.
+</p>
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-radius:12px;background:#FAF7F2;border:1px solid #EFEAE3;margin-bottom:24px;">
+  <tr>
+    <td style="padding:20px 24px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#131B17;line-height:1.8;">
+        <tr>
+          <td style="color:#56625C;width:140px;"><strong>Vendor:</strong></td>
+          <td><strong>{{ vendor_name }}</strong></td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Event:</strong></td>
+          <td>{{ event_name }}</td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Booking Ref:</strong></td>
+          <td><strong style="font-family:monospace;">{{ booking_reference }}</strong></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:0 0 24px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#555555;line-height:1.6;">
+  Your review helps organizers find reliable event professionals and rewards great vendors on the platform. Please take 30 seconds to rate your experience.
+</p>
+
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="background:#E85938;border-radius:9999px;">
+      <a href="{{ frontend_url }}/vendors/{{ vendor_slug }}" style="display:inline-block;padding:14px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">
+        Leave a Review for {{ vendor_name }} →
+      </a>
+    </td>
+  </tr>
+</table>
+{% endblock %}
+

@@ -20,6 +20,18 @@ class FlutterwaveSubaccountRequest(BaseModel):
     country: str = Field("NG", min_length=2, max_length=2)
 
 
+class ManualAccountRequest(BaseModel):
+    """A locally-recorded payout account not linked to any payment gateway
+    subaccount - for orgs whose bank isn't covered by Paystack/Flutterwave's
+    subaccount API, or who want a reference record without an automatic
+    split."""
+
+    bank_name: str = Field(..., min_length=2, max_length=255)
+    account_number: str = Field(..., min_length=4, max_length=34)
+    account_name: str = Field(..., min_length=2, max_length=255)
+    bank_code: str | None = Field(None, max_length=50)
+
+
 class PaymentAccountOut(BaseModel):
     model_config = {"from_attributes": True}
 
@@ -29,6 +41,8 @@ class PaymentAccountOut(BaseModel):
     account_name: str | None
     bank_name: str | None
     account_number: str | None
+    bank_code: str | None = None
+    recipient_code: str | None = None
     is_verified: bool
     is_default: bool
     currency: str

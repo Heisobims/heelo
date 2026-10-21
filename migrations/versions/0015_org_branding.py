@@ -1,4 +1,4 @@
-"""Add org branding fields — contact email + social links, for campaign email footers.
+"""Add org branding fields - contact email + social links, for campaign email footers.
 
 Powers the branded broadcast-email footer (logo/name already existed;
 this adds the missing contact/social info organizers want to show).

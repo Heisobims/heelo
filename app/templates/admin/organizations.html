@@ -13,7 +13,7 @@
       <input name="q" value="{{ q }}" placeholder="Search by name or slug..." />
       <select name="plan">
         <option value="">All plans</option>
-        {% for p in ['starter','growth','pro','enterprise'] %}
+        {% for p in ['free','growth','pro','enterprise'] %}
         <option value="{{ p }}" {% if selected_plan == p %}selected{% endif %}>{{ p|capitalize }}</option>
         {% endfor %}
       </select>
@@ -41,13 +41,13 @@
         </td>
         <td style="font-size:0.78rem;">{{ o.owner_email }}</td>
         <td>
-          <select class="plan-select" data-org-id="{{ o.id }}" style="background:var(--admin-surface-raised);border:1px solid var(--admin-border);color:var(--text,#e4e4e7);border-radius:6px;padding:3px 6px;font-size:0.75rem;cursor:pointer;">
-            {% for p in ['starter','growth','pro','enterprise'] %}
-            <option value="{{ p }}" {% if o.plan == p %}selected{% endif %}>{{ p }}</option>
+          <select class="plan-select" data-org-id="{{ o.id }}" style="background:var(--admin-surface) url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2371717a%27 stroke-width=%272.5%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E') no-repeat right 8px center; border:1.5px solid var(--admin-border); color:var(--text); border-radius:8px; padding:4px 26px 4px 10px; font-size:12.5px; font-weight:600; cursor:pointer; appearance:none; -webkit-appearance:none; transition:all 0.14s ease;">
+            {% for p in ['free','growth','pro','enterprise'] %}
+            <option value="{{ p }}" {% if o.plan == p %}selected{% endif %}>{{ p|capitalize }}</option>
             {% endfor %}
           </select>
         </td>
-        <td>{{ o.country or '—' }}</td>
+        <td>{{ o.country or '' }}</td>
         <td>{{ o.event_count }}</td>
         <td>₦{{ "{:,.0f}".format(o.net_revenue) }}</td>
         <td>
@@ -84,38 +84,68 @@
 <script>
 async function suspendOrg(id, name) {
   if (!confirm(`Suspend "${name}"? Their events will be hidden from public.`)) return;
-  const r = await fetch(`/api/v1/admin/organizations/${id}/suspend`, { method: 'POST' });
+  const csrf = getAdminCsrfToken();
+  const r = await fetch(`/api/v1/admin/organizations/${id}/suspend`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf }
+  });
   if (r.ok) {
+    showAdminToast(`"${name}" suspended.`);
     const badge = document.getElementById(`status-badge-${id}`);
     badge.className = 'badge badge-suspended';
     badge.textContent = 'Suspended';
     badge.closest('tr').querySelector('button').outerHTML =
       `<button class="btn btn-sm btn-accent" onclick="reinstateOrg('${id}','${name}')">Reinstate</button>`;
-  } else { alert('Failed to suspend.'); }
+  } else {
+    const err = await r.json().catch(() => ({}));
+    showAdminToast(err?.error?.message || 'Failed to suspend.', 'error');
+  }
 }
 
 async function reinstateOrg(id, name) {
   if (!confirm(`Reinstate "${name}"?`)) return;
-  const r = await fetch(`/api/v1/admin/organizations/${id}/reinstate`, { method: 'POST' });
+  const csrf = getAdminCsrfToken();
+  const r = await fetch(`/api/v1/admin/organizations/${id}/reinstate`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf }
+  });
   if (r.ok) {
+    showAdminToast(`"${name}" reinstated successfully.`);
     const badge = document.getElementById(`status-badge-${id}`);
     badge.className = 'badge badge-active';
     badge.textContent = 'Active';
     badge.closest('tr').querySelector('button').outerHTML =
       `<button class="btn btn-sm btn-danger" onclick="suspendOrg('${id}','${name}')">Suspend</button>`;
-  } else { alert('Failed to reinstate.'); }
+  } else {
+    const err = await r.json().catch(() => ({}));
+    showAdminToast(err?.error?.message || 'Failed to reinstate.', 'error');
+  }
 }
 
 document.querySelectorAll('.plan-select').forEach(sel => {
   sel.addEventListener('change', async () => {
     const id = sel.dataset.orgId;
     const plan = sel.value;
-    const r = await fetch(`/api/v1/admin/organizations/${id}/plan`, {
-      method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ plan }),
-    });
-    if (!r.ok) { alert('Failed to update plan.'); sel.selectedIndex = sel.selectedIndex; }
+    const csrf = getAdminCsrfToken();
+    try {
+      const r = await fetch(`/api/v1/admin/organizations/${id}/plan`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrf
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok) {
+        showAdminToast(`Plan updated to ${plan.toUpperCase()}!`, 'success');
+      } else {
+        showAdminToast(data?.error?.message || 'Failed to update plan.', 'error');
+        location.reload();
+      }
+    } catch (err) {
+      showAdminToast('Network error updating plan.', 'error');
+    }
   });
 });
 </script>

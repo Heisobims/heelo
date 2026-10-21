@@ -1,0 +1,267 @@
+{% extends "admin/layout.html" %}
+{% block title %}Payouts{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:24px;">
+  <h1 style="font-size:1.4rem;font-weight:700;">Payouts</h1>
+  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">
+    Organizers with no auto-split rail (no verified Paystack/Flutterwave/Stripe account), Heelo is holding their net ticket revenue and owes it to them by hand.
+  </p>
+</div>
+
+<div class="section-card">
+  <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:12px;">Owed</h2>
+  {% if owed %}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr><th>Organization</th><th>Owed</th><th>Payout account</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for row in owed %}
+        <tr id="owed-{{ row.org.id }}">
+          <td>
+            <a href="/admin/organizations/{{ row.org.id }}">{{ row.org.name }}</a><br>
+            <span style="color:var(--text-muted,#71717a);font-size:0.72rem;">/{{ row.org.slug }}</span>
+          </td>
+          <td>{{ row.org.currency or "NGN" }} {{ "{:,.2f}".format(row.owed) }}</td>
+          <td>
+            {% if row.payment_accounts %}
+            <select id="account-select-{{ row.org.id }}" class="form-select" style="font-size:0.8rem;">
+              {% for acct in row.payment_accounts %}
+              <option value="{{ acct.id }}">{{ acct.provider | capitalize }} · {{ acct.account_name or acct.provider_account_id }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <span style="color:var(--text-muted,#71717a);font-size:0.78rem;">No account on file</span>
+            {% endif %}
+          </td>
+          <td>
+            <button class="btn btn-sm btn-accent" onclick="createPayout('{{ row.org.id }}', {{ row.owed }}, '{{ row.org.currency or "NGN" }}')">Record payout</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--text-muted,#71717a);font-size:0.875rem;">Nothing owed right now.</p>
+  {% endif %}
+</div>
+
+<div class="section-card" style="margin-top:20px;">
+  <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:12px;">In flight</h2>
+  {% if in_flight %}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr><th>Organization</th><th>Amount</th><th>Status</th><th>Initiated</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for p in in_flight %}
+        <tr id="payout-{{ p.id }}">
+          <td><a href="/admin/organizations/{{ p.org_id }}">{{ p.organization.name }}</a></td>
+          <td>{{ p.currency }} {{ "{:,.2f}".format(p.amount) }}</td>
+          <td><span class="badge badge-pending" id="payout-status-{{ p.id }}">{{ p.status | capitalize }}</span></td>
+          <td style="font-size:0.78rem;">{{ p.initiated_at.strftime("%b %-d, %Y") if p.initiated_at else "" }}</td>
+          <td style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-sm btn-primary" onclick="disbursePayout('{{ p.id }}', '{{ p.currency }} {{ "{:,.2f}".format(p.amount) }}')" title="Automated Paystack bank transfer"><span class="material-symbols-outlined" style="font-size:14px; margin-right:2px;">bolt</span> Disburse</button>
+            <button class="btn btn-sm btn-accent" onclick="markPayoutPaid('{{ p.id }}')">Mark paid</button>
+            <button class="btn btn-sm btn-danger" onclick="markPayoutFailed('{{ p.id }}')">Mark failed</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--text-muted,#71717a);font-size:0.875rem;">No payouts in flight.</p>
+  {% endif %}
+</div>
+
+<div class="section-card" style="margin-top:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+    <div>
+      <h2 style="font-size:1.05rem;font-weight:700;">Vendor Marketplace Payouts</h2>
+      <p style="color:var(--text-muted,#71717a);font-size:0.8rem;margin-top:2px;">
+        Marketplace service providers requesting withdrawal of booking earnings.
+      </p>
+    </div>
+    <a href="/admin/vendors?tab=payouts" class="btn btn-sm btn-ghost">Manage all vendor payouts &rarr;</a>
+  </div>
+  {% if vendor_payouts %}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr><th>Vendor</th><th>Amount</th><th>Bank details</th><th>Status</th><th>Requested</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for vp in vendor_payouts %}
+        <tr id="vendor-payout-{{ vp.id }}">
+          <td>
+            <a href="/vendors/{{ vp.vendor.slug }}" target="_blank">{{ vp.vendor.business_name }}</a>
+            {% if vp.provider_reference %}
+            <br><span style="color:var(--text-muted,#71717a); font-size:0.72rem;">Ref: {{ vp.provider_reference }}</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:700;">{{ vp.currency }} {{ "{:,.2f}".format(vp.amount) }}</td>
+          <td style="font-size:0.78rem;">
+            {% if vp.account_details %}
+            {{ vp.account_details.get('bank_name') }} · {{ vp.account_details.get('account_number') }} ({{ vp.account_details.get('account_name') }})
+            {% else %}
+            <span style="color:var(--text-muted,#71717a);">Manual on file</span>
+            {% endif %}
+          </td>
+          <td><span class="badge badge-pending" id="vp-status-{{ vp.id }}">{{ vp.status | capitalize }}</span></td>
+          <td style="font-size:0.78rem;">{{ vp.created_at.strftime("%b %-d, %Y") if vp.created_at else "" }}</td>
+          <td>
+            <button class="btn btn-sm btn-primary" onclick="disburseVendorPayout('{{ vp.id }}', '{{ vp.currency }} {{ "{:,.2f}".format(vp.amount) }}', '{{ vp.vendor.business_name }}')"><span class="material-symbols-outlined" style="font-size:14px; margin-right:2px;">bolt</span> Disburse</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--text-muted,#71717a);font-size:0.875rem;">No vendor withdrawal payouts in flight.</p>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function disbursePayout(payoutId, amountFormatted) {
+  if (!confirm(`Are you sure you want to automatically disburse ${amountFormatted} via Paystack direct bank transfer?`)) return;
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.innerText = 'Disbursing...'; }
+  const csrf = getAdminCsrfToken();
+  try {
+    const r = await fetch(`/api/v1/admin/payouts/${payoutId}/disburse`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+    });
+    const json = await r.json();
+    if (r.ok && json.success) {
+      showAdminToast(`Transfer initiated successfully! Status: ${json.data.status}`);
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      showAdminToast(json.error?.message || json.detail || 'Failed to disburse payout via Paystack.', 'error');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px; margin-right:2px;">bolt</span> Disburse'; }
+    }
+  } catch (err) {
+    showAdminToast('Network error while initiating transfer.', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px; margin-right:2px;">bolt</span> Disburse'; }
+  }
+}
+
+async function createPayout(orgId, owed, currency) {
+  const amountStr = prompt(`Amount to record as paid (${currency}):`, owed);
+  if (!amountStr) return;
+  const amount = parseFloat(amountStr);
+  if (!amount || amount <= 0) return showAdminToast('Enter a valid amount.', 'error');
+
+  const select = document.getElementById(`account-select-${orgId}`);
+  const paymentAccountId = select ? select.value : null;
+  const csrf = getAdminCsrfToken();
+
+  try {
+    const r = await fetch(`/api/v1/admin/organizations/${orgId}/payouts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ amount, currency, payment_account_id: paymentAccountId }),
+    });
+    if (r.ok) {
+      showAdminToast('Payout recorded successfully.');
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      const json = await r.json();
+      showAdminToast(json.error?.message || 'Failed to record payout.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error recording payout.', 'error');
+  }
+}
+
+async function markPayoutPaid(payoutId) {
+  const reference = prompt('Bank transfer reference:');
+  if (!reference) return;
+  const csrf = getAdminCsrfToken();
+  try {
+    const r = await fetch(`/api/v1/admin/payouts/${payoutId}/mark-paid`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ provider_reference: reference }),
+    });
+    if (r.ok) {
+      showAdminToast('Payout marked as paid.');
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      const json = await r.json();
+      showAdminToast(json.error?.message || 'Failed to mark paid.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error marking payout as paid.', 'error');
+  }
+}
+
+async function markPayoutFailed(payoutId) {
+  const reason = prompt('Reason for failure:');
+  if (!reason) return;
+  const csrf = getAdminCsrfToken();
+  try {
+    const r = await fetch(`/api/v1/admin/payouts/${payoutId}/mark-failed`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ reason }),
+    });
+    if (r.ok) {
+      showAdminToast('Payout marked as failed.');
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      const json = await r.json();
+      showAdminToast(json.error?.message || 'Failed to mark failed.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error.', 'error');
+  }
+}
+
+async function disburseVendorPayout(payoutId, formattedAmount, vendorName) {
+  const ref = prompt(`Disburse ${formattedAmount} to "${vendorName}"?\n\nEnter optional bank transfer reference or press OK to confirm:`, `TRF-${Date.now().toString(36).toUpperCase()}`);
+  if (ref === null) return;
+  const csrf = getAdminCsrfToken();
+
+  try {
+    const res = await fetch(`/api/v1/vendors/admin/payouts/${payoutId}/disburse`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ provider_reference: ref.trim() || null }),
+    });
+    const json = await res.json();
+    if (res.ok && json.success) {
+      showAdminToast(`Vendor payout disbursed successfully!`);
+      setTimeout(() => window.location.reload(), 800);
+    } else {
+      showAdminToast(json.error?.message || json.detail || 'Failed to disburse vendor payout.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error while disbursing vendor payout.', 'error');
+  }
+}
+</script>
+{% endblock %}

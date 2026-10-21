@@ -4,12 +4,14 @@ Meta WhatsApp Business Cloud API client.
 Platform-level: one WhatsApp Business number (configured in settings)
 sends on behalf of all Heelo organizers.
 
-send_*_sync()  — blocking httpx, for Celery tasks
-send_*_async() — async httpx, for FastAPI handlers
+send_*_sync()  - blocking httpx, for Celery tasks
+send_*_async() - async httpx, for FastAPI handlers
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import re
 from typing import Any
 
@@ -18,6 +20,28 @@ import httpx
 from app.config import settings
 
 _BASE_URL = "https://graph.facebook.com/v18.0"
+
+
+# ── Webhook signature verification ────────────────────────────────────────────
+
+
+def verify_whatsapp_signature(body: bytes, signature: str) -> bool:
+    """
+    Verify Meta's `X-Hub-Signature-256: sha256=<hex>` header over the raw
+    request body, same fail-closed convention as verify_flutterwave_signature
+    - an unconfigured secret must reject, not silently accept everything.
+    """
+    if not settings.WHATSAPP_APP_SECRET:
+        return False
+    prefix = "sha256="
+    if not signature.startswith(prefix):
+        return False
+    expected = hmac.new(
+        settings.WHATSAPP_APP_SECRET.encode(),
+        body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature[len(prefix) :])
 
 
 # ── Phone number normalization ────────────────────────────────────────────────
@@ -138,16 +162,28 @@ def date_label(event) -> str:
     return event.start_datetime.strftime("%a, %b %-d at %-I:%M %p")
 
 
+def date_only_label(event) -> str:
+    if not event.start_datetime:
+        return "TBD"
+    return event.start_datetime.strftime("%a, %b %-d, %Y")
+
+
+def time_only_label(event) -> str:
+    if not event.start_datetime:
+        return "TBD"
+    return event.start_datetime.strftime("%-I:%M %p")
+
+
 def location_label(event) -> str:
     """
     Plain-text location line for WhatsApp messages.
-    Event has no single `location` field — this composes it from the venue
+    Event has no single `location` field - this composes it from the venue
     (in-person/hybrid) or virtual platform fields, matching the display
     logic already used in app/templates/events/public.html.
     """
     if event.format == "virtual":
         platform = event.virtual_platform.title() if event.virtual_platform else "Online"
-        return f"{platform} event — link shared closer to the date"
+        return f"{platform} event - link shared closer to the date"
     parts = [p for p in (event.venue_name, event.venue_city) if p]
     return ", ".join(parts) if parts else "TBA"
 
@@ -169,7 +205,7 @@ def send_registration_cancellation_sync(
         f"Your ticket ({ticket_type_name}) for *{event.title}* has been cancelled.",
     ]
     if refunded:
-        lines += ["", "Your payment has been refunded — it may take a few days to reflect."]
+        lines += ["", "Your payment has been refunded - it may take a few days to reflect."]
     send_text_sync(wa_phone, "\n".join(lines))
 
 
@@ -178,6 +214,7 @@ def send_registration_confirmation_sync(
     buyer_name: str,
     event,
     registrations: list[dict],
+    attendee_name: str | None = None,
 ) -> None:
     """
     Send registration confirmation + QR codes via WhatsApp.
@@ -189,18 +226,28 @@ def send_registration_confirmation_sync(
     if not wa_phone:
         return
 
+    if not attendee_name:
+        if registrations and registrations[0].get("attendee_name"):
+            attendee_name = registrations[0]["attendee_name"]
+        else:
+            attendee_name = buyer_name
+
+    greeting = f"Hi {attendee_name}," if attendee_name else "Hi,"
+
     lines = [
-        f"Hi {buyer_name}! 🎟️",
+        greeting,
         "",
         f"You're confirmed for *{event.title}*",
-    ]
-    if event.start_datetime:
-        lines.append(f"📅 {date_label(event)}")
-    lines.append(f"📍 {location_label(event)}")
-    lines += [
         "",
-        "Your QR codes are below — one per ticket.",
-        "Show them at the entrance.",
+        f"Date: {date_only_label(event)}",
+        f"Venue: {location_label(event)}",
+        f"Time: {time_only_label(event)}",
+        "",
+        (
+            "Your QR code is below - show it at the entrance."
+            if len(registrations) <= 1
+            else "Your QR codes are below - one per ticket. Show them at the entrance."
+        ),
         "",
         "Reply *TICKET* any time to see your tickets.",
     ]
@@ -210,7 +257,7 @@ def send_registration_confirmation_sync(
     # Send one QR image per registration
     for reg in registrations:
         qr_url = f"{settings.FRONTEND_URL}/api/v1/registrations/{reg['registration_id']}/qr.png"
-        caption = f"{reg['attendee_name']} · {reg['ticket_type']} — {event.title}"
+        caption = f"{reg['attendee_name']} · {reg['ticket_type']} - {event.title}"
         send_image_sync(wa_phone, qr_url, caption)
 
 
@@ -229,27 +276,48 @@ def send_event_reminder_sync(
     registration_id: str,
     hours_before: float = 24,
 ) -> None:
+    from urllib.parse import quote_plus
+
     wa_phone = format_phone(phone)
     if not wa_phone:
         return
 
+    headline = _reminder_headline(hours_before)
     lines = [
-        f"Hey {attendee_name}! ⏰",
+        f"Hi {attendee_name},",
         "",
-        f"*{event.title}* {_reminder_headline(hours_before)}",
+        f"*{event.title}* {headline}",
     ]
     if event.start_datetime:
-        lines.append(f"📅 {date_label(event)}")
+        lines.append(f"Date: {date_label(event)}")
+        time_str = event.start_datetime.strftime("%I:%M %p")
+        if getattr(event, "timezone", None):
+            time_str += f" ({event.timezone})"
+        lines.append(f"Time: {time_str}")
+
     if event.format in ("virtual", "hybrid") and event.virtual_url:
         platform = event.virtual_platform.title() if event.virtual_platform else "Online"
         join_url = f"{settings.FRONTEND_URL}/api/v1/registrations/{registration_id}/join"
-        lines.append(f"📍 {platform} event")
-        lines.append(f"🔗 Join: {join_url}")
+        lines.append(f"Venue: {platform} Event")
+        lines.append(f"Join Link: {join_url}")
     else:
-        lines.append(f"📍 {location_label(event)}")
+        venue_str = location_label(event)
+        lines.append(f"Venue: {venue_str}")
+        venue_parts = [
+            getattr(event, "venue_name", None),
+            getattr(event, "venue_address", None),
+            getattr(event, "venue_city", None),
+        ]
+        venue_query = " ".join([p for p in venue_parts if p])
+        if venue_query:
+            maps_url = f"https://www.google.com/maps/search/?api=1&query={quote_plus(venue_query)}"
+            lines.append(f"Venue Directions: {maps_url}")
+
+    ticket_pdf_url = f"{settings.FRONTEND_URL}/api/v1/registrations/{registration_id}/ticket.pdf"
     lines += [
+        f"Ticket Link: {ticket_pdf_url}",
         "",
-        "Here's your QR code for quick check-in:",
+        "Here is your QR code for quick check-in:",
     ]
     send_text_sync(wa_phone, "\n".join(lines))
 
@@ -270,7 +338,7 @@ def send_event_cancellation_sync(
     lines = [
         f"Hi {attendee_name},",
         "",
-        f"😔 *{event.title}* has been cancelled.",
+        f"*{event.title}* has been cancelled.",
     ]
     if cancellation_note:
         lines += ["", cancellation_note]
@@ -294,15 +362,15 @@ def send_event_update_sync(
     lines = [
         f"Hi {attendee_name},",
         "",
-        f"📢 *{event.title}* has updated details:",
+        f"*{event.title}* has updated details:",
         "",
     ]
     for c in changes:
-        lines.append(f"*{c['field']}*: {c['old']} → {c['new']}")
+        lines.append(f"*{c['field']}*: {c['old']} -> {c['new']}")
     lines += [
         "",
-        f"📅 {date_label(event)}",
-        f"📍 {location_label(event)}",
+        f"Date: {date_label(event)}",
+        f"Venue: {location_label(event)}",
     ]
     send_text_sync(wa_phone, "\n".join(lines))
 
@@ -319,11 +387,11 @@ def send_waitlist_notification_sync(
         return
 
     lines = [
-        f"Good news, {name}! 🎉",
+        f"Good news, {name}!",
         "",
         f"A *{ticket_type_name}* spot just opened up for *{event.title if event else 'the event'}*.",
         "",
-        f"Claim it now before it's gone → {register_url}",
+        f"Claim it now before it's gone: {register_url}",
     ]
     send_text_sync(wa_phone, "\n".join(lines))
 
@@ -335,7 +403,7 @@ def build_ticket_status_reply(registrations: list) -> str:
     """Build a WhatsApp text reply listing the caller's current tickets."""
     if not registrations:
         return (
-            "No active tickets found for this number. 😔\n"
+            "No active tickets found for this number.\n"
             "Visit heelo.io to register for an event.\n\n"
             "Reply *HELP* for commands."
         )
@@ -344,21 +412,21 @@ def build_ticket_status_reply(registrations: list) -> str:
     for reg in registrations:
         tt = reg.ticket_type.name if reg.ticket_type else "General"
 
-        status_icon = (
-            "✓" if reg.status == "confirmed" else "☑️" if reg.status == "checked_in" else "⏳"
+        status_label = (
+            "[Confirmed]" if reg.status == "confirmed" else "[Checked In]" if reg.status == "checked_in" else "[Pending]"
         )
         event_title = getattr(reg, "_event_title", "Event")
-        lines.append(f"  {status_icon} {event_title}\n     Ticket: {tt} — {reg.status.title()}")
+        lines.append(f"  {status_label} {event_title}\n     Ticket: {tt} - {reg.status.title()}")
 
     lines.append("\nReply *HELP* for commands.")
     return "\n".join(lines)
 
 
 HELP_TEXT = (
-    "*Heelo WhatsApp Bot* 🤖\n\n"
+    "*Heelo WhatsApp Bot*\n\n"
     "Commands:\n"
-    "  *TICKET* — see your registered tickets\n"
-    "  *HELP*   — show this message\n\n"
+    "  *TICKET* - see your registered tickets\n"
+    "  *HELP*   - show this message\n\n"
     'You can also just ask things like "where is it", "what time", '
     'or "can I bring a guest" about your most recent event.\n\n'
     "For support, visit heelo.io or contact the event organizer."

@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:8000"
     # Typed as a union (not plain list[str]) so that a non-JSON env value (e.g.
     # "localhost,127.0.0.1,testserver") doesn't make pydantic-settings' own
-    # complex-type JSON pre-parse raise before this validator ever runs — see
+    # complex-type JSON pre-parse raise before this validator ever runs - see
     # EnvSettingsSource._field_is_complex()'s allow_parse_failure branch.
     ALLOWED_HOSTS: str | list[str] = ["localhost", "127.0.0.1"]
 
@@ -67,12 +67,12 @@ class Settings(BaseSettings):
     FACEBOOK_CLIENT_ID: str = ""
     FACEBOOK_CLIENT_SECRET: str = ""
 
-    # ── Email — Resend ────────────────────────────────────────────────────────
+    # ── Email - Resend ────────────────────────────────────────────────────────
     RESEND_API_KEY: str = ""
     RESEND_FROM_EMAIL: str = "hello@heelo.io"
     RESEND_FROM_NAME: str = "Heelo"
 
-    # ── Email — SMTP ─────────────────────────────────────────────────────────
+    # ── Email - SMTP ─────────────────────────────────────────────────────────
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
@@ -94,6 +94,7 @@ class Settings(BaseSettings):
     WHATSAPP_PHONE_NUMBER_ID: str = ""
     WHATSAPP_VERIFY_TOKEN: str = ""
     WHATSAPP_BUSINESS_ACCOUNT_ID: str = ""
+    WHATSAPP_APP_SECRET: str = ""
 
     # ── Payments ─────────────────────────────────────────────────────────────
     PAYSTACK_SECRET_KEY: str = ""
@@ -104,12 +105,23 @@ class Settings(BaseSettings):
     STRIPE_SECRET_KEY: str = ""
     STRIPE_PUBLIC_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
+    # Internal ops address for the weekly pending-manual-payouts digest
+    # (app/tasks/billing.py) - blank by default, digest send is skipped
+    # entirely until set.
+    OPS_ALERT_EMAIL: str = ""
 
     # ── AI ────────────────────────────────────────────────────────────────────
     ANTHROPIC_API_KEY: str = ""
     ANTHROPIC_MODEL: str = "claude-sonnet-4-6"
 
-    # ── Storage — Cloudflare R2 ───────────────────────────────────────────────
+    # ── SEO / analytics ───────────────────────────────────────────────────────
+    # Both blank by default - base.html only renders the corresponding tag/
+    # script when set, so nothing ships until real IDs from your own GA4/
+    # Search Console properties are configured.
+    GA_MEASUREMENT_ID: str = ""
+    GOOGLE_SITE_VERIFICATION: str = ""
+
+    # ── Storage - Cloudflare R2 ───────────────────────────────────────────────
     CLOUDFLARE_R2_ACCOUNT_ID: str = ""
     CLOUDFLARE_R2_ACCESS_KEY_ID: str = ""
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: str = ""
@@ -117,8 +129,16 @@ class Settings(BaseSettings):
     CLOUDFLARE_R2_PUBLIC_URL: str = "https://media.heelo.io"
 
     # ── Database pool ─────────────────────────────────────────────────────────
-    DB_POOL_SIZE: int = 10  # connections per worker
-    DB_MAX_OVERFLOW: int = 20  # burst headroom
+    # Every gunicorn worker (gunicorn.conf.py: cpu_count()*2+1 by default) and
+    # every Celery worker opens its own pool of this size - size it so
+    # web_workers * (DB_POOL_SIZE + DB_MAX_OVERFLOW) + celery_workers * (...)
+    # stays comfortably under Postgres's max_connections (100 by default; a
+    # managed Postgres plan may differ). At the old defaults (10 + 20 = 30
+    # per process) a handful of gunicorn workers alone could approach that
+    # ceiling - these are set lower so a typical single-box deployment has
+    # headroom by default; raise them deliberately for a larger Postgres plan.
+    DB_POOL_SIZE: int = 5  # connections per worker
+    DB_MAX_OVERFLOW: int = 5  # burst headroom
     DB_POOL_TIMEOUT: int = 30  # seconds to wait for a connection
     DB_POOL_RECYCLE: int = 1800  # recycle idle connections after 30 min
 

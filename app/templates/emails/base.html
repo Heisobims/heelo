@@ -30,7 +30,7 @@
             </a>
             {% else %}
             <a href="{{ frontend_url }}" style="text-decoration:none;">
-              <span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:{{ brand_color | contrast_text('#00FFF3') }};letter-spacing:-0.03em;">heelo</span>
+              <span style="font-family:Georgia,serif;font-size:26px;font-weight:900;color:{{ brand_color | contrast_text('#E85938') }};letter-spacing:-0.03em;">heelo</span>
             </a>
             {% endif %}
           </td>
@@ -44,14 +44,16 @@
         </tr>
 
         <!-- Footer -->
+        {% if show_powered_by is not defined or show_powered_by %}
         <tr>
           <td style="background-color:#f9f9f9;padding:24px 40px;border-radius:0 0 16px 16px;border-top:1px solid #e5e5e5;">
             <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:12px;color:#999999;text-align:center;line-height:1.6;">
               Sent by <a href="{{ frontend_url }}" style="color:#999999;text-decoration:underline;">Heelo</a>{% if org_name %} on behalf of <strong>{{ org_name }}</strong>{% endif %}.<br />
-              Heelo · The event platform built for Africa.
+              Heelo · The modern event platform built for organizers and creators worldwide.
             </p>
           </td>
         </tr>
+        {% endif %}
 
       </table>
       <!--[if (gte mso 9)|(IE)]></td></tr></table><![endif]-->

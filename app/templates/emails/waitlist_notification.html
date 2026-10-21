@@ -3,7 +3,7 @@
 
 {% block content %}
 <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:26px;font-weight:900;color:#000000;line-height:1.2;">
-  Great news, {{ name }}! 🎟️
+  Great news, {{ name }}!
 </h1>
 <p style="margin:0 0 28px;font-family:system-ui,-apple-system,sans-serif;font-size:16px;color:#555555;line-height:1.5;">
   A <strong style="color:#000;">{{ ticket_type_name }}</strong> spot just opened up for
@@ -32,7 +32,7 @@
   <tr>
     <td style="padding:16px 20px;">
       <p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#92400e;">
-        ⏳ <strong>This spot expires at {{ offer_expires_at.strftime('%-I:%M %p on %b %-d') }}</strong>. After that, it goes to the next person on the waitlist.
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><strong>This spot expires at {{ offer_expires_at.strftime('%-I:%M %p on %b %-d') }}</strong>. After that, it goes to the next person on the waitlist.
       </p>
     </td>
   </tr>
@@ -44,7 +44,7 @@
   <tr>
     <td align="center" style="padding-bottom:16px;">
       <a href="{{ register_url }}"
-         style="display:inline-block;background-color:{{ brand_color or '#00FFF3' }};color:{{ brand_color | contrast_text('#000000') }};font-family:system-ui,-apple-system,sans-serif;font-size:16px;font-weight:800;text-decoration:none;padding:16px 36px;border-radius:10px;">
+         style="display:inline-block;background-color:{{ brand_color or '#E85938' }};color:{{ brand_color | contrast_text('#FFFFFF') }};font-family:system-ui,-apple-system,sans-serif;font-size:16px;font-weight:800;text-decoration:none;padding:16px 36px;border-radius:10px;">
         Claim My Spot →
       </a>
     </td>

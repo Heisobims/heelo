@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class Notification(Base, TimestampMixin):
-    """In-app notification — displayed in the slide-in notification panel."""
+    """In-app notification - displayed in the slide-in notification panel."""
 
     __tablename__ = "notifications"
     __table_args__ = (
@@ -36,7 +36,7 @@ class Notification(Base, TimestampMixin):
     type: Mapped[str] = mapped_column(String(60), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # URL to navigate to on click — relative path
+    # URL to navigate to on click - relative path
     action_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     icon: Mapped[str | None] = mapped_column(String(100), nullable=True)
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -90,7 +90,7 @@ class AdminBroadcast(Base, TimestampMixin):
     """
     Platform-wide promotional/announcement email sent by a platform admin to a
     category of users (all / organizers / attendees / vendors / admins).
-    Distinct from the org-scoped Campaign model — this targets any user on the
+    Distinct from the org-scoped Campaign model - this targets any user on the
     platform regardless of organization.
     """
 
@@ -105,7 +105,7 @@ class AdminBroadcast(Base, TimestampMixin):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     # all | organizer | attendee | vendor | admin
     audience_category: Mapped[str] = mapped_column(String(20), nullable=False)
-    # email | notification | both — where this broadcast is delivered
+    # email | notification | both - where this broadcast is delivered
     channel: Mapped[str] = mapped_column(String(20), nullable=False, default="email")
     recipient_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     sent_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

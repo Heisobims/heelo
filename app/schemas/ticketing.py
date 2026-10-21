@@ -226,6 +226,8 @@ class OrderOut(BaseModel):
     buyer_email: str
     total_amount: Decimal
     net_amount: Decimal
+    platform_fee: Decimal = Decimal("0")
+    fees_passed_to_buyer: bool = False
     currency: str
     payment_status: str
     payment_provider: str | None
@@ -238,7 +240,7 @@ class WaitlistJoinRequest(BaseModel):
     ticket_type_id: uuid.UUID
     name: str = Field(..., min_length=1, max_length=255)
     email: EmailStr
-    phone: str | None = Field(None, max_length=30, description="Optional — for WhatsApp notice")
+    phone: str | None = Field(None, max_length=30, description="Optional - for WhatsApp notice")
 
 
 class WaitlistOut(BaseModel):

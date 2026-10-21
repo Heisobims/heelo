@@ -45,9 +45,9 @@ class Campaign(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
     scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    # Audience config — {"statuses": ["confirmed", "checked_in"]}
+    # Audience config - {"statuses": ["confirmed", "checked_in"]}
     audience_filter: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    # Denormalised counters — updated by Celery tasks
+    # Denormalised counters - updated by Celery tasks
     recipient_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     sent_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     delivered_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

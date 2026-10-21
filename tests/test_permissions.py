@@ -1,4 +1,4 @@
-"""Centralized permission matrix (app/permissions.py) — unit tests for the matrix
+"""Centralized permission matrix (app/permissions.py) - unit tests for the matrix
 itself, plus integration tests confirming it's actually enforced at the two
 concrete gaps the audit found: checkin_staff couldn't scan/undo check-ins, and
 finance could see far more than just the finance dashboard.
@@ -122,12 +122,12 @@ class TestCheckinStaffEnforcement:
 
 
 class TestFinanceRoleEnforcement:
-    """finance should see financial data and nothing else — previously it was
+    """finance should see financial data and nothing else - previously it was
     only checked on the finance dashboard page, nowhere else."""
 
     async def test_finance_can_view_finance_page(self, client: AsyncClient, org, finance_member):
         # Page routes (app/routers/pages.py) authenticate via the heelo_access
-        # cookie, not an Authorization header — unlike the JSON API.
+        # cookie, not an Authorization header - unlike the JSON API.
         from tests.conftest import _make_token
 
         client.cookies.set("heelo_access", _make_token(str(finance_member.user_id)))
@@ -168,7 +168,7 @@ class TestFinanceRoleEnforcement:
 
 
 class TestOrganizerRoleStillWorksAsBefore:
-    """Regression guard — the migration to require_permission() shouldn't have
+    """Regression guard - the migration to require_permission() shouldn't have
     changed what a plain non-owner "organizer" member can do."""
 
     async def test_organizer_member_can_manage_events(

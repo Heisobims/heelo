@@ -1,4 +1,4 @@
-"""Campaign — create, schedule, send, recipient tracking."""
+"""Campaign - create, schedule, send, recipient tracking."""
 
 from __future__ import annotations
 

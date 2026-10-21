@@ -1,9 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Registration Confirmed — {{ event.title }}{% endblock %}
+{% block title %}Registration Confirmed · {{ event.title }} | Heelo{% endblock %}
+{% set cyan_text = (org.display_brand_color | contrast_text('#0A0A0A')) if org and org.display_brand_color else '#0A0A0A' %}
 
 {% block head %}
 <style>
   body { background: var(--bg-secondary); }
+  {% if org and org.display_brand_color %}
+  :root { --cyan: {{ org.display_brand_color }}; }
+  {% endif %}
 
   .conf-nav {
     position: sticky;
@@ -17,6 +21,13 @@
     gap: 10px;
     padding: 0 24px;
     height: 52px;
+  }
+
+  .conf-nav-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .conf-container {
@@ -66,18 +77,9 @@
 {% endblock %}
 
 {% block body %}
-<nav class="conf-nav">
-  <a href="/" style="font-family:var(--font-serif); font-size:18px; font-weight:700; color:var(--text-primary); text-decoration:none;">heelo</a>
-  <span style="color:var(--border-color);">›</span>
-  <a href="/e/{{ event.slug }}" style="font-size:13px; color:var(--text-muted); text-decoration:none;">{{ event.title }}</a>
-  {% if user %}
-  <div style="margin-left:auto;">
-    <a href="/dashboard" style="font-size:13px; color:var(--text-muted); text-decoration:none;">Dashboard →</a>
-  </div>
-  {% endif %}
-</nav>
+{% include "partials/site_nav.html" %}
 
-<div class="conf-container">
+<div class="conf-container" style="padding-top: 96px;">
 
   {% if cancelled %}
   <!-- Payment cancelled state -->
@@ -87,7 +89,7 @@
     </div>
     <h1 style="font-family:var(--font-serif); font-size:28px; font-weight:700; margin-bottom:8px;">Payment cancelled</h1>
     <p style="font-size:15px; color:var(--text-muted);">You cancelled the payment. Your spot has not been reserved.</p>
-    <a href="/e/{{ event.slug }}" style="display:inline-block; margin-top:16px; padding:11px 24px; background:#00FFF3; border-radius:8px; font-size:14px; font-weight:700; color:#000; text-decoration:none;">
+    <a href="/e/{{ event.slug }}" style="display:inline-block; margin-top:16px; padding:11px 24px; background:var(--cyan); border-radius:8px; font-size:14px; font-weight:700; color:{{ cyan_text }}; text-decoration:none;">
       Try again
     </a>
   </div>
@@ -102,15 +104,15 @@
     {% if request.query_params.get('error') %}
     <p style="font-size:13px; color:#dc2626; margin-bottom:12px;">Payment could not be initialised. Please try again or contact support.</p>
     {% endif %}
-    <a href="/orders/{{ order.id }}/pay" style="display:inline-block; margin-top:12px; padding:12px 28px; background:#00FFF3; border-radius:8px; font-size:14px; font-weight:700; color:#000; text-decoration:none;">
+    <a href="/orders/{{ order.id }}/pay" style="display:inline-block; margin-top:12px; padding:12px 28px; background:var(--cyan); border-radius:8px; font-size:14px; font-weight:700; color:{{ cyan_text }}; text-decoration:none;">
       Complete payment →
     </a>
   </div>
   {% else %}
   <!-- Success state -->
   <div style="text-align:center; margin-bottom:32px;">
-    <div style="width:64px; height:64px; background:#00FFF3; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; box-shadow:0 0 0 8px rgba(0,255,243,0.15);">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    <div style="width:64px; height:64px; background:var(--cyan); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; box-shadow:0 0 0 8px {{ (org.display_brand_color if org else None) | to_rgba(0.15) }};">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="{{ cyan_text }}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <h1 style="font-family:var(--font-serif); font-size:28px; font-weight:700; margin-bottom:8px;">You're in!</h1>
     <p style="font-size:15px; color:var(--text-muted);">
@@ -120,17 +122,26 @@
   {% endif %}
 
   <!-- Order reference -->
-  <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;">
-    <div>
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">Order reference</div>
-      <div style="font-family:var(--font-mono); font-size:14px; font-weight:600; letter-spacing:0.05em;">{{ order.id | string | upper }}{{ '...' if (order.id | string | length) > 8 else '' }}</div>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">Total paid</div>
-      <div style="font-size:16px; font-weight:700;">
-        {% if order.total_amount == 0 %}Free{% else %}{{ order.currency }} {{ "{:,.0f}".format(order.total_amount) }}{% endif %}
+  <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:16px 20px; margin-bottom:20px;">
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">Order reference</div>
+        <div style="font-family:var(--font-mono); font-size:14px; font-weight:600; letter-spacing:0.05em;">{{ order.id | string | upper }}{{ '...' if (order.id | string | length) > 8 else '' }}</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">Total paid</div>
+        <div style="font-size:16px; font-weight:700;">
+          {% if order.total_amount == 0 %}Free{% else %}{{ order.currency }} {{ "{:,.0f}".format(order.total_amount) }}{% endif %}
+        </div>
       </div>
     </div>
+    {% if order.fees_passed_to_buyer and order.total_amount > 0 %}
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border-light); font-size:12.5px; color:var(--text-muted); line-height:1.9;">
+      <div style="display:flex; justify-content:space-between;"><span>Ticket price</span><span>{{ order.currency }} {{ "{:,.2f}".format(order.net_amount) }}</span></div>
+      <div style="display:flex; justify-content:space-between;"><span>Service fee</span><span>{{ order.currency }} {{ "{:,.2f}".format(order.platform_fee - order.gateway_fee_amount) }}</span></div>
+      <div style="display:flex; justify-content:space-between;"><span>Processing fee</span><span>{{ order.currency }} {{ "{:,.2f}".format(order.gateway_fee_amount) }}</span></div>
+    </div>
+    {% endif %}
   </div>
 
   <!-- Event summary -->
@@ -157,7 +168,7 @@
         <div style="font-size:15px; font-weight:600; color:#fff;">{{ reg.attendee_name }}</div>
         <div style="font-size:12px; color:rgba(255,255,255,0.6);">{{ reg.attendee_email }}</div>
       </div>
-      <span style="font-size:11px; font-weight:600; padding:4px 10px; border-radius:100px; background:rgba(0,255,243,0.15); color:#00FFF3;">CONFIRMED</span>
+      <span style="font-size:11px; font-weight:600; padding:4px 10px; border-radius:100px; background:{{ (org.display_brand_color if org else None) | to_rgba(0.15) }}; color:var(--cyan);">CONFIRMED</span>
     </div>
     <div class="ticket-stub-body">
       <div class="qr-wrap">

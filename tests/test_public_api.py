@@ -1,4 +1,4 @@
-"""Public REST API — API key auth, events, registrations, check-in, stats."""
+"""Public REST API - API key auth, events, registrations, check-in, stats."""
 
 from __future__ import annotations
 

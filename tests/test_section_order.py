@@ -1,4 +1,4 @@
-"""Public event page section reordering — organizer-controlled drag-and-drop
+"""Public event page section reordering - organizer-controlled drag-and-drop
 order + show/hide for existing content sections (About, Agenda, People,
 Partners, Gallery, Discussion). Deliberately scoped to reordering, not a
 full block-based page composer.
@@ -137,7 +137,7 @@ class TestPublicPageReordering:
         )
         resp = await client.get(f"/e/{published_event.slug}")
         assert resp.status_code == 200
-        # The About *card* (title + description body) shouldn't render — the
+        # The About *card* (title + description body) shouldn't render - the
         # description text alone isn't a safe marker since it's also used in
         # the page's <meta og:description> tag regardless of section visibility.
         assert "About this event" not in resp.text

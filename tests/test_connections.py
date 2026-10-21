@@ -1,4 +1,4 @@
-"""Attendee-to-attendee connections ('mutuals') — activating the dormant Connection table."""
+"""Attendee-to-attendee connections ('mutuals') - activating the dormant Connection table."""
 
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ async def test_duplicate_pending_request_returns_existing_not_a_new_row(
 async def test_reverse_request_auto_accepts_instead_of_duplicating(
     db: AsyncSession, user, other_user
 ):
-    """If B already asked A, A asking B back should accept — not create a duplicate."""
+    """If B already asked A, A asking B back should accept - not create a duplicate."""
     original = await conn_svc.send_request(db, user.id, other_user.id)
     reverse = await conn_svc.send_request(db, other_user.id, user.id)
 

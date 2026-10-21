@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class EventFeedback(Base, TimestampMixin):
-    """Post-event rating + optional comment from an attendee — one per registration."""
+    """Post-event rating + optional comment from an attendee - one per registration."""
 
     __tablename__ = "event_feedback"
     __table_args__ = (

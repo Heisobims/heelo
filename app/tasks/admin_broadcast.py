@@ -1,4 +1,4 @@
-"""Platform-wide promotional email/notification sending — admin broadcasts."""
+"""Platform-wide promotional email/notification sending - admin broadcasts."""
 
 from __future__ import annotations
 
@@ -100,7 +100,7 @@ def send_broadcast(broadcast_id: str) -> None:
             broadcast.status = "sent" if sent > 0 or not recipients else "failed"
             db.commit()
         except Exception:
-            # Per-recipient failures are tracked above and never reach here — this
+            # Per-recipient failures are tracked above and never reach here - this
             # only catches catastrophic failures. Without it, `status` would stay
             # stuck on "sending" forever since this task has max_retries=0.
             db.rollback()

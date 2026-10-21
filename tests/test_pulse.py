@@ -1,4 +1,4 @@
-"""Live pulse — mid-event glanceable check-in rate, capacity fill, ticket tier breakdown."""
+"""Live pulse - mid-event glanceable check-in rate, capacity fill, ticket tier breakdown."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ async def test_get_live_pulse_reflects_checkins(
 async def test_get_live_pulse_capacity_percent_none_when_unlimited(
     db: AsyncSession, published_event, ticket_type, registration
 ):
-    # published_event fixture doesn't set max_capacity — should stay None, not divide-by-zero.
+    # published_event fixture doesn't set max_capacity - should stay None, not divide-by-zero.
     stats = await ci_svc.get_live_pulse(db, published_event)
     assert stats["capacity"] is None
     assert stats["percent_of_capacity"] is None

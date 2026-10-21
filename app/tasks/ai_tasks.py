@@ -1,5 +1,5 @@
 """
-AI-powered async tasks — runs via Celery worker.
+AI-powered async tasks - runs via Celery worker.
 Uses the sync Anthropic client (same pattern as email/whatsapp tasks).
 """
 

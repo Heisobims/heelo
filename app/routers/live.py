@@ -8,9 +8,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
+from app import plans
 from app.database import AsyncSessionLocal
 from app.dependencies import DBSession, OrgAccess
 from app.permissions import Permission, require_permission
+from app.plans import PlanFeature
 from app.schemas.live import (
     PollCreateRequest,
     PollVoteRequest,
@@ -87,6 +89,7 @@ async def create_poll(
     org_access: LiveEngagementManageAccess,
 ):
     org, role, is_owner = org_access
+    plans.require_feature(org.plan, PlanFeature.LIVE_ENGAGEMENT)
     event = await _get_event_for_org(db, event_id, org.id)
     poll = await live_svc.create_poll(db, event.id, data)
     return {"success": True, "data": _poll_out(poll)}
@@ -180,7 +183,7 @@ async def delete_question(
     await live_svc.delete_question(db, question)
 
 
-# ── Public API (anonymous — no login required) ───────────────────────────────
+# ── Public API (anonymous - no login required) ───────────────────────────────
 
 router_public = APIRouter(prefix="/api/v1/events/{slug}/live", tags=["live-public"])
 
@@ -252,7 +255,7 @@ async def public_upvote_question(slug: str, question_id: str, db: DBSession):
 
 @router_public.get("/stream")
 async def live_stream(slug: str, db: DBSession):
-    """SSE endpoint — pushes the open poll + question list every 3s, same
+    """SSE endpoint - pushes the open poll + question list every 3s, same
     pattern as the check-in kiosk's live-pulse stream."""
     event = await _get_public_event(db, slug)
 

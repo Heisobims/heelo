@@ -1,80 +1,510 @@
-{% extends "admin/layout.html" %}
-{% block title %}Overview{% endblock %}
-
-{% block content %}
-<div style="margin-bottom:24px;">
-  <h1 style="font-size:1.4rem;font-weight:700;">Platform Overview</h1>
-  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">Live snapshot of the Heelo platform.</p>
+{% extends "admin/layout.html" %} {% block title %}Overview{% endblock %} {%
+block content %}
+<div
+  style="
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  "
+>
+  <div>
+    <h1 style="font-size: 1.45rem; font-weight: 700; letter-spacing: -0.02em">
+      Platform Overview
+    </h1>
+    <p
+      style="
+        color: var(--text-muted, #71717a);
+        font-size: 0.875rem;
+        margin-top: 4px;
+      "
+    >
+      Live snapshot of platform transactions, subscriptions, users, and
+      operations.
+    </p>
+  </div>
+  <div style="display: flex; gap: 10px">
+    <a href="/admin/finance" class="btn btn-secondary btn-sm">
+      <span class="material-symbols-outlined" style="font-size: 16px"
+        >receipt_long</span
+      >
+      View Finances
+    </a>
+    <a href="/admin/events" class="btn btn-accent btn-sm">
+      <span class="material-symbols-outlined" style="font-size: 16px"
+        >confirmation_number</span
+      >
+      Manage Events
+    </a>
+  </div>
 </div>
 
-<div class="stat-grid">
+{% if stats.pending_verifications > 0 or stats.pending_payouts > 0 %}
+<div
+  style="
+    background: rgba(245, 158, 11, 0.08);
+    border: 1.5px solid rgba(245, 158, 11, 0.25);
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  "
+>
+  <div style="display: flex; align-items: center; gap: 10px">
+    <span
+      class="material-symbols-outlined"
+      style="color: #d97706; font-size: 22px"
+      >notifications_active</span
+    >
+    <div>
+      <span style="font-weight: 700; font-size: 0.88rem; color: var(--text)"
+        >Items requiring admin attention</span
+      >
+      <p
+        style="
+          font-size: 0.8rem;
+          color: var(--text-muted, #71717a);
+          margin-top: 2px;
+        "
+      >
+        {% if stats.pending_verifications > 0 %}<strong
+          >{{ stats.pending_verifications }}</strong
+        >
+        vendor verification request{{ 's' if stats.pending_verifications != 1
+        else '' }}{% endif %} {% if stats.pending_verifications > 0 and
+        stats.pending_payouts > 0 %} &middot; {% endif %} {% if
+        stats.pending_payouts > 0 %}<strong>{{ stats.pending_payouts }}</strong>
+        pending payout{{ 's' if stats.pending_payouts != 1 else '' }}{% endif %}
+      </p>
+    </div>
+  </div>
+  <div style="display: flex; gap: 8px">
+    {% if stats.pending_verifications > 0 %}
+    <a
+      href="/admin/vendors?tab=verifications"
+      class="btn btn-sm btn-secondary"
+      style="font-size: 12px"
+      >Review Verifications</a
+    >
+    {% endif %} {% if stats.pending_payouts > 0 %}
+    <a
+      href="/admin/payouts"
+      class="btn btn-sm btn-accent"
+      style="font-size: 12px"
+      >Disburse Payouts</a
+    >
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- Primary KPI Grid -->
+<div
+  class="stat-grid"
+  style="
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    margin-bottom: 24px;
+  "
+>
+  <div class="stat-card">
+    <div class="stat-label">Ticket GMV (Gross Sales)</div>
+    <div class="stat-value" style="color: var(--text)">
+      ₦{{ "{:,.0f}".format(stats.total_gmv) }}
+    </div>
+    <div
+      style="
+        font-size: 0.75rem;
+        color: var(--text-muted, #71717a);
+        margin-top: 4px;
+      "
+    >
+      Total volume processed
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Heelo Platform Fees</div>
+    <div class="stat-value" style="color: var(--admin-accent)">
+      ₦{{ "{:,.0f}".format(stats.total_platform_fees) }}
+    </div>
+    <div
+      style="
+        font-size: 0.75rem;
+        color: var(--text-muted, #71717a);
+        margin-top: 4px;
+      "
+    >
+      Ticket ticketing commission
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Subscription Revenue</div>
+    <div class="stat-value" style="color: #047857">
+      ₦{{ "{:,.0f}".format(stats.total_subscription_revenue) }}
+    </div>
+    <div
+      style="
+        font-size: 0.75rem;
+        color: var(--text-muted, #71717a);
+        margin-top: 4px;
+      "
+    >
+      {{ stats.active_subscriptions }} active paid plans
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Marketplace Volume</div>
+    <div class="stat-value" style="color: var(--text)">
+      ₦{{ "{:,.0f}".format(stats.total_marketplace_volume) }}
+    </div>
+    <div
+      style="
+        font-size: 0.75rem;
+        color: var(--text-muted, #71717a);
+        margin-top: 4px;
+      "
+    >
+      ₦{{ "{:,.0f}".format(stats.total_marketplace_commission) }} commission
+      earned
+    </div>
+  </div>
   <div class="stat-card">
     <div class="stat-label">Total Users</div>
     <div class="stat-value">{{ "{:,}".format(stats.total_users) }}</div>
+    <div
+      style="
+        font-size: 0.75rem;
+        color: var(--text-muted, #71717a);
+        margin-top: 4px;
+      "
+    >
+      {{ "{:,}".format(stats.total_orgs) }} organizations
+    </div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Organizations</div>
-    <div class="stat-value">{{ "{:,}".format(stats.total_orgs) }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Total Events</div>
+    <div class="stat-label">Events &amp; Attendance</div>
     <div class="stat-value">{{ "{:,}".format(stats.total_events) }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Platform Net Revenue</div>
-    <div class="stat-value" style="color:var(--admin-accent);">₦{{ "{:,.0f}".format(stats.total_net_revenue) }}</div>
+    <div
+      style="
+        font-size: 0.75rem;
+        color: var(--text-muted, #71717a);
+        margin-top: 4px;
+      "
+    >
+      {{ "{:,}".format(stats.total_tickets_sold) }} tickets confirmed
+    </div>
   </div>
 </div>
 
-<div class="section-card">
-  <div class="section-header">
-    <span class="section-title">Recent Organizations</span>
-    <a href="/admin/organizations" style="color:var(--admin-accent);font-size:0.8rem;text-decoration:none;">View all &rarr;</a>
+<!-- Recent Financials / Transactions -->
+<div
+  style="
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+    gap: 24px;
+    margin-bottom: 24px;
+  "
+>
+  <!-- Recent Ticket Orders -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-title">Recent Orders</span>
+      <a
+        href="/admin/finance?tab=orders"
+        style="
+          color: var(--admin-accent);
+          font-size: 0.8rem;
+          text-decoration: none;
+          font-weight: 600;
+        "
+        >View all &rarr;</a
+      >
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Reference</th>
+          <th>Buyer</th>
+          <th>Amount</th>
+          <th>Platform Fee</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ord in recent_orders %}
+        <tr>
+          <td>
+            <span
+              style="
+                font-family: monospace;
+                font-weight: 700;
+                font-size: 0.82rem;
+              "
+              >{{ ord.payment_reference[:12] if ord.payment_reference else ''
+              }}</span
+            >
+            <br /><span
+              style="font-size: 0.72rem; color: var(--text-muted, #71717a)"
+              >{{ ord.event.title[:24] ~ '...' if ord.event and
+              ord.event.title|length > 24 else (ord.event.title if ord.event
+              else 'Event') }}</span
+            >
+          </td>
+          <td>
+            <span style="font-weight: 600; font-size: 0.82rem"
+              >{{ ord.buyer_name or 'Anonymous' }}</span
+            >
+            <br /><span
+              style="font-size: 0.72rem; color: var(--text-muted, #71717a)"
+              >{{ ord.buyer_email or '' }}</span
+            >
+          </td>
+          <td style="font-weight: 700; font-size: 0.85rem">
+            {{ ord.currency or 'NGN' }} {{ "{:,.2f}".format(ord.total_amount) }}
+          </td>
+          <td
+            style="
+              color: var(--admin-accent);
+              font-size: 0.82rem;
+              font-weight: 600;
+            "
+          >
+            {{ ord.currency or 'NGN' }} {{ "{:,.2f}".format(ord.platform_fee) }}
+          </td>
+          <td>
+            <span
+              class="badge {{ 'badge-active' if ord.payment_status == 'paid' else ('badge-suspended' if ord.payment_status == 'refunded' else 'badge-pending') }}"
+            >
+              {{ ord.payment_status }}
+            </span>
+          </td>
+        </tr>
+        {% endfor %} {% if not recent_orders %}
+        <tr>
+          <td
+            colspan="5"
+            style="
+              text-align: center;
+              color: var(--text-muted, #71717a);
+              padding: 16px;
+            "
+          >
+            No recent ticket orders.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
   </div>
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Name</th><th>Owner</th><th>Plan</th><th>Events</th><th>Revenue</th><th>Status</th><th>Created</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for o in recent_orgs %}
-      <tr>
-        <td><a href="/admin/organizations/{{ o.id }}">{{ o.name }}</a><br><span style="color:var(--text-muted,#71717a);font-size:0.72rem;">{{ o.slug }}</span></td>
-        <td>{{ o.owner_email }}</td>
-        <td><span class="badge badge-plan-{{ o.plan }}">{{ o.plan }}</span></td>
-        <td>{{ o.event_count }}</td>
-        <td>₦{{ "{:,.0f}".format(o.net_revenue) }}</td>
-        <td><span class="badge {{ 'badge-active' if o.is_active else 'badge-suspended' }}">{{ 'Active' if o.is_active else 'Suspended' }}</span></td>
-        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">{{ o.created_at[:10] }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <!-- Recent Subscription Invoices -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-title">Recent Plan Invoices</span>
+      <a
+        href="/admin/finance?tab=invoices"
+        style="
+          color: var(--admin-accent);
+          font-size: 0.8rem;
+          text-decoration: none;
+          font-weight: 600;
+        "
+        >View all &rarr;</a
+      >
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Organization</th>
+          <th>Plan</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inv in recent_invoices %}
+        <tr>
+          <td>
+            {% if inv.organization %}
+            <a href="/admin/organizations/{{ inv.organization.id }}"
+              >{{ inv.organization.name }}</a
+            >
+            {% else %}
+            <span>Org {{ inv.org_id|string|truncate(8) }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-plan-{{ inv.plan }}"
+              >{{ inv.plan|capitalize }}</span
+            >
+          </td>
+          <td style="font-weight: 700; font-size: 0.85rem">
+            {{ inv.currency }} {{ "{:,.2f}".format(inv.amount) }}
+          </td>
+          <td>
+            <span
+              class="badge {{ 'badge-active' if inv.status == 'paid' else ('badge-suspended' if inv.status == 'failed' else 'badge-pending') }}"
+            >
+              {{ inv.status|capitalize }}
+            </span>
+          </td>
+          <td style="font-size: 0.75rem; color: var(--text-muted, #71717a)">
+            {{ inv.created_at.strftime('%b %d, %Y') if inv.created_at else '' }}
+          </td>
+        </tr>
+        {% endfor %} {% if not recent_invoices %}
+        <tr>
+          <td
+            colspan="5"
+            style="
+              text-align: center;
+              color: var(--text-muted, #71717a);
+              padding: 16px;
+            "
+          >
+            No plan invoices yet.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
-<div class="section-card">
-  <div class="section-header">
-    <span class="section-title">Recent Users</span>
-    <a href="/admin/users" style="color:var(--admin-accent);font-size:0.8rem;text-decoration:none;">View all &rarr;</a>
+<!-- Organizations & Users Grid -->
+<div
+  style="
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+    gap: 24px;
+  "
+>
+  <!-- Organizations -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-title">Recent Organizations</span>
+      <a
+        href="/admin/organizations"
+        style="
+          color: var(--admin-accent);
+          font-size: 0.8rem;
+          text-decoration: none;
+          font-weight: 600;
+        "
+        >View all &rarr;</a
+      >
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Plan</th>
+          <th>Events</th>
+          <th>Revenue</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in recent_orgs %}
+        <tr>
+          <td>
+            <a href="/admin/organizations/{{ o.id }}">{{ o.name }}</a>
+            <br /><span
+              style="color: var(--text-muted, #71717a); font-size: 0.72rem"
+              >/{{ o.slug }} &middot; {{ o.owner_email }}</span
+            >
+          </td>
+          <td>
+            <span class="badge badge-plan-{{ o.plan }}"
+              >{{ o.plan|capitalize }}</span
+            >
+          </td>
+          <td>{{ o.event_count }}</td>
+          <td>₦{{ "{:,.0f}".format(o.net_revenue) }}</td>
+          <td>
+            <span
+              class="badge {{ 'badge-active' if o.is_active else 'badge-suspended' }}"
+              >{{ 'Active' if o.is_active else 'Suspended' }}</span
+            >
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  <table class="data-table">
-    <thead>
-      <tr><th>Name</th><th>Email</th><th>Role</th><th>Verified</th><th>Joined</th></tr>
-    </thead>
-    <tbody>
-      {% for u in recent_users %}
-      <tr>
-        <td><a href="/admin/users/{{ u.id }}">{{ u.full_name }}</a></td>
-        <td>{{ u.email }}</td>
-        <td>
-          {% if u.role == 'admin' %}<span class="badge badge-admin">admin</span>{% else %}<span style="color:var(--text-muted,#71717a);">{{ u.role }}</span>{% endif %}
-        </td>
-        <td>{% if u.is_verified %}<span class="material-symbols-outlined" style="color:#22c55e;">check</span>{% else %}—{% endif %}</td>
-        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <!-- Users -->
+  <div class="section-card">
+    <div class="section-header">
+      <span class="section-title">Recent Users</span>
+      <a
+        href="/admin/users"
+        style="
+          color: var(--admin-accent);
+          font-size: 0.8rem;
+          text-decoration: none;
+          font-weight: 600;
+        "
+        >View all &rarr;</a
+      >
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Verified</th>
+          <th>Joined</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in recent_users %}
+        <tr>
+          <td>
+            <a href="/admin/users/{{ u.id }}">{{ u.full_name }}</a>
+            <br /><span
+              style="color: var(--text-muted, #71717a); font-size: 0.72rem"
+              >{{ u.email }}</span
+            >
+          </td>
+          <td>
+            {% if u.role == 'admin' %}
+            <span class="badge badge-admin">admin</span>
+            {% else %}
+            <span
+              style="
+                color: var(--text-muted, #71717a);
+                font-size: 0.82rem;
+                font-weight: 600;
+              "
+              >{{ u.role|capitalize }}</span
+            >
+            {% endif %}
+          </td>
+          <td>
+            {% if u.is_verified %}<span
+              class="material-symbols-outlined"
+              style="color: #10b981; font-size: 18px"
+              >check_circle</span
+            >{% else %}<span
+              class="material-symbols-outlined"
+              style="color: var(--text-muted, #71717a); font-size: 18px"
+              >remove</span
+            >{% endif %}
+          </td>
+          <td style="color: var(--text-muted, #71717a); font-size: 0.75rem">
+            {{ u.created_at.strftime('%b %d, %Y') }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

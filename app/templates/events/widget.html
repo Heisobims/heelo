@@ -3,20 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Register — {{ event.title }}</title>
+  <title>Register · {{ event.title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --cyan: {{ org.display_brand_color if org and org.display_brand_color else '#E85938' }};
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 14px;
       color: #0A0A0A;
       background: #fff;
       padding: 16px;
     }
-
-    --cyan: #00FFF3;
 
     h2 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
 
@@ -39,7 +44,7 @@
       transition: border-color 0.12s;
     }
 
-    .ticket-card.selected { border-color: #00FFF3; background: #f0fffe; }
+    .ticket-card.selected { border-color: var(--cyan); background: rgba(232,89,56,0.06); }
     .ticket-card.sold-out { opacity: 0.5; }
 
     .ticket-name { font-size: 14px; font-weight: 600; }
@@ -59,7 +64,7 @@
       display: flex; align-items: center; justify-content: center;
     }
 
-    .qty-btn:hover:not(:disabled) { border-color: #00FFF3; }
+    .qty-btn:hover:not(:disabled) { border-color: var(--cyan); }
     .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
     .form-group { margin-bottom: 12px; }
@@ -85,7 +90,7 @@
 
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
       outline: none;
-      border-color: #00FFF3;
+      border-color: var(--cyan);
     }
 
     .form-group select {
@@ -126,10 +131,10 @@
       display: block;
       width: 100%;
       padding: 12px;
-      background: #00FFF3;
-      color: #000;
+      background: var(--cyan);
+      color: #fff;
       border: none;
-      border-radius: 10px;
+      border-radius: 9999px;
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
@@ -194,7 +199,8 @@
 
     .success-icon {
       width: 56px; height: 56px;
-      background: #00FFF3;
+      background: var(--cyan);
+      color: #fff;
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 16px;
@@ -214,9 +220,9 @@
 
 <!-- Step indicator -->
 <div class="steps" x-show="!done">
-  <div class="step-dot" :style="step >= 1 ? 'background:#00FFF3;color:#000;' : 'background:#f3f4f6;color:#9ca3af;'">1</div>
+  <div class="step-dot" :style="step >= 1 ? 'background:var(--cyan);color:#fff;' : 'background:#f3f4f6;color:#9ca3af;'">1</div>
   <div class="step-line"></div>
-  <div class="step-dot" :style="step >= 2 ? 'background:#00FFF3;color:#000;' : 'background:#f3f4f6;color:#9ca3af;'">2</div>
+  <div class="step-dot" :style="step >= 2 ? 'background:var(--cyan);color:#fff;' : 'background:#f3f4f6;color:#9ca3af;'">2</div>
 </div>
 
 <!-- Step 1: Select tickets -->
@@ -282,7 +288,7 @@
     </div>
     <div class="form-group">
       <label>Phone</label>
-      <input type="tel" x-model="buyer.phone" placeholder="+234...">
+      <input type="tel" x-model="buyer.phone" placeholder="+1 555 123 4567">
     </div>
 
     {% if form_fields %}
@@ -293,7 +299,7 @@
       <textarea x-model="answers['{{ ff.id }}']" rows="3" {% if ff.is_required %}required{% endif %}></textarea>
       {% elif ff.field_type == 'dropdown' %}
       <select x-model="answers['{{ ff.id }}']" {% if ff.is_required %}required{% endif %}>
-        <option value="">— Select —</option>
+        <option value="">Select</option>
         {% for opt in (ff.options or []) %}<option value="{{ opt }}">{{ opt }}</option>{% endfor %}
       </select>
       {% else %}
@@ -341,7 +347,7 @@
 <script>
 const _ticketTypes = {{ ticket_types_json | safe }};
 const _eventSlug = {{ event.slug | tojson }};
-const _currency = {{ (ticket_types[0].currency if ticket_types else 'NGN') | tojson }};
+const _currency = {{ (ticket_types[0].currency if ticket_types else (event.organization.currency if event and event.organization else 'USD')) | tojson }};
 
 function widgetForm() {
   return {

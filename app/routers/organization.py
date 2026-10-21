@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import re
 import uuid
 from io import BytesIO
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from PIL import Image
+from pydantic import BaseModel, Field
 
+from app import plans
 from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.permissions import Permission, require_permission
 from app.schemas.organization import (
@@ -39,6 +42,7 @@ async def create_organization(
     current_user: CurrentUser,
     db: DBSession,
 ):
+    await plans.check_org_limit(db, current_user.id)
     org = await svc.create_organization(db, current_user.id, body)
     return _success(OrgOut.model_validate(org))
 
@@ -90,6 +94,128 @@ async def update_organization(
     return _success(OrgOut.model_validate(updated))
 
 
+# ── Custom domain ────────────────────────────────────────────────────────────
+
+
+class SetCustomDomainRequest(BaseModel):
+    domain: str = Field(..., min_length=3, max_length=255)
+
+
+@router_api.post("/{slug}/custom-domain")
+async def set_custom_domain(
+    slug: str,
+    body: SetCustomDomainRequest,
+    access: OrgSettingsAccess,
+    db: DBSession,
+):
+    org, role, is_owner = access
+    plans.require_feature(org.plan, plans.PlanFeature.CUSTOM_DOMAIN)
+    existing_count = 1 if org.custom_domain else 0
+    plans.check_custom_domain_limit(existing_count, org.plan)
+
+    domain = body.domain.strip().lower()
+    if not re.match(
+        r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$", domain
+    ):
+        raise HTTPException(422, "That doesn't look like a valid domain.")
+
+    updated = await svc.set_custom_domain(db, org, domain)
+    return _success(
+        {
+            "domain": updated.custom_domain,
+            "verified": updated.custom_domain_verified,
+            "verification_record": {
+                "type": "TXT",
+                "name": f"_heelo-verify.{updated.custom_domain}",
+                "value": updated.custom_domain_verification_token,
+            },
+        }
+    )
+
+
+@router_api.post("/{slug}/custom-domain/verify")
+async def verify_custom_domain(slug: str, access: OrgSettingsAccess, db: DBSession):
+    org, role, is_owner = access
+    plans.require_feature(org.plan, plans.PlanFeature.CUSTOM_DOMAIN)
+    updated = await svc.verify_custom_domain(db, org)
+    return _success({"domain": updated.custom_domain, "verified": updated.custom_domain_verified})
+
+
+@router_api.delete("/{slug}/custom-domain", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_custom_domain(slug: str, access: OrgSettingsAccess, db: DBSession):
+    org, role, is_owner = access
+    await svc.remove_custom_domain(db, org)
+
+
+# ── SSO domain (Enterprise) ──────────────────────────────────────────────────
+
+
+class SetSSODomainRequest(BaseModel):
+    domain: str = Field(..., min_length=3, max_length=255)
+
+
+class SetSSOEnforcementRequest(BaseModel):
+    enforced: bool
+
+
+@router_api.post("/{slug}/sso")
+async def set_sso_domain(
+    slug: str,
+    body: SetSSODomainRequest,
+    access: OrgSettingsAccess,
+    db: DBSession,
+):
+    org, role, is_owner = access
+    plans.require_feature(org.plan, plans.PlanFeature.SSO)
+
+    domain = body.domain.strip().lower()
+    if not re.match(
+        r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$", domain
+    ):
+        raise HTTPException(422, "That doesn't look like a valid domain.")
+
+    updated = await svc.set_sso_domain(db, org, domain)
+    return _success(
+        {
+            "domain": updated.sso_domain,
+            "verified": updated.sso_domain_verified,
+            "enforced": updated.sso_enforced,
+            "verification_record": {
+                "type": "TXT",
+                "name": f"_heelo-sso-verify.{updated.sso_domain}",
+                "value": updated.sso_verification_token,
+            },
+        }
+    )
+
+
+@router_api.post("/{slug}/sso/verify")
+async def verify_sso_domain(slug: str, access: OrgSettingsAccess, db: DBSession):
+    org, role, is_owner = access
+    plans.require_feature(org.plan, plans.PlanFeature.SSO)
+    updated = await svc.verify_sso_domain(db, org)
+    return _success({"domain": updated.sso_domain, "verified": updated.sso_domain_verified})
+
+
+@router_api.post("/{slug}/sso/enforce")
+async def set_sso_enforcement(
+    slug: str,
+    body: SetSSOEnforcementRequest,
+    access: OrgSettingsAccess,
+    db: DBSession,
+):
+    org, role, is_owner = access
+    plans.require_feature(org.plan, plans.PlanFeature.SSO)
+    updated = await svc.set_sso_enforcement(db, org, body.enforced)
+    return _success({"enforced": updated.sso_enforced})
+
+
+@router_api.delete("/{slug}/sso", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_sso_domain(slug: str, access: OrgSettingsAccess, db: DBSession):
+    org, role, is_owner = access
+    await svc.remove_sso_domain(db, org)
+
+
 # ── Member list ───────────────────────────────────────────────────────────────
 
 
@@ -129,6 +255,7 @@ async def invite_member(
     db: DBSession,
 ):
     org, role, is_owner = access
+    await plans.check_seat_limit(db, org)
     try:
         member = await svc.invite_member(db, org, current_user, body.email, body.role)
     except ValueError as exc:
@@ -204,6 +331,25 @@ async def remove_member(
         await svc.remove_member(db, org, member_id, current_user.id)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+# ── Resend invite ────────────────────────────────────────────────────────────
+
+
+@router_api.post("/{slug}/members/{member_id}/resend-invite")
+async def resend_invite(
+    slug: str,
+    member_id: uuid.UUID,
+    access: TeamManageAccess,
+    current_user: CurrentUser,
+    db: DBSession,
+):
+    org, role, is_owner = access
+    try:
+        member = await svc.resend_invite(db, org, member_id, current_user)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return _success({"message": f"Invite resent to {member.invited_email}."})
 
 
 # ── Logo upload ───────────────────────────────────────────────────────────────

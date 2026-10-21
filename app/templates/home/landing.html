@@ -1,919 +1,2294 @@
-{% extends "base.html" %}
-{% block title %}Heelo — Every great event starts here{% endblock %}
-{% block meta_description %}The all-in-one event platform built for Africa and the world. Sell tickets, manage check-in, send campaigns, and grow your audience — all from one place.{% endblock %}
-
+{% extends "base.html" %} {% block title %}Heelo: Every great event starts
+here{% endblock %} {% block meta_description %}Discover concerts, workshops,
+conferences, and festivals happening near you, or list your own event in
+minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 {% block head %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+/>
 <style>
-/* ── Nav ─────────────────────────────────────────────────────── */
-.ln-nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  height: 62px;
-  background: rgba(255,255,255,0.93);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0,0,0,0.07);
-  transition: box-shadow 200ms ease;
-}
-.ln-nav.sld { box-shadow: 0 1px 28px rgba(0,0,0,0.09); }
-.ln-nav-inner {
-  max-width: 1180px; margin: 0 auto; height: 100%;
-  display: flex; align-items: center; gap: 8px; padding: 0 28px;
-}
-.ln-nav-logo {
-  font-family: var(--font-serif);
-  font-size: 20px; font-weight: 700;
-  color: #0A0A0A; letter-spacing: -0.4px;
-  text-decoration: none; flex-shrink: 0; margin-right: 16px;
-}
-.ln-nav-links { display: flex; align-items: center; gap: 2px; flex: 1; }
-.ln-nav-link {
-  font-size: 13.5px; color: #555; font-weight: 500; text-decoration: none;
-  padding: 6px 12px; border-radius: 8px; white-space: nowrap;
-  transition: background 120ms, color 120ms;
-}
-.ln-nav-link:hover { background: rgba(0,0,0,0.05); color: #0A0A0A; }
-.ln-nav-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: auto; }
-.ln-nav-login {
-  font-size: 13.5px; font-weight: 500; color: #555; text-decoration: none;
-  padding: 7px 14px; border-radius: 8px; transition: background 120ms, color 120ms;
-}
-.ln-nav-login:hover { background: rgba(0,0,0,0.05); color: #0A0A0A; }
-.ln-nav-cta {
-  font-size: 13.5px; font-weight: 600;
-  background: #0A0A0A; color: #fff !important;
-  padding: 8px 18px; border-radius: 10px;
-  text-decoration: none; display: inline-flex; align-items: center;
-  transition: background 120ms, transform 80ms;
-}
-.ln-nav-cta:hover { background: #222; }
-.ln-nav-cta:active { transform: scale(0.97); }
-.ln-hamburger {
-  display: none; flex-direction: column; justify-content: center; gap: 5px;
-  background: none; border: none; cursor: pointer; padding: 6px; margin-left: 4px;
-}
-.ln-hamburger span {
-  display: block; width: 20px; height: 1.5px; background: #0A0A0A;
-  transition: transform 200ms, opacity 200ms; border-radius: 2px;
-}
-.ln-hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-.ln-hamburger.open span:nth-child(2) { opacity: 0; }
-.ln-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-.ln-mobile-menu {
-  display: none; flex-direction: column;
-  background: #fff; border-top: 1px solid rgba(0,0,0,0.07);
-  padding: 8px 20px 20px;
-}
-.ln-mobile-menu.open { display: flex; }
-.ln-mobile-menu a {
-  font-size: 15px; font-weight: 500; color: #333; text-decoration: none;
-  padding: 13px 0; border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-.ln-mobile-menu a:last-child { border-bottom: none; }
-.ln-mobile-cta {
-  margin-top: 8px; background: #0A0A0A !important; color: #fff !important;
-  border-radius: 10px; padding: 13px 20px !important;
-  font-weight: 600 !important; text-align: center; border-bottom: none !important;
-}
+  /* ============================================================
+   Maple-Exact Design System for Heelo Homepage
+   Faithfully matching https://www.getmaple.ca visual structure,
+   typography (Lora serif + Inter sans), color tokens, pill badges,
+   trust bars, 4-card on-demand grids, comparison table, and spotlight.
+   ============================================================ */
 
-/* ── Hero ────────────────────────────────────────────────────── */
-.ln-hero {
-  min-height: 100vh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; padding: 120px 24px 80px;
-  background: #F7F7F5;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,255,243,0.13) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 30% at 20% 100%, rgba(0,255,243,0.05) 0%, transparent 60%);
-  position: relative; overflow: hidden;
-}
-.ln-hero-badge {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 5px 5px 5px 14px; border-radius: var(--radius-pill);
-  border: 1px solid #e0e0dc;
-  background: #fff;
-  font-size: 12px; font-weight: 500; color: #444;
-  letter-spacing: 0; margin-bottom: 32px;
-  text-decoration: none; transition: background 120ms;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-.ln-hero-badge:hover { background: #f5f5f3; }
-.ln-hero-badge span {
-  background: var(--cyan); color: #000;
-  font-size: 11px; font-weight: 700;
-  padding: 3px 10px; border-radius: 100px;
-}
-.ln-hero h1 {
-  font-family: var(--font-serif);
-  font-size: clamp(44px, 7vw, 88px);
-  line-height: 1.04; letter-spacing: -2px;
-  color: #0A0A0A; max-width: 900px; margin: 0 auto 24px;
-}
-.ln-hero h1 em { font-style: italic; color: var(--cyan); filter: brightness(0.7); }
-.ln-hero p {
-  font-size: clamp(16px, 2vw, 19px); color: #666;
-  max-width: 540px; line-height: 1.65; margin: 0 auto 44px;
-}
-.ln-hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; }
-.btn-hero {
-  padding: 14px 28px; border-radius: var(--radius-pill);
-  font-size: 15px; font-weight: 700; color: #000;
-  background: var(--cyan); border: none; cursor: pointer;
-  text-decoration: none; display: inline-block;
-  transition: background var(--duration-fast), transform 80ms;
-  box-shadow: 0 2px 12px rgba(0,255,243,0.35);
-}
-.btn-hero:hover { background: var(--cyan-hover); }
-.btn-hero:active { transform: scale(0.98); }
-.btn-hero-ghost {
-  padding: 13px 28px; border-radius: var(--radius-pill);
-  font-size: 15px; font-weight: 500; color: #333;
-  background: #fff; border: 1.5px solid #ddd;
-  cursor: pointer; text-decoration: none; display: inline-block;
-  transition: border-color 120ms, color 120ms;
-}
-.btn-hero-ghost:hover { border-color: #999; color: #0A0A0A; }
+  /* ── Palette Tokens ────────────────────────────────────────── */
+  :root {
+    --mpl-dark: #131b17;
+    --mpl-sand: #faf9f7;
+    --mpl-bright: #faf9f7;
+    --mpl-mint: #6ee6d7;
+    --mpl-coral: #e85938;
+    --mpl-coral-light: #ff875c;
+    --mpl-coral-tint: #ffdac9;
+    --mpl-text-muted: #56625c;
+    --mpl-font-serif: "Lora", Georgia, "Times New Roman", serif;
+    --mpl-font-sans:
+      "Bricolage Grotesque", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
 
-/* Social proof */
-.ln-proof {
-  margin-top: 56px;
-  display: flex; align-items: center; gap: 24px; justify-content: center; flex-wrap: wrap;
-}
-.ln-proof-stat { text-align: center; }
-.ln-proof-stat .num { font-family: var(--font-serif); font-size: 28px; color: #0A0A0A; letter-spacing: -1px; }
-.ln-proof-stat .lbl { font-size: 12px; color: #999; margin-top: 2px; }
-.ln-proof-div { width: 1px; height: 32px; background: #ddd; }
+  body {
+    background-color: #faf9f7;
+    color: var(--mpl-dark);
+    font-family: var(--mpl-font-sans);
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
 
-/* Dashboard preview */
-.ln-preview {
-  margin-top: 72px; position: relative; max-width: 880px; width: 100%;
-}
-.ln-preview-frame {
-  border-radius: 14px; overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 40px 100px rgba(0,0,0,0.18), 0 8px 32px rgba(0,0,0,0.1);
-  background: #111;
-}
-.ln-preview-bar {
-  height: 36px; background: #1a1a1a;
-  display: flex; align-items: center; gap: 6px; padding: 0 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.ln-preview-dot { width: 10px; height: 10px; border-radius: 50%; }
-.ln-preview-screen {
-  padding: 28px 24px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
-}
-.ln-preview-card {
-  background: rgba(255,255,255,0.04); border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.07); padding: 20px;
-}
-.ln-preview-card .label { font-size: 11px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-.ln-preview-card .value { font-family: var(--font-serif); font-size: 28px; color: #fff; letter-spacing: -1px; }
-.ln-preview-card .delta { font-size: 12px; color: var(--success); margin-top: 4px; }
-.ln-preview-bar-chart { margin-top: 20px; display: flex; align-items: flex-end; gap: 4px; height: 60px; }
-.ln-bar { flex: 1; border-radius: 3px 3px 0 0; background: rgba(0,255,243,0.2); }
-.ln-bar.active { background: var(--cyan); }
+  /* ── Hero Section (Screenshot 1) ───────────────────────────── */
+  .mpl-hero-section {
+    position: relative;
+    min-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--mpl-dark);
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(19, 27, 23, 0.40) 0%,
+        rgba(19, 27, 23, 0.64) 100%
+      ),
+      url("/static/images/landing/hero-bg.jpg");
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #faf9f7;
+    padding: 130px 24px 100px;
+    text-align: center;
+    overflow: hidden;
+  }
 
-/* ── Section wrapper ─────────────────────────────────────────── */
-.ln-section { padding: 100px 24px; }
-.ln-section-inner { max-width: 1100px; margin: 0 auto; }
-.ln-label {
-  font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--cyan); margin-bottom: 14px;
-}
-.ln-heading {
-  font-family: var(--font-serif);
-  font-size: clamp(32px, 4vw, 52px); line-height: 1.1;
-  letter-spacing: -1.5px; color: var(--text-primary); margin-bottom: 20px;
-}
-.ln-sub {
-  font-size: 17px; color: var(--text-secondary); max-width: 540px; line-height: 1.7;
-}
+  .mpl-hero-section::before {
+    content: '';
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 620px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(110, 230, 215, 0.22) 0%, rgba(232, 89, 56, 0.15) 50%, transparent 72%);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    filter: blur(55px);
+    animation: mplGlowFloat 9s ease-in-out infinite;
+  }
 
-/* ── Features grid ───────────────────────────────────────────── */
-.ln-features {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1px; background: var(--border); margin-top: 64px;
-  border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden;
-}
-.ln-feature {
-  background: var(--white); padding: 36px 32px;
-  transition: background var(--duration-fast);
-}
-.ln-feature:hover { background: var(--surface); }
-.ln-feature-icon {
-  width: 42px; height: 42px; border-radius: 10px;
-  background: #0A0A0A; display: flex; align-items: center; justify-content: center;
-  margin-bottom: 20px; color: var(--cyan); font-size: 17px;
-}
-.ln-feature h3 { font-size: 17px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.3px; }
-.ln-feature p { font-size: 14px; color: var(--text-secondary); line-height: 1.65; }
+  @keyframes mplGlowFloat {
+    0%, 100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.2;
+    }
+    50% {
+      transform: translate(-46%, -53%) scale(1.12);
+      opacity: 0.35;
+    }
+  }
 
-/* ── Marquee ─────────────────────────────────────────────────── */
-.ln-marquee {
-  padding: 64px 0; overflow: hidden;
-  background: #fff;
-  border-top: 1px solid #ebebeb;
-  border-bottom: 1px solid #ebebeb;
-}
-.marquee-row { overflow: hidden; }
-.marquee-row + .marquee-row { margin-top: 16px; }
-.marquee-track { display: flex; gap: 16px; width: max-content; }
-.marquee-track.go-left  { animation: go-left  44s linear infinite; }
-.marquee-track.go-right { animation: go-right 36s linear infinite; }
-@keyframes go-left  { from { transform: translateX(0); }    to { transform: translateX(-50%); } }
-@keyframes go-right { from { transform: translateX(-50%); } to { transform: translateX(0); }   }
-.m-pill {
-  display: inline-flex; align-items: center; gap: 16px; flex-shrink: 0; white-space: nowrap;
-  padding: 22px 40px; border-radius: var(--radius-pill);
-  background: #F5F5F5; border: none;
-  font-size: 40px; font-weight: 500; color: #0A0A0A;
-  letter-spacing: -0.5px;
-}
-.m-pill .material-symbols-outlined {
-  font-size: 40px; color: var(--cyan);
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
+  @keyframes mplHeroFadeUp {
+    0% {
+      opacity: 0;
+      transform: translateY(26px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-/* ── Africa section ──────────────────────────────────────────── */
-.ln-africa { background: #080808; padding: 100px 24px; }
-.africa-wrap {
-  max-width: 1200px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;
-}
-.africa-eyebrow {
-  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.4);
-  margin-bottom: 24px;
-}
-.africa-h {
-  font-family: var(--font-serif);
-  font-size: clamp(44px, 5.5vw, 72px); font-weight: 700;
-  line-height: 1.08; letter-spacing: -1.5px; margin-bottom: 20px;
-}
-.africa-h .ln1 { color: #fff; display: block; }
-.africa-h .ln2 { color: var(--cyan); display: block; font-style: italic; }
-.africa-p {
-  font-size: 16px; color: rgba(255,255,255,0.42); line-height: 1.72;
-  max-width: 380px; margin-bottom: 32px;
-}
-.africa-ctas { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 48px; }
-.africa-btn-white {
-  padding: 12px 24px; border-radius: 100px; background: #fff; color: #0A0A0A;
-  font-size: 14px; font-weight: 600; text-decoration: none;
-  transition: background 120ms; border: none; cursor: pointer; display: inline-block;
-}
-.africa-btn-white:hover { background: #ebebeb; }
-.africa-btn-ghost {
-  padding: 12px 24px; border-radius: 100px; background: transparent;
-  color: rgba(255,255,255,0.65); font-size: 14px; font-weight: 500;
-  text-decoration: none; border: 1.5px solid rgba(255,255,255,0.18);
-  transition: border-color 120ms, color 120ms; cursor: pointer; display: inline-block;
-}
-.africa-btn-ghost:hover { border-color: rgba(255,255,255,0.45); color: #fff; }
-.africa-stats { display: flex; gap: 32px; flex-wrap: wrap; }
-.africa-stat .sv { font-size: 15px; font-weight: 700; color: #fff; display: block; }
-.africa-stat .sl { font-size: 12px; color: rgba(255,255,255,0.28); margin-top: 2px; display: block; }
+  .mpl-hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 880px;
+    margin: 0 auto;
+  }
 
-/* Code window */
-.africa-code-win {
-  background: #141414; border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.08);
-  overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.55);
-}
-.africa-code-bar {
-  background: #1c1c1c; height: 42px; border-bottom: 1px solid rgba(255,255,255,0.06);
-  display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
-}
-.africa-code-dots { display: flex; gap: 7px; }
-.africa-code-dot { width: 11px; height: 11px; border-radius: 50%; }
-.africa-code-copy {
-  font-size: 12px; color: rgba(255,255,255,0.3); cursor: default;
-  display: flex; align-items: center; gap: 5px;
-}
-.africa-code-body {
-  padding: 28px 32px; font-family: var(--font-mono); font-size: 13px;
-  line-height: 1.9; overflow-x: auto; white-space: pre;
-}
-.ck  { color: #c792ea; } /* keyword   */
-.cf  { color: #82aaff; } /* function  */
-.cs  { color: #c3e88d; } /* string    */
-.cc  { color: rgba(255,255,255,0.22); } /* comment */
-.cn  { color: #f78c6c; } /* number    */
-.cw  { color: rgba(255,255,255,0.82); } /* default */
+  .mpl-hero-title {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(40px, 5.8vw, 76px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -1.5px;
+    color: #faf9f7;
+    margin: 0 0 20px;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
+    animation: mplHeroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
 
-/* ── Integrations ────────────────────────────────────────────── */
-.ln-integrations {
-  background: #fff; padding: 100px 24px;
-  border-top: 1px solid #ebebeb;
-}
-.int-wrap { max-width: 1100px; margin: 0 auto; }
-.int-eyebrow {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  color: #999; margin-bottom: 40px;
-}
-.int-layout {
-  display: grid; grid-template-columns: 1fr 300px; gap: 14px; align-items: stretch;
-}
-.int-main {
-  background: #f5f5f5; border-radius: 24px; padding: 48px;
-  display: flex; flex-direction: column; justify-content: space-between;
-  min-height: 400px;
-}
-.int-main-logos {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 40px;
-}
-.int-logo-block {
-  background: #fff; border-radius: 16px; padding: 20px;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
-}
-.int-logo-mark {
-  width: 36px; height: 36px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-}
-.int-logo-block-name { font-size: 13px; font-weight: 700; color: #0A0A0A; }
-.int-logo-block-meta { font-size: 11px; color: #999; }
-.int-main-footer { }
-.int-main-h {
-  font-family: var(--font-serif); font-size: 28px; font-weight: 600;
-  color: #0A0A0A; letter-spacing: -0.8px; margin-bottom: 8px; line-height: 1.2;
-}
-.int-main-p { font-size: 14px; color: #888; line-height: 1.65; max-width: 340px; }
+  .mpl-typed-wrap {
+    display: inline-flex;
+    align-items: baseline;
+    white-space: nowrap;
+    color: var(--mpl-mint);
+  }
 
-.int-side { display: flex; flex-direction: column; gap: 14px; }
-.int-side-card {
-  background: #f5f5f5; border-radius: 24px; padding: 28px 28px 32px;
-  flex: 1; display: flex; flex-direction: column; justify-content: space-between;
-}
-.int-side-card h4 {
-  font-family: var(--font-serif); font-size: 20px; font-weight: 600;
-  color: #0A0A0A; letter-spacing: -0.4px; margin-bottom: 12px; line-height: 1.25;
-}
-.int-side-card p { font-size: 13px; color: #888; line-height: 1.6; }
+  .mpl-typed-word {
+    color: var(--mpl-mint);
+    display: inline-block;
+    position: relative;
+    border-bottom: 3px solid rgba(110, 230, 215, 0.45);
+    padding-bottom: 2px;
+  }
 
-/* ── Steps ───────────────────────────────────────────────────── */
-.ln-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; margin-top: 64px; }
-.ln-step { position: relative; }
-.ln-step-num {
-  font-family: var(--font-serif); font-size: 48px; line-height: 1;
-  color: var(--border); letter-spacing: -2px; margin-bottom: 16px;
-}
-.ln-step h3 { font-size: 18px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.3px; }
-.ln-step p { font-size: 14px; color: var(--text-secondary); line-height: 1.65; }
-.ln-step-connector {
-  position: absolute; top: 28px; left: calc(100% + 8px);
-  height: 1px; background: var(--border); width: 40px;
-}
+  .mpl-typed-cursor {
+    display: inline-block;
+    color: var(--mpl-mint);
+    font-weight: 300;
+    margin-left: 3px;
+    animation: mplCursorBlink 1s infinite;
+    user-select: none;
+  }
 
-/* ── CTA banner ──────────────────────────────────────────────── */
-.ln-cta {
-  background: #050505; padding: 100px 24px; text-align: center;
-  position: relative; overflow: hidden;
-}
-.ln-cta-wm {
-  position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%);
-  font-family: var(--font-sans); font-size: clamp(80px, 16vw, 220px);
-  font-weight: 900; color: rgba(255,255,255,0.03); letter-spacing: -8px;
-  pointer-events: none; white-space: nowrap; user-select: none; line-height: 1;
-}
-.ln-cta-body { position: relative; z-index: 1; }
-.ln-cta h2 {
-  font-family: var(--font-serif);
-  font-size: clamp(36px, 5vw, 64px); line-height: 1.08;
-  letter-spacing: -2px; color: #fff; margin-bottom: 24px; max-width: 640px; margin-inline: auto;
-}
-.ln-cta h2 em { font-style: normal; color: var(--cyan); }
-.ln-cta p { font-size: 17px; color: rgba(255,255,255,0.45); margin-bottom: 40px; }
+  @keyframes mplCursorBlink {
+    0%, 49% {
+      opacity: 1;
+    }
+    50%, 100% {
+      opacity: 0;
+    }
+  }
 
-/* ── Footer ──────────────────────────────────────────────────── */
-.ln-footer {
-  background: #050505; padding: 40px;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;
-}
-.ln-footer-logo { font-family: var(--font-serif); font-size: 18px; color: rgba(255,255,255,0.4); }
-.ln-footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
-.ln-footer-links a { font-size: 13px; color: rgba(255,255,255,0.3); transition: color var(--duration-fast); text-decoration: none; }
-.ln-footer-links a:hover { color: rgba(255,255,255,0.7); }
-.ln-footer-copy { font-size: 12px; color: rgba(255,255,255,0.2); }
+  .mpl-hero-subtitle {
+    font-family: var(--mpl-font-sans);
+    font-size: clamp(17px, 1.6vw, 21px);
+    line-height: 1.6;
+    color: #e2ece6;
+    max-width: 740px;
+    margin: 0 auto 36px;
+    font-weight: 400;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+    animation: mplHeroFadeUp 0.85s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
 
-/* ── Responsive ──────────────────────────────────────────────── */
-@media (max-width: 960px) {
-  .africa-wrap { grid-template-columns: 1fr; gap: 48px; }
-  .africa-code-win { display: none; }
-  .int-layout { grid-template-columns: 1fr; }
-  .int-side { flex-direction: row; flex-wrap: wrap; }
-  .int-side-card { min-width: 200px; }
-}
-@media (max-width: 768px) {
-  .ln-nav-links { display: none; }
-  .ln-hamburger { display: flex; }
-  .ln-hero { padding: 100px 20px 60px; }
-  .ln-preview-screen { grid-template-columns: 1fr 1fr; }
-  .ln-steps { grid-template-columns: 1fr; gap: 32px; }
-  .ln-step-connector { display: none; }
-  .ln-footer { flex-direction: column; align-items: flex-start; padding: 32px 20px; }
-}
-@media (max-width: 480px) {
-  .africa-item { grid-template-columns: 36px 1fr; }
-}
+  .mpl-hero-cta-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: mplHeroFadeUp 0.85s 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
 
-/* ── Smooth scroll ───────────────────────────────────────────── */
-html { scroll-behavior: smooth; }
+  .mpl-hero-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mpl-mint);
+    color: var(--mpl-dark);
+    font-family: var(--mpl-font-sans);
+    font-size: 17px;
+    font-weight: 700;
+    padding: 15px 38px;
+    border-radius: 9999px;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      background-color 180ms ease;
+    box-shadow: 0 8px 24px rgba(110, 230, 215, 0.3);
+  }
 
-/* animations removed — only marquee animates */
+  .mpl-hero-cta:hover {
+    background: #58d8c8;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(110, 230, 215, 0.45);
+    color: var(--mpl-dark);
+  }
 
-/* ── Marquee hover pause ─────────────────────────────────────── */
-.ln-marquee:hover .marquee-track { animation-play-state: paused; }
+  .mpl-hero-cta:active {
+    transform: scale(0.97);
+  }
 
+  @media (max-width: 768px) {
+    .mpl-hero-section {
+      min-height: auto;
+      padding: 110px 18px 72px;
+    }
+    .mpl-hero-section::before {
+      width: 320px;
+      height: 240px;
+    }
+    .mpl-hero-title {
+      font-size: clamp(30px, 8vw, 44px);
+      letter-spacing: -0.8px;
+      margin-bottom: 16px;
+    }
+    .mpl-hero-subtitle {
+      font-size: 15px;
+      line-height: 1.55;
+      margin-bottom: 28px;
+    }
+    .mpl-hero-cta {
+      width: 100%;
+      max-width: 290px;
+      padding: 14px 28px;
+      font-size: 16px;
+    }
+  }
 
-/* ── Card hover lifts ────────────────────────────────────────── */
-.ln-feature {
-  transition: background var(--duration-fast), transform 220ms ease, box-shadow 220ms ease;
-}
-.ln-feature:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-}
-.int-logo-block {
-  transition: transform 200ms ease, box-shadow 200ms ease;
-}
-.int-logo-block:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.09);
-}
-.int-side-card {
-  transition: background 150ms ease, transform 200ms ease, box-shadow 200ms ease;
-}
-.int-side-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-}
-.ln-step-num { transition: color 300ms ease; }
-.ln-step:hover .ln-step-num { color: var(--cyan); filter: brightness(0.7); }
+  /* ── Circular Category Strip Section (Takes main page background color) ── */
+  .mpl-category-strip {
+    background-color: var(--mpl-sand);
+    border-bottom: 1px solid rgba(19, 27, 23, 0.08);
+    padding: 44px 0 40px;
+  }
 
-/* ── Code cursor ─────────────────────────────────────────────── */
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-.code-cursor {
-  display: inline-block; width: 2px; height: 0.85em;
-  background: rgba(255,255,255,0.45); vertical-align: text-bottom;
-  margin-left: 1px; animation: blink 1.1s step-end infinite;
-}
+  .mpl-cat-container {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .mpl-cat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    text-align: center;
+    flex: 1 1 0;
+    max-width: 130px;
+    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mpl-cat-item:hover {
+    transform: translateY(-4px);
+  }
+
+  .mpl-cat-circle {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    background: var(--mpl-sand);
+    border: 1.5px solid rgba(19, 27, 23, 0.16);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mpl-dark);
+    box-shadow: 0 2px 8px rgba(19, 27, 23, 0.03);
+    transition: all 200ms ease;
+  }
+
+  .mpl-cat-item:hover .mpl-cat-circle {
+    background: #ffffff;
+    border-color: var(--mpl-coral);
+    color: var(--mpl-coral);
+    box-shadow: 0 8px 24px rgba(232, 89, 56, 0.18);
+    transform: scale(1.04);
+  }
+
+  .mpl-cat-fa {
+    font-size: 32px;
+    line-height: 1;
+    color: var(--mpl-dark);
+    transition: color 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mpl-cat-item:hover .mpl-cat-fa {
+    color: var(--mpl-coral);
+  }
+
+  .mpl-cat-label {
+    margin-top: 14px;
+    font-family: var(--mpl-font-sans);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--mpl-dark);
+    line-height: 1.3;
+    text-align: center;
+    transition: color 200ms ease;
+  }
+
+  .mpl-cat-item:hover .mpl-cat-label {
+    color: var(--mpl-coral);
+  }
+
+  @media (max-width: 991px) {
+    .mpl-category-strip {
+      padding: 30px 0 26px;
+    }
+    .mpl-cat-container {
+      overflow-x: auto;
+      padding: 0 20px;
+      gap: 22px;
+      justify-content: flex-start;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mpl-cat-container::-webkit-scrollbar {
+      display: none;
+    }
+    .mpl-cat-item {
+      flex: 0 0 auto;
+      width: 88px;
+    }
+    .mpl-cat-circle {
+      width: 72px;
+      height: 72px;
+    }
+    .mpl-cat-fa {
+      font-size: 26px;
+    }
+    .mpl-cat-label {
+      font-size: 12px;
+      margin-top: 10px;
+    }
+  }
+
+  /* ── "How can we help you today?" (Screenshot 2) ───────────── */
+  .mpl-section-care {
+    background: var(--mpl-sand);
+    padding: 88px 24px 96px;
+  }
+
+  .mpl-care-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+
+  .mpl-care-head {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .mpl-care-title {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(34px, 4vw, 48px);
+    font-weight: 700;
+    color: var(--mpl-dark);
+    letter-spacing: -1px;
+    margin: 0 0 14px;
+  }
+
+  .mpl-care-sub {
+    font-family: var(--mpl-font-sans);
+    font-size: clamp(16px, 1.4vw, 19px);
+    color: var(--mpl-text-muted);
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  /* Large Carousel Card (Screenshot 2) */
+  .mpl-carousel-card {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 7.5;
+    min-height: 380px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(19, 27, 23, 0.08);
+    background-color: var(--mpl-dark);
+  }
+
+  .mpl-carousel-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 600ms cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: flex-end;
+    pointer-events: none;
+  }
+
+  .mpl-carousel-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mpl-carousel-slide img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .mpl-carousel-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      180deg,
+      rgba(19, 27, 23, 0.05) 30%,
+      rgba(19, 27, 23, 0.8) 100%
+    );
+  }
+
+  .mpl-carousel-caption {
+    position: relative;
+    z-index: 2;
+    padding: 36px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .mpl-carousel-caption h3 {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(26px, 3.2vw, 38px);
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .mpl-btn-dark-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mpl-dark);
+    color: #ffffff;
+    font-family: var(--mpl-font-sans);
+    font-size: 15px;
+    font-weight: 700;
+    padding: 12px 26px;
+    border-radius: 9999px;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 180ms ease;
+    cursor: pointer;
+  }
+
+  .mpl-btn-dark-pill:hover {
+    background: #233029;
+    transform: translateY(-2px);
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+
+  .mpl-carousel-controls {
+    position: absolute;
+    bottom: 32px;
+    right: 36px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .mpl-carousel-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--mpl-dark);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition:
+      transform 140ms ease,
+      background 140ms ease;
+  }
+
+  .mpl-carousel-btn:hover {
+    transform: scale(1.06);
+    background: #ffffff;
+  }
+
+  .mpl-carousel-indicators {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+  }
+
+  .mpl-indicator-bar {
+    width: 50px;
+    height: 4px;
+    border-radius: 9999px;
+    background: #d8d4c8;
+    cursor: pointer;
+    transition:
+      background 250ms ease,
+      width 250ms ease;
+  }
+
+  .mpl-indicator-bar.active {
+    background: var(--mpl-dark);
+    width: 72px;
+  }
+
+  @media (max-width: 768px) {
+    .mpl-section-care {
+      padding: 56px 18px 64px;
+    }
+    .mpl-care-head {
+      margin-bottom: 28px;
+    }
+    .mpl-care-title {
+      font-size: clamp(26px, 6.5vw, 36px);
+      letter-spacing: -0.6px;
+    }
+    .mpl-care-sub {
+      font-size: 15px;
+    }
+    .mpl-carousel-card {
+      aspect-ratio: auto;
+      min-height: 350px;
+      border-radius: 16px;
+    }
+    .mpl-carousel-caption {
+      padding: 22px 18px 74px;
+      gap: 10px;
+    }
+    .mpl-carousel-caption h3 {
+      font-size: clamp(20px, 5vw, 26px);
+    }
+    .mpl-carousel-controls {
+      bottom: 18px;
+      right: 18px;
+      gap: 6px;
+    }
+    .mpl-carousel-btn {
+      width: 36px;
+      height: 36px;
+    }
+    .mpl-indicator-bar {
+      width: 36px;
+    }
+    .mpl-indicator-bar.active {
+      width: 56px;
+    }
+  }
+
+  /* ── "On-demand experiences" 4-Card Grid (Screenshot 2 & 3) ── */
+  .mpl-ondemand-section {
+    background: var(--mpl-sand);
+    padding: 20px 24px 96px;
+  }
+
+  .mpl-ondemand-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+
+  .mpl-ondemand-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .mpl-ondemand-title {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(24px, 2.5vw, 32px);
+    font-weight: 700;
+    color: var(--mpl-dark);
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .mpl-ondemand-link {
+    font-family: var(--mpl-font-sans);
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f4294;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .mpl-ondemand-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+
+  .mpl-demand-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 240ms ease;
+    border-radius: 14px;
+  }
+
+  .mpl-demand-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .mpl-demand-image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #eae6d8;
+  }
+
+  .mpl-demand-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mpl-demand-card:hover .mpl-demand-image img {
+    transform: scale(1.05);
+  }
+
+  .mpl-demand-heading {
+    font-family: var(--mpl-font-serif);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--mpl-dark);
+    margin: 16px 0 6px;
+    line-height: 1.25;
+  }
+
+  .mpl-demand-desc {
+    font-family: var(--mpl-font-sans);
+    font-size: 14.5px;
+    color: var(--mpl-text-muted);
+    line-height: 1.45;
+    margin: 0 0 16px;
+    flex-grow: 1;
+  }
+
+  .mpl-demand-line {
+    width: 100%;
+    height: 2px;
+    background-color: var(--mpl-coral-light);
+    border-radius: 2px;
+    transition: background-color 200ms ease, box-shadow 200ms ease, height 200ms ease;
+  }
+
+  .mpl-demand-card:hover .mpl-demand-line {
+    background-color: var(--mpl-coral);
+    box-shadow: 0 2px 8px rgba(232, 89, 56, 0.45);
+    height: 3px;
+  }
+
+  .mpl-ondemand-cta-wrap {
+    text-align: center;
+    margin-top: 48px;
+  }
+
+  @media (max-width: 900px) {
+    .mpl-ondemand-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+  }
+  @media (max-width: 540px) {
+    .mpl-ondemand-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .mpl-ondemand-section {
+      padding: 10px 18px 60px;
+    }
+    .mpl-ondemand-title {
+      font-size: 24px;
+    }
+    .mpl-demand-heading {
+      font-size: 18px;
+      margin: 12px 0 4px;
+    }
+    .mpl-demand-desc {
+      font-size: 13.5px;
+      margin-bottom: 12px;
+    }
+  }
+
+  /* ── "Skip the clinic. Not the care." (Screenshot 4) ────────── */
+  .mpl-comparison-section {
+    background: var(--mpl-sand);
+    padding: 80px 24px 104px;
+    border-top: 1px solid #ebe7da;
+  }
+
+  .mpl-comp-inner {
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+
+  .mpl-comp-head {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .mpl-comp-title {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(34px, 4vw, 50px);
+    font-weight: 700;
+    color: var(--mpl-dark);
+    letter-spacing: -1px;
+    margin: 0 0 12px;
+  }
+
+  .mpl-comp-sub {
+    font-family: var(--mpl-font-sans);
+    font-size: clamp(16px, 1.4vw, 19px);
+    color: var(--mpl-text-muted);
+    margin: 0;
+  }
+
+  .mpl-comp-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 8px;
+  }
+  .mpl-comp-table-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mpl-comp-swipe-hint {
+    display: none;
+  }
+
+  /* 3-Column Comparison Table */
+  .mpl-comp-table {
+    display: grid;
+    grid-template-columns: 2.2fr 1.6fr 1.6fr;
+    align-items: stretch;
+  }
+
+  .mpl-comp-col-features {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mpl-comp-col-features .mpl-comp-header-cell {
+    height: 84px;
+  }
+
+  .mpl-comp-feature-row {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    font-family: var(--mpl-font-sans);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--mpl-dark);
+    border-bottom: 1px solid var(--mpl-coral-tint);
+    padding-right: 20px;
+  }
+
+  /* Elevated Dark Middle Column */
+  .mpl-comp-col-heelo {
+    background: var(--mpl-dark);
+    border-radius: 20px;
+    color: #faf9f7;
+    box-shadow: 0 20px 48px rgba(19, 27, 23, 0.22);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+  }
+
+  .mpl-comp-col-heelo .mpl-comp-header-cell {
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mpl-comp-heelo-logo {
+    font-family: var(--mpl-font-serif);
+    font-style: italic;
+    font-size: 28px;
+    font-weight: 700;
+    color: #faf9f7;
+    letter-spacing: -0.5px;
+  }
+
+  .mpl-comp-col-heelo .mpl-comp-cell {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255, 218, 201, 0.22);
+  }
+
+  .mpl-comp-check-white {
+    color: #faf9f7;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  /* Walk-in Box Office Column */
+  .mpl-comp-col-alt {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mpl-comp-col-alt .mpl-comp-header-cell {
+    height: 84px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--mpl-font-serif);
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--mpl-dark);
+  }
+
+  .mpl-comp-col-alt .mpl-comp-cell {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid var(--mpl-coral-tint);
+  }
+
+  .mpl-comp-check-dark {
+    color: var(--mpl-dark);
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .mpl-comp-cross-muted {
+    color: #8c9791;
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  @media (max-width: 768px) {
+    .mpl-comparison-section {
+      padding: 56px 18px 68px;
+    }
+    .mpl-comp-head {
+      margin-bottom: 32px;
+    }
+    .mpl-comp-title {
+      font-size: clamp(26px, 6.5vw, 36px);
+      letter-spacing: -0.6px;
+    }
+    .mpl-comp-sub {
+      font-size: 15px;
+    }
+    .mpl-comp-table {
+      min-width: 520px;
+      grid-template-columns: 1.8fr 1.2fr 1.2fr;
+    }
+    .mpl-comp-feature-row {
+      font-size: 13.5px;
+      padding-right: 10px;
+    }
+    .mpl-comp-swipe-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--mpl-text-muted);
+      margin-top: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  /* ── Feature Spotlight (Screenshot 5) ──────────────────────── */
+  .mpl-spotlight-section {
+    background: var(--mpl-sand);
+    padding: 80px 24px 104px;
+    border-top: 1px solid #ebe7da;
+  }
+
+  .mpl-spotlight-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+
+  .mpl-spotlight-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mpl-spotlight-pill-new {
+    display: inline-flex;
+    align-items: center;
+    background: var(--mpl-mint);
+    color: var(--mpl-dark);
+    font-family: var(--mpl-font-sans);
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 9999px;
+    margin-bottom: 18px;
+  }
+
+  .mpl-spotlight-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .mpl-spotlight-brand-logo {
+    font-family: var(--mpl-font-serif);
+    font-style: italic;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--mpl-dark);
+    letter-spacing: -0.6px;
+  }
+
+  .mpl-spotlight-brand-badge {
+    border: 1px solid var(--mpl-dark);
+    border-radius: 9999px;
+    padding: 3px 12px;
+    font-family: var(--mpl-font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mpl-dark);
+  }
+
+  .mpl-spotlight-title {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(32px, 3.8vw, 46px);
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--mpl-dark);
+    letter-spacing: -1px;
+    margin: 0 0 32px;
+  }
+
+  .mpl-spotlight-image {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 16px 44px rgba(19, 27, 23, 0.1);
+    background-color: #e2ddd0;
+  }
+
+  .mpl-spotlight-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mpl-spotlight-image:hover img {
+    transform: scale(1.03);
+  }
+
+  @media (max-width: 900px) {
+    .mpl-spotlight-inner {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .mpl-spotlight-section {
+      padding: 56px 18px 68px;
+    }
+    .mpl-spotlight-title {
+      font-size: clamp(24px, 6vw, 34px);
+      letter-spacing: -0.6px;
+      margin-bottom: 22px;
+    }
+    .mpl-spotlight-image {
+      aspect-ratio: 16 / 10;
+      border-radius: 18px;
+    }
+  }
+
+  /* ── "How Heelo Works" 3-Step Cards ────────────────────────── */
+  .mpl-how-section {
+    background: var(--mpl-bright);
+    padding: 96px 24px;
+    border-top: 1px solid #ebe7da;
+  }
+
+  .mpl-how-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+
+  .mpl-how-head {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .mpl-how-title {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(34px, 4vw, 46px);
+    font-weight: 700;
+    color: var(--mpl-dark);
+    letter-spacing: -1px;
+    margin: 0 0 12px;
+  }
+
+  .mpl-how-sub {
+    font-family: var(--mpl-font-sans);
+    font-size: 17px;
+    color: var(--mpl-text-muted);
+    margin: 0;
+  }
+
+  .mpl-how-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+
+  .mpl-how-card {
+    background: var(--mpl-sand);
+    border-radius: 20px;
+    padding: 28px 24px 32px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e0d8;
+    box-shadow: 0 4px 18px rgba(19, 27, 23, 0.04);
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 240ms ease;
+  }
+
+  .mpl-how-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(19, 27, 23, 0.1);
+  }
+
+  .mpl-how-image {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #eae6d8;
+    margin-bottom: 20px;
+  }
+
+  .mpl-how-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 380ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mpl-how-card:hover .mpl-how-image img {
+    transform: scale(1.05);
+  }
+
+  .mpl-how-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mpl-dark);
+    color: #faf9f7;
+    font-family: var(--mpl-font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 9999px;
+    margin-bottom: 22px;
+    width: fit-content;
+  }
+
+  .mpl-how-card h3 {
+    font-family: var(--mpl-font-serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--mpl-dark);
+    margin: 0 0 12px;
+    line-height: 1.25;
+  }
+
+  .mpl-how-card p {
+    font-family: var(--mpl-font-sans);
+    font-size: 15px;
+    color: var(--mpl-text-muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  @media (max-width: 860px) {
+    .mpl-how-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .mpl-how-section {
+      padding: 56px 18px 68px;
+    }
+    .mpl-how-title {
+      font-size: clamp(26px, 6.5vw, 36px);
+      letter-spacing: -0.6px;
+    }
+    .mpl-how-card {
+      padding: 22px 18px 24px;
+      border-radius: 16px;
+    }
+    .mpl-how-card h3 {
+      font-size: 19px;
+    }
+  }
+
+  /* ── FAQ Accordion Section ─────────────────────────────────── */
+  .mpl-faq-section {
+    background: var(--mpl-sand);
+    padding: 88px 24px 96px;
+    border-top: 1px solid #ebe7da;
+  }
+
+  .mpl-faq-inner {
+    max-width: 840px;
+    margin: 0 auto;
+  }
+
+  .mpl-faq-head {
+    text-align: center;
+    margin-bottom: 52px;
+  }
+
+  .mpl-faq-title {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(34px, 4vw, 46px);
+    font-weight: 700;
+    color: var(--mpl-dark);
+    letter-spacing: -1px;
+    margin: 0;
+  }
+
+  .mpl-faq-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mpl-faq-item {
+    border-bottom: 1px solid var(--mpl-coral-tint);
+    transition: background-color 200ms ease;
+  }
+
+  .mpl-faq-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 24px 4px;
+    font-family: var(--mpl-font-serif);
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--mpl-dark);
+    cursor: pointer;
+    transition: color 180ms ease;
+  }
+
+  .mpl-faq-toggle:hover {
+    color: var(--mpl-coral);
+  }
+
+  .mpl-faq-icon {
+    font-size: 24px;
+    font-family: var(--mpl-font-sans);
+    font-weight: 300;
+    color: var(--mpl-dark);
+    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), color 180ms ease;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  .mpl-faq-item.active .mpl-faq-icon {
+    transform: rotate(45deg);
+    color: var(--mpl-coral);
+  }
+
+  .mpl-faq-body {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    padding: 0 4px;
+    font-family: var(--mpl-font-sans);
+    font-size: 15.5px;
+    color: var(--mpl-text-muted);
+    line-height: 1.65;
+    transition: max-height 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease, padding 320ms ease;
+  }
+
+  .mpl-faq-item.active .mpl-faq-body {
+    max-height: 300px;
+    opacity: 1;
+    padding: 0 4px 24px;
+  }
+
+  @media (max-width: 768px) {
+    .mpl-faq-section {
+      padding: 56px 18px 68px;
+    }
+    .mpl-faq-head {
+      margin-bottom: 36px;
+    }
+    .mpl-faq-title {
+      font-size: clamp(26px, 6.5vw, 36px);
+      letter-spacing: -0.6px;
+    }
+    .mpl-faq-toggle {
+      font-size: 17px;
+      padding: 18px 2px;
+    }
+    .mpl-faq-body {
+      font-size: 14.5px;
+    }
+  }
+
+  /* ── Bottom CTA Banner ─────────────────────────────────────── */
+  .mpl-bottom-cta {
+    background-color: var(--mpl-dark);
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(19, 27, 23, 0.82) 0%,
+        rgba(19, 27, 23, 0.90) 100%
+      ),
+      url("/static/images/landing/cta-bg.jpg");
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    color: #faf9f7;
+    padding: 104px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mpl-bottom-cta-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  .mpl-bottom-cta-title {
+    font-family: var(--mpl-font-serif);
+    font-size: clamp(36px, 4.5vw, 56px);
+    font-weight: 700;
+    color: #faf9f7;
+    letter-spacing: -1px;
+    margin: 0 0 18px;
+  }
+
+  .mpl-bottom-cta-sub {
+    font-family: var(--mpl-font-sans);
+    font-size: 18px;
+    color: #d3ddd7;
+    line-height: 1.6;
+    margin: 0 auto 36px;
+    max-width: 600px;
+  }
+
+  @media (max-width: 768px) {
+    .mpl-bottom-cta {
+      padding: 72px 18px;
+    }
+    .mpl-bottom-cta-title {
+      font-size: clamp(28px, 6.5vw, 40px);
+      letter-spacing: -0.6px;
+      margin-bottom: 14px;
+    }
+    .mpl-bottom-cta-sub {
+      font-size: 15px;
+      margin-bottom: 26px;
+    }
+  }
+
+  /* ── Maple Dark Footer ─────────────────────────────────────── */
+  .mpl-footer {
+    background: var(--mpl-dark);
+    color: #faf9f7;
+    border-top: 1px solid rgba(250, 249, 247, 0.12);
+    padding: 64px 24px 36px;
+  }
+
+  .mpl-footer-inner {
+    max-width: 1140px;
+    margin: 0 auto;
+  }
+
+  .mpl-footer-top {
+    display: grid;
+    grid-template-columns: 1.4fr 3fr;
+    gap: 48px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid rgba(250, 249, 247, 0.1);
+  }
+
+  .mpl-footer-brand-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mpl-footer-logo {
+    font-family: var(--mpl-font-serif);
+    font-style: italic;
+    font-size: 30px;
+    font-weight: 700;
+    color: #faf9f7;
+    text-decoration: none;
+    margin-bottom: 12px;
+  }
+
+  .mpl-footer-tagline {
+    font-family: var(--mpl-font-sans);
+    font-size: 14px;
+    color: #b2bcb6;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .mpl-footer-links-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+  }
+
+  .mpl-footer-col h5 {
+    font-family: var(--mpl-font-sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #faf9f7;
+    margin: 0 0 16px;
+  }
+
+  .mpl-footer-col a {
+    display: block;
+    font-family: var(--mpl-font-sans);
+    font-size: 14px;
+    color: #b2bcb6;
+    text-decoration: none;
+    margin-bottom: 10px;
+    transition: color 140ms ease;
+  }
+
+  .mpl-footer-col a:hover {
+    color: #ffffff;
+  }
+
+  .mpl-footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 28px;
+    font-family: var(--mpl-font-sans);
+    font-size: 13px;
+    color: #8c9791;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  @media (max-width: 860px) {
+    .mpl-footer-top {
+      grid-template-columns: 1fr;
+      gap: 36px;
+    }
+    .mpl-footer-links-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 540px) {
+    .mpl-footer {
+      padding: 48px 18px 28px;
+    }
+    .mpl-footer-top {
+      gap: 28px;
+      padding-bottom: 28px;
+    }
+    .mpl-footer-links-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px 14px;
+    }
+    .mpl-footer-bottom {
+      flex-direction: column;
+      text-align: center;
+      gap: 8px;
+    }
+  }
+
+  /* ── Floating Coral Support Widget (Screenshot 3 & 4) ──────── */
+  .mpl-floating-chat {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 99;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--mpl-coral);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(232, 89, 56, 0.4);
+    cursor: pointer;
+    border: none;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease;
+    animation: mplChatPulse 3.5s infinite;
+  }
+
+  @keyframes mplChatPulse {
+    0% {
+      box-shadow: 0 8px 24px rgba(232, 89, 56, 0.4), 0 0 0 0 rgba(232, 89, 56, 0.4);
+    }
+    50% {
+      box-shadow: 0 8px 24px rgba(232, 89, 56, 0.4), 0 0 0 10px rgba(232, 89, 56, 0);
+    }
+    100% {
+      box-shadow: 0 8px 24px rgba(232, 89, 56, 0.4), 0 0 0 0 rgba(232, 89, 56, 0);
+    }
+  }
+
+  .mpl-floating-chat:hover {
+    transform: scale(1.08);
+    box-shadow: 0 10px 28px rgba(232, 89, 56, 0.55);
+  }
+
+  .mpl-floating-chat svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+  }
+
+  @media (max-width: 600px) {
+    .mpl-floating-chat {
+      bottom: 18px;
+      right: 18px;
+      width: 48px;
+      height: 48px;
+    }
+  }
 </style>
-{% endblock %}
+{% endblock %} {% block body %} {% include "partials/site_nav.html" %}
 
-{% block body %}
-
-<!-- ── Navigation ─────────────────────────────────────────────── -->
-<nav class="ln-nav" id="ln-nav">
-  <div class="ln-nav-inner">
-    <a href="/" class="ln-nav-logo">heelo</a>
-    <div class="ln-nav-links">
-      <a href="#features" class="ln-nav-link">Features</a>
-      <a href="#how-it-works" class="ln-nav-link">How it works</a>
-      <a href="#africa" class="ln-nav-link">Africa-first</a>
-      <a href="/events" class="ln-nav-link">Browse events</a>
-      <a href="/pricing" class="ln-nav-link">Pricing</a>
-    </div>
-    <div class="ln-nav-actions">
-      {% if is_logged_in %}
-      <a href="/dashboard" class="ln-nav-cta">Go to dashboard</a>
-      {% else %}
-      <a href="/login" class="ln-nav-login">Log in</a>
-      <a href="/register" class="ln-nav-cta">Get started free</a>
-      {% endif %}
-      <button class="ln-hamburger" id="ln-hamburger" aria-label="Toggle menu">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </div>
-  <div class="ln-mobile-menu" id="ln-mobile-menu">
-    <a href="#features">Features</a>
-    <a href="#how-it-works">How it works</a>
-    <a href="#africa">Africa-first</a>
-    <a href="/events">Browse events</a>
-    <a href="/pricing">Pricing</a>
-    {% if is_logged_in %}
-    <a href="/dashboard" class="ln-mobile-cta">Go to dashboard</a>
-    {% else %}
-    <a href="/login">Log in</a>
-    <a href="/register" class="ln-mobile-cta">Get started free →</a>
-    {% endif %}
-  </div>
-</nav>
-
-<!-- ── Hero ───────────────────────────────────────────────────── -->
-<section class="ln-hero">
-  <a href="/register" class="ln-hero-badge">
-    Now in early access &mdash; try it free
-    <span>Free →</span>
-  </a>
-  <h1>Every great event<br><em>starts here.</em></h1>
-  <p>The all-in-one platform that handles tickets, check-in, campaigns, payments, and community — built for Africa, ready for the world.</p>
-  <div class="ln-hero-actions">
-    <a href="/register" class="btn-hero">Start for free →</a>
-    <a href="#how-it-works" class="btn-hero-ghost">See how it works</a>
-  </div>
-
-  <!-- Social proof -->
-  <div class="ln-proof">
-    <div class="ln-proof-stat">
-      <div class="num" data-count="20" data-suffix="+">20+</div>
-      <div class="lbl">Built-in modules</div>
-    </div>
-    <div class="ln-proof-div"></div>
-    <div class="ln-proof-stat">
-      <div class="num" data-count="4" data-suffix="">4</div>
-      <div class="lbl">Payment gateways</div>
-    </div>
-    <div class="ln-proof-div"></div>
-    <div class="ln-proof-stat">
-      <div class="num">Kiosk</div>
-      <div class="lbl">Offline check-in</div>
-    </div>
-    <div class="ln-proof-div"></div>
-    <div class="ln-proof-stat">
-      <div class="num">∞</div>
-      <div class="lbl">Events, no limits</div>
-    </div>
-  </div>
-
-  <!-- Dashboard mockup -->
-  <div class="ln-preview">
-    <div class="ln-preview-frame">
-      <div class="ln-preview-bar">
-        <div class="ln-preview-dot" style="background:#ff5f57;"></div>
-        <div class="ln-preview-dot" style="background:#febc2e;"></div>
-        <div class="ln-preview-dot" style="background:#28c840;"></div>
-      </div>
-      <div class="ln-preview-screen">
-        <div class="ln-preview-card">
-          <div class="label">Total revenue</div>
-          <div class="value">₦2.4M</div>
-          <div class="delta"><span class="material-symbols-outlined" style="font-size:10px;">trending_up</span> 18% this month</div>
-          <div class="ln-preview-bar-chart">
-            <div class="ln-bar" style="height:35%;"></div>
-            <div class="ln-bar" style="height:50%;"></div>
-            <div class="ln-bar" style="height:42%;"></div>
-            <div class="ln-bar" style="height:68%;"></div>
-            <div class="ln-bar active" style="height:88%;"></div>
-            <div class="ln-bar active" style="height:75%;"></div>
-            <div class="ln-bar active" style="height:100%;"></div>
-          </div>
-        </div>
-        <div class="ln-preview-card">
-          <div class="label">Registrations</div>
-          <div class="value">1,284</div>
-          <div class="delta"><span class="material-symbols-outlined" style="font-size:10px;">trending_up</span> 32 today</div>
-          <div class="ln-preview-bar-chart">
-            <div class="ln-bar" style="height:40%;"></div>
-            <div class="ln-bar" style="height:55%;"></div>
-            <div class="ln-bar" style="height:70%;"></div>
-            <div class="ln-bar active" style="height:60%;"></div>
-            <div class="ln-bar active" style="height:85%;"></div>
-            <div class="ln-bar active" style="height:95%;"></div>
-            <div class="ln-bar active" style="height:78%;"></div>
-          </div>
-        </div>
-        <div class="ln-preview-card">
-          <div class="label">Check-in rate</div>
-          <div class="value">91%</div>
-          <div class="delta"><span class="material-symbols-outlined" style="font-size:10px;">trending_up</span> vs last event</div>
-          <div style="margin-top:20px; height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden;">
-            <div style="width:91%; height:100%; background:var(--cyan); border-radius:4px;"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-top:8px;">
-            <span style="font-size:11px;color:rgba(255,255,255,0.3);">0%</span>
-            <span style="font-size:11px;color:var(--cyan);">91% checked in</span>
-          </div>
-        </div>
-      </div>
+<!-- ── Hero Section (Screenshot 1: "Health Yeah!" -> "Events Yeah!") ── -->
+<section class="mpl-hero-section">
+  <div class="mpl-hero-content">
+    <h1 class="mpl-hero-title">
+      Create <span class="mpl-typed-wrap"><span class="mpl-typed-word" id="heroTypedWord">memories</span><span class="mpl-typed-cursor" aria-hidden="true">|</span></span> that last a lifetime.
+    </h1>
+    <p class="mpl-hero-subtitle">
+      If you need same-day tickets, a VIP pass, or help hosting your own event,
+      our verified platform connects you to extraordinary experiences anytime.
+    </p>
+    <div class="mpl-hero-cta-wrap">
+      <a href="/events" class="mpl-hero-cta">Get started now</a>
     </div>
   </div>
 </section>
 
-<!-- ── Features ───────────────────────────────────────────────── -->
-<section class="ln-section" id="features">
-  <div class="ln-section-inner">
-    <div class="ln-label">Everything you need</div>
-    <h2 class="ln-heading">One platform.<br>Zero duct tape.</h2>
-    <p class="ln-sub">Stop juggling five tools. Heelo handles every part of your event lifecycle in one place.</p>
+<!-- ── Category Strip Section (Takes main page background color) ── -->
+<section class="mpl-category-strip">
+  <div class="mpl-cat-container">
+    <!-- 1: Music -->
+    <a href="/events?category=music" class="mpl-cat-item">
+      <div class="mpl-cat-circle">
+        <i class="fa-solid fa-microphone mpl-cat-fa" aria-hidden="true"></i>
+      </div>
+      <span class="mpl-cat-label">Music</span>
+    </a>
 
-    <div class="ln-features">
-      <div class="ln-feature">
-        <div class="ln-feature-icon"><span class="material-symbols-outlined">confirmation_number</span></div>
-        <h3>Ticketing &amp; Registration</h3>
-        <p>Free, paid, VIP, early bird, group — any ticket type. Promo codes, capacity limits, waitlists. QR tickets delivered by email and WhatsApp.</p>
+    <!-- 2: Nightlife -->
+    <a href="/events?category=nightlife" class="mpl-cat-item">
+      <div class="mpl-cat-circle">
+        <i
+          class="fa-solid fa-champagne-glasses fa-glass-cheers mpl-cat-fa"
+          aria-hidden="true"
+        ></i>
       </div>
-      <div class="ln-feature">
-        <div class="ln-feature-icon"><span class="material-symbols-outlined">qr_code_2</span></div>
-        <h3>Smart Check-in</h3>
-        <p>QR scan from any device. Works offline on the kiosk app. Syncs automatically when back online.</p>
+      <span class="mpl-cat-label">Nightlife</span>
+    </a>
+
+    <!-- 3: Performing & Visual Arts -->
+    <a href="/events?category=performing-visual-arts" class="mpl-cat-item">
+      <div class="mpl-cat-circle">
+        <i
+          class="fa-solid fa-masks-theater fa-theater-masks mpl-cat-fa"
+          aria-hidden="true"
+        ></i>
       </div>
-      <div class="ln-feature">
-        <div class="ln-feature-icon"><span class="material-symbols-outlined">payments</span></div>
-        <h3>Payments Built In</h3>
-        <p>Paystack, Flutterwave, Stripe — collect money in NGN, KES, GHS, USD and more. Instant payouts to your bank account.</p>
+      <span class="mpl-cat-label">Performing &amp;<br />Visual Arts</span>
+    </a>
+
+    <!-- 4: Holidays -->
+    <a href="/events?category=holidays" class="mpl-cat-item">
+      <div class="mpl-cat-circle">
+        <i
+          class="fa-solid fa-calendar-days fa-calendar-alt mpl-cat-fa"
+          aria-hidden="true"
+        ></i>
       </div>
-      <div class="ln-feature">
-        <div class="ln-feature-icon"><span class="material-symbols-outlined">chat</span></div>
-        <h3>WhatsApp &amp; SMS Campaigns</h3>
-        <p>Send event reminders, updates, and thank-you messages via WhatsApp or SMS. Segment by ticket type, registration status, or custom tags.</p>
+      <span class="mpl-cat-label">Holidays</span>
+    </a>
+
+    <!-- 5: Dating -->
+    <a href="/events?category=dating" class="mpl-cat-item">
+      <div class="mpl-cat-circle">
+        <i class="fa-solid fa-heart mpl-cat-fa" aria-hidden="true"></i>
       </div>
-      <div class="ln-feature">
-        <div class="ln-feature-icon"><span class="material-symbols-outlined">show_chart</span></div>
-        <h3>Real-time Analytics</h3>
-        <p>Live check-in stream, revenue by ticket type, attendance heatmap, campaign open rates. Every number you need, exactly when you need it.</p>
+      <span class="mpl-cat-label">Dating</span>
+    </a>
+
+    <!-- 6: Hobbies -->
+    <a href="/events?category=hobbies" class="mpl-cat-item">
+      <div class="mpl-cat-circle">
+        <i class="fa-solid fa-gamepad mpl-cat-fa" aria-hidden="true"></i>
       </div>
-      <div class="ln-feature">
-        <div class="ln-feature-icon"><span class="material-symbols-outlined">code</span></div>
-        <h3>Webhooks &amp; Public API</h3>
-        <p>Integrate Heelo with your own systems. Receive real-time webhooks for orders, check-ins, and more. Full REST API with API key auth.</p>
+      <span class="mpl-cat-label">Hobbies</span>
+    </a>
+
+    <!-- 7: Business -->
+    <a href="/events?category=business" class="mpl-cat-item">
+      <div class="mpl-cat-circle">
+        <i class="fa-solid fa-briefcase mpl-cat-fa" aria-hidden="true"></i>
       </div>
+      <span class="mpl-cat-label">Business</span>
+    </a>
+
+    <!-- 8: Food & Drink -->
+    <a href="/events?category=food-drink" class="mpl-cat-item">
+      <div class="mpl-cat-circle">
+        <i
+          class="fa-solid fa-utensils fa-cutlery mpl-cat-fa"
+          aria-hidden="true"
+        ></i>
+      </div>
+      <span class="mpl-cat-label">Food &amp; Drink</span>
+    </a>
+  </div>
+</section>
+
+<!-- ── "How can we help you today?" (Screenshot 2) ───────────── -->
+<section class="mpl-section-care">
+  <div class="mpl-care-inner">
+    <div class="mpl-care-head">
+      <h2 class="mpl-care-title">How can we help you today?</h2>
+      <p class="mpl-care-sub">
+        From same-day live concerts to weekend festivals, workshops, and
+        community gatherings, we're here for you.
+      </p>
+    </div>
+
+    <!-- Large Carousel Media Card (Screenshot 2: Paediatric care mockup) -->
+    <div class="mpl-carousel-card" id="careCarousel">
+      <!-- Slide 1: Live Concerts & Music Festivals -->
+      <div class="mpl-carousel-slide active" data-slide="0">
+        <img
+          src="/static/images/landing/carousel-festivals.jpg"
+          alt="Concerts and Festivals"
+          loading="eager"
+        />
+        <div class="mpl-carousel-overlay"></div>
+        <div class="mpl-carousel-caption">
+          <h3>Concerts &amp; Live Festivals</h3>
+          <a href="/events" class="mpl-btn-dark-pill">Get started now</a>
+        </div>
+      </div>
+
+      <!-- Slide 2: Tech Conferences & Masterclasses -->
+      <div class="mpl-carousel-slide" data-slide="1">
+        <img
+          src="/static/images/landing/carousel-conferences.jpg"
+          alt="Conferences and Summits"
+          loading="lazy"
+        />
+        <div class="mpl-carousel-overlay"></div>
+        <div class="mpl-carousel-caption">
+          <h3>Conferences &amp; Tech Summits</h3>
+          <a href="/events" class="mpl-btn-dark-pill">Get started now</a>
+        </div>
+      </div>
+
+      <!-- Slide 3: Cultural Gatherings & Dining -->
+      <div class="mpl-carousel-slide" data-slide="2">
+        <img
+          src="/static/images/landing/carousel-culture.jpg"
+          alt="Arts and Culture"
+          loading="lazy"
+        />
+        <div class="mpl-carousel-overlay"></div>
+        <div class="mpl-carousel-caption">
+          <h3>Arts, Culture &amp; Gatherings</h3>
+          <a href="/events" class="mpl-btn-dark-pill">Get started now</a>
+        </div>
+      </div>
+
+      <!-- Carousel Navigation Controls on Bottom Right -->
+      <div class="mpl-carousel-controls">
+        <button
+          class="mpl-carousel-btn"
+          id="prevSlide"
+          aria-label="Previous slide"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button
+          class="mpl-carousel-btn"
+          id="togglePlay"
+          aria-label="Pause or play carousel"
+        >
+          <svg
+            id="playIcon"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+        </button>
+        <button class="mpl-carousel-btn" id="nextSlide" aria-label="Next slide">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Centered Indicator Pill Bar -->
+    <div class="mpl-carousel-indicators" id="carouselIndicators">
+      <div class="mpl-indicator-bar active" data-indicator="0"></div>
+      <div class="mpl-indicator-bar" data-indicator="1"></div>
+      <div class="mpl-indicator-bar" data-indicator="2"></div>
     </div>
   </div>
 </section>
 
-<!-- ── Feature marquee ────────────────────────────────────────── -->
-<div class="ln-marquee">
-  {% set row1 = [
-    ('confirmation_number', 'Ticketing'),
-    ('qr_code_2',           'QR Check-in'),
-    ('payments',            'Payments'),
-    ('campaign',            'Campaigns'),
-    ('bar_chart',           'Analytics'),
-    ('contacts',            'CRM'),
-    ('storefront',          'Vendor Marketplace'),
-    ('language',            'Multi-currency'),
-    ('groups',              'Community'),
-    ('auto_awesome',        'AI Copywriter'),
-    ('webhook',             'Webhooks'),
-    ('notifications',       'Notifications'),
-    ('mail',                'Email Receipts'),
-  ] %}
-  {% set row2 = [
-    ('chat',                'WhatsApp Tickets'),
-    ('sell',                'Promo Codes'),
-    ('playlist_add_check',  'Waitlists'),
-    ('wifi_off',            'Offline Kiosk'),
-    ('percent',             'Early Bird Pricing'),
-    ('forum',               'Event Discussions'),
-    ('event_available',     'Event Discovery'),
-    ('donut_large',         'Attendance Heatmap'),
-    ('key',                 'API Keys'),
-    ('smart_toy',           'AI Insights'),
-    ('share',               'Social Sharing'),
-    ('badge',               'Badge Printing'),
-    ('map',                 'Venue Maps'),
-  ] %}
-  <div class="marquee-row">
-    <div class="marquee-track go-left">
-      {% for icon, label in row1 + row1 %}
-      <div class="m-pill"><span class="material-symbols-outlined">{{ icon }}</span>{{ label }}</div>
-      {% endfor %}
+<!-- ── "On-demand care" -> "On-demand experiences" (Screenshot 2 & 3: 4 Clean Square Cards) ── -->
+<section class="mpl-ondemand-section">
+  <div class="mpl-ondemand-inner">
+    <div class="mpl-ondemand-header">
+      <h2 class="mpl-ondemand-title">On-demand experiences</h2>
+      <a href="/events" class="mpl-ondemand-link">View all</a>
+    </div>
+
+    <!-- 4 Clean Square Cards with coral underline matching Screenshot 3 -->
+    <div class="mpl-ondemand-grid">
+      <!-- Card 1: Prescriptions -> Concerts & Gigs -->
+      <a href="/events" class="mpl-demand-card">
+        <div class="mpl-demand-image">
+          <img
+            src="/static/images/landing/card-concerts.jpg"
+            alt="Concerts &amp; Live Shows"
+            loading="lazy"
+          />
+        </div>
+        <h3 class="mpl-demand-heading">Concerts &amp; Live Shows</h3>
+        <p class="mpl-demand-desc">
+          From intimate gigs to arena tours and weekend festivals
+        </p>
+        <div class="mpl-demand-line"></div>
+      </a>
+
+      <!-- Card 2: Cold, flu and allergies -> Parties & Nightlife -->
+      <a href="/events" class="mpl-demand-card">
+        <div class="mpl-demand-image">
+          <img
+            src="/static/images/landing/card-nightlife.jpg"
+            alt="Parties &amp; Nightlife"
+            loading="lazy"
+          />
+        </div>
+        <h3 class="mpl-demand-heading">Parties &amp; Nightlife</h3>
+        <p class="mpl-demand-desc">
+          Club nights, DJ sets, rooftop parties, and weekend socials
+        </p>
+        <div class="mpl-demand-line"></div>
+      </a>
+
+      <!-- Card 3: Sexual health -> Tech & Workshops -->
+      <a href="/events" class="mpl-demand-card">
+        <div class="mpl-demand-image">
+          <img
+            src="/static/images/landing/card-tech.jpg"
+            alt="Tech &amp; Workshops"
+            loading="lazy"
+          />
+        </div>
+        <h3 class="mpl-demand-heading">Tech &amp; Workshops</h3>
+        <p class="mpl-demand-desc">
+          Masterclasses, developer summits, and hands-on bootcamps
+        </p>
+        <div class="mpl-demand-line"></div>
+      </a>
+
+      <!-- Card 4: Skin health -> Arts & Culture -->
+      <a href="/events" class="mpl-demand-card">
+        <div class="mpl-demand-image">
+          <img
+            src="/static/images/landing/card-arts.jpg"
+            alt="Arts &amp; Culture"
+            loading="lazy"
+          />
+        </div>
+        <h3 class="mpl-demand-heading">Arts &amp; Culture</h3>
+        <p class="mpl-demand-desc">
+          Exhibitions, theatre, poetry slams, and culinary tastings
+        </p>
+        <div class="mpl-demand-line"></div>
+      </a>
+    </div>
+
+    <!-- Centered dark pill button below the 4 cards (Screenshot 3) -->
+    <div class="mpl-ondemand-cta-wrap">
+      <a
+        href="/events"
+        class="mpl-btn-dark-pill"
+        style="padding: 15px 40px; font-size: 16px"
+        >Get started now</a
+      >
     </div>
   </div>
-  <div class="marquee-row">
-    <div class="marquee-track go-right">
-      {% for icon, label in row2 + row2 %}
-      <div class="m-pill"><span class="material-symbols-outlined">{{ icon }}</span>{{ label }}</div>
-      {% endfor %}
+</section>
+
+<!-- ── "Skip the clinic. Not the care." (Screenshot 4: Comparison Table) ── -->
+<section class="mpl-comparison-section">
+  <div class="mpl-comp-inner">
+    <div class="mpl-comp-head">
+      <h2 class="mpl-comp-title">Skip the box office. Not the experience.</h2>
+      <p class="mpl-comp-sub">Book verified tickets anytime, day or night.</p>
+    </div>
+
+    <!-- 3-Column Table matching Screenshot 4 in horizontal scroll wrapper -->
+    <div class="mpl-comp-table-scroll">
+      <div class="mpl-comp-table">
+        <!-- Col 1: Feature Row Labels -->
+        <div class="mpl-comp-col-features">
+          <div class="mpl-comp-header-cell"></div>
+          <div class="mpl-comp-feature-row">
+            Verified tickets &amp; cryptographically signed QR codes
+          </div>
+          <div class="mpl-comp-feature-row">24/7 instant access to tickets</div>
+          <div class="mpl-comp-feature-row">
+            Tickets delivered in seconds to your phone
+          </div>
+          <div class="mpl-comp-feature-row">
+            Book from your couch or on the go
+          </div>
+          <div class="mpl-comp-feature-row">
+            One place for all your tickets &amp; receipts
+          </div>
+          <div class="mpl-comp-feature-row">
+            Seamless gate entry with offline QR check-in
+          </div>
+        </div>
+
+        <!-- Col 2: Elevated Deep Forest Green Card (Heelo) -->
+        <div class="mpl-comp-col-heelo">
+          <div class="mpl-comp-header-cell">
+            <span class="mpl-comp-heelo-logo">heelo</span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+          </div>
+        </div>
+
+        <!-- Col 3: Traditional Box Office -->
+        <div class="mpl-comp-col-alt">
+          <div class="mpl-comp-header-cell">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>Walk-in box offices</span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-check-dark"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+          </div>
+          <div class="mpl-comp-cell">
+            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mpl-comp-swipe-hint">
+      <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i> Swipe table to compare
     </div>
   </div>
-</div>
+</section>
 
-<!-- ── Africa-first ────────────────────────────────────────────── -->
-<section class="ln-africa" id="africa">
-  <div class="africa-wrap">
-
-    <!-- Left: copy -->
-    <div>
-      <div class="africa-eyebrow">Built for the continent</div>
-      <h2 class="africa-h">
-        <span class="ln1">One platform.</span>
-        <span class="ln2">Built for Africa.</span>
+<!-- ── Feature Spotlight (Screenshot 5: "Explore our new ADHD program...") ── -->
+<section class="mpl-spotlight-section">
+  <div class="mpl-spotlight-inner">
+    <div class="mpl-spotlight-copy">
+      <span class="mpl-spotlight-pill-new">New</span>
+      <div class="mpl-spotlight-brand-row">
+        <span class="mpl-spotlight-brand-logo">heelo</span>
+        <span class="mpl-spotlight-brand-badge">Organizer Suite</span>
+      </div>
+      <h2 class="mpl-spotlight-title">
+        Explore our new Organizer Suite to host, manage, and scale your events
       </h2>
-      <p class="africa-p">Offline kiosk check-in, local payment gateways, WhatsApp tickets — built in from day one, not bolted on as an afterthought.</p>
-      <div class="africa-ctas">
-        <a href="/register" class="africa-btn-white">Get started free</a>
-        <a href="#how-it-works" class="africa-btn-ghost">See how it works</a>
-      </div>
-      <div class="africa-stats">
-        <div class="africa-stat">
-          <span class="sv">5 currencies</span>
-          <span class="sl">NGN · KES · GHS · ZAR · USD</span>
-        </div>
-        <div class="africa-stat">
-          <span class="sv">WhatsApp</span>
-          <span class="sl">Tickets & reminders, no app needed</span>
-        </div>
-        <div class="africa-stat">
-          <span class="sv">Offline-first</span>
-          <span class="sl">No signal, no problem</span>
-        </div>
-      </div>
+      <a
+        href="/host"
+        class="mpl-btn-dark-pill"
+        style="padding: 15px 36px; font-size: 16px"
+      >
+        Start for free
+      </a>
     </div>
 
-    <!-- Right: code window -->
-    <div class="africa-code-win">
-      <div class="africa-code-bar">
-        <div class="africa-code-dots">
-          <div class="africa-code-dot" style="background:#ff5f57;"></div>
-          <div class="africa-code-dot" style="background:#febc2e;"></div>
-          <div class="africa-code-dot" style="background:#28c840;"></div>
-        </div>
-        <div class="africa-code-copy">
-          <span class="material-symbols-outlined" style="font-size:14px;font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;">content_copy</span> Copy
-        </div>
-      </div>
-      <div class="africa-code-body"><span class="cc"># Check in an attendee via Heelo API</span>
-<span class="ck">import</span> <span class="cw">requests</span>
-
-<span class="cw">response</span> = <span class="cw">requests</span>.<span class="cf">post</span>(
-    <span class="cs">"https://api.heelo.app/v1/checkin"</span>,
-    <span class="cw">headers</span>={<span class="cs">"Authorization"</span>: <span class="cs">"Bearer hlo_live_sk_••••"</span>},
-    <span class="cw">json</span>={<span class="cs">"qr_code"</span>: <span class="cs">"REG-48291-KOFIMENSAH"</span>}
-)
-
-<span class="cc"># Instant response</span>
-{
-  <span class="cs">"success"</span>: <span class="ck">true</span>,
-  <span class="cs">"attendee"</span>: <span class="cs">"Kofi Mensah"</span>,
-  <span class="cs">"ticket_type"</span>: <span class="cs">"VIP · Gate B"</span>,
-  <span class="cs">"checked_in_at"</span>: <span class="cs">"2026-07-02T14:23:11Z"</span>
-}<span class="code-cursor"></span></div>
-    </div>
-
-  </div>
-</section>
-
-<!-- ── Integrations ────────────────────────────────────────────── -->
-<section class="ln-integrations">
-  <div class="int-wrap">
-    <div class="int-eyebrow">Integrations</div>
-    <div class="int-layout">
-
-      <!-- Large left card -->
-      <div class="int-main">
-        <div class="int-main-logos">
-          <div class="int-logo-block">
-            <div class="int-logo-mark" style="background:#e6f9ff;">
-              <svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="16" fill="#00c3f7"/><text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-weight="800" font-size="13" fill="#fff" font-family="sans-serif">P</text></svg>
-            </div>
-            <div class="int-logo-block-name">Paystack</div>
-            <div class="int-logo-block-meta">NGN · KES · GHS</div>
-          </div>
-          <div class="int-logo-block">
-            <div class="int-logo-mark" style="background:#fff8ed;">
-              <svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="16" fill="#f5a623"/><text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-weight="800" font-size="9" fill="#fff" font-family="sans-serif">FW</text></svg>
-            </div>
-            <div class="int-logo-block-name">Flutterwave</div>
-            <div class="int-logo-block-meta">30+ countries</div>
-          </div>
-          <div class="int-logo-block">
-            <div class="int-logo-mark" style="background:#f4f3ff;">
-              <svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="16" fill="#635bff"/><text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-weight="800" font-size="13" fill="#fff" font-family="sans-serif">S</text></svg>
-            </div>
-            <div class="int-logo-block-name">Stripe</div>
-            <div class="int-logo-block-meta">USD · EUR · GBP</div>
-          </div>
-          <div class="int-logo-block">
-            <div class="int-logo-mark" style="background:#f0fff8;">
-              <svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="16" fill="#25d366"/><text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-weight="800" font-size="8" fill="#fff" font-family="sans-serif">WA</text></svg>
-            </div>
-            <div class="int-logo-block-name">WhatsApp</div>
-            <div class="int-logo-block-meta">Tickets · Campaigns</div>
-          </div>
-          <div class="int-logo-block">
-            <div class="int-logo-mark" style="background:#eff6ff;">
-              <svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="16" fill="#0066ff"/><text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-weight="800" font-size="11" fill="#fff" font-family="sans-serif">T</text></svg>
-            </div>
-            <div class="int-logo-block-name">Termii</div>
-            <div class="int-logo-block-meta">SMS · W. Africa</div>
-          </div>
-          <div class="int-logo-block">
-            <div class="int-logo-mark" style="background:#fff1f2;">
-              <svg viewBox="0 0 32 32" width="22" height="22"><circle cx="16" cy="16" r="16" fill="#f22f46"/><text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle" font-weight="800" font-size="9" fill="#fff" font-family="sans-serif">Tw</text></svg>
-            </div>
-            <div class="int-logo-block-name">Twilio</div>
-            <div class="int-logo-block-meta">SMS · Global</div>
-          </div>
-        </div>
-        <div class="int-main-footer">
-          <div class="int-main-h">Works with what<br>you already use.</div>
-          <p class="int-main-p">We didn't build our own payment processor or messaging layer. We plugged into the best ones — so you get reliability already proven at scale.</p>
-        </div>
-      </div>
-
-      <!-- Right: 3 stacked cards -->
-      <div class="int-side">
-        <div class="int-side-card">
-          <h4>Collect payments locally</h4>
-          <p>Paystack and Flutterwave handle NGN, KES, GHS, ZAR — settlements go straight to your bank. No FX friction.</p>
-        </div>
-        <div class="int-side-card">
-          <h4>Reach attendees anywhere</h4>
-          <p>WhatsApp tickets, SMS reminders via Termii, and Twilio as global fallback. One message, every phone.</p>
-        </div>
-        <div class="int-side-card">
-          <h4>No code required</h4>
-          <p>Every integration is configured from your dashboard. Add a payment key, you're live. No engineers needed.</p>
-        </div>
-      </div>
-
+    <div class="mpl-spotlight-image">
+      <img
+        src="/static/images/landing/spotlight-suite.jpg"
+        alt="Heelo Organizer Suite"
+        loading="lazy"
+      />
     </div>
   </div>
 </section>
 
-<!-- ── How it works ───────────────────────────────────────────── -->
-<section class="ln-section" id="how-it-works">
-  <div class="ln-section-inner">
-    <div class="ln-label">How it works</div>
-    <h2 class="ln-heading">Up and running<br>in minutes.</h2>
+<!-- ── "How Heelo Works" 3 Steps ──────────────────────────────── -->
+<section class="mpl-how-section" id="how-it-works">
+  <div class="mpl-how-inner">
+    <div class="mpl-how-head">
+      <h2 class="mpl-how-title">How Heelo works</h2>
+      <p class="mpl-how-sub">
+        Everything you need to experience or host great events in three simple
+        steps.
+      </p>
+    </div>
 
-    <div class="ln-steps">
-      <div class="ln-step">
-        <div class="ln-step-connector"></div>
-        <div class="ln-step-num">01</div>
-        <h3>Create your event</h3>
-        <p>Set your event details, add ticket types with pricing and capacity, configure promo codes — all in one guided flow.</p>
+    <div class="mpl-how-grid">
+      <!-- Step 1 -->
+      <div class="mpl-how-card">
+        <div class="mpl-how-image">
+          <img
+            src="/static/images/landing/how-step1.jpg"
+            alt="Sign up and explore events"
+            loading="lazy"
+          />
+        </div>
+        <span class="mpl-how-badge">Step 1</span>
+        <h3>Sign up and tell us what you love</h3>
+        <p>
+          Explore concerts, festivals, tech workshops, and local gatherings
+          tailored to your taste and city.
+        </p>
       </div>
-      <div class="ln-step">
-        <div class="ln-step-connector"></div>
-        <div class="ln-step-num">02</div>
-        <h3>Share and sell</h3>
-        <p>Your event gets a public registration page instantly. Share the link anywhere. Payments land directly in your account.</p>
+
+      <!-- Step 2 -->
+      <div class="mpl-how-card">
+        <div class="mpl-how-image">
+          <img
+            src="/static/images/landing/how-step2.jpg"
+            alt="Reserve verified tickets"
+            loading="lazy"
+          />
+        </div>
+        <span class="mpl-how-badge">Step 2</span>
+        <h3>Reserve verified tickets in seconds</h3>
+        <p>
+          Checkout instantly using Card, Apple Pay, Google Pay, or Mobile Money
+          with zero fraud or scalping risk.
+        </p>
       </div>
-      <div class="ln-step">
-        <div class="ln-step-num">03</div>
-        <h3>Run the day</h3>
-        <p>Open the kiosk on any device. Scan QRs, manually search names, send last-minute WhatsApp blasts — all from your phone.</p>
+
+      <!-- Step 3 -->
+      <div class="mpl-how-card">
+        <div class="mpl-how-image">
+          <img
+            src="/static/images/landing/how-step3.jpg"
+            alt="Show QR code and enjoy"
+            loading="lazy"
+          />
+        </div>
+        <span class="mpl-how-badge">Step 3</span>
+        <h3>Show your QR code &amp; enjoy</h3>
+        <p>
+          Your tickets live offline on your phone. Walk in effortlessly with
+          fast sub-second gate scanning.
+        </p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── CTA ────────────────────────────────────────────────────── -->
-<section class="ln-cta">
-  <div class="ln-cta-body">
-    <h2>Ready to run your<br><em>best event yet?</em></h2>
-    <p>Free to start. No credit card required.</p>
-    <a href="/register" class="btn-hero">Create your first event →</a>
+<!-- ── Common Questions (FAQ Accordion) ───────────────────────── -->
+<section class="mpl-faq-section">
+  <div class="mpl-faq-inner">
+    <div class="mpl-faq-head">
+      <h2 class="mpl-faq-title">Frequently Asked Questions</h2>
+    </div>
+
+    <div class="mpl-faq-list" id="faqList">
+      <div class="mpl-faq-item active">
+        <button class="mpl-faq-toggle" type="button">
+          <span>How do verified tickets and QR check-in work?</span>
+          <span class="mpl-faq-icon">+</span>
+        </button>
+        <div class="mpl-faq-body">
+          Every ticket issued on Heelo is cryptographically signed and tied to a
+          unique dynamic QR code. Organizers use our offline-ready gate scanner
+          to validate admissions in less than 0.5 seconds, eliminating
+          counterfeit passes and duplicate entries.
+        </div>
+      </div>
+
+      <div class="mpl-faq-item">
+        <button class="mpl-faq-toggle" type="button">
+          <span>Can I transfer or resell my ticket to a friend?</span>
+          <span class="mpl-faq-icon">+</span>
+        </button>
+        <div class="mpl-faq-body">
+          Yes. From your attendee dashboard or confirmation email, you can
+          securely reassign tickets to a friend with one click. A fresh QR code
+          is immediately generated for the new holder.
+        </div>
+      </div>
+
+      <div class="mpl-faq-item">
+        <button class="mpl-faq-toggle" type="button">
+          <span>How quickly do event organizers receive their payouts?</span>
+          <span class="mpl-faq-icon">+</span>
+        </button>
+        <div class="mpl-faq-body">
+          Payouts are automated and deposited directly into your verified bank
+          account via Paystack, Stripe, or Flutterwave according to your payout
+          schedule (next-day or rolling daily).
+        </div>
+      </div>
+
+      <div class="mpl-faq-item">
+        <button class="mpl-faq-toggle" type="button">
+          <span>What payment methods and currencies are supported?</span>
+          <span class="mpl-faq-icon">+</span>
+        </button>
+        <div class="mpl-faq-body">
+          Heelo powers international transactions with multi-currency checkouts in USD, EUR, GBP, CAD, NGN, KES, GHS, and ZAR.
+          We accept all major cards (Visa, Mastercard, AMEX, Discover), Apple Pay, Google Pay, local bank transfers, and mobile money.
+        </div>
+      </div>
+
+      <div class="mpl-faq-item">
+        <button class="mpl-faq-toggle" type="button">
+          <span>How does Heelo ensure security and privacy?</span>
+          <span class="mpl-faq-icon">+</span>
+        </button>
+        <div class="mpl-faq-body">
+          All financial data is processed through PCI-DSS Level 1 certified
+          gateways. We adhere to rigorous data privacy regulations (GDPR and
+          NDPR), and we never sell your personal contact information to third
+          parties.
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="ln-cta-wm">heelo</div>
 </section>
 
-<!-- ── Footer ─────────────────────────────────────────────────── -->
-<footer class="ln-footer">
-  <div class="ln-footer-logo">heelo</div>
-  <div class="ln-footer-links">
-    <a href="/login">Log in</a>
-    <a href="/register">Sign up</a>
-    <a href="#features">Features</a>
-    <a href="#africa">Africa-first</a>
-    <a href="/events">Browse events</a>
-    <a href="/pricing">Pricing</a>
+<!-- ── Bottom Call-to-Action ──────────────────────────────────── -->
+<section class="mpl-bottom-cta">
+  <div class="mpl-bottom-cta-inner">
+    <h2 class="mpl-bottom-cta-title">Ready to get started?</h2>
+    <p class="mpl-bottom-cta-sub">
+      Join thousands of attendees and creators discovering and hosting
+      incredible experiences today.
+    </p>
+    <a href="/events" class="mpl-hero-cta">Get started now</a>
   </div>
-  <div class="ln-footer-copy">© 2026 Heelo. Every great event starts here.</div>
+</section>
+
+<!-- ── Maple Dark Footer ──────────────────────────────────────── -->
+<footer class="mpl-footer">
+  <div class="mpl-footer-inner">
+    <div class="mpl-footer-top">
+      <div class="mpl-footer-brand-col">
+        <a href="/" class="mpl-footer-logo">heelo</a>
+        <p class="mpl-footer-tagline">
+          The modern all-in-one event platform: verified ticketing, offline
+          check-ins, global multi-currency payouts, and community broadcasts.
+        </p>
+      </div>
+
+      <div class="mpl-footer-links-grid">
+        <div class="mpl-footer-col">
+          <h5>Platform</h5>
+          <a href="/events">Browse events</a>
+          <a href="/discover">Categories</a>
+          <a href="/pricing">Pricing</a>
+          <a href="/my-tickets">Find my ticket</a>
+        </div>
+
+        <div class="mpl-footer-col">
+          <h5>Organizers</h5>
+          <a href="/host">Create event</a>
+          <a href="/login">Organizer login</a>
+          <a href="/pricing#features">Features</a>
+          <a href="/dashboard">Dashboard</a>
+        </div>
+
+        <div class="mpl-footer-col">
+          <h5>Vendors</h5>
+          <a href="/vendors">Vendor directory</a>
+          <a href="/vendor-signup">List your services</a>
+        </div>
+
+        <div class="mpl-footer-col">
+          <h5>Company</h5>
+          <a href="/terms">Terms of service</a>
+          <a href="/privacy">Privacy policy</a>
+          <a href="javascript:void(0)" onclick="window.openCookieConsent && window.openCookieConsent()">Cookie preferences</a>
+          <a href="mailto:hello@heelo.io">Contact support</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mpl-footer-bottom">
+      <div>&copy; 2026 Heelo Inc. All rights reserved.</div>
+      <div>Payments secured by Paystack, Flutterwave &amp; Stripe.</div>
+    </div>
+  </div>
 </footer>
 
+<!-- ── Floating Coral Support Widget (Screenshot 3 & 4) ───────── -->
+<a
+  href="mailto:hello@heelo.io"
+  class="mpl-floating-chat"
+  title="Contact Heelo Support"
+  aria-label="Support chat"
+>
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"
+    />
+  </svg>
+</a>
+
+<!-- ── Minimal JavaScript for Interactive Components ─────────── -->
 <script>
-(function () {
-  // ── Nav scroll shadow ──────────────────────────────────────────
-  var nav = document.querySelector('.ln-nav');
-  window.addEventListener('scroll', function () {
-    nav.classList.toggle('sld', window.scrollY > 24);
-  }, { passive: true });
+  (function () {
+    // Carousel functionality
+    var slides = document.querySelectorAll(".mpl-carousel-slide");
+    var indicators = document.querySelectorAll(".mpl-indicator-bar");
+    var prevBtn = document.getElementById("prevSlide");
+    var nextBtn = document.getElementById("nextSlide");
+    var playBtn = document.getElementById("togglePlay");
+    var playIcon = document.getElementById("playIcon");
+    var currentSlide = 0;
+    var isPlaying = true;
+    var intervalId = null;
 
-  // ── Mobile hamburger ───────────────────────────────────────────
-  var btn = document.getElementById('ln-hamburger');
-  var menu = document.getElementById('ln-mobile-menu');
-  if (btn && menu) {
-    btn.addEventListener('click', function () {
-      btn.classList.toggle('open');
-      menu.classList.toggle('open');
-    });
-    menu.querySelectorAll('a').forEach(function (a) {
-      a.addEventListener('click', function () {
-        btn.classList.remove('open');
-        menu.classList.remove('open');
+    function showSlide(index) {
+      if (!slides.length) return;
+      currentSlide = (index + slides.length) % slides.length;
+      slides.forEach(function (s, i) {
+        if (i === currentSlide) {
+          s.classList.add("active");
+        } else {
+          s.classList.remove("active");
+        }
+      });
+      indicators.forEach(function (ind, i) {
+        if (i === currentSlide) {
+          ind.classList.add("active");
+        } else {
+          ind.classList.remove("active");
+        }
+      });
+    }
+
+    function startAutoplay() {
+      stopAutoplay();
+      intervalId = setInterval(function () {
+        showSlide(currentSlide + 1);
+      }, 4500);
+      isPlaying = true;
+      if (playIcon) {
+        playIcon.innerHTML =
+          '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+      }
+    }
+
+    function stopAutoplay() {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      isPlaying = false;
+      if (playIcon) {
+        playIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+      }
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener("click", function () {
+        showSlide(currentSlide - 1);
+      });
+    }
+    if (nextBtn) {
+      nextBtn.addEventListener("click", function () {
+        showSlide(currentSlide + 1);
+      });
+    }
+    if (playBtn) {
+      playBtn.addEventListener("click", function () {
+        if (isPlaying) {
+          stopAutoplay();
+        } else {
+          startAutoplay();
+        }
+      });
+    }
+
+    indicators.forEach(function (ind, i) {
+      ind.addEventListener("click", function () {
+        showSlide(i);
       });
     });
-  }
 
-  // ── Copy button for code window ────────────────────────────────
-  var copyBtn = document.querySelector('.africa-code-copy');
-  if (copyBtn) {
-    copyBtn.style.cursor = 'pointer';
-    copyBtn.addEventListener('click', function () {
-      var code = document.querySelector('.africa-code-body').innerText;
-      navigator.clipboard.writeText(code).then(function () {
-        copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;font-variation-settings:\'FILL\' 0,\'wght\' 300,\'GRAD\' 0,\'opsz\' 20;">check</span> Copied!';
-        setTimeout(function () {
-          copyBtn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;font-variation-settings:\'FILL\' 0,\'wght\' 300,\'GRAD\' 0,\'opsz\' 20;">content_copy</span> Copy';
-        }, 2000);
-      });
+    // Start carousel
+    startAutoplay();
+
+    // FAQ Accordion functionality
+    var faqItems = document.querySelectorAll(".mpl-faq-item");
+    faqItems.forEach(function (item) {
+      var toggle = item.querySelector(".mpl-faq-toggle");
+      if (toggle) {
+        toggle.addEventListener("click", function () {
+          var wasActive = item.classList.contains("active");
+          faqItems.forEach(function (other) {
+            other.classList.remove("active");
+          });
+          if (!wasActive) {
+            item.classList.add("active");
+          }
+        });
+      }
     });
-  }
-}());
+
+    // ── Hero Typewriter Loop ─────────────────────────────────────
+    var typewriterEl = document.getElementById("heroTypedWord");
+    if (typewriterEl) {
+      var words = [
+        "memories",
+        "moments",
+        "experiences",
+        "impressions",
+        "milestones"
+      ];
+      var wordIndex = 0;
+      var charIndex = words[0].length;
+      var isDeleting = true; // Starts with initial "memories" text, pauses, then clears
+      var typingSpeed = 150;
+      var deletingSpeed = 75;
+      var pauseAfterWord = 3500;
+      var pauseAfterClear = 500;
+
+      function typeLoop() {
+        var currentWord = words[wordIndex];
+
+        if (isDeleting) {
+          charIndex--;
+          typewriterEl.textContent = currentWord.substring(0, charIndex);
+          if (charIndex === 0) {
+            isDeleting = false;
+            wordIndex = (wordIndex + 1) % words.length;
+            setTimeout(typeLoop, pauseAfterClear);
+            return;
+          }
+          setTimeout(typeLoop, deletingSpeed);
+        } else {
+          charIndex++;
+          typewriterEl.textContent = currentWord.substring(0, charIndex);
+          if (charIndex === currentWord.length) {
+            isDeleting = true;
+            setTimeout(typeLoop, pauseAfterWord);
+            return;
+          }
+          setTimeout(typeLoop, typingSpeed);
+        }
+      }
+
+      // Initial pause on the initial "memories" text before deleting begins
+      setTimeout(typeLoop, pauseAfterWord);
+    }
+  })();
 </script>
 
 {% endblock %}

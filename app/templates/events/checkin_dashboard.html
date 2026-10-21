@@ -1,11 +1,13 @@
-{% extends "base.html" %}
-{% block title %}Check-in · {{ event.title }} — Heelo{% endblock %}
+{% extends "dashboard/layout.html" %}
+{% block title %}Check-in · {{ event.title }} | Heelo{% endblock %}
+{% set active = 'checkin' %}
 
 {% block head %}
+{{ super() }}
 <style>
-  .ci-layout { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+  .ci-layout { max-width: 1100px; margin: 0; padding: 0; }
   .ci-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-  .ci-title { font-family: 'STK Bureau Serif', Georgia, serif; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.25rem; }
+  .ci-title { font-family: var(--font-serif); font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0 0 0.25rem; }
   .ci-sub { font-size: 0.875rem; color: var(--text-secondary); }
   .ci-actions { display: flex; gap: 0.75rem; align-items: center; flex-shrink: 0; }
 
@@ -17,7 +19,7 @@
   .stat-label { font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.375rem; font-weight: 500; }
   .stat-value { font-size: 2rem; font-weight: 800; line-height: 1; }
   .stat-sub { font-size: 0.8125rem; color: var(--text-secondary); margin-top: 0.25rem; }
-  .stat-card.highlight { border-color: var(--cyan); background: rgba(0,255,243,0.04); }
+  .stat-card.highlight { border-color: var(--cyan); background: rgba(232,89,56,0.04); }
   .stat-card.highlight .stat-value { color: var(--cyan); }
 
   /* ── Progress bar ────────────────────────────────────────────────────────── */
@@ -40,7 +42,7 @@
 
   /* ── Badges ──────────────────────────────────────────────────────────────── */
   .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600; }
-  .badge-in { background: rgba(0,255,243,0.12); color: var(--cyan); }
+  .badge-in { background: rgba(232,89,56,0.12); color: var(--cyan-dark, #C84729); }
   .badge-conf { background: rgba(34,197,94,0.12); color: #16a34a; }
   .badge-pend { background: var(--surface-alt, #f5f5f5); color: var(--text-secondary); }
 
@@ -69,37 +71,98 @@
 </style>
 {% endblock %}
 
-{% block body %}
-<div class="ci-layout" x-data="checkInDashboard()">
-  <!-- Header -->
-  <div class="ci-header">
-    <div>
-      <h1 class="ci-title">Check-in</h1>
-      <p class="ci-sub">{{ event.title }} · <a href="/org/{{ org.slug }}/events/{{ event.id }}" style="color:var(--text-secondary);">Back to event</a></p>
+{% block main_content %}
+<div class="dash-content">
+  <div class="ci-layout" x-data="checkInDashboard()">
+    
+    <!-- Breadcrumb -->
+    <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px; display:flex; align-items:center; gap:6px;">
+      <a href="/org/{{ org.slug }}/events" style="color:var(--text-muted); text-decoration:none;">Events</a>
+      <span>›</span>
+      <a href="/org/{{ org.slug }}/events/{{ event.id }}" style="color:var(--text-muted); text-decoration:none; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ event.title }}</a>
+      <span>›</span>
+      <span style="color:var(--text-primary); font-weight:600;">Check-in</span>
     </div>
-    <div class="ci-actions">
-      <a href="/org/{{ org.slug }}/events/{{ event.id }}/kiosk" target="_blank" class="btn btn-primary">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        Open Kiosk
+
+    <!-- Event Header -->
+    <div style="display:flex; align-items:flex-start; gap:16px; margin-bottom:20px; flex-wrap:wrap;">
+      <div style="width:72px; height:50px; border-radius:8px; background:var(--bg-secondary); flex-shrink:0; overflow:hidden;">
+        {% if event.cover_image_url %}
+        <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" style="width:100%;height:100%;object-fit:cover;">
+        {% else %}
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#1a1a1a,#0A0A0A);display:flex;align-items:center;justify-content:center;">
+          <span class="material-symbols-outlined" style="color:rgba(255,255,255,0.4);font-size:20px;">calendar_month</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="flex:1; min-width:0;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
+          <h1 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin:0; color:var(--text-primary);">{{ event.title }}</h1>
+          <span class="badge {% if event.status == 'live' %}badge-in{% elif event.status == 'published' %}badge-conf{% else %}badge-pend{% endif %}" style="text-transform:capitalize;">{{ event.status }}</span>
+        </div>
+        <div style="font-size:13px; color:var(--text-muted);">
+          {{ event.start_datetime.strftime('%A, %d %B %Y · %H:%M') if event.start_datetime else 'Date TBD' }}
+          {% if event.venue_city %} · {{ event.venue_city }}{% endif %}
+          · {{ event.format | replace('_', ' ') | title }}
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="ci-actions">
+        {% if event.status in ('published', 'live', 'ended') %}
+        <a href="/e/{{ event.slug }}" target="_blank" class="btn btn-outline" style="font-size:13px; padding:7px 14px;">
+          <span class="material-symbols-outlined" style="font-size:16px;">open_in_new</span> Public Page
+        </a>
+        {% endif %}
+        <a href="/api/v1/organizations/{{ org.slug }}/events/{{ event.id }}/badges.pdf" target="_blank" class="btn btn-outline" style="font-size:13px; padding:7px 14px;">
+          <span class="material-symbols-outlined" style="font-size:16px;">badge</span> Print Badges
+        </a>
+        <a href="/org/{{ org.slug }}/events/{{ event.id }}/kiosk" target="_blank" class="btn btn-primary" style="font-size:13px; padding:7px 14px;">
+          <span class="material-symbols-outlined" style="font-size:16px;">qr_code_scanner</span> Open Kiosk
+        </a>
+      </div>
+    </div>
+
+    <!-- Event Navigation Tabs Bar -->
+    <div style="display:flex; gap:2px; border-bottom:1px solid var(--border-light); margin-bottom:24px; overflow-x:auto;">
+      <a href="/org/{{ org.slug }}/events/{{ event.id }}" style="padding:10px 16px; font-size:14px; font-weight:500; text-decoration:none; color:var(--text-muted); border-bottom:2px solid transparent; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+        <span class="material-symbols-outlined" style="font-size:18px;">dashboard</span>
+        Overview &amp; Details
+      </a>
+      <a href="/org/{{ org.slug }}/events/{{ event.id }}/check-in" style="padding:10px 16px; font-size:14px; font-weight:600; text-decoration:none; color:var(--text-primary); border-bottom:2px solid var(--cyan); display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+        <span class="material-symbols-outlined" style="font-size:18px; color:var(--cyan);">how_to_reg</span>
+        Check-in Dashboard
+      </a>
+      <a href="/org/{{ org.slug }}/events/{{ event.id }}/kiosk" target="_blank" style="padding:10px 16px; font-size:14px; font-weight:500; text-decoration:none; color:var(--text-muted); border-bottom:2px solid transparent; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+        <span class="material-symbols-outlined" style="font-size:18px;">qr_code_scanner</span>
+        Kiosk Scanner <span class="material-symbols-outlined" style="font-size:13px; opacity:0.6;">open_in_new</span>
+      </a>
+      <a href="/org/{{ org.slug }}/events/{{ event.id }}/live" style="padding:10px 16px; font-size:14px; font-weight:500; text-decoration:none; color:var(--text-muted); border-bottom:2px solid transparent; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+        <span class="material-symbols-outlined" style="font-size:18px;">forum</span>
+        Live Q&amp;A
+      </a>
+      <a href="/org/{{ org.slug }}/events/{{ event.id }}/edit" style="padding:10px 16px; font-size:14px; font-weight:500; text-decoration:none; color:var(--text-muted); border-bottom:2px solid transparent; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+        <span class="material-symbols-outlined" style="font-size:18px;">edit</span>
+        Edit Event
       </a>
     </div>
-  </div>
 
-  <!-- Stat cards — live updated via Alpine polling -->
+  <!-- Stat cards - live updated via Alpine polling -->
   <div class="stat-grid">
     <div class="stat-card">
       <div class="stat-label">Total Tickets</div>
-      <div class="stat-value" x-text="stats.total ?? '—'"></div>
+      <div class="stat-value" x-text="stats.total ?? '-'"></div>
       <div class="stat-sub">all registrations</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Confirmed</div>
-      <div class="stat-value" x-text="stats.confirmed ?? '—'"></div>
+      <div class="stat-value" x-text="stats.confirmed ?? '-'"></div>
       <div class="stat-sub">awaiting check-in</div>
     </div>
     <div class="stat-card highlight">
       <div class="stat-label">Checked In</div>
-      <div class="stat-value" x-text="stats.checked_in ?? '—'"></div>
+      <div class="stat-value" x-text="stats.checked_in ?? '-'"></div>
       <div class="stat-sub">already arrived</div>
       <div class="progress-wrap" style="margin-top: 0.625rem;">
         <div class="progress-bar" :style="{ width: (stats.percent_checked_in || 0) + '%' }"></div>
@@ -107,7 +170,7 @@
     </div>
     <div class="stat-card">
       <div class="stat-label">Arrival Rate</div>
-      <div class="stat-value" x-text="(stats.percent_checked_in ?? '—') + (stats.percent_checked_in != null ? '%' : '')"></div>
+      <div class="stat-value" x-text="(stats.percent_checked_in ?? '-') + (stats.percent_checked_in != null ? '%' : '')"></div>
       <div class="stat-sub">of all tickets</div>
     </div>
   </div>
@@ -145,21 +208,21 @@
           <template x-if="displayRows.length === 0">
             <tr class="empty-row"><td colspan="5" x-text="searchQuery ? 'No matches.' : 'No check-ins yet. Open the kiosk to start scanning.'"></td></tr>
           </template>
-          <template x-for="r in displayRows" :key="r.registration_id">
+          <template x-for="r in paginatedRows" :key="r.registration_id">
             <tr>
               <td>
                 <div class="name" x-text="r.attendee_name"></div>
                 <div class="meta" x-text="r.attendee_email"></div>
               </td>
-              <td x-text="r.ticket_type || '—'"></td>
+              <td x-text="r.ticket_type || ''"></td>
               <td>
                 <span
                   class="badge"
                   :class="r.status === 'checked_in' ? 'badge-in' : r.status === 'confirmed' ? 'badge-conf' : 'badge-pend'"
-                  x-text="r.status === 'checked_in' ? '✓ Checked In' : r.status === 'confirmed' ? 'Confirmed' : r.status"
+                  x-text="r.status === 'checked_in' ? 'Checked In' : r.status === 'confirmed' ? 'Confirmed' : r.status"
                 ></span>
               </td>
-              <td x-text="r.checked_in_at ? fmtTime(r.checked_in_at) : '—'"></td>
+              <td x-text="r.checked_in_at ? fmtTime(r.checked_in_at) : ''"></td>
               <td>
                 <template x-if="r.status === 'confirmed'">
                   <button class="btn btn-outline" style="font-size:0.8125rem;padding:0.3rem 0.75rem;" @click="manualCheckIn(r)">Check in</button>
@@ -173,7 +236,39 @@
         </tbody>
       </table>
     </div>
+    <!-- Table Pagination Navigation -->
+    <div class="ci-pagination" x-show="displayRows.length > 0" style="display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-top:1px solid var(--border); font-size:13px; color:var(--text-secondary); flex-wrap:wrap; gap:12px;">
+      <div>
+        Showing <strong x-text="((page - 1) * pageSize) + 1"></strong> to <strong x-text="Math.min(page * pageSize, displayRows.length)"></strong> of <strong x-text="displayRows.length"></strong> attendees
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;" x-show="totalPages > 1">
+        <button
+          type="button"
+          class="btn btn-outline"
+          style="padding:5px 12px; font-size:12.5px; height:32px; border-radius:7px;"
+          :disabled="page <= 1"
+          :style="page <= 1 ? 'opacity:0.4; cursor:not-allowed;' : ''"
+          @click="prevPage()"
+        >
+          <span class="material-symbols-outlined" style="font-size:16px;">chevron_left</span> Prev
+        </button>
+        <span style="padding:0 8px; font-size:12.5px; font-weight:600; color:var(--text-primary);">
+          Page <span x-text="page"></span> of <span x-text="totalPages"></span>
+        </span>
+        <button
+          type="button"
+          class="btn btn-outline"
+          style="padding:5px 12px; font-size:12.5px; height:32px; border-radius:7px;"
+          :disabled="page >= totalPages"
+          :style="page >= totalPages ? 'opacity:0.4; cursor:not-allowed;' : ''"
+          @click="nextPage()"
+        >
+          Next <span class="material-symbols-outlined" style="font-size:16px;">chevron_right</span>
+        </button>
+      </div>
+    </div>
   </div>
+</div>
 </div>
 
 <script>
@@ -187,9 +282,32 @@ function checkInDashboard() {
     searchRows: [],
     searchQuery: '',
     statsLoading: false,
+    page: 1,
+    pageSize: 10,
 
     get displayRows() {
       return this.searchQuery.trim().length >= 2 ? this.searchRows : this.recentRows;
+    },
+
+    get totalPages() {
+      return Math.max(1, Math.ceil(this.displayRows.length / this.pageSize));
+    },
+
+    get paginatedRows() {
+      const start = (this.page - 1) * this.pageSize;
+      return this.displayRows.slice(start, start + this.pageSize);
+    },
+
+    prevPage() {
+      if (this.page > 1) this.page--;
+    },
+
+    nextPage() {
+      if (this.page < this.totalPages) this.page++;
+    },
+
+    goToPage(p) {
+      if (p >= 1 && p <= this.totalPages) this.page = p;
     },
 
     async init() {
@@ -223,6 +341,7 @@ function checkInDashboard() {
     },
 
     async runSearch() {
+      this.page = 1;
       const q = this.searchQuery.trim();
       if (q.length < 2) { this.searchRows = []; return; }
       try {
@@ -231,7 +350,10 @@ function checkInDashboard() {
           { credentials: 'include' }
         );
         const j = await r.json();
-        if (j.success) this.searchRows = j.data;
+        if (j.success) {
+          this.searchRows = j.data;
+          this.page = 1;
+        }
       } catch {}
     },
 
@@ -293,7 +415,7 @@ function checkInDashboard() {
     fmtTime(iso) {
       try {
         return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      } catch { return '—'; }
+      } catch { return '-'; }
     },
   };
 }

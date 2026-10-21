@@ -18,7 +18,7 @@ from app.database import engine
 from app.logging_config import configure_logging
 
 # Importing this here (not used directly) ensures the properly-configured
-# Celery app — broker=settings.CELERY_BROKER_URL — becomes Celery's "current
+# Celery app - broker=settings.CELERY_BROKER_URL - becomes Celery's "current
 # app" for this process. Without it, @shared_task-decorated tasks resolve
 # against Celery's bare default app (AMQP, localhost) instead, so every
 # `.delay()` call from a request handler fails with a connection error even
@@ -65,10 +65,13 @@ def create_app() -> FastAPI:
 
     # ── Middleware ────────────────────────────────────────────────────────────
     # Applied in reverse order: last registered = outermost (runs first).
+    from app.middleware.csrf import CSRFMiddleware
+    from app.middleware.custom_domain import CustomDomainMiddleware
     from app.middleware.request_logging import RequestLoggingMiddleware
     from app.middleware.security import SecurityHeadersMiddleware
 
     app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(CSRFMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
 
     app.add_middleware(
@@ -80,10 +83,20 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.FRONTEND_URL],
+        allow_origin_regex=(
+            r"^https?://(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|172\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$"
+            if settings.is_development
+            else None
+        ),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    # Outermost - runs before TrustedHostMiddleware's Host check, so a verified
+    # custom domain must also be present in ALLOWED_HOSTS in production or
+    # TrustedHostMiddleware rejects the request before this ever sees it. See
+    # app/middleware/custom_domain.py's module docstring.
+    app.add_middleware(CustomDomainMiddleware)
 
     # ── Static files ──────────────────────────────────────────────────────────
     app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -196,9 +209,14 @@ def _register_routers(app: FastAPI) -> None:
 
     app.include_router(router_campaigns)  # /api/v1/organizations/{slug}/campaigns/...
 
-    from app.routers.vendor import router_vendor
+    from app.routers.vendor import router_booth, router_vendor
 
     app.include_router(router_vendor)  # /api/v1/vendors/...
+    app.include_router(router_booth)  # /api/v1/... booth packages & applications
+
+    from app.routers.affiliate import router_affiliate
+
+    app.include_router(router_affiliate)  # /api/v1/organizations/{slug}/affiliates and /r/{code}
 
     from app.routers.crm import router_crm
 

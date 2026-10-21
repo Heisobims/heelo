@@ -1,4 +1,4 @@
-"""Attendee-to-attendee direct messages — gated behind an accepted
+"""Attendee-to-attendee direct messages - gated behind an accepted
 Connection, built on top of the existing connections system.
 """
 

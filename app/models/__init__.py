@@ -2,6 +2,7 @@
 # 1. Alembic autogenerate can detect all tables via Base.metadata
 # 2. Relationship back-references resolve at startup
 
+from app.models.affiliate import AffiliatePayout, EventAffiliate  # noqa: F401
 from app.models.api import ApiKey, WebhookDelivery, WebhookSubscription  # noqa: F401
 from app.models.campaign import Campaign, CampaignRecipient  # noqa: F401
 from app.models.checkin import Checkin  # noqa: F401
@@ -12,7 +13,13 @@ from app.models.community import (  # noqa: F401
     OrganizerFollower,
     WhatsAppMessage,
 )
-from app.models.event import Event, EventCategory, EventSession, event_category_link  # noqa: F401
+from app.models.event import (  # noqa: F401
+    Event,
+    EventCategory,
+    EventSession,
+    EventSessionBookmark,
+    event_category_link,
+)
 from app.models.feedback import EventFeedback  # noqa: F401
 from app.models.notification import AdminBroadcast, AuditLog, Notification  # noqa: F401
 from app.models.organization import Organization, OrganizationMember  # noqa: F401
@@ -29,7 +36,24 @@ from app.models.ticketing import (  # noqa: F401
     Waitlist,
 )
 from app.models.user import OTPCode, PasswordResetToken, RefreshToken, User  # noqa: F401
-from app.models.vendor import Vendor, VendorLead  # noqa: F401
+from app.models.vendor import (  # noqa: F401
+    BoothApplication,
+    EventBoothPackage,
+    Vendor,
+    VendorBooking,
+    VendorFeaturedCampaign,
+    VendorLead,
+    VendorLeadCreditPurchase,
+    VendorPayout,
+    VendorQuotation,
+    VendorQuoteRecipient,
+    VendorQuoteRequest,
+    VendorReview,
+    VendorServiceListing,
+    VendorSubscription,
+    VendorTransaction,
+    VendorVerificationRequest,
+)
 
 __all__ = [
     "User",
@@ -70,4 +94,21 @@ __all__ = [
     "WebhookDelivery",
     "Vendor",
     "VendorLead",
+    "EventBoothPackage",
+    "BoothApplication",
+    "VendorServiceListing",
+    "VendorQuoteRequest",
+    "VendorQuoteRecipient",
+    "VendorQuotation",
+    "VendorBooking",
+    "VendorReview",
+    "VendorTransaction",
+    "VendorSubscription",
+    "VendorFeaturedCampaign",
+    "VendorLeadCreditPurchase",
+    "VendorPayout",
+    "VendorVerificationRequest",
+    "EventAffiliate",
+    "AffiliatePayout",
+    "EventSessionBookmark",
 ]

@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}{% if mode == 'create' %}Create event{% else %}Edit: {{ event.title }}{% endif %} — Heelo{% endblock %}
+{% block title %}{% if mode == 'create' %}Create event{% else %}Edit: {{ event.title }}{% endif %} | Heelo{% endblock %}
 {% set active_page = 'events' %}
 
 {% block head %}
@@ -15,8 +15,8 @@
   transition: box-shadow 0.18s, border-color 0.18s;
 }
 .ev-card:focus-within {
-  border-color: rgba(0,255,243,0.35);
-  box-shadow: 0 0 0 3px rgba(0,255,243,0.07);
+  border-color: rgba(232,89,56,0.35);
+  box-shadow: 0 0 0 3px rgba(232,89,56,0.08);
 }
 
 /* ── Section header ───────────────────────────────────────────── */
@@ -30,8 +30,8 @@
   min-height: 64px;
 }
 .ev-sec-hd:hover .ev-sec-icon {
-  background: rgba(0,255,243,0.1);
-  color: #009e95;
+  background: rgba(232,89,56,0.1);
+  color: #C84729;
 }
 .ev-sec-icon {
   width: 38px; height: 38px;
@@ -44,8 +44,8 @@
   transition: background 0.15s, color 0.15s;
 }
 .ev-sec-icon.active {
-  background: rgba(0,255,243,0.1);
-  color: #009e95;
+  background: rgba(232,89,56,0.1);
+  color: #C84729;
 }
 .ev-sec-label { flex: 1; min-width: 0; }
 .ev-sec-title { font-size: 14px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; }
@@ -55,7 +55,7 @@
   font-size: 11px; font-weight: 700;
   min-width: 20px; height: 20px; padding: 0 6px;
   border-radius: 100px;
-  background: rgba(0,255,243,0.14); color: #009e95;
+  background: rgba(232,89,56,0.12); color: #C84729;
   display: flex; align-items: center; justify-content: center;
 }
 .badge-req {
@@ -93,7 +93,7 @@
   transition: border-color 0.14s, color 0.14s, background 0.14s;
   margin-top: 10px;
 }
-.add-btn:hover { border-color: var(--cyan); color: #009e95; background: rgba(0,255,243,0.04); }
+.add-btn:hover { border-color: var(--cyan); color: #C84729; background: rgba(232,89,56,0.04); }
 
 /* ── Format radio cards ───────────────────────────────────────── */
 .fmt-card {
@@ -101,7 +101,7 @@
   border-radius: 10px; text-align: center; cursor: pointer;
   user-select: none; transition: border-color 0.14s, background 0.14s;
 }
-.fmt-card.active { border-color: var(--cyan); background: rgba(0,255,243,0.07); }
+.fmt-card.active { border-color: var(--cyan); background: rgba(232,89,56,0.06); }
 
 /* ── Category pills ───────────────────────────────────────────── */
 .cat-pill {
@@ -110,12 +110,12 @@
   border-radius: 100px; font-size: 13px; font-weight: 500;
   cursor: pointer; transition: border-color 0.12s, background 0.12s; user-select: none;
 }
-.cat-pill.selected { border-color: var(--cyan); background: rgba(0,255,243,0.1); }
+.cat-pill.selected { border-color: var(--cyan); background: rgba(232,89,56,0.1); }
 
 /* ── Vibe tag chips ────────────────────────────────────────────── */
 .vibe-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 10px 6px 14px; border: 1.5px solid var(--cyan); background: rgba(0,255,243,0.1);
+  padding: 6px 10px 6px 14px; border: 1.5px solid var(--cyan); background: rgba(232,89,56,0.08); color: #C84729;
   border-radius: 100px; font-size: 13px; font-weight: 500;
 }
 .vibe-chip button { border: none; background: none; cursor: pointer; display: flex; padding: 2px; color: var(--text-muted); }
@@ -135,7 +135,7 @@
   transition: border-color 0.12s, box-shadow 0.12s;
   animation: fadeInUp 0.18s ease;
 }
-.ticket-row:hover { border-color: rgba(0,255,243,0.4); }
+.ticket-row:hover { border-color: rgba(232,89,56,0.35); }
 .tier-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
 .t-free { background: #22c55e; }
 .t-general { background: #64748b; }
@@ -153,7 +153,7 @@
 .agenda-time { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; min-width: 100px; padding-top: 2px; }
 .agenda-content { flex: 1; min-width: 0; }
 .stype-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-.st-talk { background: #009e95; }
+.st-talk { background: #E85938; }
 .st-panel { background: #9333ea; }
 .st-workshop { background: #3b82f6; }
 .st-networking { background: #22c55e; }
@@ -167,7 +167,7 @@
   cursor: pointer; white-space: nowrap; border: none; background: transparent;
   color: var(--text-muted); transition: background 0.12s, color 0.12s;
 }
-.people-tab.active { background: rgba(0,255,243,0.1); color: #009e95; font-weight: 600; }
+.people-tab.active { background: rgba(232,89,56,0.1); color: #C84729; font-weight: 600; }
 .people-tab:hover:not(.active) { background: var(--bg-secondary); }
 .person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 10px; }
 .person-card {
@@ -176,7 +176,7 @@
   transition: border-color 0.12s, box-shadow 0.12s;
   animation: fadeInUp 0.18s ease;
 }
-.person-card:hover { border-color: rgba(0,255,243,0.5); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.person-card:hover { border-color: rgba(232,89,56,0.4); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
 .person-avatar {
   width: 52px; height: 52px; border-radius: 50%;
   background: var(--bg-secondary); margin: 0 auto 8px;
@@ -204,7 +204,7 @@
   position: relative; animation: fadeInUp 0.18s ease;
   transition: border-color 0.12s;
 }
-.partner-card:hover { border-color: rgba(0,255,243,0.4); }
+.partner-card:hover { border-color: rgba(232,89,56,0.35); }
 .partner-logo {
   width: 34px; height: 34px; border-radius: 8px;
   background: var(--bg-secondary); display: flex; align-items: center; justify-content: center;
@@ -248,12 +248,12 @@
 .ai-btn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 4px 10px; border-radius: 7px; font-size: 12px; font-weight: 600;
-  border: 1.5px solid var(--cyan); background: rgba(0,255,243,0.06); color: #009e95;
+  border: 1.5px solid var(--cyan); background: rgba(232,89,56,0.06); color: #C84729;
   cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
 }
 .ai-btn:hover { opacity: 0.8; }
 .ai-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.ai-spinner { width: 10px; height: 10px; border: 1.5px solid #009e95; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+.ai-spinner { width: 10px; height: 10px; border: 1.5px solid #C84729; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
 
 /* ── Field errors ─────────────────────────────────────────────── */
 .form-input.field-err { border-color: #e53e3e !important; background: #fff5f5; }
@@ -282,11 +282,16 @@
     <span style="margin:0 6px; opacity:.4;">›</span>
     {% if mode == 'create' %}New event{% else %}Edit event{% endif %}
   </div>
-  <div class="dash-greeting" style="margin-bottom:24px;">
+  <div class="dash-greeting" style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center;">
     {% if mode == 'create' %}
       <span class="material-symbols-outlined" style="font-size:20px; margin-right:10px; color:var(--cyan);">event</span>Create an event
     {% else %}
       <span class="material-symbols-outlined" style="font-size:20px; margin-right:10px; color:var(--cyan);">edit</span>Edit event
+    {% endif %}
+    </div>
+    {% if mode == 'edit' and event %}
+    <span class="status-badge {{ event.status }}">{{ event.status | capitalize }}</span>
     {% endif %}
   </div>
 
@@ -425,23 +430,37 @@
           <div class="form-group" style="margin-bottom:0;">
             <label class="form-label"><span class="material-symbols-outlined" style="margin-right:5px; color:var(--text-muted);">language</span>Timezone</label>
             <select class="form-select" x-model="form.timezone">
-              <optgroup label="Africa">
-                <option value="Africa/Lagos">Africa/Lagos (WAT, UTC+1)</option>
-                <option value="Africa/Accra">Africa/Accra (GMT, UTC+0)</option>
-                <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
-                <option value="Africa/Johannesburg">Africa/Johannesburg (SAST, UTC+2)</option>
-                <option value="Africa/Cairo">Africa/Cairo (EET, UTC+2)</option>
-                <option value="Africa/Abidjan">Africa/Abidjan (GMT, UTC+0)</option>
-                <option value="Africa/Dakar">Africa/Dakar (GMT, UTC+0)</option>
-                <option value="Africa/Kigali">Africa/Kigali (CAT, UTC+2)</option>
+              <optgroup label="North America">
+                <option value="America/New_York">Eastern Time (New York, Toronto, Miami)</option>
+                <option value="America/Chicago">Central Time (Chicago, Dallas, Houston)</option>
+                <option value="America/Denver">Mountain Time (Denver, Calgary)</option>
+                <option value="America/Los_Angeles">Pacific Time (Los Angeles, San Francisco, Vancouver)</option>
+                <option value="America/Phoenix">Arizona (Phoenix, MST)</option>
               </optgroup>
-              <optgroup label="International">
-                <option value="Europe/London">Europe/London (GMT/BST)</option>
-                <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
-                <option value="America/New_York">America/New_York (ET)</option>
-                <option value="America/Los_Angeles">America/Los_Angeles (PT)</option>
-                <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
-                <option value="UTC">UTC</option>
+              <optgroup label="Europe &amp; United Kingdom">
+                <option value="Europe/London">London, Dublin, Lisbon (GMT/BST)</option>
+                <option value="Europe/Paris">Paris, Berlin, Amsterdam, Rome, Madrid (CET/CEST)</option>
+                <option value="Europe/Athens">Athens, Helsinki, Bucharest (EET/EEST)</option>
+              </optgroup>
+              <optgroup label="Asia-Pacific &amp; Middle East">
+                <option value="Asia/Dubai">Dubai, Abu Dhabi (GST, UTC+4)</option>
+                <option value="Asia/Kolkata">India Standard Time (IST, UTC+5:30)</option>
+                <option value="Asia/Singapore">Singapore, Hong Kong, Beijing (SGT/CST, UTC+8)</option>
+                <option value="Asia/Tokyo">Tokyo, Seoul (JST/KST, UTC+9)</option>
+                <option value="Australia/Sydney">Sydney, Melbourne (AEST/AEDT, UTC+10/+11)</option>
+                <option value="Australia/Perth">Perth (AWST, UTC+8)</option>
+                <option value="Pacific/Auckland">Auckland, Wellington (NZST/NZDT, UTC+12/+13)</option>
+              </optgroup>
+              <optgroup label="Africa">
+                <option value="Africa/Lagos">West Africa Time (Lagos, Port Harcourt, UTC+1)</option>
+                <option value="Africa/Accra">Accra (GMT, UTC+0)</option>
+                <option value="Africa/Nairobi">East Africa Time (Nairobi, Kampala, Addis Ababa, UTC+3)</option>
+                <option value="Africa/Johannesburg">South Africa Standard Time (Johannesburg, Cape Town, UTC+2)</option>
+                <option value="Africa/Cairo">Cairo (EET, UTC+2)</option>
+                <option value="Africa/Kigali">Kigali (CAT, UTC+2)</option>
+              </optgroup>
+              <optgroup label="Universal">
+                <option value="UTC">Coordinated Universal Time (UTC)</option>
               </optgroup>
             </select>
           </div>
@@ -504,7 +523,7 @@
             </div>
             <div x-show="form.venue_city && form.venue_city.trim()" x-cloak style="margin-top:-2px;">
               <a :href="'/venues?city=' + encodeURIComponent(form.venue_city.trim())" target="_blank" rel="noopener"
-                style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--cyan-dark,#00b3a9); text-decoration:none; font-weight:600;">
+                style="display:inline-flex; align-items:center; gap:5px; font-size:13px; color:var(--cyan-dark,#C84729); text-decoration:none; font-weight:600;">
                 <span class="material-symbols-outlined" style="font-size:16px;">domain</span>
                 <span x-text="'Browse venues in ' + form.venue_city.trim() + ' →'"></span>
               </a>
@@ -569,7 +588,7 @@
             <span class="material-symbols-outlined" style="color:var(--text-muted); font-size:13px; flex-shrink:0;">info</span>
             <div style="flex:1;">
               <div style="font-size:13px; font-weight:500;">Free event</div>
-              <div style="font-size:12px; color:var(--text-muted);">No tickets required — attendees register at no cost</div>
+              <div style="font-size:12px; color:var(--text-muted);">No tickets required: attendees register at no cost</div>
             </div>
             <div class="tog" @click="toggleFree()" :style="isFree ? 'background:var(--cyan)' : 'background:var(--border-color)'">
               <div class="tog-knob" :style="isFree ? 'transform:translateX(18px)' : 'transform:translateX(2px)'"></div>
@@ -605,7 +624,7 @@
             <!-- Add ticket inline form -->
             <div x-show="addingTicket" class="inline-form" style="display:none;">
               <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
-                <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">confirmation_number</span>New ticket type
+                <span class="material-symbols-outlined" style="color:#C84729; margin-right:5px; font-size:11px;">confirmation_number</span>New ticket type
               </div>
               <div class="inline-form-grid" style="margin-bottom:10px;">
                 <div class="form-group" style="margin:0; grid-column:1/-1;">
@@ -632,14 +651,20 @@
                 <div class="form-group" style="margin:0;" x-show="tDraft.tier !== 'free'" style="display:none;">
                   <label class="form-label" style="font-size:12px;">Currency</label>
                   <select class="form-select" x-model="tDraft.currency" style="font-size:13px;">
-                    <option value="NGN">NGN</option><option value="GHS">GHS</option>
-                    <option value="KES">KES</option><option value="ZAR">ZAR</option>
-                    <option value="USD">USD</option><option value="GBP">GBP</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="CAD">CAD (CA$)</option>
+                    <option value="AUD">AUD (A$)</option>
+                    <option value="NGN">NGN (₦)</option>
+                    <option value="GHS">GHS (GH₵)</option>
+                    <option value="KES">KES (KSh)</option>
+                    <option value="ZAR">ZAR (R)</option>
                   </select>
                 </div>
                 <div class="form-group" style="margin:0;" x-show="tDraft.tier !== 'free'" style="display:none;">
                   <label class="form-label" style="font-size:12px;">Price</label>
-                  <input type="number" class="form-input" placeholder="0" min="0" step="100"
+                  <input type="number" class="form-input" placeholder="0" min="0" step="any"
                     x-model.number="tDraft.price" style="font-size:13px;">
                 </div>
                 <div class="form-group" style="margin:0; grid-column:1/-1;">
@@ -657,9 +682,44 @@
             </div>
 
             <button type="button" class="add-btn" x-show="!addingTicket"
-              @click="addingTicket=true; tDraft={ name:'', tier:'general', price:0, currency:'NGN', quantity:null, description:'' }">
+              @click="addingTicket=true; tDraft={ name:'', tier:'general', price:0, currency: '{{ org.currency or 'USD' }}', quantity:null, description:'' }">
               <span class="material-symbols-outlined">add</span> Add ticket type
             </button>
+
+            <!-- Fee handling strategy (Pass to buyer vs Absorb) -->
+            <div style="margin-top:20px; padding:16px 18px; border:1px solid var(--border-light); border-radius:12px; background:var(--bg-secondary);">
+              <div style="font-size:13px; font-weight:600; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                <span class="material-symbols-outlined" style="font-size:16px; color:#C84729;">payments</span>
+                Ticketing &amp; Processing Fees
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">
+                Choose how platform (5%) and payment gateway fees are handled at checkout.
+              </p>
+
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:10px 12px; border-radius:10px; border:1.5px solid;"
+                  :style="form.pass_fees_to_buyer ? 'border-color:var(--cyan); background:#fff;' : 'border-color:transparent; background:transparent;'">
+                  <input type="radio" name="pass_fees_to_buyer" :value="true" :checked="form.pass_fees_to_buyer" @change="form.pass_fees_to_buyer = true" style="margin-top:2px;">
+                  <div>
+                    <div style="font-size:13px; font-weight:600;">Pass fees to buyer <span style="font-size:11px; font-weight:700; color:#22c55e; margin-left:4px;">(Default)</span></div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                      Buyers pay the 5% service fee and gateway fee on top of ticket price. You net 100% of your ticket face value.
+                    </div>
+                  </div>
+                </label>
+
+                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; padding:10px 12px; border-radius:10px; border:1.5px solid;"
+                  :style="!form.pass_fees_to_buyer ? 'border-color:var(--cyan); background:#fff;' : 'border-color:transparent; background:transparent;'">
+                  <input type="radio" name="pass_fees_to_buyer" :value="false" :checked="!form.pass_fees_to_buyer" @change="form.pass_fees_to_buyer = false" style="margin-top:2px;">
+                  <div>
+                    <div style="font-size:13px; font-weight:600;">Absorb fees into ticket price <span style="font-size:11px; font-weight:700; color:#9333ea; margin-left:4px;">(Inclusive Pricing)</span></div>
+                    <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                      Buyers pay the exact advertised price with zero extra lines at checkout. Fees are deducted from your ticket sales (ideal for premium galas, exclusive dinners, and conferences).
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
           </div>
 
           <div x-show="isFree" style="padding:10px 0; text-align:center; font-size:13px; color:var(--text-muted); display:none;">
@@ -706,7 +766,7 @@
                     <span style="font-size:14px; font-weight:600;" x-text="f.label"></span>
                     <span style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted); text-transform:capitalize;"
                       x-text="f.field_type.replace('_',' ')"></span>
-                    <span x-show="f.is_required" style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:100px; background:rgba(0,255,243,0.1); color:#009e95;" style="display:none;">Required</span>
+                    <span x-show="f.is_required" style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:100px; background:rgba(232,89,56,0.1); color:#C84729;" style="display:none;">Required</span>
                   </div>
                   <div style="font-size:12px; color:var(--text-muted); margin-top:3px;" x-text="fieldTicketNames(f)"></div>
                 </div>
@@ -722,7 +782,7 @@
           <!-- Add field form -->
           <div x-show="addingFormField" class="inline-form" style="display:none;">
             <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
-              <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">add</span>Add question
+              <span class="material-symbols-outlined" style="color:#C84729; margin-right:5px; font-size:11px;">add</span>Add question
             </div>
             <div class="inline-form-grid" style="margin-bottom:10px;">
               <div class="form-group" style="margin:0; grid-column:1/-1;">
@@ -834,17 +894,23 @@
                 </div>
                 <div class="agenda-content">
                   <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span class="stype-dot" :class="'st-' + item.session_type"></span>
+                    <span class="stype-dot" :class="'st-' + item.session_type" :style="item.track_color ? 'background:' + item.track_color + ' !important;' : ''"></span>
                     <span style="font-size:14px; font-weight:600;" x-text="item.title"></span>
                     <span style="font-size:10px; font-weight:600; padding:2px 7px; border-radius:100px; background:var(--bg-secondary); color:var(--text-muted); text-transform:capitalize;"
                       x-text="item.session_type.replace('_',' ')"></span>
+                    <span x-show="item.track" style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:100px; display:inline-flex; align-items:center; gap:4px;"
+                      :style="'background:' + (item.track_color ? item.track_color + '20' : 'rgba(200,71,41,0.1)') + '; color:' + (item.track_color || '#C84729') + ';'">
+                      <span class="material-symbols-outlined" style="font-size:9px;">sell</span><span x-text="item.track"></span>
+                    </span>
+                    <span x-show="item.room_or_stage" style="font-size:11px; color:var(--text-muted); display:inline-flex; align-items:center; gap:3px;">
+                      <span class="material-symbols-outlined" style="font-size:11px;">meeting_room</span><span x-text="item.room_or_stage"></span>
+                    </span>
+                    <span x-show="item.date" style="font-size:11px; color:var(--text-muted);" x-text="item.date"></span>
                   </div>
-                  <div x-show="item.speaker_keys.length > 0" style="font-size:12px; color:var(--text-muted); margin-top:3px; display:none;">
+                  <div x-show="item.speaker_keys && item.speaker_keys.length > 0" style="font-size:12px; color:var(--text-muted); margin-top:3px; display:none;">
                     <span class="material-symbols-outlined" style="font-size:10px; margin-right:4px;">mic</span><span x-text="agendaSpeakerNames(item)"></span>
                   </div>
-                  <div x-show="item.track" style="font-size:11px; color:#009e95; margin-top:2px; display:none;">
-                    <span class="material-symbols-outlined" style="font-size:9px; margin-right:3px;">sell</span><span x-text="item.track"></span>
-                  </div>
+                  <div x-show="item.description" style="font-size:12px; color:var(--text-muted); margin-top:2px;" x-text="item.description"></div>
                 </div>
                 <button type="button" @click="agenda.splice(idx,1)"
                   style="width:26px;height:26px;border-radius:50%;border:none;background:rgba(229,62,62,0.08);color:#e53e3e;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:0;transition:opacity 0.12s;"
@@ -858,16 +924,20 @@
           <!-- Add agenda form -->
           <div x-show="addingAgenda" class="inline-form" style="display:none;">
             <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
-              <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">add</span>Add session
+              <span class="material-symbols-outlined" style="color:#C84729; margin-right:5px; font-size:11px;">add</span>Add session
             </div>
             <div class="inline-form-grid" style="margin-bottom:10px;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" style="font-size:12px;">Session Date (optional for multi-day)</label>
+                <input type="date" class="form-input" x-model="aDraft.date" style="font-size:13px;">
+              </div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
                 <div class="form-group" style="margin:0;">
-                  <label class="form-label" style="font-size:12px;">Start</label>
+                  <label class="form-label" style="font-size:12px;">Start Time</label>
                   <input type="time" class="form-input" x-model="aDraft.time" style="font-size:13px;">
                 </div>
                 <div class="form-group" style="margin:0;">
-                  <label class="form-label" style="font-size:12px;">End</label>
+                  <label class="form-label" style="font-size:12px;">End Time</label>
                   <input type="time" class="form-input" x-model="aDraft.end_time" style="font-size:13px;">
                 </div>
               </div>
@@ -884,7 +954,7 @@
               </div>
               <div class="form-group" style="margin:0; grid-column:1/-1;">
                 <label class="form-label" style="font-size:12px;">Session title <span style="color:#e53e3e;">*</span></label>
-                <input type="text" class="form-input" placeholder="e.g. Opening Keynote"
+                <input type="text" class="form-input" placeholder="e.g. Opening Keynote: The Future of Scaling"
                   x-model="aDraft.title" style="font-size:13px;" maxlength="200">
               </div>
               <div class="form-group" style="margin:0; grid-column:1/-1;">
@@ -899,10 +969,32 @@
                   Add people in the People section above to link them to sessions.
                 </div>
               </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; grid-column:1/-1;">
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Track Name (optional)</label>
+                  <input type="text" class="form-input" placeholder="e.g. Main Stage or Engineering"
+                    x-model="aDraft.track" style="font-size:13px;">
+                </div>
+                <div class="form-group" style="margin:0;">
+                  <label class="form-label" style="font-size:12px;">Breakout Room / Stage</label>
+                  <input type="text" class="form-input" placeholder="e.g. Hall B, Stage 1"
+                    x-model="aDraft.room_or_stage" style="font-size:13px;">
+                </div>
+              </div>
               <div class="form-group" style="margin:0; grid-column:1/-1;">
-                <label class="form-label" style="font-size:12px;">Track (optional)</label>
-                <input type="text" class="form-input" placeholder="e.g. Main Stage"
-                  x-model="aDraft.track" style="font-size:13px;">
+                <label class="form-label" style="font-size:12px;">Track Color</label>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <template x-for="c in ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6', '#C84729']" :key="c">
+                    <button type="button" @click="aDraft.track_color = c"
+                      style="width:22px; height:22px; border-radius:50%; border:2px solid #fff; cursor:pointer; transition:transform 0.1s;"
+                      :style="'background:' + c + '; box-shadow: ' + (aDraft.track_color === c ? '0 0 0 2px var(--cyan)' : '0 0 0 1px var(--border-light)') + ';'"></button>
+                  </template>
+                  <input type="color" x-model="aDraft.track_color" style="width:26px; height:26px; border:none; padding:0; background:none; cursor:pointer;">
+                </div>
+              </div>
+              <div class="form-group" style="margin:0; grid-column:1/-1;">
+                <label class="form-label" style="font-size:12px;">Description (optional)</label>
+                <textarea class="form-input" x-model="aDraft.description" rows="2" placeholder="Brief synopsis of what this session covers…" style="font-size:13px;"></textarea>
               </div>
             </div>
             <div style="display:flex; gap:8px; justify-content:flex-end;">
@@ -914,7 +1006,7 @@
           </div>
 
           <button type="button" class="add-btn" x-show="!addingAgenda"
-            @click="addingAgenda=true; aDraft={ time:'', end_time:'', title:'', session_type:'talk', speaker_keys:[], track:'' }">
+            @click="addingAgenda=true; aDraft={ date:(form.start_datetime||'').split('T')[0], time:'', end_time:'', title:'', description:'', session_type:'talk', speaker_keys:[], track:'', track_color:'#3b82f6', room_or_stage:'' }">
             <span class="material-symbols-outlined">add</span> Add session
           </button>
         </div>
@@ -980,7 +1072,7 @@
           <!-- Add person form -->
           <div x-show="addingPerson" class="inline-form" style="display:none;">
             <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
-              <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">person_add</span>
+              <span class="material-symbols-outlined" style="color:#C84729; margin-right:5px; font-size:11px;">person_add</span>
               Add <span x-text="personTabs.find(t=>t.id===activeTab)?.label.slice(0,-1).toLowerCase() || 'person'"></span>
             </div>
             <div style="display:flex; gap:14px; align-items:flex-start; margin-bottom:12px;">
@@ -1083,7 +1175,7 @@
           <!-- Add partner form -->
           <div x-show="addingPartner" class="inline-form" style="display:none;">
             <div style="font-size:13px; font-weight:600; margin-bottom:12px;">
-              <span class="material-symbols-outlined" style="color:#009e95; margin-right:5px; font-size:11px;">add</span>
+              <span class="material-symbols-outlined" style="color:#C84729; margin-right:5px; font-size:11px;">add</span>
               Add partner / sponsor
             </div>
             <div class="inline-form-grid" style="margin-bottom:10px;">
@@ -1311,12 +1403,12 @@
                 <div>
                   <input type="text" class="form-input" placeholder="24, 1"
                     x-model="form.email_reminder_hours" style="max-width:160px;">
-                  <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">Email — hours before, comma-separated</p>
+                  <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">Email: hours before, comma-separated</p>
                 </div>
                 <div>
                   <input type="text" class="form-input" placeholder="24, 1"
                     x-model="form.whatsapp_reminder_hours" style="max-width:160px;">
-                  <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">WhatsApp — hours before, comma-separated</p>
+                  <p style="font-size:11px; color:var(--text-muted); margin-top:2px;">WhatsApp: hours before, comma-separated</p>
                 </div>
               </div>
             </div>
@@ -1384,7 +1476,7 @@
                   @keydown.enter.prevent="addVibeTag()" @keydown.comma.prevent="addVibeTag()" @blur="addVibeTag()"
                   :disabled="form.vibe_tags.length >= 8">
               </div>
-              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Press Enter to add. Up to 8 — how it actually feels, not a category.</p>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Press Enter to add. Up to 8: how it actually feels, not a category.</p>
             </div>
 
           </div>
@@ -1398,6 +1490,16 @@
         <span class="material-symbols-outlined" style="font-size:11px; margin-right:6px;">arrow_back</span>Cancel
       </a>
       <div style="display:flex; gap:10px;">
+        {% if mode == 'edit' and event and event.status != 'draft' %}
+        {# Event is already published or live - save changes updates the published event directly #}
+        <button type="button" class="btn btn-primary"
+          :class="{ 'btn-loading': saving && !publishing }"
+          :disabled="saving || publishing"
+          @click="submit('save')">
+          <span class="material-symbols-outlined" style="font-size:12px; margin-right:6px;">check</span>Save changes
+        </button>
+        {% else %}
+        {# Draft event or new event creation #}
         <button type="button" class="btn btn-secondary"
           :class="{ 'btn-loading': saving && !publishing }"
           :disabled="saving || publishing"
@@ -1421,6 +1523,7 @@
           @click="submit('save')">
           <span class="material-symbols-outlined" style="font-size:12px; margin-right:6px;">arrow_forward</span>Create event
         </button>
+        {% endif %}
         {% endif %}
       </div>
     </div>
@@ -1477,7 +1580,12 @@ function eventForm() {
     return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
   }
 
-  const defTz = '{{ org.country == "GH" and "Africa/Accra" or org.country == "KE" and "Africa/Nairobi" or org.country == "ZA" and "Africa/Johannesburg" or "Africa/Lagos" }}';
+  let detectedTz = "UTC";
+  try {
+    detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch (e) {}
+  const orgCountryTz = '{{ org.country == "US" and "America/New_York" or org.country == "GB" and "Europe/London" or org.country == "CA" and "America/Toronto" or org.country == "AU" and "Australia/Sydney" or org.country == "DE" and "Europe/Berlin" or org.country == "FR" and "Europe/Paris" or org.country == "GH" and "Africa/Accra" or org.country == "KE" and "Africa/Nairobi" or org.country == "ZA" and "Africa/Johannesburg" or org.country == "NG" and "Africa/Lagos" or "" }}';
+  const defTz = orgCountryTz || detectedTz || "America/New_York";
   const ex = existing || {};
   const extras = ex.extras || {};
   let _k = 0;
@@ -1521,11 +1629,15 @@ function eventForm() {
 
   const agendaInit = existingSessions.map(s => ({
     id: s.id,
+    date: (s.start_datetime || '').split('T')[0],
     time: toTimeHHMM(s.start_datetime),
     end_time: toTimeHHMM(s.end_datetime),
     title: s.title,
+    description: s.description || '',
     session_type: s.session_type,
     track: s.track || '',
+    track_color: s.track_color || '#3b82f6',
+    room_or_stage: s.location_or_stream_url || '',
     speaker_keys: (s.speaker_ids || []).map(sid => speakerIdToKey[sid]).filter(Boolean),
     _key: k(),
   }));
@@ -1548,6 +1660,7 @@ function eventForm() {
       max_capacity:     ex.max_capacity || null,
       is_private:       ex.is_private || false,
       password:         ex.password || '',
+      pass_fees_to_buyer: ex.pass_fees_to_buyer !== undefined ? Boolean(ex.pass_fees_to_buyer) : true,
       category_ids:     (ex.categories || []).map(c => String(c.id)),
       vibe_tags:        ex.vibe_tags || [],
       email_reminder_hours:    (extras.email_reminder_hours || [24, 1]).join(', '),
@@ -1576,13 +1689,13 @@ function eventForm() {
     tickets: ticketsInit,
     isFree: existingTickets.length === 0,
     addingTicket: false,
-    tDraft: { name:'', tier:'general', price:0, currency:'NGN', quantity:null, description:'' },
+    tDraft: { name:'', tier:'general', price:0, currency: '{{ org.currency or "USD" }}', quantity:null, description:'' },
 
     /* ─ Agenda ─ */
     agenda: agendaInit,
     addingAgenda: false,
     dragIdx: null,
-    aDraft: { time:'', end_time:'', title:'', session_type:'talk', speaker_keys:[], track:'' },
+    aDraft: { date:'', time:'', end_time:'', title:'', description:'', session_type:'talk', speaker_keys:[], track:'', track_color:'#3b82f6', room_or_stage:'' },
 
     allPeopleFlat() {
       return Object.values(this.people).flat();
@@ -2002,26 +2115,33 @@ function eventForm() {
           for (let idx = 0; idx < this.agenda.length; idx++) {
             const item = this.agenda[idx];
             const speaker_ids = item.speaker_keys.map(key => keyToSpeakerId[key]).filter(Boolean);
-            const start = toIso(datePart, item.time);
+            const sessionDate = item.date || datePart;
+            const start = toIso(sessionDate, item.time);
             if (!start) continue;
             // default a 30-minute slot when no end time was given, since a
             // session must have end > start
-            const end = toIso(datePart, item.end_time) || new Date(new Date(start).getTime() + 30*60000).toISOString();
+            const end = toIso(sessionDate, item.end_time) || new Date(new Date(start).getTime() + 30*60000).toISOString();
+            const sessionBody = {
+              title: item.title,
+              description: item.description || null,
+              session_type: item.session_type,
+              track: item.track || null,
+              track_color: item.track_color || null,
+              location_or_stream_url: item.room_or_stage || null,
+              speaker_ids,
+              start_datetime: start,
+              end_datetime: end,
+              sort_order: idx,
+            };
             if (item.id) {
               await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/sessions/${item.id}`,{
                 method:'PATCH', headers:{'Content-Type':'application/json'}, credentials:'include',
-                body: JSON.stringify({
-                  title:item.title, session_type:item.session_type, track:item.track||null,
-                  speaker_ids, start_datetime:start, end_datetime:end, sort_order:idx,
-                }),
+                body: JSON.stringify(sessionBody),
               });
             } else {
               await fetch(`/api/v1/organizations/${orgSlug}/events/${eventId}/sessions`,{
                 method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include',
-                body: JSON.stringify({
-                  title:item.title, session_type:item.session_type, track:item.track||null,
-                  speaker_ids, start_datetime:start, end_datetime:end, sort_order:idx,
-                }),
+                body: JSON.stringify(sessionBody),
               });
             }
           }

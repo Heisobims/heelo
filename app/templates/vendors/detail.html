@@ -1,294 +1,1122 @@
 {% extends "base.html" %}
-{% block title %}{{ vendor.business_name }} — Heelo Vendors{% endblock %}
+{% block title %}{{ vendor.business_name }} | Heelo Vendors{% endblock %}
 {% block meta_description %}{{ vendor.tagline or vendor.description[:160] if vendor.description else vendor.business_name + ' on Heelo vendor marketplace' }}{% endblock %}
+{% block og_title %}{{ vendor.business_name }}{% endblock %}
+{% block og_description %}{{ self.meta_description() }}{% endblock %}
+{% block og_image %}{{ vendor.cover_image_url or '/static/icons/og-default.png' }}{% endblock %}
 
 {% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": {{ vendor.business_name | tojson }},
+  {% if vendor.description or vendor.tagline %}"description": {{ (vendor.description or vendor.tagline) | tojson }},{% endif %}
+  {% if vendor.cover_image_url %}"image": [{{ vendor.cover_image_url | tojson }}],{% endif %}
+  {% if vendor.website_url %}"url": {{ vendor.website_url | tojson }},{% endif %}
+  {% if vendor.contact_phone %}"telephone": {{ vendor.contact_phone | tojson }},{% endif %}
+  {% if vendor.location_city or vendor.location_country %}
+  "address": {
+    "@type": "PostalAddress"
+    {% if vendor.location_city %},"addressLocality": {{ vendor.location_city | tojson }}{% endif %}
+    {% if vendor.location_country %},"addressCountry": {{ vendor.location_country | tojson }}{% endif %}
+  },
+  {% endif %}
+  "priceRange": {{ ((vendor.currency | currency_symbol) * 3 if vendor.price_range == 'premium' else (vendor.currency | currency_symbol) * 2 if vendor.price_range == 'mid' else (vendor.currency | currency_symbol)) | tojson }}
+}
+</script>
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
-  body { background: var(--bg-secondary); }
-
-  .vd-nav {
-    position: sticky; top: 0; z-index: 40;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
+  body { 
+    background: var(--bg-secondary, #FAF7F2); 
+    color: var(--text-primary, #131B17);
+    font-family: 'Bricolage Grotesque', var(--font-sans, sans-serif);
   }
-  .vd-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
-  .vd-nav-logo span { color: var(--cyan-dark, #00b3a9); }
-  .vd-nav-back { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--text-muted); text-decoration: none; margin-left: 8px; }
-  .vd-nav-back:hover { color: var(--text-primary); }
-  .vd-nav-right { margin-left: auto; display: flex; gap: 10px; }
-  .vd-btn { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; cursor: pointer; border: none; font-family: inherit; }
-  .vd-btn-cyan { background: var(--cyan); color: #000; }
-  .vd-btn-outline { border: 1px solid var(--border-light); background: #fff; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
 
+  /* Navigation Spacing */
+  .vd-page-wrap {
+    min-height: 100vh;
+    padding-top: 64px; /* site-nav height */
+  }
+
+  /* Hero & Cover */
   .vd-hero {
-    width: 100%; height: 240px; background: linear-gradient(135deg, #0d0d0d, #1a1a1a);
-    position: relative; overflow: hidden;
+    width: 100%;
+    height: 300px;
+    background: linear-gradient(135deg, #18221c, #0d120f);
+    position: relative;
+    overflow: hidden;
   }
-  .vd-hero img { width: 100%; height: 100%; object-fit: cover; }
-  .vd-hero-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 72px; opacity: 0.07; }
-
-  .vd-layout { max-width: 1060px; margin: 0 auto; padding: 0 24px 64px; display: grid; grid-template-columns: 1fr 360px; gap: 32px; }
-  @media(max-width:768px) { .vd-layout { grid-template-columns: 1fr; } }
-
-  .vd-main { margin-top: -48px; }
-  .vd-profile-card { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-  .vd-avatar { width: 80px; height: 80px; border-radius: 16px; background: linear-gradient(135deg, var(--cyan), #00b3a9); display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 800; color: #000; margin-bottom: 16px; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-  .vd-biz-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-  .vd-verified-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: var(--cyan-dark,#00b3a9); background: rgba(0,255,243,0.08); border: 1px solid rgba(0,255,243,0.25); border-radius: 100px; padding: 3px 8px; }
-  .vd-cat-badge { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
-  .vd-tagline { font-size: 15px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
-  .vd-meta-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .vd-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; padding: 4px 12px; border-radius: 100px; background: var(--bg-secondary); color: var(--text-muted); font-weight: 500; }
-  .vd-price-chip.budget { background: rgba(34,197,94,0.1); color: #15803d; }
-  .vd-price-chip.mid { background: rgba(245,158,11,0.1); color: #b45309; }
-  .vd-price-chip.premium { background: rgba(168,85,247,0.1); color: #7e22ce; }
-  .vd-contact-links { display: flex; gap: 10px; flex-wrap: wrap; }
-  .vd-contact-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); text-decoration: none; }
-  .vd-contact-link:hover { color: var(--text-primary); }
-
-  .vd-section { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
-  .vd-section-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
-  .vd-description { font-size: 14.5px; line-height: 1.75; color: var(--text-primary); white-space: pre-line; }
-
-  .vd-portfolio { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-  .vd-portfolio img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 10px; }
-
-  .vd-sidebar { margin-top: -48px; }
-  .vd-contact-card { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: 24px; position: sticky; top: 72px; }
-  .vd-contact-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
-  .vd-contact-card p { font-size: 13.5px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; }
-
-  .vd-form .field { margin-bottom: 14px; }
-  .vd-form .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-  .vd-form .field input, .vd-form .field textarea, .vd-form .field select {
-    width: 100%; padding: 9px 12px; border: 1.5px solid var(--border-light);
-    border-radius: 9px; font-size: 13.5px; font-family: inherit; background: #fff;
-    color: var(--text-primary); outline: none; transition: border-color 0.15s; box-sizing: border-box;
+  .vd-hero img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    object-position: center;
   }
-  .vd-form .field input:focus, .vd-form .field textarea:focus, .vd-form .field select:focus { border-color: var(--cyan); }
-  .vd-form .field textarea { resize: vertical; min-height: 100px; }
-  .vd-submit-btn {
-    width: 100%; padding: 12px; background: var(--cyan); color: #000;
-    border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
-    cursor: pointer; font-family: inherit; transition: opacity 0.15s;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
+  .vd-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(19,27,23,0.2) 0%, rgba(19,27,23,0.65) 100%);
+    pointer-events: none;
   }
-  .vd-submit-btn:hover { opacity: 0.85; }
-  .vd-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .vd-success { text-align: center; padding: 20px 0; }
-  .vd-success-icon { font-size: 40px; margin-bottom: 12px; }
-  .vd-success h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-  .vd-success p { font-size: 13.5px; color: var(--text-muted); line-height: 1.5; }
-  .vd-leads-count { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
+  .vd-hero-placeholder { 
+    position: absolute; 
+    inset: 0; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 80px; 
+    opacity: 0.12; 
+    color: #fff;
+  }
+  .vd-hero-nav {
+    position: absolute;
+    top: 20px;
+    left: 24px;
+    z-index: 10;
+  }
+  .vd-back-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(19, 27, 23, 0.1);
+    border-radius: 9999px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #131B17;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    transition: all 160ms ease;
+  }
+  .vd-back-pill:hover {
+    background: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  }
+
+  /* Two Column Layout */
+  .vd-layout { 
+    max-width: 1140px; 
+    margin: 0 auto; 
+    padding: 0 24px 80px; 
+    display: grid; 
+    grid-template-columns: 1fr 360px; 
+    gap: 32px; 
+    position: relative;
+  }
+  @media(max-width:920px) { 
+    .vd-layout { grid-template-columns: 1fr; } 
+  }
+
+  /* Main Column */
+  .vd-main { 
+    margin-top: -64px; 
+    min-width: 0;
+  }
+
+  /* Profile Card */
+  .vd-profile-card { 
+    background: #ffffff; 
+    border: 1px solid var(--border-light, #EFEAE3); 
+    border-radius: 20px; 
+    padding: 32px; 
+    margin-bottom: 24px; 
+    box-shadow: 0 4px 20px rgba(19,27,23,0.04); 
+    position: relative;
+  }
+
+  /* Protruding Avatar */
+  .vd-avatar-wrap {
+    margin-top: -80px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .vd-avatar { 
+    width: 104px; 
+    height: 104px; 
+    border-radius: 24px; 
+    background: linear-gradient(135deg, var(--cyan, #E85938), #B33D22); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 38px; 
+    font-weight: 800; 
+    color: #fff; 
+    border: 4px solid #ffffff; 
+    box-shadow: 0 8px 24px rgba(19,27,23,0.14); 
+    overflow: hidden; 
+    flex-shrink: 0;
+  }
+  .vd-avatar img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+  }
+
+  .vd-owner-badge {
+    background: var(--bg-secondary, #FAF7F2);
+    border: 1.5px solid var(--border-light, #EFEAE3);
+    border-radius: 9999px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary, #131B17);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 160ms ease;
+  }
+  .vd-owner-badge:hover {
+    background: #ffffff;
+    border-color: var(--text-primary);
+    transform: translateY(-1px);
+  }
+
+  /* Business Title & Verified Badges */
+  .vd-cat-badge { 
+    font-size: 11.5px; 
+    font-weight: 800; 
+    letter-spacing: 0.08em; 
+    text-transform: uppercase; 
+    color: var(--cyan-dark, #C84729); 
+    margin-bottom: 8px; 
+    display: inline-block;
+  }
+  .vd-biz-name { 
+    font-size: clamp(24px, 4vw, 32px); 
+    font-weight: 800; 
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 8px; 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    flex-wrap: wrap; 
+  }
+  .vd-verified-badge { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 4px; 
+    font-size: 11.5px; 
+    font-weight: 700; 
+    color: #065f46; 
+    background: #ecfdf5; 
+    border: 1px solid #a7f3d0; 
+    border-radius: 100px; 
+    padding: 3px 10px; 
+    letter-spacing: 0.02em;
+  }
+  .vd-featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 100px;
+    padding: 3px 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .vd-tagline { 
+    font-size: 16px; 
+    color: var(--text-muted, #56625C); 
+    margin-bottom: 20px; 
+    line-height: 1.5; 
+  }
+
+  /* Meta Chips Row */
+  .vd-meta-chips { 
+    display: flex; 
+    gap: 8px; 
+    flex-wrap: wrap; 
+    margin-bottom: 20px; 
+  }
+  .vd-chip { 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 6px; 
+    font-size: 13px; 
+    padding: 6px 14px; 
+    border-radius: 100px; 
+    background: var(--bg-secondary, #FAF7F2); 
+    color: var(--text-primary, #131B17); 
+    font-weight: 600; 
+    border: 1px solid var(--border-light, #EFEAE3);
+  }
+  .vd-chip-accent {
+    background: rgba(232,89,56,0.08); 
+    color: var(--cyan-dark, #C84729); 
+    border-color: rgba(232,89,56,0.2); 
+    font-weight: 700;
+  }
+  .vd-chip-star {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fef3c7;
+    font-weight: 700;
+  }
+
+  /* Quick Actions in Header */
+  .vd-header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-light, #EFEAE3);
+  }
+
+  /* Generic Buttons */
+  .vd-btn { 
+    height: 44px;
+    padding: 0 20px; 
+    border-radius: 9999px; 
+    font-size: 13.5px; 
+    font-weight: 700; 
+    text-decoration: none; 
+    cursor: pointer; 
+    border: 1.5px solid transparent; 
+    font-family: inherit; 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    gap: 8px; 
+    white-space: nowrap;
+    user-select: none;
+    box-sizing: border-box;
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1); 
+  }
+  .vd-btn:hover {
+    transform: translateY(-1px);
+  }
+  .vd-btn:active {
+    transform: scale(0.98);
+  }
+  .vd-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.25);
+  }
+  .vd-btn-primary { 
+    background: var(--text-primary, #131B17); 
+    color: #ffffff !important; 
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(19,27,23,0.12);
+  }
+  .vd-btn-primary:hover { 
+    background: #233029; 
+    color: #ffffff; 
+    box-shadow: 0 4px 14px rgba(19,27,23,0.2);
+  }
+  .vd-btn-primary:active {
+    background: #0E1411;
+  }
+  .vd-btn-accent { 
+    background: var(--cyan, #E85938); 
+    color: #ffffff !important; 
+    font-weight: 700; 
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(232,89,56,0.2);
+  }
+  .vd-btn-accent:hover { 
+    background: var(--primary-hover, #D44727); 
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(232,89,56,0.28);
+  }
+  .vd-btn-accent:active {
+    background: #C84729;
+  }
+  .vd-btn-outline, .vd-btn-secondary { 
+    border: 1.5px solid var(--border-light, #EFEAE3); 
+    background: #ffffff; 
+    color: var(--text-primary, #131B17); 
+  }
+  .vd-btn-outline:hover, .vd-btn-secondary:hover { 
+    border-color: rgba(19, 27, 23, 0.25); 
+    background: var(--bg-secondary, #FAF7F2);
+    box-shadow: 0 2px 8px rgba(19, 27, 23, 0.05);
+  }
+  .vd-btn-outline:active, .vd-btn-secondary:active {
+    background: #EFEAE3;
+  }
+
+  /* Content Sections */
+  .vd-section { 
+    background: #ffffff; 
+    border: 1px solid var(--border-light, #EFEAE3); 
+    border-radius: 20px; 
+    padding: 32px; 
+    margin-bottom: 24px; 
+    box-shadow: 0 4px 20px rgba(19,27,23,0.03); 
+  }
+  .vd-section-header { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    margin-bottom: 20px; 
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .vd-section-title { 
+    font-size: 20px; 
+    font-weight: 800; 
+    letter-spacing: -0.01em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .vd-description { 
+    font-size: 15px; 
+    line-height: 1.8; 
+    color: var(--text-primary, #131B17); 
+    white-space: pre-line; 
+  }
+
+  /* Service Packages Cards */
+  .vd-services-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .vd-service-card { 
+    border: 1.5px solid var(--border-light, #EFEAE3); 
+    border-radius: 16px; 
+    padding: 24px; 
+    background: #ffffff;
+    transition: all 180ms ease; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-between; 
+  }
+  .vd-service-card:hover { 
+    border-color: var(--cyan, #E85938); 
+    box-shadow: 0 6px 20px rgba(232,89,56,0.08); 
+    transform: translateY(-2px);
+  }
+  .vd-service-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .vd-service-title { 
+    font-size: 18px; 
+    font-weight: 800; 
+    margin-bottom: 4px; 
+    color: var(--text-primary, #131B17);
+  }
+  .vd-service-cat {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #56625C);
+  }
+  .vd-service-price { 
+    font-size: 22px; 
+    font-weight: 800; 
+    color: var(--text-primary, #131B17); 
+    white-space: nowrap;
+    text-align: right;
+  }
+  .vd-service-price span {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: block;
+  }
+  .vd-service-desc {
+    font-size: 14px;
+    color: var(--text-secondary, #56625C);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .vd-inclusions-list {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .vd-inclusion-item { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 13.5px; 
+    color: var(--text-primary, #131B17); 
+  }
+  .vd-service-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-light, #EFEAE3);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  /* Portfolio Gallery */
+  .vd-portfolio { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+    gap: 14px; 
+  }
+  .vd-portfolio-item {
+    position: relative;
+    border-radius: 14px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+    background: #000;
+  }
+  .vd-portfolio-item img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    transition: transform 0.3s ease;
+  }
+  .vd-portfolio-item:hover img {
+    transform: scale(1.05);
+  }
+
+  /* Reviews Section */
+  .vd-review-card { 
+    border-bottom: 1px solid var(--border-light, #EFEAE3); 
+    padding: 22px 0; 
+  }
+  .vd-review-card:first-child { padding-top: 0; }
+  .vd-review-card:last-child { border-bottom: none; padding-bottom: 0; }
+  .vd-vendor-reply { 
+    background: var(--bg-secondary, #FAF7F2); 
+    border-left: 3px solid var(--cyan, #E85938); 
+    border-radius: 10px; 
+    padding: 16px; 
+    margin-top: 14px; 
+    font-size: 13.5px; 
+  }
+
+  /* Sidebar */
+  .vd-sidebar { 
+    margin-top: -64px; 
+  }
+  .vd-sticky-box {
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .vd-contact-card { 
+    background: #ffffff; 
+    border: 1px solid var(--border-light, #EFEAE3); 
+    border-radius: 20px; 
+    padding: 28px; 
+    box-shadow: 0 4px 20px rgba(19,27,23,0.04); 
+  }
+  .vd-trust-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-secondary, #56625C);
+    line-height: 1.4;
+  }
+
+  /* Modal Overlay */
+  .vd-modal-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(19, 27, 23, 0.75); 
+    backdrop-filter: blur(6px); 
+    z-index: 9999; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 20px; 
+  }
+  .vd-modal { 
+    background: #ffffff; 
+    width: 100%; 
+    max-width: 580px; 
+    max-height: 90vh; 
+    overflow-y: auto; 
+    border-radius: 24px; 
+    padding: 32px; 
+    box-shadow: 0 24px 48px rgba(0,0,0,0.25); 
+  }
 </style>
 {% endblock %}
 
 {% block body %}
-<!-- Nav -->
-<nav class="vd-nav">
-  <a href="/" class="vd-nav-logo">heelo<span>.</span></a>
-  <a href="/vendors" class="vd-nav-back">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    Vendor Marketplace
-  </a>
-  <div class="vd-nav-right">
-    {% if user %}
-    <a href="/home" class="vd-btn vd-btn-outline">Dashboard</a>
+{% include "partials/site_nav.html" %}
+
+<div class="vd-page-wrap" x-data="vendorPage()">
+
+  <!-- Hero cover with Back link -->
+  <div class="vd-hero">
+    {% if vendor.cover_image_url %}
+    <img src="{{ vendor.cover_image_url }}" alt="{{ vendor.business_name }}">
     {% else %}
-    <a href="/login" class="vd-btn vd-btn-outline">Sign in</a>
-    {% endif %}
-  </div>
-</nav>
-
-<!-- Hero cover -->
-<div class="vd-hero">
-  {% if vendor.cover_image_url %}
-  <img src="{{ vendor.cover_image_url }}" alt="{{ vendor.business_name }}">
-  {% else %}
-  {% set cat_ms = {'photography': 'photo_camera', 'videography': 'videocam', 'catering': 'restaurant', 'decorations': 'auto_awesome', 'security': 'security', 'entertainment': 'music_note', 'mc': 'mic', 'venue': 'account_balance', 'sound_lighting': 'lightbulb', 'branding': 'palette', 'logistics': 'local_shipping', 'other': 'more_horiz'} %}
-  <div class="vd-hero-placeholder"><span class="material-symbols-outlined" style="font-size:3rem; opacity:0.3; color:#fff;">{{ cat_ms.get(vendor.category, 'more_horiz') }}</span></div>
-  {% endif %}
-</div>
-
-<!-- Content layout -->
-<div class="vd-layout">
-
-  <!-- Main column -->
-  <div class="vd-main">
-
-    <!-- Profile card -->
-    <div class="vd-profile-card">
-      <div class="vd-avatar">{{ vendor.business_name[0].upper() }}</div>
-      <div class="vd-cat-badge">{{ vendor.category | replace('_', ' ') | title }}</div>
-      <div class="vd-biz-name">
-        {{ vendor.business_name }}
-        {% if vendor.is_verified %}
-        <span class="vd-verified-badge">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="var(--cyan-dark,#00b3a9)"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          Verified
-        </span>
-        {% endif %}
-      </div>
-      {% if vendor.tagline %}<div class="vd-tagline">{{ vendor.tagline }}</div>{% endif %}
-      <div class="vd-meta-chips">
-        {% if vendor.location_city %}
-        <span class="vd-chip">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          {{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}
-        </span>
-        {% endif %}
-        {% if vendor.price_range %}
-        <span class="vd-chip vd-price-chip {{ vendor.price_range }}">{{ {'budget': 'Budget-friendly', 'mid': 'Mid-range', 'premium': 'Premium'}.get(vendor.price_range, vendor.price_range) }}</span>
-        {% endif %}
-        {% if vendor.capacity %}
-        <span class="vd-chip">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Up to {{ "{:,}".format(vendor.capacity) }} guests
-        </span>
-        {% endif %}
-      </div>
-      {% if vendor.address %}
-      <div style="font-size:13px; color:var(--text-muted); margin-top:6px;">{{ vendor.address }}</div>
-      {% endif %}
-      <div class="vd-contact-links">
-        {% if vendor.contact_email %}
-        <a href="mailto:{{ vendor.contact_email }}" class="vd-contact-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          {{ vendor.contact_email }}
-        </a>
-        {% endif %}
-        {% if vendor.contact_phone %}
-        <a href="tel:{{ vendor.contact_phone }}" class="vd-contact-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l1.27-.9a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          {{ vendor.contact_phone }}
-        </a>
-        {% endif %}
-        {% if vendor.website_url %}
-        <a href="{{ vendor.website_url }}" target="_blank" rel="noopener noreferrer" class="vd-contact-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          Website
-        </a>
-        {% endif %}
-      </div>
-    </div>
-
-    {% if vendor.description %}
-    <div class="vd-section">
-      <div class="vd-section-title">About this vendor</div>
-      <div class="vd-description">{{ vendor.description }}</div>
+    <div class="vd-hero-placeholder">
+      <span class="material-symbols-outlined" style="font-size:5rem;">storefront</span>
     </div>
     {% endif %}
+    <div class="vd-hero-overlay"></div>
 
-    {% if vendor.portfolio_urls or vendor.portfolio_link %}
-    <div class="vd-section">
-      <div class="vd-section-title">Portfolio</div>
-      {% if vendor.portfolio_urls %}
-      <div class="vd-portfolio">
-        {% for img_url in vendor.portfolio_urls %}
-        <img src="{{ img_url }}" alt="Portfolio image" loading="lazy">
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% if vendor.portfolio_link %}
-      <a href="{{ vendor.portfolio_link }}" target="_blank" rel="noopener noreferrer" class="vd-contact-link" style="{% if vendor.portfolio_urls %}margin-top:14px;{% endif %}">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-        View full portfolio ↗
+    <div class="vd-hero-nav">
+      <a href="/vendors" class="vd-back-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Back to Vendors</span>
       </a>
-      {% endif %}
     </div>
-    {% endif %}
+  </div>
+
+  <!-- Main Container -->
+  <div class="vd-layout">
+
+    <!-- Left Main Column -->
+    <div class="vd-main">
+
+      <!-- Profile Header Card -->
+      <div class="vd-profile-card">
+        <div class="vd-avatar-wrap">
+          <div class="vd-avatar">
+            {% if vendor.logo_url %}
+            <img src="{{ vendor.logo_url }}" alt="{{ vendor.business_name }}">
+            {% else %}
+            <span>{{ vendor.business_name[0].upper() }}</span>
+            {% endif %}
+          </div>
+          {% if is_owner %}
+          <a href="/my-vendor-dashboard" class="vd-owner-badge">
+            <span class="material-symbols-outlined" style="font-size:16px;">dashboard</span>
+            <span>Vendor Dashboard &amp; Edit</span>
+          </a>
+          {% endif %}
+        </div>
+
+        <div class="vd-cat-badge">{{ vendor.category | replace('_', ' ') }}</div>
+
+        <h1 class="vd-biz-name">
+          <span>{{ vendor.business_name }}</span>
+          {% if vendor.is_verified or vendor.verification_status == 'approved' %}
+          <span class="vd-verified-badge" title="Official Verified Business: CAC registration &amp; ID checked">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            Verified Business
+          </span>
+          {% endif %}
+          {% if vendor.is_featured %}
+          <span class="vd-featured-badge"><span class="material-symbols-outlined" style="font-size:13px; vertical-align:-2px;">star</span> Featured</span>
+          {% endif %}
+        </h1>
+
+        {% if vendor.tagline %}
+        <div class="vd-tagline">{{ vendor.tagline }}</div>
+        {% endif %}
+
+        <!-- Meta Information Chips -->
+        <div class="vd-meta-chips">
+          {% if vendor.reviews_count and vendor.reviews_count > 0 %}
+          <span class="vd-chip vd-chip-star">
+            <span class="material-symbols-outlined" style="font-size:16px; color:#f59e0b; font-variation-settings:'FILL' 1;">star</span>
+            {{ "%.1f"|format(vendor.rating_avg) }} ({{ vendor.reviews_count }} verified review{{ 's' if vendor.reviews_count != 1 }})
+          </span>
+          {% else %}
+          <span class="vd-chip">
+            <span class="material-symbols-outlined" style="font-size:15px; color:#f59e0b;">star</span>
+            New on Marketplace
+          </span>
+          {% endif %}
+
+          {% if vendor.location_city %}
+          <span class="vd-chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}
+          </span>
+          {% endif %}
+
+          {% if vendor.starting_price %}
+          <span class="vd-chip vd-chip-accent">
+            Starting from {{ vendor.currency | currency_symbol }}{{ "{:,.0f}".format(vendor.starting_price) }}
+          </span>
+          {% elif vendor.price_range %}
+          <span class="vd-chip">{{ {'budget': 'Budget-friendly', 'mid': 'Mid-range', 'premium': 'Premium Tier'}.get(vendor.price_range, vendor.price_range|capitalize) }}</span>
+          {% endif %}
+
+          <span class="vd-chip" style="background:#f0fdf4; color:#166534; border-color:#dcfce7;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Escrow Protected
+          </span>
+        </div>
+
+        {% if vendor.service_areas %}
+        <div style="font-size:13.5px; color:var(--text-muted); margin-bottom:20px;">
+          <strong style="color:var(--text-primary);">Service Coverage:</strong> {{ vendor.service_areas | join(', ') }}
+        </div>
+        {% endif %}
+
+        <!-- Quick Action CTAs -->
+        <div class="vd-header-actions">
+          <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-accent">
+            <span class="material-symbols-outlined" style="font-size:16px;">mail</span>
+            Request a Custom Quote
+          </button>
+          {% if services %}
+          <button type="button" @click="scrollToServices()" class="vd-btn vd-btn-outline">
+            <span class="material-symbols-outlined" style="font-size:16px;">layers</span>
+            Browse {{ services | length }} Packages
+          </button>
+          {% endif %}
+          {% if vendor.contact_phone %}
+          <a href="tel:{{ vendor.contact_phone }}" class="vd-btn vd-btn-outline" title="Call vendor directly">
+            <span class="material-symbols-outlined" style="font-size:16px;">call</span>
+            Call
+          </a>
+          {% endif %}
+          {% if vendor.website_url %}
+          <a href="{{ vendor.website_url }}" target="_blank" rel="noopener noreferrer" class="vd-btn vd-btn-outline" title="Visit website">
+            <span class="material-symbols-outlined" style="font-size:16px;">language</span>
+            Website <span class="material-symbols-outlined" style="font-size:13px; vertical-align:-2px;">open_in_new</span>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Services & Packages Section -->
+      {% if services %}
+      <div class="vd-section" id="services-section">
+        <div class="vd-section-header">
+          <h2 class="vd-section-title">
+            <span class="material-symbols-outlined" style="color:var(--cyan);">inventory_2</span>
+            <span>Services &amp; Packages ({{ services | length }})</span>
+          </h2>
+          <span style="font-size:13px; color:var(--text-muted);">Transparent pricing · Instant booking</span>
+        </div>
+
+        <div class="vd-services-grid">
+          {% for s in services %}
+          <div class="vd-service-card">
+            <div class="vd-service-top">
+              <div>
+                <h3 class="vd-service-title">{{ s.title }}</h3>
+                <span class="vd-service-cat">{{ s.category | replace('_', ' ') }}</span>
+              </div>
+              <div class="vd-service-price">
+                {{ s.currency | currency_symbol }}{{ "{:,.0f}".format(s.price) }}
+                <span>fixed price</span>
+              </div>
+            </div>
+
+            {% if s.description %}
+            <div class="vd-service-desc">{{ s.description }}</div>
+            {% endif %}
+
+            {% if s.inclusions %}
+            <div class="vd-inclusions-list">
+              {% for inc in s.inclusions %}
+              <div class="vd-inclusion-item">
+                <span class="material-symbols-outlined" style="font-size:16px; color:#16a34a; flex-shrink:0;">check_circle</span>
+                <span>{{ inc }}</span>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="vd-service-bottom">
+              <div style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+                <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
+                {% if s.duration_hours %}{{ s.duration_hours }} hours event coverage{% else %}Standard Package{% endif %}
+              </div>
+              <button type="button" @click="openDirectBooking('{{ s.id }}', '{{ s.title }}', '{{ s.price }}')" class="vd-btn vd-btn-primary">
+                Book This Package →
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- About Business Section -->
+      {% if vendor.description %}
+      <div class="vd-section">
+        <div class="vd-section-header">
+          <h2 class="vd-section-title">
+            <span class="material-symbols-outlined" style="color:var(--cyan);">badge</span>
+            <span>About {{ vendor.business_name }}</span>
+          </h2>
+        </div>
+        <div class="vd-description">{{ vendor.description }}</div>
+      </div>
+      {% endif %}
+
+      <!-- Portfolio Section -->
+      {% if vendor.portfolio_urls or vendor.portfolio_link %}
+      <div class="vd-section">
+        <div class="vd-section-header">
+          <h2 class="vd-section-title">
+            <span class="material-symbols-outlined" style="color:var(--cyan);">photo_library</span>
+            <span>Portfolio &amp; Past Work</span>
+          </h2>
+          {% if vendor.portfolio_link %}
+          <a href="{{ vendor.portfolio_link }}" target="_blank" rel="noopener noreferrer" class="vd-btn vd-btn-outline" style="font-size:12.5px; padding:6px 14px;">
+            Full Portfolio <span class="material-symbols-outlined" style="font-size:13px; vertical-align:-2px;">open_in_new</span>
+          </a>
+          {% endif %}
+        </div>
+
+        {% if vendor.portfolio_urls %}
+        <div class="vd-portfolio">
+          {% for img_url in vendor.portfolio_urls %}
+          <div class="vd-portfolio-item">
+            <img src="{{ img_url }}" alt="Portfolio image" loading="lazy">
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Customer Reviews Section (Phase 12) -->
+      <div class="vd-section">
+        <div class="vd-section-header">
+          <h2 class="vd-section-title">
+            <span class="material-symbols-outlined" style="color:#f59e0b; font-variation-settings:'FILL' 1;">star</span>
+            <span>Verified Customer Reviews ({{ reviews_total or 0 }})</span>
+          </h2>
+          <span style="font-size:12.5px; color:var(--text-muted); background:var(--bg-secondary); padding:4px 10px; border-radius:100px;">
+            100% Genuine Verified Bookings
+          </span>
+        </div>
+
+        {% if reviews %}
+        <div>
+          {% for rev in reviews %}
+          <div class="vd-review-card">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:12px;">
+              <div>
+                <div style="font-weight:700; font-size:15px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                  <span>{{ rev.reviewer.full_name if rev.reviewer else 'Verified Event Organizer' }}</span>
+                  <span style="color:#16a34a; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:2px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Verified Client
+                  </span>
+                </div>
+                {% if rev.created_at %}
+                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                  {{ rev.created_at.strftime("%B %d, %Y") }}
+                </div>
+                {% endif %}
+              </div>
+              <div style="display:flex; align-items:center; gap:2px; color:#f59e0b;">
+                {% for i in range(rev.rating) %}
+                <span class="material-symbols-outlined" style="font-size:16px; font-variation-settings:'FILL' 1;">star</span>
+                {% endfor %}
+              </div>
+            </div>
+
+            {% if rev.title %}
+            <div style="font-weight:700; font-size:14px; margin-bottom:6px; color:var(--text-primary);">{{ rev.title }}</div>
+            {% endif %}
+
+            <div style="font-size:14px; color:var(--text-secondary); line-height:1.6;">{{ rev.content }}</div>
+
+            {% if rev.response_from_vendor %}
+            <div class="vd-vendor-reply">
+              <strong style="color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                <span class="material-symbols-outlined" style="font-size:16px; color:var(--cyan);">reply</span>
+                Response from {{ vendor.business_name }}:
+              </strong>
+              <div style="margin-top:6px; color:var(--text-secondary); line-height:1.5;">{{ rev.response_from_vendor }}</div>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:36px 16px; color:var(--text-muted); font-size:14px; background:var(--bg-secondary); border-radius:14px;">
+          <span class="material-symbols-outlined" style="font-size:32px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; display:block;">rate_review</span>
+          <strong>No customer reviews yet.</strong>
+          <p style="font-size:13px; margin-top:4px; max-width:420px; margin-left:auto; margin-right:auto;">
+            Reviews on Heelo are published exclusively by genuine event organizers following completed, verified bookings.
+          </p>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="vd-sidebar">
+      <div class="vd-sticky-box">
+
+        <!-- Booking & Inquiry Card -->
+        <div class="vd-contact-card">
+          <div style="font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.06em; color:var(--cyan-dark,#C84729); margin-bottom:6px;">
+            Book with Confidence
+          </div>
+          <h3 style="font-size:20px; font-weight:800; margin-bottom:8px; letter-spacing:-0.01em;">
+            Hire {{ vendor.business_name }}
+          </h3>
+          <p style="font-size:13.5px; color:var(--text-muted); margin-bottom:20px; line-height:1.5;">
+            Send your event date and budget for a custom quote, or book an itemized package instantly with full escrow protection.
+          </p>
+
+          <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-accent" style="width:100%; padding:14px; font-size:14.5px; margin-bottom:12px;">
+            Request a Custom Quote →
+          </button>
+
+          {% if services %}
+          <button type="button" @click="scrollToServices()" class="vd-btn vd-btn-outline" style="width:100%; padding:12px; font-size:13.5px; margin-bottom:20px;">
+            Browse Packages ({{ services | length }})
+          </button>
+          {% endif %}
+
+          <div style="padding-top:18px; border-top:1px solid var(--border-light); display:flex; flex-direction:column; gap:12px;">
+            <div class="vd-trust-item">
+              <span class="material-symbols-outlined" style="font-size:18px; color:#16a34a; flex-shrink:0;">verified_user</span>
+              <span><strong>Heelo Escrow Protection:</strong> Funds released only after your service is fulfilled.</span>
+            </div>
+            <div class="vd-trust-item">
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--cyan); flex-shrink:0;">bolt</span>
+              <span><strong>Rapid Response:</strong> Average reply under 2 hours.</span>
+            </div>
+            <div class="vd-trust-item">
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--text-muted); flex-shrink:0;">receipt_long</span>
+              <span><strong>Official Contract &amp; Invoicing:</strong> Automated receipts and dispute coverage.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Owner QR Code Card (Required by test suite) -->
+        {% if is_owner %}
+        <div class="vd-contact-card">
+          <h3 style="font-size:16px; font-weight:800; margin-bottom:8px;">Your QR code</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+            Display or print your personalized QR code at event booths or flyers for direct mobile scans.
+          </p>
+          <div style="text-align:center; padding:16px; background:var(--bg-secondary); border-radius:14px; margin-bottom:14px;">
+            <img src="/api/v1/vendors/me/qr.png" alt="Your QR code" style="width:160px; height:160px; object-fit:contain; display:inline-block; border-radius:8px;">
+          </div>
+          <a href="/api/v1/vendors/me/qr.png" download="{{ vendor.slug }}-qr.png" class="vd-btn vd-btn-outline" style="width:100%; justify-content:center;">
+            <span class="material-symbols-outlined" style="font-size:16px;">download</span>
+            Download QR PNG
+          </a>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
 
   </div>
 
-  <!-- Sidebar: contact form -->
-  <div class="vd-sidebar">
-    <div class="vd-contact-card" x-data="contactForm()">
+  <!-- Request A Quote (RFQ) Modal -->
+  <div class="vd-modal-overlay" x-show="showRfqModal" x-cloak x-transition>
+    <div class="vd-modal" @click.outside="showRfqModal = false">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="font-size:20px; font-weight:800; margin:0;">Request Quote from {{ vendor.business_name }}</h3>
+        <button type="button" @click="showRfqModal = false" style="background:none; border:none; cursor:pointer; font-size:22px; color:var(--text-muted); display:inline-flex; align-items:center;"><span class="material-symbols-outlined" style="font-size:20px;">close</span></button>
+      </div>
 
-      <template x-if="!submitted">
-        <div>
-          <h3>Send an enquiry</h3>
-          <p>Get in touch with {{ vendor.business_name }} directly through Heelo.</p>
-
-          <div class="vd-form">
-            <div class="field">
-              <label>Your name</label>
-              <input type="text" x-model="form.name" placeholder="Jane Doe" required>
-            </div>
-            <div class="field">
-              <label>Your email</label>
-              <input type="email" x-model="form.email" placeholder="jane@example.com" required>
-            </div>
-            <div class="field">
-              <label>Event name <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
-              <input type="text" x-model="form.event_name" placeholder="Annual company dinner…">
-            </div>
-            <div class="field">
-              <label>Message</label>
-              <textarea x-model="form.message" placeholder="Tell {{ vendor.business_name }} about your event and what you need…"></textarea>
-            </div>
-            <div x-show="errorMsg" x-text="errorMsg" style="font-size:13px;color:#dc2626;margin-bottom:12px;"></div>
-            <button class="vd-submit-btn" @click="submit()" :disabled="loading" type="button">
-              <template x-if="!loading">
-                <span>Send enquiry →</span>
-              </template>
-              <template x-if="loading">
-                <span>Sending…</span>
-              </template>
-            </button>
+      <template x-if="!rfqSubmitted">
+        <form @submit.prevent="submitRfq()">
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Name *</label>
+            <input type="text" x-model="rfqForm.event_name" placeholder="e.g. Annual Gala 2026 / Wedding" required style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
           </div>
-
-          <div class="vd-leads-count">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            {{ vendor.lead_count }} organizer{{ 's' if vendor.lead_count != 1 }} contacted this vendor
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Date</label>
+              <input type="date" x-model="rfqForm.event_date" style="width:100%; height:44px; padding:0 12px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Expected Attendance</label>
+              <input type="number" x-model="rfqForm.expected_attendance" placeholder="e.g. 250" style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+            </div>
           </div>
-        </div>
+          <div style="margin-bottom:14px;">
+            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Venue / Event Location</label>
+            <input type="text" x-model="rfqForm.event_location" placeholder="e.g. Landmark Centre, Victoria Island" style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Budget Min ({{ vendor.currency | currency_symbol }})</label>
+              <input type="number" x-model="rfqForm.budget_min" placeholder="50" style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+            </div>
+            <div>
+              <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Budget Max ({{ vendor.currency | currency_symbol }})</label>
+              <input type="number" x-model="rfqForm.budget_max" placeholder="250" style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+            </div>
+          </div>
+          <div style="margin-bottom:18px;">
+            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Detailed Requirements *</label>
+            <textarea x-model="rfqForm.requirements" rows="4" placeholder="Detail your timing, expectations, equipment, or specific deliverables..." required style="width:100%; padding:12px 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; line-height:1.6; box-sizing:border-box;"></textarea>
+          </div>
+          <div x-show="rfqError" x-text="rfqError" style="color:#dc2626; font-size:13px; margin-bottom:12px;"></div>
+          <button type="submit" :disabled="rfqLoading" class="vd-btn vd-btn-accent" style="width:100%; padding:14px; font-size:15px;">
+            <span x-show="!rfqLoading">Submit Quote Request →</span>
+            <span x-show="rfqLoading">Sending Request…</span>
+          </button>
+        </form>
       </template>
 
-      <template x-if="submitted">
-        <div class="vd-success">
-          <div class="vd-success-icon"><span class="material-symbols-outlined" style="color:#22c55e; font-size:2.5rem;">check_circle</span></div>
-          <h4>Enquiry sent!</h4>
-          <p>{{ vendor.business_name }} will get back to you at <strong x-text="form.email"></strong> soon.</p>
+      <template x-if="rfqSubmitted">
+        <div style="text-align:center; padding:24px 0;">
+          <span class="material-symbols-outlined" style="color:#16a34a; font-size:56px; margin-bottom:12px;">check_circle</span>
+          <h4 style="font-size:20px; font-weight:800; margin-bottom:8px;">Request Dispatched!</h4>
+          <p style="color:var(--text-secondary); font-size:14.5px; line-height:1.6; margin-bottom:24px;">
+            {{ vendor.business_name }} has received your specifications and will respond with an itemized quotation directly in your Heelo inbox.
+          </p>
+          <button type="button" @click="showRfqModal = false" class="vd-btn vd-btn-primary">Done</button>
         </div>
       </template>
+    </div>
+  </div>
 
+  <!-- Direct Package Booking Modal -->
+  <div class="vd-modal-overlay" x-show="showBookingModal" x-cloak x-transition>
+    <div class="vd-modal" @click.outside="showBookingModal = false">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <h3 style="font-size:20px; font-weight:800; margin:0;">Book Service Package</h3>
+        <button type="button" @click="showBookingModal = false" style="background:none; border:none; cursor:pointer; font-size:22px; color:var(--text-muted); display:inline-flex; align-items:center;"><span class="material-symbols-outlined" style="font-size:20px;">close</span></button>
+      </div>
+
+      <div style="padding:16px 20px; background:var(--bg-secondary); border-radius:14px; margin-bottom:20px; border:1px solid var(--border-light);">
+        <div style="font-weight:700; font-size:16px;" x-text="selectedService.title"></div>
+        <div style="font-weight:800; font-size:20px; color:var(--cyan-dark,#C84729); margin-top:4px;" x-text="'{{ vendor.currency | currency_symbol }}' + Number(selectedService.price).toLocaleString()"></div>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">100% Escrow Protection Guarantee</div>
+      </div>
+
+      <form @submit.prevent="submitDirectBooking()">
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Name *</label>
+          <input type="text" x-model="bookingForm.event_name" placeholder="e.g. Lagos Tech Gala 2026" required style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Date *</label>
+          <input type="date" x-model="bookingForm.event_date" required style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Venue / Location</label>
+          <input type="text" x-model="bookingForm.event_location" placeholder="e.g. Eko Hotel Grand Ballroom" style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:20px; font-size:12.5px; color:var(--text-muted); line-height:1.5;">
+          By proceeding, your payment will be held securely in escrow by Heelo until you confirm completion of the event service.
+        </div>
+        <div x-show="bookingError" x-text="bookingError" style="color:#dc2626; font-size:13px; margin-bottom:12px;"></div>
+        <button type="submit" :disabled="bookingLoading" class="vd-btn vd-btn-primary" style="width:100%; padding:14px; font-size:15px;">
+          <span x-show="!bookingLoading">Proceed to Secure Checkout →</span>
+          <span x-show="bookingLoading">Initializing Booking…</span>
+        </button>
+      </form>
     </div>
   </div>
 
 </div>
 
 <script>
-function contactForm() {
+function vendorPage() {
   return {
-    form: { name: '{{ user.full_name if user else '' }}', email: '{{ user.email if user else '' }}', event_name: '', message: '' },
-    loading: false,
-    submitted: false,
-    errorMsg: '',
-    async submit() {
-      if (!this.form.name || !this.form.email) { this.errorMsg = 'Name and email are required.'; return; }
-      this.loading = true; this.errorMsg = '';
+    showRfqModal: false,
+    rfqLoading: false,
+    rfqSubmitted: false,
+    rfqError: '',
+    rfqForm: {
+      event_name: '',
+      service_category: '{{ vendor.category }}',
+      event_date: '',
+      expected_attendance: '',
+      event_location: '',
+      budget_min: '',
+      budget_max: '',
+      requirements: '',
+    },
+    showBookingModal: false,
+    bookingLoading: false,
+    bookingError: '',
+    selectedService: { id: '', title: '', price: 0 },
+    bookingForm: {
+      event_name: '',
+      event_date: '',
+      event_location: '',
+    },
+    scrollToServices() {
+      const el = document.getElementById('services-section');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 400, behavior: 'smooth' });
+      }
+    },
+    openDirectBooking(id, title, price) {
+      this.selectedService = { id, title, price };
+      this.showBookingModal = true;
+    },
+    async submitRfq() {
+      this.rfqLoading = true;
+      this.rfqError = '';
       try {
-        const res = await fetch('/api/v1/vendors/{{ vendor.slug }}/contact', {
+        const payload = {
+          event_name: this.rfqForm.event_name,
+          service_category: this.rfqForm.service_category,
+          requirements: this.rfqForm.requirements,
+          event_date: this.rfqForm.event_date ? new Date(this.rfqForm.event_date).toISOString() : null,
+          event_location: this.rfqForm.event_location || null,
+          expected_attendance: this.rfqForm.expected_attendance ? parseInt(this.rfqForm.expected_attendance) : null,
+          budget_min: this.rfqForm.budget_min ? parseFloat(this.rfqForm.budget_min) : null,
+          budget_max: this.rfqForm.budget_max ? parseFloat(this.rfqForm.budget_max) : null,
+          vendor_ids: ['{{ vendor.id }}'],
+        };
+        const res = await fetch('/api/v1/vendors/quotes/requests', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({
-            requester_name: this.form.name,
-            requester_email: this.form.email,
-            event_name: this.form.event_name || null,
-            message: this.form.message || null,
-            {% if org %}org_id: '{{ org.id }}',{% endif %}
-          }),
+          body: JSON.stringify(payload),
         });
         const j = await res.json();
-        if (!res.ok) throw new Error(j.error?.message || 'Failed to send enquiry.');
-        this.submitted = true;
-      } catch (e) {
-        this.errorMsg = e.message;
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to submit quote request. Please sign in first.');
+        this.rfqSubmitted = true;
+      } catch (err) {
+        this.rfqError = err.message;
       } finally {
-        this.loading = false;
+        this.rfqLoading = false;
+      }
+    },
+    async submitDirectBooking() {
+      this.bookingLoading = true;
+      this.bookingError = '';
+      try {
+        const payload = {
+          vendor_id: '{{ vendor.id }}',
+          service_listing_id: this.selectedService.id,
+          event_name: this.bookingForm.event_name,
+          event_date: this.bookingForm.event_date ? new Date(this.bookingForm.event_date).toISOString() : null,
+          event_location: this.bookingForm.event_location || null,
+        };
+        const res = await fetch('/api/v1/vendors/bookings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to initialize booking. Please sign in first.');
+        const bookingId = j.data.id;
+        window.location.href = `/vendors/bookings/${bookingId}/pay`;
+      } catch (err) {
+        this.bookingError = err.message;
+      } finally {
+        this.bookingLoading = false;
       }
     },
   };

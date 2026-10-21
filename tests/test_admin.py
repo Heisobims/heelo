@@ -1,4 +1,4 @@
-"""Admin panel — suspend org, ban user, promote to admin, list views."""
+"""Admin panel - suspend org, ban user, promote to admin, list views."""
 
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ async def test_banned_user_cannot_login(client: AsyncClient, user, admin_headers
     # Ban the user
     await client.post(f"/api/v1/admin/users/{user.id}/ban", headers=admin_headers)
 
-    # Try to login — should fail since deleted_at is set
+    # Try to login - should fail since deleted_at is set
     resp = await client.post(
         "/api/v1/auth/login",
         json={

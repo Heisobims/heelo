@@ -10,13 +10,23 @@
     color: var(--text); border-radius: 8px; padding: 9px 12px; font-size: 0.85rem; font-family: inherit;
   }
   .bc-input:focus, .bc-select:focus, .bc-textarea:focus { outline: none; border-color: var(--admin-accent); }
+  .bc-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 34px;
+    cursor: pointer;
+  }
   .bc-textarea { min-height: 220px; resize: vertical; line-height: 1.5; }
   .bc-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
   .bc-audience-count { font-weight: 700; color: var(--admin-accent); }
   .bc-warning {
-    background: #f59e0b15; border: 1px solid #f59e0b40; color: #fbbf24; border-radius: 8px;
-    padding: 10px 14px; font-size: 0.8rem; margin-bottom: 20px; display: none;
+    background: rgba(245, 158, 11, 0.1); border: 1.5px solid rgba(245, 158, 11, 0.3); color: #B45309; border-radius: 10px;
+    padding: 12px 16px; font-size: 0.82rem; margin-bottom: 20px; display: none; font-weight: 500;
   }
+  [data-theme="dark"] .bc-warning { color: #FBBF24; background: rgba(245, 158, 11, 0.16); }
   .bc-actions { display: flex; gap: 10px; margin-top: 20px; }
   .bc-status { font-size: 0.78rem; padding: 2px 9px; border-radius: 100px; font-weight: 600; }
   .bc-status-draft { background: #71717a20; color: #a1a1aa; }
@@ -35,7 +45,7 @@
 <div class="section-card">
   <div class="bc-warning" id="gmail-warning">
     <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">warning</span>
-    This audience exceeds the ~{{ gmail_daily_limit }}/day Gmail sending limit on a personal account. Sending may get throttled or flagged — consider a transactional email provider (Resend, SendGrid) for sends this size.
+    This audience exceeds the ~{{ gmail_daily_limit }}/day Gmail sending limit on a personal account. Sending may get throttled or flagged; consider a transactional email provider (Resend, SendGrid) for sends this size.
   </div>
 
   <div class="bc-form-row">
@@ -68,7 +78,7 @@
   <div class="bc-form-row">
     <label class="bc-label">Message (HTML)</label>
     <textarea class="bc-textarea" id="bc-body" placeholder="Hi {{ '{{name}}' }},&#10;&#10;..."></textarea>
-    <div class="bc-hint">Supports <code>{{ '{{name}}' }}</code> and <code>{{ '{{email}}' }}</code> merge tags — personalized per recipient at send time. For in-app notifications, HTML tags are stripped and the text is trimmed to 300 characters.</div>
+    <div class="bc-hint">Supports <code>{{ '{{name}}' }}</code> and <code>{{ '{{email}}' }}</code> merge tags, personalized per recipient at send time. For in-app notifications, HTML tags are stripped and the text is trimmed to 300 characters.</div>
   </div>
 
   <div id="bc-error" style="display:none;color:#ff6b6b;font-size:0.82rem;margin-top:8px;"></div>
@@ -151,17 +161,23 @@ async function sendTest() {
   const { subject, body, audience_category } = getFormValues();
   if (!subject || !body) { showError('Subject and message are required.'); return; }
   setSending(true);
+  const csrf = getAdminCsrfToken();
   try {
     const res = await fetch('/api/v1/admin/broadcasts/test', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
       body: JSON.stringify({ subject, body, audience_category }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data?.detail || 'Failed to send test.');
     showNotice(`Test sent to ${data.data.sent_to}.`);
+    showAdminToast(`Test broadcast sent to ${data.data.sent_to}!`, 'success');
   } catch (e) {
     showError(e.message);
+    showAdminToast(e.message, 'error');
   } finally {
     setSending(false);
   }
@@ -173,19 +189,25 @@ async function confirmAndSend() {
   const count = _counts[audience_category] ?? 0;
   if (!confirm(`Send this to ${count} recipients via ${channel}? This can't be undone.`)) return;
   setSending(true);
+  const csrf = getAdminCsrfToken();
   try {
     const res = await fetch('/api/v1/admin/broadcasts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
       body: JSON.stringify({ subject, body, audience_category, channel }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data?.detail || 'Failed to send broadcast.');
-    showNotice('Broadcast queued — sending in the background. Refresh to see updated status.');
+    showNotice('Broadcast queued: sending in the background. Refresh to see updated status.');
+    showAdminToast('Broadcast queued for immediate delivery!', 'success');
     document.getElementById('bc-subject').value = '';
     document.getElementById('bc-body').value = '';
   } catch (e) {
     showError(e.message);
+    showAdminToast(e.message, 'error');
   } finally {
     setSending(false);
   }

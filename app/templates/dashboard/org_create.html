@@ -1,40 +1,46 @@
-{% extends "base.html" %}
-{% block title %}Create your organization — Heelo{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="/static/css/dashboard.css">
-{% endblock %}
-
-{% block body %}
+{% extends "base.html" %} {% block title %}Create your organization | Heelo{%
+endblock %} {% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css?v=4" />
+{% endblock %} {% block body %}
 <!-- Minimal nav for this step -->
 <header class="dash-topnav">
   <a href="/" class="dash-topnav-logo">heelo</a>
   <div class="dash-topnav-divider"></div>
   <span class="small text-muted">New organization</span>
-  <div style="margin-left:auto;">
-    <div class="user-avatar-btn" style="cursor:default;" title="{{ user.full_name }}">
+  <div style="margin-left: auto">
+    <div
+      class="user-avatar-btn"
+      style="cursor: default"
+      title="{{ user.full_name }}"
+    >
       {% if user.avatar_url %}
-      <img src="{{ user.avatar_url }}" alt="{{ user.full_name }}">
-      {% else %}
-      {{ user.full_name[0].upper() }}
-      {% endif %}
+      <img src="{{ user.avatar_url }}" alt="{{ user.full_name }}" />
+      {% else %} {{ user.full_name[0].upper() }} {% endif %}
     </div>
   </div>
 </header>
 
 <div class="org-create-wrap">
   <div class="org-create-card" x-data="orgCreateForm()">
-
     <div class="org-create-step">Step 1 of 1</div>
-    <h1 class="h1" style="margin-bottom:8px;">Name your organization</h1>
-    <p class="text-secondary small" style="margin-bottom:32px;">
-      This is how attendees and team members will see you. You can always change it later.
+    <h1 class="h1" style="margin-bottom: 8px">Name your organization</h1>
+    <p class="text-secondary small" style="margin-bottom: 32px">
+      This is how attendees and team members will see you. You can always change
+      it later.
     </p>
 
-    <div x-show="error" class="alert alert-danger mb-4" x-text="error" style="display:none;"></div>
+    <div
+      x-show="error"
+      class="alert alert-danger mb-4"
+      x-text="error"
+      style="display: none"
+    ></div>
 
-    <form @submit.prevent="submit" novalidate style="display:flex; flex-direction:column; gap:20px;">
-
+    <form
+      @submit.prevent="submit"
+      novalidate
+      style="display: flex; flex-direction: column; gap: 20px"
+    >
       <!-- Org name -->
       <div class="form-group">
         <label class="form-label" for="org-name">Organization name</label>
@@ -42,14 +48,14 @@
           id="org-name"
           type="text"
           class="form-input"
-          placeholder="e.g. Lagos Tech Collective"
+          placeholder="e.g. Acme Experiences, Silicon Valley Founders, or London Design Guild"
           x-model="name"
           @input="updateSlug"
           autocomplete="organization"
           maxlength="255"
           required
           autofocus
-        >
+        />
         <div class="org-slug-preview" x-show="slug">
           heelo.io/<span x-text="slug"></span>
         </div>
@@ -57,25 +63,53 @@
 
       <!-- Country -->
       <div class="form-group">
-        <label class="form-label" for="org-country">Country <span class="text-muted">(optional)</span></label>
-        <select id="org-country" class="form-select" x-model="country">
+        <label class="form-label" for="org-country"
+          >Country <span class="text-muted">(optional)</span></label
+        >
+        <select id="org-country" class="form-select" x-model="country" @change="onCountryChange">
           <option value="">Select country…</option>
-          <option value="NG">Nigeria</option>
-          <option value="GH">Ghana</option>
-          <option value="KE">Kenya</option>
-          <option value="ZA">South Africa</option>
-          <option value="TZ">Tanzania</option>
-          <option value="UG">Uganda</option>
-          <option value="RW">Rwanda</option>
-          <option value="ET">Ethiopia</option>
-          <option value="CM">Cameroon</option>
-          <option value="CI">Côte d'Ivoire</option>
-          <option value="SN">Senegal</option>
-          <option value="GB">United Kingdom</option>
-          <option value="US">United States</option>
-          <option value="CA">Canada</option>
-          <option value="DE">Germany</option>
-          <option value="FR">France</option>
+          <optgroup label="North America">
+            <option value="US">United States</option>
+            <option value="CA">Canada</option>
+            <option value="MX">Mexico</option>
+          </optgroup>
+          <optgroup label="Europe & United Kingdom">
+            <option value="GB">United Kingdom</option>
+            <option value="IE">Ireland</option>
+            <option value="DE">Germany</option>
+            <option value="FR">France</option>
+            <option value="NL">Netherlands</option>
+            <option value="ES">Spain</option>
+            <option value="IT">Italy</option>
+            <option value="CH">Switzerland</option>
+            <option value="SE">Sweden</option>
+            <option value="NO">Norway</option>
+          </optgroup>
+          <optgroup label="Asia-Pacific & Middle East">
+            <option value="AU">Australia</option>
+            <option value="NZ">New Zealand</option>
+            <option value="SG">Singapore</option>
+            <option value="JP">Japan</option>
+            <option value="AE">United Arab Emirates</option>
+            <option value="IN">India</option>
+          </optgroup>
+          <optgroup label="Africa">
+            <option value="NG">Nigeria</option>
+            <option value="GH">Ghana</option>
+            <option value="KE">Kenya</option>
+            <option value="ZA">South Africa</option>
+            <option value="EG">Egypt</option>
+            <option value="RW">Rwanda</option>
+            <option value="TZ">Tanzania</option>
+            <option value="UG">Uganda</option>
+            <option value="CI">Cote d'Ivoire</option>
+            <option value="SN">Senegal</option>
+          </optgroup>
+          <optgroup label="Latin America">
+            <option value="BR">Brazil</option>
+            <option value="AR">Argentina</option>
+            <option value="CO">Colombia</option>
+          </optgroup>
         </select>
       </div>
 
@@ -83,13 +117,18 @@
       <div class="form-group">
         <label class="form-label" for="org-currency">Default currency</label>
         <select id="org-currency" class="form-select" x-model="currency">
-          <option value="NGN">NGN — Nigerian Naira</option>
-          <option value="GHS">GHS — Ghanaian Cedi</option>
-          <option value="KES">KES — Kenyan Shilling</option>
-          <option value="ZAR">ZAR — South African Rand</option>
-          <option value="USD">USD — US Dollar</option>
-          <option value="GBP">GBP — British Pound</option>
-          <option value="EUR">EUR — Euro</option>
+          <option value="USD">USD · US Dollar ($)</option>
+          <option value="EUR">EUR · Euro (€)</option>
+          <option value="GBP">GBP · British Pound (£)</option>
+          <option value="CAD">CAD · Canadian Dollar (CA$)</option>
+          <option value="AUD">AUD · Australian Dollar (A$)</option>
+          <option value="NGN">NGN · Nigerian Naira (₦)</option>
+          <option value="GHS">GHS · Ghanaian Cedi (GH₵)</option>
+          <option value="KES">KES · Kenyan Shilling (KSh)</option>
+          <option value="ZAR">ZAR · South African Rand (R)</option>
+          <option value="SGD">SGD · Singapore Dollar (S$)</option>
+          <option value="JPY">JPY · Japanese Yen (¥)</option>
+          <option value="CHF">CHF · Swiss Franc (CHF)</option>
         </select>
       </div>
 
@@ -101,65 +140,107 @@
       >
         <span class="btn-label">Create organization</span>
       </button>
-
     </form>
 
-    <p class="small text-muted text-center" style="margin-top:20px;">
-      Already have an organization? <a href="/dashboard" style="color:var(--text-secondary); text-decoration:underline; text-underline-offset:2px;">Go to dashboard</a>
+    <p class="small text-muted text-center" style="margin-top: 20px">
+      Already have an organization?
+      <a
+        href="/dashboard"
+        style="
+          color: var(--text-secondary);
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        "
+        >Go to dashboard</a
+      >
     </p>
-
   </div>
 </div>
 
 <script>
-function orgCreateForm() {
-  return {
-    name: '',
-    slug: '',
-    country: '',
-    currency: 'NGN',
-    loading: false,
-    error: null,
+  function orgCreateForm() {
+    return {
+      name: "",
+      slug: "",
+      country: "",
+      currency: "USD",
+      loading: false,
+      error: null,
 
-    updateSlug() {
-      this.slug = this.name
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .slice(0, 80) || '';
-    },
-
-    async submit() {
-      this.error = null;
-      if (!this.name.trim()) return;
-
-      this.loading = true;
-      try {
-        const res = await fetch('/api/v1/organizations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            name: this.name.trim(),
-            country: this.country || null,
-            currency: this.currency,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok || !data.success) {
-          this.error = data.error?.message || 'Could not create organization.';
-          return;
+      onCountryChange() {
+        const countryToCurr = {
+          US: "USD",
+          GB: "GBP",
+          CA: "CAD",
+          AU: "AUD",
+          NZ: "USD",
+          DE: "EUR",
+          FR: "EUR",
+          IE: "EUR",
+          NL: "EUR",
+          ES: "EUR",
+          IT: "EUR",
+          CH: "CHF",
+          JP: "JPY",
+          SG: "SGD",
+          AE: "USD",
+          NG: "NGN",
+          GH: "GHS",
+          KE: "KES",
+          ZA: "ZAR",
+          EG: "EGP",
+          RW: "USD",
+          TZ: "USD",
+          UG: "USD",
+          BR: "USD",
+          MX: "USD"
+        };
+        if (this.country && countryToCurr[this.country]) {
+          this.currency = countryToCurr[this.country];
         }
-        window.location.href = '/org/' + data.data.slug;
-      } catch {
-        this.error = 'Something went wrong. Please try again.';
-      } finally {
-        this.loading = false;
-      }
-    },
-  };
-}
+      },
+
+      updateSlug() {
+        this.slug =
+          this.name
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-")
+            .slice(0, 80) || "";
+      },
+
+      async submit() {
+        this.error = null;
+        if (!this.name.trim()) return;
+
+        this.loading = true;
+        try {
+          const res = await fetch("/api/v1/organizations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              name: this.name.trim(),
+              country: this.country || null,
+              currency: this.currency,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            this.error =
+              data.error?.message || "Could not create organization.";
+            return;
+          }
+          window.location.href = "/org/" + data.data.slug;
+        } catch {
+          this.error = "Something went wrong. Please try again.";
+        } finally {
+          this.loading = false;
+        }
+      },
+    };
+  }
 </script>
 {% endblock %}

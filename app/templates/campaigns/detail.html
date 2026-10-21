@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}{{ campaign.name }} · Campaigns — Heelo{% endblock %}
+{% block title %}{{ campaign.name }} · Campaigns | Heelo{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -19,7 +19,7 @@
   .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.2rem 0.65rem; border-radius: 100px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; }
   .badge-draft     { background: var(--surface-alt,rgba(120,120,120,0.12)); color: var(--text-secondary); }
   .badge-scheduled { background: rgba(245,158,11,0.12); color: #d97706; }
-  .badge-sending   { background: rgba(0,255,243,0.1); color: var(--cyan-dark,#00b3a9); animation: pulse-badge 2s ease infinite; }
+  .badge-sending   { background: rgba(232,89,56,0.1); color: var(--cyan-dark,#C84729); animation: pulse-badge 2s ease infinite; }
   .badge-sent      { background: rgba(34,197,94,0.1); color: #16a34a; }
   .badge-failed    { background: rgba(239,68,68,0.1); color: #dc2626; }
   .badge-pending   { background: rgba(245,158,11,0.1); color: #d97706; }
@@ -105,7 +105,7 @@
   #cd-toast.error { border-color: #dc2626; color: #dc2626; }
 
   /* ── Send/cancel action section ────────────────────────────────────────── */
-  .action-bar { background: rgba(0,255,243,0.04); border: 1.5px solid var(--cyan); border-radius: 14px; padding: 1.125rem 1.25rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .action-bar { background: rgba(232,89,56,0.04); border: 1.5px solid var(--cyan); border-radius: 14px; padding: 1.125rem 1.25rem; margin-bottom: 1.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .action-bar.warning { background: rgba(245,158,11,0.04); border-color: rgba(245,158,11,0.4); }
   .action-bar-text { font-size: 0.9rem; }
   .action-bar-title { font-weight: 700; margin-bottom: 0.2rem; }
@@ -204,7 +204,7 @@
       <div class="stat-label">Sent</div>
       <div class="stat-value">{{ campaign.sent_count }}</div>
       <div class="stat-sub">
-        {% if campaign.recipient_count > 0 %}{{ ((campaign.sent_count / campaign.recipient_count) * 100) | round | int }}% of audience{% else %}—{% endif %}
+        {% if campaign.recipient_count > 0 %}{{ ((campaign.sent_count / campaign.recipient_count) * 100) | round | int }}% of audience{% else %}-{% endif %}
       </div>
     </div>
     <div class="stat-card {% if campaign.delivered_count > 0 %}success{% endif %}">
@@ -227,7 +227,7 @@
       <div class="stat-sub">
         {% if campaign.failed_count > 0 and campaign.recipient_count > 0 %}
           {{ ((campaign.failed_count / campaign.recipient_count) * 100) | round | int }}% failure rate
-        {% else %}—{% endif %}
+        {% else %}-{% endif %}
       </div>
     </div>
   </div>
@@ -336,7 +336,7 @@
             <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div>Delivered ({{ recipient_stats.get('delivered', 0) }})</div>
             {% endif %}
             {% if recipient_stats.get('sent', 0) > 0 %}
-            <div class="legend-item"><div class="legend-dot" style="background:#00FFF3;"></div>Sent ({{ recipient_stats.get('sent', 0) }})</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#E85938;"></div>Sent ({{ recipient_stats.get('sent', 0) }})</div>
             {% endif %}
             {% if recipient_stats.get('pending', 0) > 0 %}
             <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div>Pending ({{ recipient_stats.get('pending', 0) }})</div>
@@ -390,8 +390,8 @@
           {% if recipients %}
             {% for r in recipients %}
             <tr>
-              <td class="td-name">{{ r.name or '—' }}</td>
-              <td class="td-contact">{{ r.email or r.whatsapp_number or r.phone or '—' }}</td>
+              <td class="td-name">{{ r.name or '-' }}</td>
+              <td class="td-contact">{{ r.email or r.whatsapp_number or r.phone or '-' }}</td>
               <td>
                 <span class="badge badge-{{ r.status }}">{{ r.status | title }}</span>
               </td>
@@ -400,17 +400,17 @@
                   <span title="{{ r.sent_at.strftime('%Y-%m-%d %H:%M:%S') }}">
                     {{ r.sent_at.strftime('%b %d, %H:%M') }}
                   </span>
-                {% else %}—{% endif %}
+                {% else %}-{% endif %}
               </td>
               <td>
                 {% if r.error_message %}
                 <span class="td-error" title="{{ r.error_message }}">{{ r.error_message }}</span>
-                {% else %}—{% endif %}
+                {% else %}-{% endif %}
               </td>
             </tr>
             {% endfor %}
           {% else %}
-          <tr class="empty-row"><td colspan="5">No recipients yet — campaign hasn't sent yet.</td></tr>
+          <tr class="empty-row"><td colspan="5">No recipients yet: campaign hasn't sent yet.</td></tr>
           {% endif %}
         </tbody>
       </table>
@@ -522,15 +522,15 @@ async function cancelSchedule() {
         datasets: [{
           data: funnelValues,
           backgroundColor: [
-            'rgba(0,255,243,0.75)',
-            'rgba(0,200,210,0.7)',
+            'rgba(232,89,56,0.75)',
+            'rgba(200,71,41,0.7)',
             'rgba(34,197,94,0.7)',
             'rgba(59,130,246,0.7)',
             'rgba(139,92,246,0.7)',
           ],
           borderColor: [
-            'rgba(0,255,243,0.95)',
-            'rgba(0,200,210,0.9)',
+            'rgba(232,89,56,0.95)',
+            'rgba(200,71,41,0.9)',
             'rgba(34,197,94,0.9)',
             'rgba(59,130,246,0.9)',
             'rgba(139,92,246,0.9)',
@@ -583,7 +583,7 @@ async function cancelSchedule() {
 
     const colorMap = {
       delivered:    '#16a34a',
-      sent:         '#00FFF3',
+      sent:         '#E85938',
       pending:      '#d97706',
       failed:       '#dc2626',
       bounced:      '#f87171',

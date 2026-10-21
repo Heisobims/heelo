@@ -2,67 +2,250 @@
 {% block title %}Events{% endblock %}
 
 {% block content %}
-<div style="margin-bottom:24px;">
-  <h1 style="font-size:1.4rem;font-weight:700;">All Events</h1>
-  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">{{ total }} total events across the platform</p>
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 style="font-size:1.45rem; font-weight:700;">All Events</h1>
+    <p style="color:var(--text-muted,#71717a); font-size:0.85rem; margin-top:4px;">
+      Manage event listings, category classification, ticket volume, and platform-wide featured spotlights.
+    </p>
+  </div>
+  <div>
+    <a href="/create" target="_blank" class="btn btn-accent btn-sm">
+      <span class="material-symbols-outlined" style="font-size:16px;">add</span>
+      Create Event
+    </a>
+  </div>
 </div>
 
 <div class="section-card">
   <form method="get" action="/admin/events">
-    <div class="search-bar">
-      <input name="q" value="{{ q }}" placeholder="Search by title or slug..." />
-      <select name="status">
+    <div class="search-bar" style="display:flex; gap:10px; flex-wrap:wrap;">
+      <input name="q" value="{{ q }}" placeholder="Search by title, slug, venue, or city..." style="flex:2; min-width:200px;" />
+      
+      <select name="status" style="flex:1; min-width:140px;">
         <option value="">All statuses</option>
-        {% for s in ['draft','published','ended','cancelled'] %}
+        {% for s in ['published', 'draft', 'ended', 'cancelled'] %}
         <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s|capitalize }}</option>
         {% endfor %}
       </select>
+
+      <select name="category" style="flex:1; min-width:160px;">
+        <option value="">All categories</option>
+        {% for c in categories %}
+        <option value="{{ c.slug }}" {% if selected_category == c.slug %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+
+      <select name="featured" style="flex:1; min-width:140px;">
+        <option value="">All spotlight</option>
+        <option value="true" {% if selected_featured == 'true' %}selected{% endif %}>Featured only</option>
+        <option value="false" {% if selected_featured == 'false' %}selected{% endif %}>Standard only</option>
+      </select>
+
       <button type="submit" class="btn btn-accent">Filter</button>
+      {% if q or selected_status or selected_category or selected_featured %}
+      <a href="/admin/events" class="btn btn-ghost">Clear</a>
+      {% endif %}
     </div>
   </form>
 
-  <table class="data-table">
-    <thead>
-      <tr><th>Title</th><th>Organization</th><th>Status</th><th>Date</th><th>Location</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-      {% for ev in events %}
-      <tr>
-        <td>
-          <a href="/e/{{ ev.slug }}" target="_blank">{{ ev.title }}</a><br>
-          <span style="color:var(--text-muted,#71717a);font-size:0.72rem;">/e/{{ ev.slug }}</span>
-        </td>
-        <td>
-          {% if ev._org %}
-          <a href="/admin/organizations/{{ ev._org.id }}" style="font-size:0.82rem;">{{ ev._org.name }}</a>
-          {% else %}—{% endif %}
-        </td>
-        <td>
-          <span class="badge {{ 'badge-active' if ev.status == 'published' else 'badge-suspended' }}">{{ ev.status }}</span>
-        </td>
-        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">
-          {{ ev.start_datetime.strftime('%Y-%m-%d') if ev.start_datetime else '—' }}
-        </td>
-        <td style="color:var(--text-muted,#71717a);font-size:0.75rem;">
-          {{ ev.location_name or ('Virtual' if ev.is_virtual else '—') }}
-        </td>
-        <td>
-          <a href="/e/{{ ev.slug }}" target="_blank" class="btn btn-sm btn-ghost">View</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Event Title &amp; Category</th>
+          <th>Organization</th>
+          <th>Date &amp; Venue</th>
+          <th>Tickets Sold</th>
+          <th>Gross Revenue</th>
+          <th>Featured</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in events %}
+        <tr id="event-row-{{ ev.id }}">
+          <td>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <a href="/e/{{ ev.slug }}" target="_blank" style="font-weight:700; font-size:0.9rem;">{{ ev.title }}</a>
+              {% if ev.is_featured %}
+              <span id="star-icon-{{ ev.id }}" title="Featured Event" class="material-symbols-outlined" style="color:#f59e0b; font-size:16px;">star</span>
+              {% endif %}
+            </div>
+            <div style="display:flex; gap:6px; align-items:center; margin-top:3px; flex-wrap:wrap;">
+              <span style="color:var(--text-muted,#71717a); font-size:0.72rem;">/e/{{ ev.slug }}</span>
+              {% for cat in ev.categories %}
+              <span style="font-size:0.68rem; padding:1px 6px; border-radius:4px; background:var(--admin-surface-raised); border:1px solid var(--admin-border); color:var(--text-muted,#71717a);">
+                {{ cat.name }}
+              </span>
+              {% endfor %}
+              {% if ev.vibe_tags %}
+              {% for vibe in ev.vibe_tags[:2] %}
+              <span style="font-size:0.68rem; padding:1px 6px; border-radius:4px; background:rgba(232, 89, 56, 0.08); color:var(--admin-accent); font-weight:600;">
+                #{{ vibe }}
+              </span>
+              {% endfor %}
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            {% if ev._org %}
+            <a href="/admin/organizations/{{ ev._org.id }}" style="font-size:0.84rem; font-weight:600;">{{ ev._org.name }}</a>
+            <br><span style="font-size:0.72rem; color:var(--text-muted,#71717a);">/{{ ev._org.slug }}</span>
+            {% else %}
+            <span style="color:var(--text-muted,#71717a); font-size:0.8rem;">Independent</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-size:0.82rem; font-weight:500;">
+              {{ ev.start_datetime.strftime('%b %d, %Y') if ev.start_datetime else 'TBD' }}
+            </span>
+            <br>
+            <span style="color:var(--text-muted,#71717a); font-size:0.74rem;">
+              {{ ev.venue_name or ('Virtual' if ev.is_virtual else '') }}{% if ev.venue_city %}, {{ ev.venue_city }}{% endif %}
+            </span>
+          </td>
+          <td>
+            <span style="font-weight:700; font-size:0.88rem;">{{ "{:,}".format(ev._reg_count) }}</span>
+            {% if ev.max_capacity %}
+            <span style="color:var(--text-muted,#71717a); font-size:0.75rem;">/ {{ "{:,}".format(ev.max_capacity) }}</span>
+            {% endif %}
+          </td>
+          <td style="font-weight:700; font-size:0.88rem; color:var(--text);">
+            ₦{{ "{:,.0f}".format(ev._revenue) }}
+          </td>
+          <td>
+            <button 
+              type="button"
+              id="feature-btn-{{ ev.id }}"
+              onclick="toggleFeatured('{{ ev.id }}')"
+              class="btn btn-sm {% if ev.is_featured %}btn-accent{% else %}btn-ghost{% endif %}"
+              style="font-size:11.5px; padding:3px 10px;"
+            >
+              {% if ev.is_featured %}<span class="material-symbols-outlined" style="font-size:14px; margin-right:3px;">star</span>Featured{% else %}<span class="material-symbols-outlined" style="font-size:14px; margin-right:3px;">grade</span>Feature{% endif %}
+            </button>
+          </td>
+          <td>
+            <span class="badge {{ 'badge-active' if ev.status == 'published' else ('badge-suspended' if ev.status == 'cancelled' else 'badge-pending') }}" id="status-badge-{{ ev.id }}">
+              {{ ev.status|capitalize }}
+            </span>
+          </td>
+          <td>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <a href="/e/{{ ev.slug }}" target="_blank" class="btn btn-sm btn-ghost" title="View Public Page">
+                <span class="material-symbols-outlined" style="font-size:15px;">open_in_new</span>
+              </a>
+              {% if ev.status == 'published' %}
+              <button 
+                type="button" 
+                onclick="changeStatus('{{ ev.id }}', 'cancelled')" 
+                class="btn btn-sm btn-ghost" 
+                style="color:#ef4444; border-color:rgba(239,68,68,0.25);"
+                title="Cancel Event"
+              >
+                Cancel
+              </button>
+              {% elif ev.status == 'cancelled' or ev.status == 'draft' %}
+              <button 
+                type="button" 
+                onclick="changeStatus('{{ ev.id }}', 'published')" 
+                class="btn btn-sm btn-ghost" 
+                style="color:#10b981; border-color:rgba(16,185,129,0.25);"
+                title="Publish Event"
+              >
+                Publish
+              </button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not events %}
+        <tr>
+          <td colspan="8" style="text-align:center; padding:32px; color:var(--text-muted,#71717a);">
+            No events match your search or filter settings.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
 
   <div class="pagination">
     {% if page > 1 %}
-    <a href="?q={{ q }}&status={{ selected_status }}&page={{ page - 1 }}">&larr; Prev</a>
+    <a href="?q={{ q }}&status={{ selected_status }}&category={{ selected_category }}&featured={{ selected_featured }}&page={{ page - 1 }}">&larr; Prev</a>
     {% endif %}
     <span class="current">{{ page }}</span>
     {% if page * per_page < total %}
-    <a href="?q={{ q }}&status={{ selected_status }}&page={{ page + 1 }}">Next &rarr;</a>
+    <a href="?q={{ q }}&status={{ selected_status }}&category={{ selected_category }}&featured={{ selected_featured }}&page={{ page + 1 }}">Next &rarr;</a>
     {% endif %}
-    <span class="info">{{ total }} results</span>
+    <span class="info">{{ total }} events</span>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function toggleFeatured(eventId) {
+  const btn = document.getElementById(`feature-btn-${eventId}`);
+  const csrf = getAdminCsrfToken();
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await fetch(`/api/v1/admin/events/${eventId}/toggle-featured`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      }
+    });
+    const json = await res.json();
+    if (res.ok && json.success) {
+      const isFeatured = json.data.is_featured;
+      showAdminToast(isFeatured ? 'Event marked as Featured spotlight!' : 'Event removed from Featured.', 'success');
+      if (btn) {
+        btn.className = isFeatured ? 'btn btn-sm btn-accent' : 'btn btn-sm btn-ghost';
+        btn.innerHTML = isFeatured ? '<span class="material-symbols-outlined" style="font-size:14px; margin-right:3px;">star</span>Featured' : '<span class="material-symbols-outlined" style="font-size:14px; margin-right:3px;">grade</span>Feature';
+      }
+    } else {
+      showAdminToast(json.error?.message || 'Failed to toggle featured status.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error toggling featured status.', 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function changeStatus(eventId, newStatus) {
+  if (!confirm(`Are you sure you want to change this event status to ${newStatus.toUpperCase()}?`)) return;
+  const csrf = getAdminCsrfToken();
+
+  try {
+    const res = await fetch(`/api/v1/admin/events/${eventId}/status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const json = await res.json();
+    if (res.ok && json.success) {
+      showAdminToast(`Event status updated to ${newStatus.toUpperCase()}.`, 'success');
+      const badge = document.getElementById(`status-badge-${eventId}`);
+      if (badge) {
+        badge.className = `badge ${newStatus === 'published' ? 'badge-active' : (newStatus === 'cancelled' ? 'badge-suspended' : 'badge-pending')}`;
+        badge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      }
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showAdminToast(json.error?.message || 'Failed to update event status.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error updating event status.', 'error');
+  }
+}
+</script>
 {% endblock %}

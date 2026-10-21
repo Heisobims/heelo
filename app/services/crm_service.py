@@ -12,7 +12,7 @@ from app.models.ticketing import Registration, TicketType
 
 
 async def unsubscribe_contact(db: AsyncSession, org_id: uuid.UUID, email: str) -> None:
-    """Mark an email as unsubscribed from this org's campaigns — creates a
+    """Mark an email as unsubscribed from this org's campaigns - creates a
     Contact row if one doesn't already exist, so future audience builds skip it."""
     from app.models.crm import Contact
 

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block subject %}Vendor Marked Service Delivered: Ref {{ booking_reference }}{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;font-weight:900;color:#000000;line-height:1.2;">
+  Service Marked as Delivered
+</h1>
+<p style="margin:0 0 24px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#555555;line-height:1.6;">
+  Hello <strong>{{ client_name }}</strong>,<br />
+  Your vendor <strong>{{ business_name }}</strong> has marked their service as delivered for <strong>{{ event_name }}</strong>.
+</p>
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-radius:12px;background:#FAF7F2;border:1px solid #EFEAE3;margin-bottom:24px;">
+  <tr>
+    <td style="padding:20px 24px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#131B17;line-height:1.8;">
+        <tr>
+          <td style="color:#56625C;width:140px;"><strong>Booking Ref:</strong></td>
+          <td><strong style="font-family:monospace;">{{ booking_reference }}</strong></td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Vendor:</strong></td>
+          <td>{{ business_name }}</td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Event:</strong></td>
+          <td>{{ event_name }}</td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Escrow Amount:</strong></td>
+          <td><strong>{{ currency }} {{ "{:,.2f}".format(total_amount) }}</strong></td>
+        </tr>
+        {% if proof_notes %}
+        <tr>
+          <td style="color:#56625C;"><strong>Vendor Notes:</strong></td>
+          <td>{{ proof_notes }}</td>
+        </tr>
+        {% endif %}
+      </table>
+    </td>
+  </tr>
+</table>
+
+<div style="background:#FFF8E6;border:1px solid #FFE082;border-radius:10px;padding:14px 18px;margin-bottom:24px;font-family:system-ui,-apple-system,sans-serif;font-size:13px;color:#78350F;line-height:1.5;">
+  <strong>Heelo Escrow Protection:</strong> Please review the delivered service. If everything was completed to your satisfaction, confirm fulfillment to release the escrow payment. If no action or dispute is submitted within 48 hours, payment will automatically release to the vendor.
+</div>
+
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="background:#131B17;border-radius:9999px;">
+      <a href="{{ frontend_url }}/events" style="display:inline-block;padding:14px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">
+        Review &amp; Release Escrow &rarr;
+      </a>
+    </td>
+  </tr>
+</table>
+{% endblock %}
+

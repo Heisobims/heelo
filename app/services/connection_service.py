@@ -1,6 +1,6 @@
 """
 Attendee-to-attendee connections ('mutuals'). The Connection table has existed
-in the schema since the initial migration but was never wired to an API —
+in the schema since the initial migration but was never wired to an API -
 this activates it.
 """
 
@@ -40,7 +40,7 @@ async def send_request(
         if existing.status == "accepted":
             return existing
         if existing.status == "pending" and existing.user_id == target_user_id:
-            # They already asked us — accept it instead of creating a duplicate.
+            # They already asked us - accept it instead of creating a duplicate.
             from datetime import UTC, datetime
 
             existing.status = "accepted"
@@ -48,7 +48,7 @@ async def send_request(
             await db.commit()
             await db.refresh(existing)
             return existing
-        # Pending request we already sent — no-op, don't spam a new row.
+        # Pending request we already sent - no-op, don't spam a new row.
         return existing
 
     conn = Connection(
@@ -176,7 +176,7 @@ async def list_connectable_attendees(
     limit: int = 20,
 ):
     """
-    Other confirmed attendees of this event who have an opted-in public profile —
+    Other confirmed attendees of this event who have an opted-in public profile -
     this is how people actually discover who to connect with (there's no global
     attendee directory, discovery is scoped to a shared event).
     """

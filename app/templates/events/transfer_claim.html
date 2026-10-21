@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{% if reg %}Claim your ticket · {{ reg.event.title }}{% else %}Transfer link{% endif %} | Heelo{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block head %}
+<style>
+  [x-cloak] { display: none !important; }
+  body { background: var(--bg-secondary); }
+  .tc-nav {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; height: 52px; padding: 0 24px;
+  }
+  .tc-container { max-width: 460px; margin: 0 auto; padding: 48px 24px 80px; }
+  .tc-card { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: 28px 24px; }
+  .tc-field { margin-bottom: 16px; }
+  .tc-field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="tc-nav">
+  <a href="/" style="font-family:var(--font-serif); font-size:18px; font-weight:700; color:var(--text-primary); text-decoration:none;">heelo</a>
+</nav>
+
+<div class="tc-container">
+  {% if not reg %}
+  <div class="tc-card" style="text-align:center;">
+    <h1 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin-bottom:8px;">Link not valid</h1>
+    <p style="font-size:14px; color:var(--text-muted);">This transfer link is invalid, has already been claimed, or has expired. Ask the sender for a new one.</p>
+  </div>
+  {% else %}
+  <div x-data="transferClaim()" x-cloak>
+    <template x-if="!claimed">
+      <div class="tc-card">
+        <div style="text-align:center; margin-bottom:24px;">
+          <h1 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin-bottom:6px;">You've been sent a ticket</h1>
+          <p style="font-size:14px; color:var(--text-muted);">
+            <strong>{{ reg.attendee_name }}</strong> is transferring their <strong>{{ reg.ticket_type.name if reg.ticket_type else 'General' }}</strong> ticket for
+          </p>
+          <p style="font-size:16px; font-weight:600; margin-top:4px;">{{ reg.event.title }}</p>
+        </div>
+
+        <div class="tc-field">
+          <label for="tc-name">Your name</label>
+          <input id="tc-name" class="form-input" type="text" x-model="name" required maxlength="255">
+        </div>
+        <div class="tc-field">
+          <label for="tc-email">Your email</label>
+          <input id="tc-email" class="form-input" type="email" x-model="email" required maxlength="255">
+        </div>
+        <div class="tc-field">
+          <label for="tc-phone">Phone (optional)</label>
+          <input id="tc-phone" class="form-input" type="tel" x-model="phone" maxlength="30">
+        </div>
+
+        <div x-show="error" x-text="error" class="alert alert-danger" style="display:none; margin-bottom:14px; font-size:13px;"></div>
+
+        <button type="button" class="btn btn-primary" style="width:100%;" @click="claim()" :disabled="submitting || !name.trim() || !email.trim()">
+          <span x-show="!submitting">Claim this ticket</span>
+          <span x-show="submitting">Claiming…</span>
+        </button>
+      </div>
+    </template>
+
+    <template x-if="claimed">
+      <div class="tc-card" style="text-align:center;">
+        <div style="width:56px; height:56px; background:var(--cyan); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h1 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin-bottom:8px;">It's yours!</h1>
+        <p style="font-size:14px; color:var(--text-muted);">Your ticket is confirmed. We've emailed your QR code to <strong x-text="email"></strong>.</p>
+      </div>
+    </template>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function transferClaim() {
+  return {
+    name: '', email: '', phone: '',
+    submitting: false, claimed: false, error: '',
+    async claim() {
+      this.submitting = true;
+      this.error = '';
+      try {
+        const res = await fetch('/api/v1/registrations/transfer/{{ token }}/claim', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: this.name, email: this.email, phone: this.phone || null }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error((data.error && data.error.message) || 'Could not claim this ticket.');
+        this.claimed = true;
+      } catch (e) {
+        this.error = e.message || 'A network error occurred. Please try again.';
+      } finally {
+        this.submitting = false;
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

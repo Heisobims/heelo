@@ -1,5 +1,5 @@
 """
-Admin HTML pages — all routes under /admin/, require user.role == 'admin'.
+Admin HTML pages - all routes under /admin/, require user.role == 'admin'.
 """
 
 from __future__ import annotations
@@ -9,14 +9,19 @@ import uuid
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import or_, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy import func, or_, select
+from sqlalchemy.orm import joinedload, selectinload
 
+from app.config import settings
 from app.dependencies import DBSession
 from app.services import admin_service as adm_svc
+from app.utils.currency import currency_symbol
 
 router_admin_pages = APIRouter(prefix="/admin", tags=["admin-pages"])
 templates = Jinja2Templates(directory="app/templates")
+templates.env.filters["currency_symbol"] = currency_symbol
+templates.env.globals["settings"] = settings
+templates.env.globals["currency_symbol"] = currency_symbol
 
 
 async def _require_admin_ctx(request: Request, db):
@@ -43,7 +48,13 @@ async def _require_admin_ctx(request: Request, db):
 
 
 def _ctx(request, admin_user, active_page: str, **kwargs):
-    return {"request": request, "admin_user": admin_user, "active_page": active_page, **kwargs}
+    return {
+        "request": request,
+        "admin_user": admin_user,
+        "user": admin_user,
+        "active_page": active_page,
+        **kwargs,
+    }
 
 
 # ── Overview ──────────────────────────────────────────────────────────────────
@@ -59,6 +70,8 @@ async def admin_overview(request: Request, db: DBSession):
     stats = await adm_svc.platform_stats(db)
     recent_orgs, _ = await adm_svc.list_orgs(db, page=1, per_page=5)
     recent_users, _ = await adm_svc.list_users(db, page=1, per_page=5)
+    recent_orders, _ = await adm_svc.list_orders_admin(db, page=1, per_page=5)
+    recent_invoices, _ = await adm_svc.list_plan_invoices_admin(db, page=1, per_page=5)
 
     return templates.TemplateResponse(
         "admin/overview.html",
@@ -69,6 +82,8 @@ async def admin_overview(request: Request, db: DBSession):
             stats=stats,
             recent_orgs=recent_orgs,
             recent_users=recent_users,
+            recent_orders=recent_orders,
+            recent_invoices=recent_invoices,
         ),
     )
 
@@ -144,16 +159,62 @@ async def admin_vendors(request: Request, db: DBSession):
     if not admin_user:
         return RedirectResponse("/login?next=/admin/vendors", status_code=302)
 
-    from app.models.vendor import VENDOR_CATEGORIES
+    from app.models.vendor import VENDOR_CATEGORIES, VendorPayout, VendorVerificationRequest
 
+    tab = request.query_params.get("tab", "directory").strip()
     q = request.query_params.get("q", "").strip() or None
     selected_category = request.query_params.get("category", "").strip() or None
     selected_status = request.query_params.get("status", "").strip() or None
     page = max(1, int(request.query_params.get("page", 1)))
 
+    # Compute badge counts for pending items
+    pending_verifications_count = (
+        await db.scalar(
+            select(func.count(VendorVerificationRequest.id)).where(
+                VendorVerificationRequest.status == "pending"
+            )
+        )
+        or 0
+    )
+    pending_payouts_count = (
+        await db.scalar(
+            select(func.count(VendorPayout.id)).where(VendorPayout.status == "pending")
+        )
+        or 0
+    )
+
+    # 1. Directory query
     vendors, total = await adm_svc.list_vendors(
         db, search=q, category=selected_category, status=selected_status, page=page, per_page=30
     )
+
+    # 2. Verifications query
+    verif_status = request.query_params.get("verif_status", "pending").strip()
+    verif_stmt = (
+        select(VendorVerificationRequest)
+        .options(
+            joinedload(VendorVerificationRequest.vendor),
+            joinedload(VendorVerificationRequest.reviewer),
+        )
+        .order_by(VendorVerificationRequest.created_at.desc())
+    )
+    if verif_status and verif_status != "all":
+        verif_stmt = verif_stmt.where(VendorVerificationRequest.status == verif_status)
+    verification_requests = (await db.scalars(verif_stmt.limit(100))).all()
+
+    # 3. Payouts query
+    payout_filter_status = request.query_params.get("payout_status", "pending").strip()
+    payout_stmt = (
+        select(VendorPayout)
+        .options(
+            joinedload(VendorPayout.vendor),
+            joinedload(VendorPayout.initiator),
+        )
+        .order_by(VendorPayout.created_at.desc())
+    )
+    if payout_filter_status and payout_filter_status != "all":
+        payout_stmt = payout_stmt.where(VendorPayout.status == payout_filter_status)
+    vendor_payouts = (await db.scalars(payout_stmt.limit(100))).all()
 
     return templates.TemplateResponse(
         "admin/vendors.html",
@@ -161,6 +222,7 @@ async def admin_vendors(request: Request, db: DBSession):
             request,
             admin_user,
             "vendors",
+            tab=tab,
             vendors=vendors,
             total=total,
             page=page,
@@ -169,6 +231,12 @@ async def admin_vendors(request: Request, db: DBSession):
             categories=VENDOR_CATEGORIES,
             selected_category=selected_category or "",
             selected_status=selected_status or "",
+            verif_status=verif_status,
+            verification_requests=verification_requests,
+            pending_verifications_count=pending_verifications_count,
+            payout_filter_status=payout_filter_status,
+            vendor_payouts=vendor_payouts,
+            pending_payouts_count=pending_payouts_count,
         ),
     )
 
@@ -280,18 +348,42 @@ async def admin_events(request: Request, db: DBSession):
 
     from sqlalchemy import func
 
-    from app.models.event import Event
+    from app.models.event import Event, EventCategory
+    from app.models.ticketing import Order, Registration, REVENUE_STATUSES
 
     q_str = request.query_params.get("q", "").strip() or None
     selected_status = request.query_params.get("status", "").strip() or None
+    selected_category = request.query_params.get("category", "").strip() or None
+    selected_featured = request.query_params.get("featured", "").strip() or None
     page = max(1, int(request.query_params.get("page", 1)))
     per_page = 30
 
-    q = select(Event).options(selectinload(Event.organization))
+    # Fetch all categories for filter dropdown
+    categories = list(
+        (await db.scalars(select(EventCategory).order_by(EventCategory.sort_order))).all()
+    )
+
+    q = select(Event).options(
+        selectinload(Event.organization),
+        selectinload(Event.categories),
+    )
     if q_str:
-        q = q.where(or_(Event.title.ilike(f"%{q_str}%"), Event.slug.ilike(f"%{q_str}%")))
+        q = q.where(
+            or_(
+                Event.title.ilike(f"%{q_str}%"),
+                Event.slug.ilike(f"%{q_str}%"),
+                Event.venue_name.ilike(f"%{q_str}%"),
+                Event.venue_city.ilike(f"%{q_str}%"),
+            )
+        )
     if selected_status:
         q = q.where(Event.status == selected_status)
+    if selected_category:
+        q = q.join(Event.categories).where(EventCategory.slug == selected_category)
+    if selected_featured == "true":
+        q = q.where(Event.is_featured.is_(True))
+    elif selected_featured == "false":
+        q = q.where(or_(Event.is_featured.is_(False), Event.is_featured.is_(None)))
 
     total = await db.scalar(select(func.count()).select_from(q.subquery()))
     rows = await db.scalars(
@@ -299,9 +391,23 @@ async def admin_events(request: Request, db: DBSession):
     )
     events = list(rows.all())
 
-    # Attach org for display (loaded via selectinload)
+    # Attach org, ticket counts, and gross revenue
     for ev in events:
         ev._org = ev.organization if hasattr(ev, "organization") else None
+        reg_count = await db.scalar(
+            select(func.count()).where(
+                Registration.event_id == ev.id,
+                Registration.status == "confirmed",
+            )
+        )
+        ev._reg_count = reg_count or 0
+        rev = await db.scalar(
+            select(func.coalesce(func.sum(Order.total_amount), 0)).where(
+                Order.event_id == ev.id,
+                Order.payment_status.in_(REVENUE_STATUSES),
+            )
+        )
+        ev._revenue = float(rev or 0)
 
     return templates.TemplateResponse(
         "admin/events.html",
@@ -310,7 +416,66 @@ async def admin_events(request: Request, db: DBSession):
             admin_user,
             "events",
             events=events,
+            categories=categories,
             total=total or 0,
+            page=page,
+            per_page=per_page,
+            q=q_str or "",
+            selected_status=selected_status or "",
+            selected_category=selected_category or "",
+            selected_featured=selected_featured or "",
+        ),
+    )
+
+
+# ── Finance & Orders ──────────────────────────────────────────────────────────
+
+
+@router_admin_pages.get("/finance", response_class=HTMLResponse)
+@router_admin_pages.get("/orders", response_class=HTMLResponse)
+async def admin_finance(request: Request, db: DBSession):
+    admin_user = await _require_admin_ctx(request, db)
+    if not admin_user:
+        return RedirectResponse("/login?next=/admin/finance", status_code=302)
+
+    tab = request.query_params.get("tab", "orders").strip()
+    q_str = request.query_params.get("q", "").strip() or None
+    selected_status = request.query_params.get("status", "").strip() or None
+    page = max(1, int(request.query_params.get("page", 1)))
+    per_page = 30
+
+    fin_stats = await adm_svc.financial_overview_stats(db)
+
+    orders = []
+    invoices = []
+    bookings = []
+    total = 0
+
+    if tab == "orders":
+        orders, total = await adm_svc.list_orders_admin(
+            db, search=q_str, status=selected_status, page=page, per_page=per_page
+        )
+    elif tab == "invoices":
+        invoices, total = await adm_svc.list_plan_invoices_admin(
+            db, status=selected_status, page=page, per_page=per_page
+        )
+    elif tab == "marketplace":
+        bookings, total = await adm_svc.list_marketplace_bookings_admin(
+            db, search=q_str, status=selected_status, page=page, per_page=per_page
+        )
+
+    return templates.TemplateResponse(
+        "admin/finance.html",
+        _ctx(
+            request,
+            admin_user,
+            "finance",
+            tab=tab,
+            fin_stats=fin_stats,
+            orders=orders,
+            invoices=invoices,
+            bookings=bookings,
+            total=total,
             page=page,
             per_page=per_page,
             q=q_str or "",
@@ -346,5 +511,56 @@ async def admin_broadcasts(request: Request, db: DBSession):
             per_page=20,
             counts=counts,
             gmail_daily_limit=bc_svc.GMAIL_DAILY_SOFT_LIMIT,
+        ),
+    )
+
+
+@router_admin_pages.get("/payouts", response_class=HTMLResponse)
+async def admin_payouts(request: Request, db: DBSession):
+    admin_user = await _require_admin_ctx(request, db)
+    if not admin_user:
+        return RedirectResponse("/login?next=/admin/payouts", status_code=302)
+
+    from sqlalchemy import select
+
+    from app.models.organization import Organization
+    from app.models.payment import Payout
+    from app.models.vendor import Vendor, VendorPayout
+    from app.services import payment_account_service as acc_svc
+    from app.services import payout_service as payout_svc
+
+    owed = await payout_svc.list_orgs_with_pending_payouts(db)
+    for row in owed:
+        row["payment_accounts"] = await acc_svc.list_payment_accounts(db, row["org"].id)
+
+    in_flight = (
+        await db.scalars(
+            select(Payout)
+            .where(Payout.status.in_(["pending", "processing"]))
+            .join(Organization, Organization.id == Payout.org_id)
+            .order_by(Payout.created_at.desc())
+            .options(selectinload(Payout.organization))
+        )
+    ).all()
+
+    vendor_payouts = (
+        await db.scalars(
+            select(VendorPayout)
+            .where(VendorPayout.status.in_(["pending", "processing"]))
+            .join(Vendor, Vendor.id == VendorPayout.vendor_id)
+            .order_by(VendorPayout.created_at.desc())
+            .options(joinedload(VendorPayout.vendor))
+        )
+    ).all()
+
+    return templates.TemplateResponse(
+        "admin/payouts.html",
+        _ctx(
+            request,
+            admin_user,
+            "payouts",
+            owed=owed,
+            in_flight=in_flight,
+            vendor_payouts=vendor_payouts,
         ),
     )

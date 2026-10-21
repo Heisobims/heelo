@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Settings — {{ org.name }} — Heelo{% endblock %}
+{% block title %}Settings · {{ org.name }} | Heelo{% endblock %}
 {% set active_page = 'settings' %}
 
 {% block head %}
@@ -46,7 +46,7 @@
     color: var(--text-primary);
     transition: border-color 0.12s, box-shadow 0.12s;
   }
-  .settings-link-card:hover { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,255,243,0.08); }
+  .settings-link-card:hover { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(232,89,56,0.1); }
   .settings-link-icon {
     width: 36px; height: 36px;
     border-radius: 8px;
@@ -72,7 +72,7 @@
     display: inline-flex; align-items: center; gap: 4px;
     padding: 3px 10px; border-radius: 100px;
     font-size: 11px; font-weight: 700;
-    background: rgba(0,255,243,0.12); color: #009e95;
+    background: rgba(232,89,56,0.12); color: #C84729;
     text-transform: uppercase; letter-spacing: 0.04em;
   }
 </style>
@@ -91,7 +91,7 @@
 
   <div x-data="orgSettings()">
 
-    <div x-show="success" class="alert" style="display:none; background:rgba(0,255,243,0.1); border:1px solid var(--cyan); color:#009e95; margin-bottom:16px; border-radius:8px; padding:12px 16px; font-size:13px;">
+    <div x-show="success" class="alert" style="display:none; background:rgba(232,89,56,0.1); border:1px solid var(--cyan); color:#C84729; margin-bottom:16px; border-radius:8px; padding:12px 16px; font-size:13px;">
       <span class="material-symbols-outlined">check_circle</span> <span x-text="success"></span>
     </div>
     <div x-show="error" x-text="error" class="alert alert-danger" style="display:none; margin-bottom:16px;"></div>
@@ -101,6 +101,8 @@
       <div class="sett-tab" :class="{ active: tab === 'general' }" @click="tab = 'general'">General</div>
       <div class="sett-tab" :class="{ active: tab === 'appearance' }" @click="tab = 'appearance'">Appearance</div>
       <div class="sett-tab" :class="{ active: tab === 'branding' }" @click="tab = 'branding'">Branding</div>
+      <div class="sett-tab" :class="{ active: tab === 'domain' }" @click="tab = 'domain'">Domain</div>
+      <div class="sett-tab" :class="{ active: tab === 'security' }" @click="tab = 'security'">Security</div>
       <div class="sett-tab" :class="{ active: tab === 'links' }" @click="tab = 'links'">Other settings</div>
     </div>
 
@@ -116,7 +118,7 @@
           </div>
 
           <div class="form-group" style="margin-bottom:0;">
-            <label class="form-label">Slug <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(URL — cannot be changed)</span></label>
+            <label class="form-label">Slug <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(URL: cannot be changed)</span></label>
             <input type="text" class="form-input" value="{{ org.slug }}" disabled style="background:var(--bg-secondary); color:var(--text-muted); cursor:not-allowed; font-family:monospace;">
             <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Your event links will be at heelo.io/org/{{ org.slug }}/...</p>
           </div>
@@ -152,14 +154,14 @@
             <div class="form-group" style="margin-bottom:0;">
               <label class="form-label">Default currency</label>
               <select class="form-select" x-model="form.currency">
-                <option value="NGN">NGN — Nigerian Naira</option>
-                <option value="GHS">GHS — Ghanaian Cedi</option>
-                <option value="KES">KES — Kenyan Shilling</option>
-                <option value="ZAR">ZAR — South African Rand</option>
-                <option value="UGX">UGX — Ugandan Shilling</option>
-                <option value="USD">USD — US Dollar</option>
-                <option value="GBP">GBP — British Pound</option>
-                <option value="EUR">EUR — Euro</option>
+                <option value="NGN">NGN · Nigerian Naira</option>
+                <option value="GHS">GHS · Ghanaian Cedi</option>
+                <option value="KES">KES · Kenyan Shilling</option>
+                <option value="ZAR">ZAR · South African Rand</option>
+                <option value="UGX">UGX · Ugandan Shilling</option>
+                <option value="USD">USD · US Dollar</option>
+                <option value="GBP">GBP · British Pound</option>
+                <option value="EUR">EUR · Euro</option>
               </select>
             </div>
           </div>
@@ -200,11 +202,11 @@
       <div class="sett-card">
         <p class="sett-card-title">Brand color</p>
         <p style="font-size:13px; color:var(--text-muted); margin-top:-8px; margin-bottom:16px;">
-          Accents your public event pages and checkout — buttons, progress steps, and highlights.
+          Accents your public event pages and checkout: buttons, progress steps, and highlights.
         </p>
         <div style="display:flex; align-items:center; gap:12px;">
           <input type="color" x-model="form.brand_color" style="width:44px; height:44px; padding:0; border:1.5px solid var(--border-light); border-radius:8px; cursor:pointer;">
-          <input type="text" class="form-input" x-model="form.brand_color" placeholder="#00FFF3" pattern="^#[0-9A-Fa-f]{6}$" style="width:120px; font-family:var(--font-mono);" maxlength="7">
+          <input type="text" class="form-input" x-model="form.brand_color" placeholder="#E85938" pattern="^#[0-9A-Fa-f]{6}$" style="width:120px; font-family:var(--font-mono);" maxlength="7">
           <button type="button" class="btn btn-secondary btn-sm" @click="form.brand_color = ''" x-show="form.brand_color">Reset to default</button>
         </div>
         <div style="display:flex; justify-content:flex-end; margin-top:20px;">
@@ -220,12 +222,12 @@
       <div class="sett-card">
         <p class="sett-card-title">Email footer</p>
         <p style="font-size:13px; color:var(--text-muted); margin-top:-8px; margin-bottom:16px;">
-          Shown in the footer of every campaign email you send from Heelo — your logo already appears in the header.
+          Shown in the footer of every campaign email you send from Heelo: your logo already appears in the header.
         </p>
         <div style="display:flex; flex-direction:column; gap:16px;">
 
           <div class="form-group" style="margin-bottom:0;">
-            <label class="form-label">Contact email <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(public — shown to your audience)</span></label>
+            <label class="form-label">Contact email <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(public: shown to your audience)</span></label>
             <input type="email" class="form-input" x-model="form.contact_email" placeholder="hello@yourbrand.com">
           </div>
 
@@ -258,6 +260,133 @@
     </div>
 
     <!-- ── Other settings ─────────────────────────────────── -->
+    <!-- ── Domain ──────────────────────────────────────────── -->
+    <div x-show="tab === 'domain'" style="display:none;">
+      {% if not has_custom_domain_feature %}
+      <div class="sett-card" style="text-align:center; padding:36px 24px;">
+        <span class="material-symbols-outlined" style="font-size:28px; color:var(--text-muted);">language</span>
+        <p class="sett-card-title" style="margin-top:10px;">Custom domain is a Pro feature</p>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Serve your events from your own domain instead of heelo.io.</p>
+        <a href="/org/{{ org.slug }}/plan" class="btn btn-primary btn-sm">Upgrade to Pro</a>
+      </div>
+      {% else %}
+      <div class="sett-card" x-data="domainSettings()">
+        <p class="sett-card-title">Custom domain</p>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:-8px; margin-bottom:16px;">
+          Point your own domain at your events page. You'll still manage everything from heelo.io: this only changes what your audience sees.
+        </p>
+
+        <template x-if="!domain">
+          <div style="display:flex; gap:10px;">
+            <input type="text" class="form-input" x-model="newDomain" placeholder="events.yourbrand.com" style="flex:1;">
+            <button type="button" class="btn btn-primary" :disabled="settingDomain || !newDomain.trim()" @click="setDomain()">
+              <span x-show="!settingDomain">Add domain</span>
+              <span x-show="settingDomain">Adding…</span>
+            </button>
+          </div>
+        </template>
+
+        <template x-if="domain">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+              <span style="font-family:var(--font-mono); font-size:14px; font-weight:600;" x-text="domain"></span>
+              <span class="badge" :style="verified ? 'background:#e6faf5;color:#0a7a5a;' : 'background:#fff8e6;color:#9a6600;'" x-text="verified ? 'Verified' : 'Pending verification'"></span>
+              <a href="#" style="font-size:12px; color:#dc2626; margin-left:auto;" @click.prevent="removeDomain()">Remove</a>
+            </div>
+
+            <template x-if="!verified">
+              <div>
+                <p style="font-size:13px; font-weight:600; margin-bottom:8px;">1. Add this DNS TXT record</p>
+                <div style="background:var(--bg-light); border:1px solid var(--border-light); border-radius:8px; padding:12px; font-family:var(--font-mono); font-size:12.5px; margin-bottom:16px;">
+                  <div>Type: <strong>TXT</strong></div>
+                  <div>Name: <strong x-text="'_heelo-verify.' + domain"></strong></div>
+                  <div>Value: <strong x-text="verificationToken"></strong></div>
+                </div>
+                <p style="font-size:13px; font-weight:600; margin-bottom:8px;">2. Point the domain at Heelo</p>
+                <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:16px;">Add a CNAME record for <strong x-text="domain"></strong> pointing to <strong>heelo.io</strong> (ask your DNS provider if unsure: this step happens outside Heelo).</p>
+                <button type="button" class="btn btn-secondary btn-sm" :disabled="verifying" @click="verify()">
+                  <span x-show="!verifying">Check verification</span>
+                  <span x-show="verifying">Checking…</span>
+                </button>
+              </div>
+            </template>
+            <p x-show="verified" style="font-size:13px; color:#0a7a5a;">Your domain is verified and live.</p>
+          </div>
+        </template>
+
+        <p x-show="domainError" x-text="domainError" style="font-size:12.5px; color:#dc2626; margin-top:12px;"></p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Security (SSO) ──────────────────────────────────── -->
+    <div x-show="tab === 'security'" style="display:none;">
+      {% if not has_sso_feature %}
+      <div class="sett-card" style="text-align:center; padding:36px 24px;">
+        <span class="material-symbols-outlined" style="font-size:28px; color:var(--text-muted);">lock_person</span>
+        <p class="sett-card-title" style="margin-top:10px;">Single sign-on is an Enterprise feature</p>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Require your team to sign in with Google Workspace instead of a password.</p>
+        <a href="/org/{{ org.slug }}/plan" class="btn btn-primary btn-sm">Upgrade to Enterprise</a>
+      </div>
+      {% else %}
+      <div class="sett-card" x-data="ssoSettings()">
+        <p class="sett-card-title">Single sign-on</p>
+        <p style="font-size:13px; color:var(--text-muted); margin-top:-8px; margin-bottom:16px;">
+          Verify your team's email domain, then require sign-in via Google instead of a password for anyone on that domain.
+        </p>
+
+        <template x-if="!domain">
+          <div style="display:flex; gap:10px;">
+            <input type="text" class="form-input" x-model="newDomain" placeholder="acme.com" style="flex:1;">
+            <button type="button" class="btn btn-primary" :disabled="settingDomain || !newDomain.trim()" @click="setDomain()">
+              <span x-show="!settingDomain">Add domain</span>
+              <span x-show="settingDomain">Adding…</span>
+            </button>
+          </div>
+        </template>
+
+        <template x-if="domain">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+              <span style="font-family:var(--font-mono); font-size:14px; font-weight:600;" x-text="domain"></span>
+              <span class="badge" :style="verified ? 'background:#e6faf5;color:#0a7a5a;' : 'background:#fff8e6;color:#9a6600;'" x-text="verified ? 'Verified' : 'Pending verification'"></span>
+              <a href="#" style="font-size:12px; color:#dc2626; margin-left:auto;" @click.prevent="removeDomain()">Remove</a>
+            </div>
+
+            <template x-if="!verified">
+              <div>
+                <p style="font-size:13px; font-weight:600; margin-bottom:8px;">Add this DNS TXT record to prove you own this domain</p>
+                <div style="background:var(--bg-light); border:1px solid var(--border-light); border-radius:8px; padding:12px; font-family:var(--font-mono); font-size:12.5px; margin-bottom:16px;">
+                  <div>Type: <strong>TXT</strong></div>
+                  <div>Name: <strong x-text="'_heelo-sso-verify.' + domain"></strong></div>
+                  <div>Value: <strong x-text="verificationToken"></strong></div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" :disabled="verifying" @click="verify()">
+                  <span x-show="!verifying">Check verification</span>
+                  <span x-show="verifying">Checking…</span>
+                </button>
+              </div>
+            </template>
+
+            <template x-if="verified">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:8px; border-top:1px solid var(--border-light);">
+                <div>
+                  <p style="font-size:13px; font-weight:600; margin-bottom:2px;">Require SSO for @<span x-text="domain"></span></p>
+                  <p style="font-size:12px; color:var(--text-muted);">Once enabled, anyone with this email domain must sign in with Google: password login is blocked for them.</p>
+                </div>
+                <label style="display:inline-flex; align-items:center; cursor:pointer; flex-shrink:0;">
+                  <input type="checkbox" x-model="enforced" @change="toggleEnforce()" :disabled="enforcing">
+                </label>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <p x-show="ssoError" x-text="ssoError" style="font-size:12.5px; color:#dc2626; margin-top:12px;"></p>
+      </div>
+      {% endif %}
+    </div>
+
     <div x-show="tab === 'links'" style="display:none;">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
 
@@ -410,6 +539,158 @@ function orgSettings() {
         setTimeout(() => this.success = '', 3000);
       } catch { this.logoError = 'Upload failed.'; }
       finally { this.logoUploading = false; }
+    },
+  };
+}
+
+function domainSettings() {
+  return {
+    domain: {{ (org.custom_domain or '') | tojson }},
+    verified: {{ (org.custom_domain_verified or false) | tojson }},
+    verificationToken: {{ (org.custom_domain_verification_token or '') | tojson }},
+    newDomain: '',
+    settingDomain: false,
+    verifying: false,
+    domainError: '',
+
+    async setDomain() {
+      this.domainError = '';
+      this.settingDomain = true;
+      try {
+        const res = await fetch('/api/v1/organizations/{{ org.slug }}/custom-domain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ domain: this.newDomain.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.domainError = data.error?.message || 'Could not add that domain.';
+          return;
+        }
+        this.domain = data.data.domain;
+        this.verified = data.data.verified;
+        this.verificationToken = data.data.verification_record.value;
+      } catch { this.domainError = 'Network error.'; }
+      finally { this.settingDomain = false; }
+    },
+
+    async verify() {
+      this.domainError = '';
+      this.verifying = true;
+      try {
+        const res = await fetch('/api/v1/organizations/{{ org.slug }}/custom-domain/verify', {
+          method: 'POST', credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.domainError = data.error?.message || 'Verification failed.';
+          return;
+        }
+        this.verified = data.data.verified;
+      } catch { this.domainError = 'Network error.'; }
+      finally { this.verifying = false; }
+    },
+
+    async removeDomain() {
+      if (!confirm('Remove this custom domain?')) return;
+      try {
+        await fetch('/api/v1/organizations/{{ org.slug }}/custom-domain', {
+          method: 'DELETE', credentials: 'include',
+        });
+        this.domain = '';
+        this.verified = false;
+        this.newDomain = '';
+      } catch { this.domainError = 'Network error.'; }
+    },
+  };
+}
+
+function ssoSettings() {
+  return {
+    domain: {{ (org.sso_domain or '') | tojson }},
+    verified: {{ (org.sso_domain_verified or false) | tojson }},
+    verificationToken: {{ (org.sso_verification_token or '') | tojson }},
+    enforced: {{ (org.sso_enforced or false) | tojson }},
+    newDomain: '',
+    settingDomain: false,
+    verifying: false,
+    enforcing: false,
+    ssoError: '',
+
+    async setDomain() {
+      this.ssoError = '';
+      this.settingDomain = true;
+      try {
+        const res = await fetch('/api/v1/organizations/{{ org.slug }}/sso', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ domain: this.newDomain.trim() }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.ssoError = data.error?.message || 'Could not add that domain.';
+          return;
+        }
+        this.domain = data.data.domain;
+        this.verified = data.data.verified;
+        this.enforced = data.data.enforced;
+        this.verificationToken = data.data.verification_record.value;
+      } catch { this.ssoError = 'Network error.'; }
+      finally { this.settingDomain = false; }
+    },
+
+    async verify() {
+      this.ssoError = '';
+      this.verifying = true;
+      try {
+        const res = await fetch('/api/v1/organizations/{{ org.slug }}/sso/verify', {
+          method: 'POST', credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.ssoError = data.error?.message || 'Verification failed.';
+          return;
+        }
+        this.verified = data.data.verified;
+      } catch { this.ssoError = 'Network error.'; }
+      finally { this.verifying = false; }
+    },
+
+    async toggleEnforce() {
+      this.ssoError = '';
+      this.enforcing = true;
+      const desired = this.enforced;
+      try {
+        const res = await fetch('/api/v1/organizations/{{ org.slug }}/sso/enforce', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ enforced: desired }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.ssoError = data.error?.message || 'Could not update SSO enforcement.';
+          this.enforced = !desired;
+          return;
+        }
+        this.enforced = data.data.enforced;
+      } catch { this.ssoError = 'Network error.'; this.enforced = !desired; }
+      finally { this.enforcing = false; }
+    },
+
+    async removeDomain() {
+      if (!confirm('Remove SSO for this domain? Members will be able to log in with a password again.')) return;
+      try {
+        await fetch('/api/v1/organizations/{{ org.slug }}/sso', {
+          method: 'DELETE', credentials: 'include',
+        });
+        this.domain = '';
+        this.verified = false;
+        this.enforced = false;
+        this.newDomain = '';
+      } catch { this.ssoError = 'Network error.'; }
     },
   };
 }

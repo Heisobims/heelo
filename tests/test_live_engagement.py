@@ -1,4 +1,4 @@
-"""Live polls and Q&A. Per product decision: Q&A is anonymous free-for-all —
+"""Live polls and Q&A. Per product decision: Q&A is anonymous free-for-all -
 no submission approval queue, organizer can only hide/delete after the fact.
 No account/login required to vote, ask, or upvote.
 """

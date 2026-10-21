@@ -10,7 +10,7 @@
  *   - All other API              → Network-only (no offline fallback)
  */
 
-const CACHE_VERSION = 'heelo-v5';
+const CACHE_VERSION = 'heelo-v7';
 const OFFLINE_URL   = '/offline';
 
 // Precache: these must all return 200 at install time
@@ -62,25 +62,25 @@ self.addEventListener('fetch', (event) => {
   const isSameOrigin = url.origin === self.location.origin;
   const isJsqrCDN = request.url.startsWith('https://cdn.jsdelivr.net/npm/jsqr');
 
-  // ── Check-in API — network-first with offline queue ─────────────────────
+  // ── Check-in API - network-first with offline queue ─────────────────────
   if (isSameOrigin && url.pathname.includes('/check-in') && request.method === 'POST') {
     event.respondWith(handleCheckin(request));
     return;
   }
 
-  // ── Static assets & CDN — cache-first ────────────────────────────────────
+  // ── Static assets & CDN - cache-first ────────────────────────────────────
   if ((isSameOrigin && url.pathname.startsWith('/static/')) || isJsqrCDN) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  // ── Kiosk page — network-first, cache on success for offline ─────────────
+  // ── Kiosk page - network-first, cache on success for offline ─────────────
   if (isSameOrigin && KIOSK_PATTERN.test(url.pathname)) {
     event.respondWith(networkFirstWithOfflineFallback(request));
     return;
   }
 
-  // ── Navigation — network-first, offline fallback ──────────────────────────
+  // ── Navigation - network-first, offline fallback ──────────────────────────
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstWithOfflineFallback(request));
     return;
@@ -145,7 +145,7 @@ async function handleCheckin(request) {
     }));
     return response;
   } catch {
-    // Offline — queue the check-in
+    // Offline - queue the check-in
     await enqueueCheckin({ url, body: bodyText, timestamp: Date.now() });
 
     // Return a synthetic response indicating offline queuing
@@ -191,7 +191,7 @@ async function enqueueCheckin(item) {
 }
 
 // Best-effort registration id for a queued item, purely for reporting a sync
-// conflict back to the UI — not used for anything security-sensitive (the
+// conflict back to the UI: not used for anything security-sensitive (the
 // server independently verifies the QR JWT before ever checking anyone in).
 function _queuedItemRegId(body) {
   try {
@@ -228,7 +228,7 @@ async function drainCheckinQueue() {
         credentials: 'include',
       });
       if (resp.ok || resp.status === 409) {
-        // Success or already-checked-in — remove from queue
+        // Success or already-checked-in: remove from queue
         await new Promise((resolve, reject) => {
           const tx = db.transaction(CHECKIN_QUEUE_STORE, 'readwrite');
           tx.objectStore(CHECKIN_QUEUE_STORE).delete(item.id);
@@ -241,11 +241,11 @@ async function drainCheckinQueue() {
         }
       }
     } catch {
-      // Still offline — leave in queue
+      // Still offline: leave in queue
     }
   }
 
-  // Notify all clients of sync completion — including which of the queued
+  // Notify all clients of sync completion, including which of the queued
   // check-ins, if any, turned out to already be checked in elsewhere by the
   // time they synced, so the UI can flag it instead of dropping it silently.
   const clients = await self.clients.matchAll();

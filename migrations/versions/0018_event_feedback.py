@@ -1,4 +1,4 @@
-"""Add event_feedback table — a post-event star rating + optional comment per
+"""Add event_feedback table - a post-event star rating + optional comment per
 registration, submitted through a link sent after the event ends.
 """
 

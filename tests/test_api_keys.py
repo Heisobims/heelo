@@ -1,4 +1,4 @@
-"""API key management — create, list, revoke."""
+"""API key management - create, list, revoke."""
 
 from __future__ import annotations
 
@@ -81,3 +81,29 @@ async def test_non_member_cannot_create_api_key(client: AsyncClient, org, other_
         headers=other_headers,
     )
     assert resp.status_code == 403
+
+
+async def test_list_api_keys_rejects_checkin_staff(client: AsyncClient, org, checkin_staff_headers):
+    """Regression test: list_keys was the one endpoint in this file still
+    using bare org membership instead of ApiKeysManageAccess, so a
+    checkin_staff login could enumerate live API key prefixes/metadata."""
+    resp = await client.get(
+        f"/api/v1/organizations/{org.slug}/api-keys",
+        headers=checkin_staff_headers,
+    )
+    assert resp.status_code == 403
+
+
+async def test_developer_settings_page_renders(client: AsyncClient, org, user, db):
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": user.email, "password": "password123"}
+    )
+    assert login.status_code == 200
+
+    resp = await client.get(f"/org/{org.slug}/settings/developer")
+    assert resp.status_code == 200
+    assert "Developer Platform" in resp.text
+    assert "Secret API Keys" in resp.text
+    assert "Webhook Subscriptions" in resp.text
+    assert "Integration Quickstart" in resp.text
+

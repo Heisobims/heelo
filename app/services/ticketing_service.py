@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -81,7 +82,7 @@ async def copy_ticket_types(
     db: AsyncSession, source_event_id: uuid.UUID, target_event_id: uuid.UUID
 ) -> None:
     """
-    Copy a source event's ticket type structure onto a target event — used by
+    Copy a source event's ticket type structure onto a target event - used by
     event duplication, "start from template", and recurring series generation.
     Copies pricing/tiers/limits only; never sales counters (quantity_sold /
     quantity_reserved always start at 0 on the new event).
@@ -289,41 +290,63 @@ async def resolve_promo(
 
 # Discount applied to a friend's ticket when they register through another
 # attendee's referral link. A business/pricing decision, not an engineering
-# one — change this constant to adjust the incentive.
-REFERRAL_DISCOUNT_PERCENT = Decimal("0.10")
+# one: change this constant to adjust the incentive. The platform fee
+# absorbs this discount first (see confirm_order in payment_service.py).
+# This now equals PLATFORM_FEE_PERCENT exactly, so a referred order's fee
+# floors at (or very near) 0 without the organizer absorbing anything;
+# raising this above PLATFORM_FEE_PERCENT means the organizer starts
+# absorbing the difference too, so keep that in mind before tuning it up.
+REFERRAL_DISCOUNT_PERCENT = Decimal("0.05")
 
 
 async def _resolve_referral(
     db: AsyncSession, event_id: uuid.UUID, referral_code: str | None, buyer_email: str
-) -> uuid.UUID | None:
+) -> str | None:
     """
-    Validate a referral code (the referrer's own registration id, from their
-    shareable link) for this event. Returns the referrer's registration id if
-    valid, else None — an unknown, wrong-event, or self-referral code just
+    Validate a referral code (the referrer's own referral_token - a value
+    distinct from their registration id, since that id is also the bare
+    capability-token behind qr.png/badge.pdf/certificate.pdf and must never be
+    something a shared link exposes) for this event. Returns the code itself
+    if valid, else None - an unknown, wrong-event, or self-referral code just
     silently drops the discount rather than failing the whole registration.
     """
     if not referral_code:
         return None
-    try:
-        referrer_id = uuid.UUID(referral_code)
-    except ValueError:
-        return None
+
+    # Check if this matches an organizer promoter/affiliate code for this event
+    from app.models.affiliate import EventAffiliate
+
+    aff = await db.scalar(
+        select(EventAffiliate).where(
+            EventAffiliate.event_id == event_id,
+            func.upper(EventAffiliate.affiliate_code) == referral_code.strip().upper(),
+            EventAffiliate.is_active.is_(True),
+        )
+    )
+    if aff:
+        return aff.affiliate_code
+
     referrer = await db.scalar(
         select(Registration).where(
-            Registration.id == referrer_id,
+            Registration.referral_token == referral_code,
             Registration.event_id == event_id,
             Registration.status.in_(("confirmed", "checked_in")),
         )
     )
     if not referrer or referrer.attendee_email.lower() == buyer_email.lower():
         return None
-    return referrer_id
+    return referral_code
 
 
 async def get_referral_stats(db: AsyncSession, registration_id: uuid.UUID) -> dict:
     """How many orders were referred by this attendee's link."""
+    referrer_token = await db.scalar(
+        select(Registration.referral_token).where(Registration.id == registration_id)
+    )
+    if not referrer_token:
+        return {"referred_count": 0}
     count = await db.scalar(
-        select(func.count(Order.id)).where(Order.referral_code == str(registration_id))
+        select(func.count(Order.id)).where(Order.referral_code == referrer_token)
     )
     return {"referred_count": count or 0}
 
@@ -359,25 +382,73 @@ async def register(
                 400, f"Maximum {tt.max_per_order} ticket(s) per order for '{tt.name}'."
             )
 
+    if event.max_capacity is not None:
+        # Best-effort, event-wide cap across all ticket types - a coarser
+        # aggregate than the atomic per-ticket-type check below, so a narrow
+        # TOCTOU window remains under heavy concurrent checkout at the exact
+        # limit. Still far better than the previous behavior, where
+        # max_capacity was silently never enforced at all.
+        already_held = await db.scalar(
+            select(
+                func.coalesce(func.sum(TicketType.quantity_sold + TicketType.quantity_reserved), 0)
+            ).where(TicketType.event_id == event.id)
+        )
+        requested = sum(item.quantity for item in data.items)
+        if (already_held or 0) + requested > event.max_capacity:
+            raise HTTPException(409, f"This event is at capacity ({event.max_capacity} spots).")
+
     promo, discount_amount = await resolve_promo(db, event.id, data.promo_code, data.items, tt_map)
 
     raw_total = sum(
         Decimal(str(tt_map[item.ticket_type_id].price)) * item.quantity for item in data.items
     )
 
-    referrer_id = await _resolve_referral(db, event.id, data.referral_code, data.buyer_email)
-    # Referral and promo-code discounts don't stack — a promo code takes
+    referrer_code = await _resolve_referral(db, event.id, data.referral_code, data.buyer_email)
+    # Referral and promo-code discounts don't stack - a promo code takes
     # precedence if the buyer used both; the referral is still recorded for
     # attribution either way, it just doesn't also discount the order.
     referral_discount = (
         (raw_total * REFERRAL_DISCOUNT_PERCENT)
-        if (referrer_id and discount_amount == Decimal("0"))
+        if (referrer_code and discount_amount == Decimal("0"))
         else Decimal("0")
     )
 
-    total_amount = max(Decimal("0"), raw_total - discount_amount - referral_discount)
-    is_free = total_amount == Decimal("0")
+    # subtotal is what the organizer must net - the ticket price they set,
+    # in full.
+    subtotal = max(Decimal("0"), raw_total - discount_amount - referral_discount)
+    is_free = subtotal == Decimal("0")
     currency = tt_map[data.items[0].ticket_type_id].currency
+
+    total_amount = subtotal
+    platform_fee_amount = Decimal("0")
+    gateway_fee_amount = Decimal("0")
+    fees_passed_to_buyer = False
+    net_amount = subtotal
+
+    # Check whether fees are passed to the buyer (default) or absorbed by the organizer (inclusive pricing)
+    if not is_free:
+        from app.services.payment_service import (
+            PLATFORM_FEE_PERCENT,
+            gross_up_for_buyer_fees,
+            select_provider,
+        )
+
+        pass_fees = getattr(event, "pass_fees_to_buyer", True)
+        provider = select_provider(currency)
+
+        if pass_fees:
+            total_amount, platform_fee_amount, gateway_fee_amount = gross_up_for_buyer_fees(
+                subtotal, provider
+            )
+            fees_passed_to_buyer = True
+            net_amount = subtotal
+        else:
+            # Inclusive pricing: fees absorbed into the ticket price by organizer
+            total_amount = subtotal
+            fees_passed_to_buyer = False
+            platform_fee_amount = (total_amount * PLATFORM_FEE_PERCENT).quantize(Decimal("0.01"))
+            gateway_fee_amount = Decimal("0")
+            net_amount = (total_amount - platform_fee_amount).quantize(Decimal("0.01"))
 
     order_id = uuid.uuid4()
     order = Order(
@@ -389,14 +460,23 @@ async def register(
         buyer_phone=data.buyer_phone,
         whatsapp_consent=data.whatsapp_consent,
         total_amount=float(total_amount),
-        net_amount=float(total_amount),
-        platform_fee=0.0,
+        net_amount=float(net_amount),
+        # For passthrough orders, platform_fee records total - net (platform cut + gateway fee estimate).
+        # For fee-absorbed orders, platform_fee is Heelo's flat 5% cut.
+        platform_fee=float(
+            platform_fee_amount + gateway_fee_amount
+            if fees_passed_to_buyer
+            else platform_fee_amount
+        ),
         currency=currency,
         payment_provider="free" if is_free else None,
         payment_status="paid" if is_free else "pending",
         promo_code_id=promo.id if promo else None,
         discount_amount=float(discount_amount + referral_discount),
-        referral_code=str(referrer_id) if referrer_id else None,
+        referral_discount_amount=float(referral_discount),
+        fees_passed_to_buyer=fees_passed_to_buyer,
+        gateway_fee_amount=float(gateway_fee_amount),
+        referral_code=referrer_code,
         utm_source=data.utm_source,
         utm_medium=data.utm_medium,
         utm_campaign=data.utm_campaign,
@@ -481,6 +561,7 @@ async def register(
                 whatsapp_consent=data.whatsapp_consent,
                 qr_code=qr_token,
                 status="confirmed" if is_free else "pending",
+                referral_token=secrets.token_urlsafe(12),
             )
             db.add(reg)
             registrations.append(reg)
@@ -501,10 +582,26 @@ async def register(
             )
 
     if promo:
-        promo.used_count += 1
+        # Atomic conditional increment - a plain `promo.used_count += 1` here
+        # would let two concurrent checkouts both read the same used_count
+        # and both pass the max_uses check in resolve_promo() before either
+        # commits, redeeming the code more times than allowed. Same pattern
+        # as the per-ticket-type inventory check above.
+        promo_result = await db.execute(
+            update(PromoCode)
+            .where(
+                PromoCode.id == promo.id,
+                or_(PromoCode.max_uses.is_(None), PromoCode.used_count < PromoCode.max_uses),
+            )
+            .values(used_count=PromoCode.used_count + 1)
+            .returning(PromoCode.id)
+        )
+        if promo_result.fetchone() is None:
+            await db.rollback()
+            raise HTTPException(409, "This promo code has just reached its usage limit.")
 
     # Someone who was on the waitlist and just successfully registered has
-    # claimed their spot — drop them from the queue so they don't get
+    # claimed their spot - drop them from the queue so they don't get
     # re-notified or block the position count for people behind them.
     ticket_type_ids = {item.ticket_type_id for item in data.items}
     if ticket_type_ids:
@@ -556,8 +653,17 @@ async def get_order(db: AsyncSession, order_id: uuid.UUID) -> Order | None:
     )
 
 
-async def get_registration_by_id(db: AsyncSession, reg_id: uuid.UUID) -> Registration | None:
-    return await db.scalar(
+async def get_registration_by_id(
+    db: AsyncSession, reg_id: uuid.UUID, *, for_update: bool = False
+) -> Registration | None:
+    """
+    `for_update` takes a row lock on the registration - use it before
+    cancel_registration() so two near-simultaneous cancel requests for the
+    same registration can't both pass the status check and both trigger a
+    real refund. The second request blocks until the first transaction
+    commits, then re-reads the now-updated status.
+    """
+    stmt = (
         select(Registration)
         .where(Registration.id == reg_id)
         .options(
@@ -566,6 +672,9 @@ async def get_registration_by_id(db: AsyncSession, reg_id: uuid.UUID) -> Registr
             selectinload(Registration.order).selectinload(Order.registrations),
         )
     )
+    if for_update:
+        stmt = stmt.with_for_update(of=Registration)
+    return await db.scalar(stmt)
 
 
 async def cancel_registration(
@@ -580,7 +689,7 @@ async def cancel_registration(
     release the ticket capacity it held, and offer the freed spot to the next
     waitlisted person.
 
-    `cancelled_by` is "organizer" or "attendee" — used only for notification copy.
+    `cancelled_by` is "organizer" or "attendee" - used only for notification copy.
     """
     if reg.status not in ("confirmed", "checked_in"):
         raise HTTPException(400, f"Registration is '{reg.status}' and cannot be cancelled.")
@@ -615,7 +724,7 @@ async def cancel_registration(
         sibling_statuses = [r.status for r in order.registrations if r.id != reg.id]
         if refunded:
             order.refunded_amount = float(order.refunded_amount or 0) + float(tt.price)
-            # Reverse our cut on the refunded portion too — the platform shouldn't
+            # Reverse our cut on the refunded portion too - the platform shouldn't
             # keep a fee on money that was given back. Proportional to how the fee
             # was originally computed (a flat % of gross), not the whole order's fee.
             fee_reversed = float(tt.price) * float(pay_svc.PLATFORM_FEE_PERCENT)
@@ -656,10 +765,128 @@ async def cancel_registration(
     return reg
 
 
+# ── Ticket transfer ──────────────────────────────────────────────────────────
+#
+# Two-step, claim-link flow (matches the transfer_token/transfer_expires_at
+# columns already on Registration): the current holder generates a shareable
+# link, and whoever opens it fills in *their own* details to claim the ticket
+# - the holder doesn't need to know the recipient's email up front. The
+# original registration is locked (status="transfer_pending") the moment a
+# transfer is initiated, not when it's claimed, so the original holder can't
+# also check in while a transfer is outstanding.
+
+_TRANSFER_EXPIRE_DAYS = 7
+
+
+async def initiate_transfer(db: AsyncSession, reg: Registration) -> Registration:
+    if reg.status != "confirmed":
+        raise HTTPException(
+            400, f"Registration is '{reg.status}': only a confirmed ticket can be transferred."
+        )
+    reg.status = "transfer_pending"
+    reg.transfer_token = secrets.token_urlsafe(24)
+    reg.transfer_expires_at = datetime.now(UTC) + timedelta(days=_TRANSFER_EXPIRE_DAYS)
+    await db.commit()
+    await db.refresh(reg)
+    return reg
+
+
+async def cancel_transfer(db: AsyncSession, reg: Registration) -> Registration:
+    if reg.status != "transfer_pending":
+        raise HTTPException(400, "This registration doesn't have a pending transfer.")
+    reg.status = "confirmed"
+    reg.transfer_token = None
+    reg.transfer_expires_at = None
+    await db.commit()
+    await db.refresh(reg)
+    return reg
+
+
+async def get_registration_by_transfer_token(db: AsyncSession, token: str) -> Registration | None:
+    reg = await db.scalar(
+        select(Registration)
+        .where(Registration.transfer_token == token)
+        .options(
+            selectinload(Registration.event),
+            selectinload(Registration.ticket_type),
+        )
+    )
+    if not reg or reg.status != "transfer_pending":
+        return None
+    if reg.transfer_expires_at and reg.transfer_expires_at < datetime.now(UTC):
+        return None
+    return reg
+
+
+async def claim_transfer(
+    db: AsyncSession,
+    token: str,
+    *,
+    new_name: str,
+    new_email: str,
+    new_phone: str | None,
+) -> Registration:
+    original = await get_registration_by_transfer_token(db, token)
+    if not original:
+        raise HTTPException(400, "This transfer link is invalid or has expired.")
+
+    # Atomic claim: two concurrent submissions of the same link (double-click,
+    # or the link forwarded to two people) must not both pass the read-only
+    # check above and each mint a new registration. Flip the original to
+    # "claiming" first - only the request that actually wins this update may
+    # proceed to create the new registration.
+    claim = await db.execute(
+        update(Registration)
+        .where(Registration.id == original.id, Registration.status == "transfer_pending")
+        .values(status="claiming")
+        .returning(Registration.id)
+    )
+    if claim.fetchone() is None:
+        await db.rollback()
+        raise HTTPException(400, "This transfer link has already been used.")
+
+    new_reg_id = uuid.uuid4()
+    qr_token = create_ticket_qr_token(str(new_reg_id), str(original.event_id))
+    new_reg = Registration(
+        id=new_reg_id,
+        event_id=original.event_id,
+        ticket_type_id=original.ticket_type_id,
+        order_id=original.order_id,
+        attendee_name=new_name,
+        attendee_email=new_email.lower(),
+        attendee_phone=new_phone,
+        qr_code=qr_token,
+        status="confirmed",
+        transferred_from_id=original.id,
+        referral_token=secrets.token_urlsafe(12),
+    )
+    db.add(new_reg)
+
+    original.status = "transferred"
+    original.transfer_token = None  # single-use - the link can't be replayed
+    original.transfer_expires_at = None
+
+    await db.commit()
+    await db.refresh(new_reg)
+
+    try:
+        from app.tasks.email import send_ticket_transfer_confirmation as _email_transfer
+
+        _email_transfer.delay(str(new_reg.id))
+    except Exception as err:
+        logger.warning(
+            "ticketing.transfer_confirmation_email_enqueue_failed",
+            registration_id=str(new_reg.id),
+            error=str(err),
+        )
+
+    return new_reg
+
+
 async def notify_next_waitlist_entry(
     db: AsyncSession, ticket_type_id: uuid.UUID
 ) -> Waitlist | None:
-    """Offer a just-freed spot to the next un-notified person on the waitlist —
+    """Offer a just-freed spot to the next un-notified person on the waitlist -
     called automatically when a registration is cancelled, and available for an
     organizer to trigger manually (e.g. after raising capacity by hand)."""
     next_wl = await db.scalar(

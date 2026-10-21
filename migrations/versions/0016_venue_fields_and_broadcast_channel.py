@@ -1,6 +1,6 @@
 """Add venue-specific fields to vendors, and a delivery channel to admin broadcasts.
 
-- vendors.address / vendors.capacity: "venue" is already a vendor category —
+- vendors.address / vendors.capacity: "venue" is already a vendor category -
   these let hall/venue owners list guest capacity and a precise address,
   which the generic vendor fields didn't cover.
 - admin_broadcasts.channel: lets a platform admin send an announcement as an

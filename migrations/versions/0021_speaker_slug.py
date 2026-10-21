@@ -1,4 +1,4 @@
-"""Add slug to speakers — needed for public speaker profile pages
+"""Add slug to speakers - needed for public speaker profile pages
 (GET /speakers/{slug}), now that Speaker is a real, reusable-across-events
 record instead of an inline JSON blob entry.
 """

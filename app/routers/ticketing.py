@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel
 from sqlalchemy import select
 
+from app import plans
 from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.models.ticketing import PromoCode, TicketType
 from app.permissions import Permission, require_permission
@@ -159,6 +160,7 @@ async def create_form_field(
     org_access: TicketingManageAccess,
 ):
     org, role, is_owner = org_access
+    plans.require_feature(org.plan, plans.PlanFeature.CUSTOM_FORM_FIELDS)
     event = await _get_event_for_org(db, event_id, org.id)
     return await tk_svc.create_form_field(db, event.id, data)
 
@@ -224,6 +226,7 @@ async def create_promo_code(
 ):
     org, role, is_owner = org_access
     event = await _get_event_for_org(db, event_id, org.id)
+    await plans.check_active_promo_code_limit(db, org.id, event.id, org.plan)
     return await tk_svc.create_promo_code(db, event.id, data)
 
 
@@ -298,7 +301,7 @@ async def cancel_registration(
     except ValueError as err:
         raise HTTPException(422, "Invalid registration ID.") from err
 
-    reg = await tk_svc.get_registration_by_id(db, rid)
+    reg = await tk_svc.get_registration_by_id(db, rid, for_update=True)
     if not reg or reg.event_id != event.id:
         raise HTTPException(404, "Registration not found.")
 
@@ -423,7 +426,7 @@ async def register_for_event(
         try:
             order_out.payment_url = await pay_svc.initialize_payment(db, order, event, org)
         except HTTPException:
-            # Surface payment init failures as a field on the response, not a 5xx —
+            # Surface payment init failures as a field on the response, not a 5xx -
             # the order is already created; the attendee can retry via confirmation page.
             order_out.payment_url = None
 
@@ -534,7 +537,7 @@ async def join_virtual_event(registration_id: str, db: DBSession):
 @router_registrations.get("/{registration_id}/referral-stats")
 async def registration_referral_stats(registration_id: str, db: DBSession):
     """
-    Powers the "bring a friend" card on an attendee's ticket page — their
+    Powers the "bring a friend" card on an attendee's ticket page - their
     shareable link and how many people have registered through it so far.
     """
     try:
@@ -550,7 +553,7 @@ async def registration_referral_stats(registration_id: str, db: DBSession):
     return {
         "success": True,
         "data": {
-            "referral_path": f"/e/{reg.event.slug}?ref={reg_id}",
+            "referral_path": f"/e/{reg.event.slug}?ref={reg.referral_token}",
             "referred_count": stats["referred_count"],
             "discount_percent": float(tk_svc.REFERRAL_DISCOUNT_PERCENT) * 100,
         },
@@ -569,7 +572,7 @@ async def cancel_my_registration(
     except ValueError as err:
         raise HTTPException(422, "Invalid registration ID.") from err
 
-    reg = await tk_svc.get_registration_by_id(db, reg_id)
+    reg = await tk_svc.get_registration_by_id(db, reg_id, for_update=True)
     if not reg:
         raise HTTPException(404, "Registration not found.")
 
@@ -581,3 +584,104 @@ async def cancel_my_registration(
 
     reg = await tk_svc.cancel_registration(db, reg, refund=True, cancelled_by="attendee")
     return {"success": True, "data": {"id": str(reg.id), "status": reg.status}}
+
+
+# ── Ticket transfer ────────────────────────────────────────────────────────────
+
+
+class ClaimTransferRequest(BaseModel):
+    name: str
+    email: str
+    phone: str | None = None
+
+
+@router_registrations.post("/{registration_id}/transfer")
+async def transfer_my_registration(
+    registration_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+    request: Request,
+):
+    """Attendee-initiated - generates a shareable claim link for someone
+    else to take over this ticket. Locks the ticket (can't be checked in)
+    until the transfer is claimed or cancelled."""
+    try:
+        reg_id = uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await tk_svc.get_registration_by_id(db, reg_id, for_update=True)
+    if not reg:
+        raise HTTPException(404, "Registration not found.")
+
+    owns_ticket = str(reg.user_id) == str(current_user.id) or (
+        reg.attendee_email and reg.attendee_email.lower() == current_user.email.lower()
+    )
+    if not owns_ticket:
+        raise HTTPException(403, "This isn't your ticket.")
+
+    reg = await tk_svc.initiate_transfer(db, reg)
+    transfer_url = f"{str(request.base_url).rstrip('/')}/transfer/{reg.transfer_token}"
+    return {
+        "success": True,
+        "data": {
+            "id": str(reg.id),
+            "status": reg.status,
+            "transfer_url": transfer_url,
+            "expires_at": reg.transfer_expires_at,
+        },
+    }
+
+
+@router_registrations.post("/{registration_id}/transfer/cancel")
+async def cancel_my_transfer(
+    registration_id: str,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    """Revoke an unclaimed transfer link and restore the ticket."""
+    try:
+        reg_id = uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await tk_svc.get_registration_by_id(db, reg_id, for_update=True)
+    if not reg:
+        raise HTTPException(404, "Registration not found.")
+
+    owns_ticket = str(reg.user_id) == str(current_user.id) or (
+        reg.attendee_email and reg.attendee_email.lower() == current_user.email.lower()
+    )
+    if not owns_ticket:
+        raise HTTPException(403, "This isn't your ticket.")
+
+    reg = await tk_svc.cancel_transfer(db, reg)
+    return {"success": True, "data": {"id": str(reg.id), "status": reg.status}}
+
+
+@router_registrations.get("/transfer/{token}")
+async def get_transfer_details(token: str, db: DBSession):
+    """Public, unauthenticated - the claim link itself is the capability,
+    same pattern as qr.png/badge.pdf. Lets the claim page show what's being
+    transferred before the recipient fills in their details."""
+    reg = await tk_svc.get_registration_by_transfer_token(db, token)
+    if not reg:
+        raise HTTPException(404, "This transfer link is invalid or has expired.")
+    return {
+        "success": True,
+        "data": {
+            "event_title": reg.event.title if reg.event else "",
+            "ticket_type": reg.ticket_type.name if reg.ticket_type else "General",
+            "from_attendee_name": reg.attendee_name,
+            "expires_at": reg.transfer_expires_at,
+        },
+    }
+
+
+@router_registrations.post("/transfer/{token}/claim")
+async def claim_transfer(token: str, body: ClaimTransferRequest, db: DBSession):
+    """Public, unauthenticated - same capability-URL reasoning as above."""
+    new_reg = await tk_svc.claim_transfer(
+        db, token, new_name=body.name, new_email=body.email, new_phone=body.phone
+    )
+    return {"success": True, "data": {"id": str(new_reg.id), "status": new_reg.status}}

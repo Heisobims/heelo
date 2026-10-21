@@ -1,4 +1,4 @@
-"""Livestream — simple paste-your-own-URL player (YouTube/Vimeo/HLS/generic
+"""Livestream - simple paste-your-own-URL player (YouTube/Vimeo/HLS/generic
 embed), not a real video-API integration. See build-order discussion: no
 paid video API account exists to integrate against and test in this
 environment, so this is the deliberately scoped option.

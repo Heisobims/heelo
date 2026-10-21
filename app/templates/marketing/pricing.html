@@ -1,24 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Pricing — Heelo{% endblock %}
-{% block meta_description %}Heelo takes {{ platform_fee_percent }}% on paid tickets. Nothing else — no attendee fees, no paywalled tools, and free events stay free.{% endblock %}
+{% block title %}Pricing | Heelo{% endblock %}
+{% block meta_description %}Heelo takes {{ platform_fee_percent }}% on paid tickets, added at checkout: organizers always keep their full ticket price. No paywalled tools, and free events stay free.{% endblock %}
 
 {% block head %}
 <style>
-  .pr-wrap { max-width: 760px; margin: 0 auto; padding: 72px 24px 96px; }
+  .pr-wrap { max-width: 760px; margin: 0 auto; padding: 130px 24px 40px; }
 
-  .pr-nav { display: flex; align-items: center; justify-content: space-between; max-width: 760px; margin: 0 auto; padding: 24px; }
-  .pr-nav-logo { font-family: var(--font-serif); font-size: 20px; font-weight: 700; color: var(--text-primary); text-decoration: none; }
-  .pr-nav-cta { font-size: 14px; font-weight: 600; color: var(--text-primary); text-decoration: none; padding: 8px 16px; border: 1.5px solid var(--border); border-radius: 8px; }
-  .pr-nav-cta:hover { border-color: var(--text-primary); }
-
-  .pr-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #00b3a9; margin-bottom: 12px; }
+  .pr-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); margin-bottom: 12px; }
   .pr-title { font-family: var(--font-serif); font-size: clamp(30px, 5vw, 44px); font-weight: 700; line-height: 1.12; letter-spacing: -0.01em; margin-bottom: 14px; }
   .pr-dek { font-size: 16px; line-height: 1.6; color: var(--text-secondary); max-width: 52ch; margin-bottom: 48px; }
 
   .pr-fee-card {
-    background: var(--text-primary);
+    background: var(--primary-dark);
     color: var(--white);
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 40px;
     display: flex;
     align-items: center;
@@ -27,11 +22,11 @@
     flex-wrap: wrap;
     margin-bottom: 56px;
   }
-  .pr-fee-number { font-family: var(--font-serif); font-size: 56px; font-weight: 700; line-height: 1; color: #00FFF3; }
+  .pr-fee-number { font-family: var(--font-serif); font-size: 56px; font-weight: 700; line-height: 1; color: var(--primary-aa); }
   .pr-fee-number sup { font-size: 24px; top: -0.6em; }
   .pr-fee-copy { flex: 1; min-width: 220px; }
   .pr-fee-copy h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-  .pr-fee-copy p { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.6; margin: 0; }
+  .pr-fee-copy p { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.6; margin: 0; }
 
   .pr-section { margin-bottom: 56px; }
   .pr-section h2 { font-size: 20px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.005em; }
@@ -43,47 +38,238 @@
     align-items: flex-start;
     gap: 10px;
     padding: 14px 16px;
-    background: var(--bg-secondary, #F7F7F5);
-    border-radius: 10px;
+    background: var(--bg-secondary, #FAF9F7);
+    border-radius: 12px;
     font-size: 14px;
     color: var(--text-secondary);
   }
-  .pr-item svg { flex-shrink: 0; margin-top: 2px; color: #00b3a9; }
+  .pr-item svg { flex-shrink: 0; margin-top: 2px; color: var(--primary); }
 
   .pr-rules { display: flex; flex-direction: column; gap: 20px; }
   .pr-rule { display: grid; grid-template-columns: 28px 1fr; gap: 14px; }
-  .pr-rule-mark { width: 8px; height: 8px; border-radius: 50%; background: #00FFF3; border: 2px solid #00b3a9; margin-top: 6px; }
+  .pr-rule-mark { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); border: 2px solid var(--primary); margin-top: 6px; }
   .pr-rule h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
   .pr-rule p { font-size: 14.5px; line-height: 1.65; color: var(--text-secondary); margin: 0; }
 
-  .pr-cta-block { text-align: center; padding-top: 24px; border-top: 1px solid var(--border); }
-  .pr-cta-block p { font-size: 14px; color: var(--text-muted); margin-bottom: 16px; }
-  .pr-cta-btn { display: inline-block; background: var(--text-primary); color: var(--white); font-size: 15px; font-weight: 600; padding: 13px 28px; border-radius: 10px; text-decoration: none; }
-  .pr-cta-btn:hover { background: #00FFF3; color: var(--text-primary); }
+  /* ── Shared wide-section wrapper (matches the landing page's) ────── */
+  .ln-section { padding: 88px 24px; }
+  .ln-section-inner { max-width: 1100px; margin: 0 auto; }
+  .ln-label {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--primary); margin-bottom: 14px;
+  }
+  .ln-heading {
+    font-family: var(--font-serif);
+    font-size: clamp(32px, 4vw, 52px); line-height: 1.1;
+    letter-spacing: -1.5px; color: var(--text-primary); margin-bottom: 20px;
+  }
+  .ln-sub {
+    font-size: 17px; color: var(--text-secondary); max-width: 540px; line-height: 1.7;
+  }
+
+  /* ── Pricing tiers ────────────────────────────────────────────── */
+  .ln-pricing-strip { background: var(--surface); }
+  .ps-row { display: flex; flex-direction: column; gap: 16px; margin: 48px 0 0; }
+  .ps-tier {
+    display: flex; align-items: center; gap: 44px;
+    background: #fff; border: 1px solid var(--border); border-radius: 24px;
+    padding: 36px 44px; position: relative;
+    transition: transform 220ms ease, border-color 220ms ease;
+  }
+  .ps-tier:hover { transform: translateY(-3px); border-color: var(--primary); }
+  .ps-tier-price { flex: 0 0 auto; min-width: 240px; }
+  .ps-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 12px; }
+  .ps-amt {
+    font-family: var(--font-mono); font-weight: 800; font-size: clamp(38px, 4.6vw, 60px);
+    color: #0A0A0A; letter-spacing: -2px; line-height: 1;
+  }
+  .ps-currency {
+    font-family: var(--font-sans), system-ui, sans-serif; font-weight: 800;
+    letter-spacing: 0; margin-right: 1px;
+  }
+  .ps-amt span:last-child { font-size: 15px; font-weight: 500; color: var(--text-muted); letter-spacing: 0; margin-left: 4px; }
+  .ps-tier-copy { flex: 1; min-width: 220px; border-left: 1px solid var(--border); padding-left: 44px; }
+  .ps-tier-copy p { font-size: 16px; color: var(--text-secondary); line-height: 1.7; }
+
+  .ps-tier.ps-popular {
+    background: linear-gradient(120deg, rgba(232,89,56,0.08), rgba(232,89,56,0.01));
+    border-color: var(--primary);
+  }
+  .ps-tier.ps-popular .ps-amt { color: var(--primary); }
+  .ps-tier.ps-popular .ps-amt {
+    animation: ps-amt-glow 2.6s ease-in-out infinite;
+  }
+  @keyframes ps-amt-glow {
+    0%, 100% { text-shadow: 0 0 0 rgba(232,89,56,0); }
+    50% { text-shadow: 0 0 24px rgba(232,89,56,0.35); }
+  }
+  .ps-popular-badge {
+    position: absolute; top: -15px; left: 40px; z-index: 2;
+    background: var(--primary); color: #FFFFFF; font-family: var(--font-serif);
+    font-size: 12px; font-weight: 700; padding: 6px 16px 6px 14px; border-radius: 9999px;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 6px 18px rgba(232,89,56,0.4);
+    animation: ps-badge-pulse 2.4s ease-in-out infinite;
+  }
+  .ps-popular-badge .material-symbols-outlined {
+    font-size: 14px; font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20;
+  }
+  @keyframes ps-badge-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 6px 18px rgba(232,89,56,0.4); }
+    50% { transform: scale(1.05); box-shadow: 0 8px 24px rgba(232,89,56,0.55); }
+  }
+
+  .curr-pill {
+    padding: 6px 14px; border-radius: 9999px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: 1.5px solid var(--border); background: #fff;
+    color: var(--text-secondary); transition: all 0.15s ease;
+  }
+  .curr-pill:hover { border-color: var(--primary); color: var(--primary); }
+  .curr-pill.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+  /* ── Real numbers, redesigned for this page's narrower rhythm ───── */
+  .pr-stats-head { max-width: 640px; margin: 0 auto 40px; text-align: center; }
+  .pr-stats-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .pr-stat { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 26px 24px; transition: transform 200ms ease, border-color 200ms ease; }
+  .pr-stat:hover { transform: translateY(-3px); border-color: var(--cyan); }
+  .pr-stat-num { font-family: var(--font-mono); font-weight: 700; font-size: clamp(28px, 3.2vw, 36px); letter-spacing: -1px; display: block; margin-bottom: 12px; }
+  .pr-stat:nth-child(1) .pr-stat-num { color: var(--cyan); filter: brightness(0.6); }
+  .pr-stat:nth-child(2) .pr-stat-num { color: var(--magenta); filter: brightness(0.9); }
+  .pr-stat:nth-child(3) .pr-stat-num { color: var(--warning); filter: brightness(0.85); }
+  .pr-stat:nth-child(4) .pr-stat-num { color: var(--success); filter: brightness(0.85); }
+  .pr-stat-title { font-family: var(--font-serif); font-weight: 700; font-size: 15.5px; color: #0A0A0A; letter-spacing: -0.2px; line-height: 1.3; margin-bottom: 8px; }
+  .pr-stat-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.55; }
+
+  /* ── Everything you need (pillars) ───────────────────────────── */
+  .ln-pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); margin-top: 64px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .ln-pillar { background: var(--white); padding: 40px 32px; display: flex; flex-direction: column; }
+  .ln-pillar-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    background: #0A0A0A; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; color: var(--cyan); font-size: 17px;
+  }
+  .ln-pillar h3 { font-size: 19px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.3px; }
+  .ln-pillar-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.65; margin-bottom: 20px; }
+  .ln-pillar-list { list-style: none; padding: 0; margin: 0 0 24px; flex: 1; }
+  .ln-pillar-list li {
+    font-size: 13.5px; color: var(--text-primary); padding: 7px 0 7px 20px; position: relative; line-height: 1.5;
+  }
+  .ln-pillar-list li::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 11px;
+    width: 5px;
+    height: 9px;
+    border: solid var(--cyan);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    filter: brightness(0.65);
+  }
+  .ln-pillar-link {
+    font-size: 13.5px; font-weight: 600; color: #0A0A0A; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .ln-pillar-link:hover { color: var(--cyan); filter: brightness(0.7); }
+
+  /* ── Built for every kind of event (use-case tabs) ───────────────── */
+  .ln-usecases { padding: 88px 24px; background: #fff; }
+  .uc-tabs {
+    display: flex; gap: 0; margin: 40px 0 36px; border-bottom: 1px solid var(--border);
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .uc-tabs::-webkit-scrollbar { display: none; }
+  .uc-tab {
+    background: none; border: none; cursor: pointer; padding: 12px 4px; margin-right: 30px;
+    font-family: var(--font-sans, inherit); font-size: 14.5px; font-weight: 600; color: #9c9686;
+    white-space: nowrap; flex-shrink: 0;
+    border-bottom: 2px solid transparent; transition: color 150ms, border-color 150ms;
+  }
+  .uc-tab.active { color: #0A0A0A; border-bottom-color: var(--cyan); }
+  .uc-tab:hover { color: #0A0A0A; }
+
+  .uc-panel-grid {
+    display: grid; grid-template-columns: 1fr 300px; grid-template-rows: repeat(2, minmax(160px, auto));
+    gap: 14px;
+  }
+  .uc-card {
+    border-radius: 24px; padding: 28px 26px;
+    display: flex; flex-direction: column; justify-content: center;
+    transition: transform 200ms ease;
+  }
+  .uc-card:hover { transform: translateY(-3px); }
+  .uc-card .material-symbols-outlined { color: var(--cyan); filter: brightness(0.6); font-size: 22px; margin-bottom: 14px; display: block; }
+  .uc-card h4 { font-size: 16px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.2px; }
+  .uc-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+  .uc-card:nth-child(1) { background: linear-gradient(150deg, rgba(232,89,56,0.12), rgba(232,89,56,0.02)); }
+  .uc-card:nth-child(2) { background: linear-gradient(150deg, rgba(255,62,203,0.11), rgba(255,62,203,0.02)); }
+  .uc-card:nth-child(2) .material-symbols-outlined { color: var(--magenta); filter: brightness(0.85); }
+  .uc-card:nth-child(3) { background: linear-gradient(150deg, rgba(255,179,0,0.14), rgba(255,179,0,0.03)); }
+  .uc-card:nth-child(3) .material-symbols-outlined { color: var(--warning); filter: brightness(0.85); }
+  .uc-card:first-child {
+    grid-row: 1 / 3; grid-column: 1; padding: 48px; justify-content: flex-end; min-height: 340px;
+  }
+  .uc-card:first-child .material-symbols-outlined { font-size: 34px; margin-bottom: 22px; }
+  .uc-card:first-child h4 { font-size: 22px; letter-spacing: -0.4px; margin-bottom: 12px; }
+  .uc-card:first-child p { font-size: 15px; max-width: 34ch; }
+  .uc-card:nth-child(2) { grid-row: 1; grid-column: 2; }
+  .uc-card:nth-child(3) { grid-row: 2; grid-column: 2; }
+
+  /* ── Scroll reveal ────────────────────────────────────────────── */
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity 600ms ease, transform 600ms ease; }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+  .ps-row .reveal:nth-child(1) { transition-delay: 0ms; }
+  .ps-row .reveal:nth-child(2) { transition-delay: 90ms; }
+  .ps-row .reveal:nth-child(3) { transition-delay: 180ms; }
+  .pr-stats-grid .reveal:nth-child(1) { transition-delay: 0ms; }
+  .pr-stats-grid .reveal:nth-child(2) { transition-delay: 80ms; }
+  .pr-stats-grid .reveal:nth-child(3) { transition-delay: 160ms; }
+  .pr-stats-grid .reveal:nth-child(4) { transition-delay: 240ms; }
+  .ln-pillars .reveal:nth-child(1) { transition-delay: 0ms; }
+  .ln-pillars .reveal:nth-child(2) { transition-delay: 90ms; }
+  .ln-pillars .reveal:nth-child(3) { transition-delay: 180ms; }
+
+  @media (max-width: 960px) {
+    .ln-pillars { grid-template-columns: 1fr; }
+    .pr-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .ps-tier { flex-direction: column; align-items: flex-start; gap: 20px; padding: 30px 28px; }
+    .ps-tier-copy { border-left: none; padding-left: 0; }
+    .uc-panel-grid { grid-template-columns: 1fr; grid-template-rows: none; }
+    .uc-card:first-child { grid-row: auto; grid-column: auto; padding: 28px 26px; justify-content: center; }
+    .uc-card:first-child .material-symbols-outlined { font-size: 22px; margin-bottom: 14px; }
+    .uc-card:first-child h4 { font-size: 16px; margin-bottom: 8px; }
+    .uc-card:first-child p { font-size: 14px; max-width: none; }
+    .uc-card:nth-child(2), .uc-card:nth-child(3) { grid-row: auto; grid-column: auto; }
+  }
+  @media (max-width: 768px) {
+    .uc-tabs { margin: 32px 0 28px; }
+    .uc-tab { margin-right: 22px; font-size: 13.5px; }
+  }
+  @media (max-width: 480px) {
+    .pr-stats-grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .ps-tier.ps-popular .ps-amt { animation: none; }
+    .ps-popular-badge { animation: none; }
+  }
 </style>
 {% endblock %}
 
 {% block body %}
-<nav class="pr-nav">
-  <a href="/" class="pr-nav-logo">heelo</a>
-  {% if is_logged_in %}
-  <a href="/dashboard" class="pr-nav-cta">Go to dashboard</a>
-  {% else %}
-  <a href="/register" class="pr-nav-cta">Get started free</a>
-  {% endif %}
-</nav>
+{% include "partials/site_nav.html" %}
 
 <div class="pr-wrap">
 
   <div class="pr-eyebrow">Pricing</div>
   <h1 class="pr-title">One fee. Paid when you get paid.</h1>
-  <p class="pr-dek">No subscriptions, no paywalled tools, no fee sprung on attendees at checkout. Heelo makes money the same way you do — when a ticket sells.</p>
+  <p class="pr-dek">No subscriptions, no paywalled tools: just one flat fee, shown to attendees at checkout so nothing is hidden. Heelo makes money the same way you do: when a ticket sells.</p>
 
   <div class="pr-fee-card">
     <div class="pr-fee-number">{{ platform_fee_percent }}<sup>%</sup></div>
     <div class="pr-fee-copy">
-      <h3>On paid tickets. That's the whole rate card.</h3>
-      <p>Taken from what you receive as the organizer — never added to what your attendees pay at checkout. Free events cost nothing to run, always.</p>
+      <h3>Added at checkout. Never taken from you.</h3>
+      <p>Your attendees cover Heelo's {{ platform_fee_percent }}% fee and payment processing on top of your ticket price: you always receive exactly what you set. Free events cost nothing to run, always.</p>
     </div>
   </div>
 
@@ -99,21 +285,21 @@
     </div>
   </div>
 
-  <div class="pr-section">
+  <div class="pr-section" style="margin-bottom: 0;">
     <h2>How the fee works</h2>
     <div class="pr-rules">
       <div class="pr-rule">
         <div class="pr-rule-mark"></div>
         <div>
-          <h4>Free events are free — always</h4>
-          <p>A {{ platform_fee_percent }}% cut of ₦0 is ₦0. There's no plan, no cap, no "upgrade to keep hosting free events."</p>
+          <h4>Free events are free, always</h4>
+          <p>A {{ platform_fee_percent }}% cut of free is free. There's no plan, no cap, no "upgrade to keep hosting free events."</p>
         </div>
       </div>
       <div class="pr-rule">
         <div class="pr-rule-mark"></div>
         <div>
-          <h4>Attendees never see a Heelo fee</h4>
-          <p>The fee comes out of what you, the organizer, receive — it's not stacked on top of your ticket price at checkout the way some platforms do it.</p>
+          <h4>Flexible fee strategy: Pass to buyer or absorb</h4>
+          <p>You choose what fits your brand. Pass fees to the ticket buyer at checkout to net 100% of your ticket price, or offer inclusive pricing where fees are absorbed into ticket face value (ideal for galas, exclusive dinners, and conferences).</p>
         </div>
       </div>
       <div class="pr-rule">
@@ -127,20 +313,362 @@
         <div class="pr-rule-mark"></div>
         <div>
           <h4>You see the fee before you publish, not after</h4>
-          <p>When you set a ticket price, you'll see exactly what you'll take home per ticket — no discovering it for the first time on your payout.</p>
+          <p>When you set a ticket price, you'll see exactly what you'll take home per ticket: no discovering it for the first time on your payout.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="pr-cta-block">
-    <p>No credit card, no trial that expires. Just create your first event.</p>
-    {% if is_logged_in %}
-    <a href="/dashboard" class="pr-cta-btn">Go to your dashboard</a>
-    {% else %}
-    <a href="/register" class="pr-cta-btn">Get started free</a>
-    {% endif %}
-  </div>
-
 </div>
+
+<!-- ── Pricing tiers ────────────────────────────────────────────── -->
+<section class="ln-section ln-pricing-strip" id="tiers">
+  <div class="ln-section-inner">
+    <div class="ln-label">Plans</div>
+    <h2 class="ln-heading">Start free.<br>Upgrade when you're ready.</h2>
+    <p class="ln-sub">The {{ platform_fee_percent }}% fee above applies at every tier: plans add branding, seats, and advanced tools, not a different rate card.</p>
+
+    <!-- Currency switch pills -->
+    <div style="display:flex; align-items:center; gap:8px; margin-top:28px; flex-wrap:wrap;">
+      <span style="font-size:13px; font-weight:600; color:var(--text-muted); margin-right:4px;">Billing currency:</span>
+      <button type="button" class="curr-pill active" onclick="switchCurrency('USD', '$', {growth: 19, pro: 49})">USD ($)</button>
+      <button type="button" class="curr-pill" onclick="switchCurrency('EUR', '€', {growth: 18, pro: 45})">EUR (€)</button>
+      <button type="button" class="curr-pill" onclick="switchCurrency('GBP', '£', {growth: 15, pro: 39})">GBP (£)</button>
+      <button type="button" class="curr-pill" onclick="switchCurrency('CAD', 'CA$', {growth: 25, pro: 65})">CAD (CA$)</button>
+      <button type="button" class="curr-pill" onclick="switchCurrency('NGN', '₦', {growth: 7500, pro: 25000})">NGN (₦)</button>
+    </div>
+
+    <div class="ps-row">
+      <div class="ps-tier reveal">
+        <div class="ps-tier-price">
+          <div class="ps-name">Free</div>
+          <div class="ps-amt"><span class="ps-currency">$</span><span class="ps-amt-num" data-count="0">0</span><span>/mo</span></div>
+        </div>
+        <div class="ps-tier-copy">
+          <p>Everything you need to run a real event: unlimited events and paid tickets, with no trial clock and no forced upgrade, ever.</p>
+        </div>
+      </div>
+      <div class="ps-tier ps-popular reveal">
+        <div class="ps-popular-badge"><span class="material-symbols-outlined">star</span>Most popular</div>
+        <div class="ps-tier-price">
+          <div class="ps-name">Growth</div>
+          <div class="ps-amt"><span class="ps-currency">$</span><span class="ps-amt-num" data-count="19">0</span><span>/mo</span></div>
+        </div>
+        <div class="ps-tier-copy">
+          <p>For organizers building a brand: your own branding everywhere, three team seats to share the load, and CRM import to bring your contacts with you.</p>
+        </div>
+      </div>
+      <div class="ps-tier reveal">
+        <div class="ps-tier-price">
+          <div class="ps-name">Pro</div>
+          <div class="ps-amt"><span class="ps-currency">$</span><span class="ps-amt-num" data-count="49">0</span><span>/mo</span></div>
+        </div>
+        <div class="ps-tier-copy">
+          <p>For conferences that mean business: sponsors, live polls and Q&amp;A, full analytics, and a custom domain that makes it feel like yours.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Real numbers, not slogans ────────────────────────────────── -->
+<section class="ln-section">
+  <div class="pr-stats-head reveal">
+    <div class="ln-label" style="display:inline-block;">Real numbers, not slogans</div>
+    <h2 class="ln-heading" style="font-size:clamp(26px,3.4vw,38px);">Every promise here is something you can check in the product.</h2>
+  </div>
+  <div class="pr-stats-grid">
+    <div class="pr-stat reveal">
+      <span class="pr-stat-num" data-count="0" data-prefix="$" data-suffix="">$0</span>
+      <div class="pr-stat-title">Free, forever.</div>
+      <div class="pr-stat-desc">Unlimited events and paid tickets on the free plan. No trial clock, no forced upgrade.</div>
+    </div>
+    <div class="pr-stat reveal">
+      <span class="pr-stat-num" data-count="100" data-prefix="" data-suffix="%">100%</span>
+      <div class="pr-stat-title">You keep your full price.</div>
+      <div class="pr-stat-desc">Whatever you set as the ticket price is exactly what lands in your account: Heelo's fee is added on top, not carved out.</div>
+    </div>
+    <div class="pr-stat reveal">
+      <span class="pr-stat-num" data-count="5" data-prefix="" data-suffix="s">5s</span>
+      <div class="pr-stat-title">Check-in that updates itself.</div>
+      <div class="pr-stat-desc">Your live check-in stream refreshes every five seconds. No manual reload at the door.</div>
+    </div>
+    <div class="pr-stat reveal">
+      <span class="pr-stat-num" data-count="5" data-prefix="" data-suffix="%">5%</span>
+      <div class="pr-stat-title">A referral discount, one click away.</div>
+      <div class="pr-stat-desc">Every attendee gets a shareable link. Friends who use it get 5% off: no separate referral system to configure.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Everything you need ──────────────────────────────────────── -->
+<section class="ln-section" id="features">
+  <div class="ln-section-inner">
+    <div class="ln-label">Everything you need</div>
+    <h2 class="ln-heading">One platform.<br>Zero duct tape.</h2>
+    <p class="ln-sub">Stop juggling five tools. Heelo handles every part of your event lifecycle in one place.</p>
+
+    <div class="ln-pillars">
+      <div class="ln-pillar reveal">
+        <div class="ln-pillar-icon"><span class="material-symbols-outlined">confirmation_number</span></div>
+        <h3>Ticketing &amp; Registration</h3>
+        <p class="ln-pillar-desc">Every ticket type your event needs, with capacity limits and sale windows built in from day one.</p>
+        <ul class="ln-pillar-list">
+          <li>Free, paid, VIP, early-bird &amp; group tickets</li>
+          <li>Promo codes and waitlists with auto-offer</li>
+          <li>QR tickets delivered by email and WhatsApp</li>
+          <li>A public registration page, live instantly</li>
+          <li>A vertical discovery feed, not a static list</li>
+        </ul>
+        <a href="/events" class="ln-pillar-link">Explore ticketing →</a>
+      </div>
+      <div class="ln-pillar reveal">
+        <div class="ln-pillar-icon"><span class="material-symbols-outlined">qr_code_2</span></div>
+        <h3>Check-in &amp; Attendance</h3>
+        <p class="ln-pillar-desc">Built for the one thing most ticketing platforms get wrong: the door, when the WiFi doesn't cooperate.</p>
+        <ul class="ln-pillar-list">
+          <li>QR scan from any device, no extra hardware</li>
+          <li>Genuine offline mode, syncs when signal returns</li>
+          <li>Live check-in stream and attendance tracking</li>
+          <li>Badge and certificate PDFs, single or bulk</li>
+        </ul>
+        <a href="#usecases" class="ln-pillar-link">Explore check-in →</a>
+      </div>
+      <div class="ln-pillar reveal">
+        <div class="ln-pillar-icon"><span class="material-symbols-outlined">payments</span></div>
+        <h3>Payments &amp; Growth</h3>
+        <p class="ln-pillar-desc">Collect money in NGN, KES, GHS, USD and more, then bring attendees back without spending on ads.</p>
+        <ul class="ln-pillar-list">
+          <li>Paystack, Flutterwave, and Stripe, built in</li>
+          <li>Heelo's 5% fee is added at checkout, not deducted from you</li>
+          <li>Referral links: 5% off for friends, one click to share</li>
+          <li>WhatsApp and email campaigns with segments</li>
+          <li>AI-generated insights after every event</li>
+        </ul>
+        <a href="#tiers" class="ln-pillar-link">See plans →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Built for every kind of event ────────────────────────────── -->
+<section class="ln-usecases" id="usecases" x-data="{ tab: 0 }">
+  <div class="ln-section-inner">
+    <div class="ln-label">Built for every kind of event</div>
+    <h2 class="ln-heading">However you gather people,<br>Heelo already fits.</h2>
+    <p class="ln-sub">One platform underneath all four, not just the parts that look like a concert.</p>
+
+    <div class="uc-tabs">
+      <button type="button" class="uc-tab" :class="{ active: tab === 0 }" @click="tab = 0">Conferences &amp; summits</button>
+      <button type="button" class="uc-tab" :class="{ active: tab === 1 }" @click="tab = 1">Concerts &amp; parties</button>
+      <button type="button" class="uc-tab" :class="{ active: tab === 2 }" @click="tab = 2">Community meetups</button>
+      <button type="button" class="uc-tab" :class="{ active: tab === 3 }" @click="tab = 3">Workshops &amp; classes</button>
+    </div>
+
+    <div x-show="tab === 0" x-cloak class="uc-panel-grid">
+      <div class="uc-card">
+        <span class="material-symbols-outlined">groups</span>
+        <h4>Speaker profiles that stick around</h4>
+        <p>Reusable bios, photos, and socials, attach a speaker to one event or ten, with a self-service invite-and-claim flow.</p>
+      </div>
+      <div class="uc-card">
+        <span class="material-symbols-outlined">calendar_view_day</span>
+        <h4>Multi-track agenda builder</h4>
+        <p>Drag-and-reorder sessions across tracks and rooms: no more agenda living in a shared spreadsheet nobody updates.</p>
+      </div>
+      <div class="uc-card">
+        <span class="material-symbols-outlined">handshake</span>
+        <h4>A sponsor portal that isn't email</h4>
+        <p>Platinum-to-media sponsor tiers, and sponsors log in themselves to update their own logo and description.</p>
+      </div>
+    </div>
+
+    <div x-show="tab === 1" x-cloak class="uc-panel-grid">
+      <div class="uc-card">
+        <span class="material-symbols-outlined">confirmation_number</span>
+        <h4>VIP, early-bird, group: any ticket type</h4>
+        <p>Each with its own capacity, price, and sale window. Promo codes and waitlists with automatic offer-on-cancellation are built in.</p>
+      </div>
+      <div class="uc-card">
+        <span class="material-symbols-outlined">chat</span>
+        <h4>Tickets land on WhatsApp</h4>
+        <p>The QR code is sent as an image, straight to your guest's phone. No app download, no "check your spam folder."</p>
+      </div>
+      <div class="uc-card">
+        <span class="material-symbols-outlined">wifi_off</span>
+        <h4>Check-in that works at the door</h4>
+        <p>Scan or search by name, offline. Every check-in syncs the moment the venue's signal decides to cooperate.</p>
+      </div>
+    </div>
+
+    <div x-show="tab === 2" x-cloak class="uc-panel-grid">
+      <div class="uc-card">
+        <span class="material-symbols-outlined">contacts</span>
+        <h4>A real contact database</h4>
+        <p>Not just names pulled off ticket sales: import your own list, tag it, and stay compliant with one-click unsubscribe.</p>
+      </div>
+      <div class="uc-card">
+        <span class="material-symbols-outlined">campaign</span>
+        <h4>WhatsApp and email campaigns</h4>
+        <p>Segment by ticket type, registration status, or custom tag, and send updates through the channel your community actually reads.</p>
+      </div>
+      <div class="uc-card">
+        <span class="material-symbols-outlined">forum</span>
+        <h4>A community that talks back</h4>
+        <p>Attendees can follow your org and leave comments on your events: an actual audience, not just a list of past ticket buyers.</p>
+      </div>
+    </div>
+
+    <div x-show="tab === 3" x-cloak class="uc-panel-grid">
+      <div class="uc-card">
+        <span class="material-symbols-outlined">redeem</span>
+        <h4>A referral loop, built in</h4>
+        <p>Every attendee gets a shareable link. Friends get 5% off: simple, with no separate system to configure.</p>
+      </div>
+      <div class="uc-card">
+        <span class="material-symbols-outlined">workspace_premium</span>
+        <h4>Certificates, generated automatically</h4>
+        <p>Everyone who checks in gets a certificate PDF: no design work, no manual sending after the fact.</p>
+      </div>
+      <div class="uc-card">
+        <span class="material-symbols-outlined">auto_awesome</span>
+        <h4>AI, inside the workflow</h4>
+        <p>Draft your event description or campaign message without leaving the page you're already on.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Scroll reveal ──────────────────────────────────────────────
+  var revealEls = document.querySelectorAll('.reveal');
+  if (revealEls.length) {
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      revealEls.forEach(function (el) { el.classList.add('in'); });
+    } else {
+      var revealIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in');
+            revealIo.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+      revealEls.forEach(function (el) { revealIo.observe(el); });
+    }
+  }
+
+  // ── Stats count-up ───────────────────────────────────────────────
+  var statsGrid = document.querySelector('.pr-stats-grid');
+  var statEls = document.querySelectorAll('.pr-stat-num[data-count]');
+  if (statsGrid && statEls.length) {
+    var runStatCount = function () {
+      statEls.forEach(function (el) {
+        var target = parseInt(el.getAttribute('data-count'), 10);
+        var prefix = el.getAttribute('data-prefix') || '';
+        var suffix = el.getAttribute('data-suffix') || '';
+        if (reduceMotion) { el.textContent = prefix + target + suffix; return; }
+        var duration = 900;
+        var startTime = null;
+        function step(ts) {
+          if (!startTime) startTime = ts;
+          var progress = Math.min((ts - startTime) / duration, 1);
+          el.textContent = prefix + Math.floor(progress * target) + suffix;
+          if (progress < 1) requestAnimationFrame(step);
+          else el.textContent = prefix + target + suffix;
+        }
+        requestAnimationFrame(step);
+      });
+    };
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      runStatCount();
+    } else {
+      var statsIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            runStatCount();
+            statsIo.disconnect();
+          }
+        });
+      }, { threshold: 0.4 });
+      statsIo.observe(statsGrid);
+    }
+  }
+
+  // ── Pricing count-up ────────────────────────────────────────────
+  var priceRow = document.querySelector('.ps-row');
+  var priceEls = document.querySelectorAll('.ps-amt-num[data-count]');
+  if (priceRow && priceEls.length) {
+    var runPriceCount = function () {
+      priceEls.forEach(function (el) {
+        var target = parseInt(el.getAttribute('data-count'), 10);
+        if (reduceMotion) { el.textContent = target.toLocaleString('en-US'); return; }
+        var duration = 1100;
+        var startTime = null;
+        function step(ts) {
+          if (!startTime) startTime = ts;
+          var progress = Math.min((ts - startTime) / duration, 1);
+          var eased = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.floor(eased * target).toLocaleString('en-US');
+          if (progress < 1) requestAnimationFrame(step);
+          else el.textContent = target.toLocaleString('en-US');
+        }
+        requestAnimationFrame(step);
+      });
+    };
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      runPriceCount();
+    } else {
+      var priceIo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            runPriceCount();
+            priceIo.disconnect();
+          }
+        });
+      }, { threshold: 0.4 });
+      priceIo.observe(priceRow);
+    }
+  }
+
+  window.switchCurrency = function(code, symbol, prices) {
+    document.querySelectorAll('.curr-pill').forEach(function(btn) {
+      btn.classList.toggle('active', btn.textContent.includes(code));
+    });
+    document.querySelectorAll('.ps-currency').forEach(function(span) {
+      span.textContent = symbol;
+    });
+    var nums = document.querySelectorAll('.ps-amt-num');
+    if (nums[1]) {
+      nums[1].setAttribute('data-count', prices.growth);
+      nums[1].textContent = prices.growth.toLocaleString('en-US');
+    }
+    if (nums[2]) {
+      nums[2].setAttribute('data-count', prices.pro);
+      nums[2].textContent = prices.pro.toLocaleString('en-US');
+    }
+    var freeStat = document.querySelector('.pr-stat-num[data-count="0"]');
+    if (freeStat) {
+      freeStat.setAttribute('data-prefix', symbol);
+      freeStat.textContent = symbol + '0';
+    }
+  };
+
+  try {
+    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    if (tz.startsWith('Europe/London')) {
+      switchCurrency('GBP', '£', {growth: 15, pro: 39});
+    } else if (tz.startsWith('Europe/')) {
+      switchCurrency('EUR', '€', {growth: 18, pro: 45});
+    } else if (tz.includes('Lagos') || tz.includes('Accra') || tz.includes('Nairobi') || tz.includes('Johannesburg')) {
+      switchCurrency('NGN', '₦', {growth: 7500, pro: 25000});
+    } else if (tz.startsWith('America/Toronto') || tz.startsWith('America/Vancouver') || tz.startsWith('America/Montreal')) {
+      switchCurrency('CAD', 'CA$', {growth: 25, pro: 65});
+    }
+  } catch (e) {}
+}());
+</script>
 {% endblock %}

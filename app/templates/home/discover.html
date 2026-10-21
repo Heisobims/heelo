@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Discover — Heelo{% endblock %}
+{% block title %}Discover | Heelo{% endblock %}
 {% block meta_description %}Scroll through upcoming events near you and across Africa.{% endblock %}
 
 {% block head %}
@@ -12,15 +12,15 @@
     background: linear-gradient(to bottom, rgba(0,0,0,0.65), transparent);
   }
   .feed-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: #fff; }
-  .feed-nav-logo span { color: var(--cyan, #00FFF3); }
+  .feed-nav-logo span { color: var(--primary, #E85938); }
   .feed-nav-links { display: flex; gap: 4px; margin-left: 8px; }
   .feed-nav-links a { font-size: 13.5px; font-weight: 500; padding: 5px 12px; border-radius: 7px; text-decoration: none; color: rgba(255,255,255,0.75); }
   .feed-nav-links a:hover, .feed-nav-links a.active { background: rgba(255,255,255,0.12); color: #fff; }
   .feed-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
   .feed-btn-ghost { padding: 6px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; text-decoration: none; color: #fff; border: 1px solid rgba(255,255,255,0.3); }
-  .feed-btn-primary { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--cyan, #00FFF3); color: #000; }
+  .feed-btn-primary { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--primary, #E85938); color: #fff; }
 
-  /* ── Vertical scroll-snap feed — one card at a time ─────────────────────── */
+  /* ── Vertical scroll-snap feed - one card at a time ─────────────────────── */
   .feed-container {
     height: 100vh; overflow-y: scroll;
     scroll-snap-type: y mandatory;
@@ -47,13 +47,13 @@
     transition: background 0.15s, color 0.15s, transform 0.1s;
   }
   .feed-card-interest:active { transform: scale(0.9); }
-  .feed-card-interest.active { background: var(--cyan, #00FFF3); color: #000; }
+  .feed-card-interest.active { background: var(--primary, #E85938); color: #fff; }
 
   .feed-card-overlay { position: absolute; left: 0; right: 0; bottom: 0; padding: 24px 24px calc(env(safe-area-inset-bottom, 0px) + 32px); }
   .feed-card-tags { display: flex; gap: 6px; margin-bottom: 10px; }
-  .feed-card-tag { font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: rgba(0,255,243,0.15); border: 1px solid rgba(0,255,243,0.35); color: var(--cyan, #00FFF3); }
+  .feed-card-tag { font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: color-mix(in srgb, var(--primary, #E85938) 15%, transparent); border: 1px solid color-mix(in srgb, var(--primary, #E85938) 35%, transparent); color: var(--primary, #E85938); }
 
-  .feed-card-mutuals { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--cyan, #00FFF3); margin-bottom: 8px; }
+  .feed-card-mutuals { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--primary, #E85938); margin-bottom: 8px; }
   .feed-card-title { font-family: var(--font-serif); font-size: clamp(22px, 4.5vw, 34px); font-weight: 700; color: #fff; line-height: 1.15; margin: 0 0 12px; max-width: 640px; }
   .feed-card-meta { display: flex; flex-wrap: wrap; gap: 14px; }
   .feed-card-meta-item { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: rgba(255,255,255,0.85); }
@@ -64,8 +64,34 @@
   .feed-empty { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 24px; color: #fff; }
   .feed-empty p { color: rgba(255,255,255,0.6); font-size: 14px; margin-top: 8px; max-width: 320px; }
 
+  .feed-hamburger {
+    display: none; flex-direction: column; justify-content: center; gap: 5px;
+    background: none; border: none; cursor: pointer; padding: 6px; margin-left: 4px;
+  }
+  .feed-hamburger span {
+    display: block; width: 20px; height: 1.5px; background: #fff;
+    transition: transform 200ms, opacity 200ms; border-radius: 2px;
+  }
+  .feed-hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .feed-hamburger.open span:nth-child(2) { opacity: 0; }
+  .feed-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+  .feed-mobile-menu {
+    display: none; flex-direction: column;
+    position: fixed; top: 52px; left: 0; right: 0; z-index: 49;
+    background: rgba(10,10,10,0.97); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 8px 20px 20px;
+  }
+  .feed-mobile-menu.open { display: flex; }
+  .feed-mobile-menu a {
+    font-size: 15px; font-weight: 500; color: #fff; text-decoration: none;
+    padding: 13px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .feed-mobile-menu a:last-child { border-bottom: none; }
+
   @media (max-width: 640px) {
     .feed-nav-links { display: none; }
+    .feed-hamburger { display: flex; }
   }
 </style>
 {% endblock %}
@@ -77,6 +103,7 @@
     <a href="/discover" class="active">Feed</a>
     <a href="/events">Events</a>
     <a href="/vendors">Vendors</a>
+    <a href="/venues">Venues</a>
   </div>
   <div class="feed-nav-right">
     {% if user %}
@@ -86,7 +113,22 @@
     <a href="/register" class="feed-btn-primary">Sign up</a>
     {% endif %}
   </div>
+  <button class="feed-hamburger" id="feed-hamburger" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+<div class="feed-mobile-menu" id="feed-mobile-menu">
+  <a href="/discover">Feed</a>
+  <a href="/events">Events</a>
+  <a href="/vendors">Vendors</a>
+  <a href="/venues">Venues</a>
+  {% if user %}
+  <a href="/home">Dashboard</a>
+  {% else %}
+  <a href="/login">Sign in</a>
+  <a href="/register">Sign up</a>
+  {% endif %}
+</div>
 
 <div class="feed-container" id="feed-container">
   {% if items %}
@@ -103,7 +145,7 @@
 <script>
 (function () {
   // Best-effort location-proximity re-sort of the first rendered batch only.
-  // Silent no-op if permission is denied/unavailable — feed stays in the
+  // Silent no-op if permission is denied/unavailable - feed stays in the
   // server-ranked date + popularity order.
   if (!('geolocation' in navigator)) return;
 
@@ -138,7 +180,7 @@
     sortedCards.forEach(card => frag.appendChild(card)); // detaches each card from the live DOM
     container.insertBefore(frag, container.firstChild);
   }, function () {
-    // Permission denied or timed out — do nothing, feed stays as-is.
+    // Permission denied or timed out - do nothing, feed stays as-is.
   }, { timeout: 4000, maximumAge: 300000 });
 })();
 
@@ -152,7 +194,7 @@ async function heeloToggleInterest(btn) {
   const wasInterested = btn.dataset.interested === 'true';
   const method = wasInterested ? 'DELETE' : 'POST';
 
-  // Optimistic UI — flip immediately, revert on failure.
+  // Optimistic UI - flip immediately, revert on failure.
   btn.dataset.interested = wasInterested ? 'false' : 'true';
   btn.classList.toggle('active', !wasInterested);
   btn.querySelector('svg').setAttribute('fill', wasInterested ? 'none' : 'currentColor');
@@ -166,5 +208,22 @@ async function heeloToggleInterest(btn) {
     btn.querySelector('svg').setAttribute('fill', wasInterested ? 'currentColor' : 'none');
   }
 }
+
+// ── Mobile hamburger ─────────────────────────────────────────────
+(function () {
+  var btn = document.getElementById('feed-hamburger');
+  var menu = document.getElementById('feed-mobile-menu');
+  if (!btn || !menu) return;
+  btn.addEventListener('click', function () {
+    btn.classList.toggle('open');
+    menu.classList.toggle('open');
+  });
+  menu.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      btn.classList.remove('open');
+      menu.classList.remove('open');
+    });
+  });
+})();
 </script>
 {% endblock %}

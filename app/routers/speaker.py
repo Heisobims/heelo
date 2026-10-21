@@ -6,8 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 
+from app import plans
 from app.dependencies import DBSession, OrgAccess
 from app.permissions import Permission, require_permission
+from app.plans import PlanFeature
 from app.schemas.speaker import (
     EventSpeakerLinkRequest,
     EventSpeakerUpdateRequest,
@@ -40,6 +42,7 @@ async def create_speaker(
     slug: str, data: SpeakerCreateRequest, db: DBSession, org_access: SpeakersManageAccess
 ):
     org, role, is_owner = org_access
+    plans.require_feature(org.plan, PlanFeature.SPEAKERS_AGENDA)
     speaker = await sp_svc.create_speaker(db, org.id, data)
     return {"success": True, "data": _speaker_out(speaker)}
 

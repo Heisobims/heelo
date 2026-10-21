@@ -15,7 +15,7 @@ from app.utils.certificate_pdf import CertificateData, generate_certificate_pdf
 async def generate_certificates(db: AsyncSession, event: Event) -> Event:
     """Mark certificates as available for this event's attendees. Certificates
     are generated on-the-fly per download (same pattern as badges/OG images),
-    so this is purely an availability gate — nothing is rendered here."""
+    so this is purely an availability gate - nothing is rendered here."""
     if event.status != "ended":
         raise HTTPException(400, "Certificates can only be generated once the event has ended.")
 
@@ -31,7 +31,8 @@ def _certificate_data(reg: Registration, org: Organization) -> CertificateData:
         event_title=reg.event.title if reg.event else "",
         org_name=org.name,
         event_date=reg.event.start_datetime if reg.event else datetime.now(UTC),
-        brand_color=org.brand_color,
+        brand_color=org.display_brand_color,
+        show_powered_by=org.show_powered_by,
     )
 
 

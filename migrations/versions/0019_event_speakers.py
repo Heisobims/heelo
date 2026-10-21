@@ -1,4 +1,4 @@
-"""Add event_speakers join table — links a reusable org-level Speaker to a
+"""Add event_speakers join table - links a reusable org-level Speaker to a
 specific event with a role (speaker/panelist/moderator/judge/organizer) and a
 display sort order. Lets an event's "People" roster live in the real
 `speakers` table instead of the Event.extras.people JSON blob.

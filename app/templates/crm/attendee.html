@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}{{ summary.name }} · Attendee — Heelo{% endblock %}
+{% block title %}{{ summary.name }} · Attendee | Heelo{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -50,14 +50,14 @@
 
   .ev-title { font-weight: 600; }
   .ev-date { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem; }
-  .checkin-time { font-size: 0.8rem; color: var(--cyan-dark,#00b3a9); margin-top: 0.15rem; }
+  .checkin-time { font-size: 0.8rem; color: var(--cyan-dark,#C84729); margin-top: 0.15rem; }
   .amount-cell { font-weight: 700; font-variant-numeric: tabular-nums; }
   .free-label { color: var(--text-secondary); font-size: 0.8rem; }
 
   /* ── Badges ──────────────────────────────────────────────────────────────── */
   .badge { display: inline-flex; align-items: center; padding: 0.2rem 0.6rem; border-radius: 100px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
   .badge-confirmed   { background: rgba(34,197,94,0.1);   color: #16a34a; }
-  .badge-checked_in  { background: rgba(0,255,243,0.1);   color: var(--cyan-dark,#00b3a9); }
+  .badge-checked_in  { background: rgba(232, 89, 56, 0.1);   color: var(--cyan-dark,#C84729); }
   .badge-pending     { background: rgba(245,158,11,0.1);  color: #b45309; }
   .badge-cancelled   { background: var(--surface-alt,#f0f0f0); color: var(--text-secondary); }
   .badge-refunded    { background: rgba(239,68,68,0.1);   color: #dc2626; }
@@ -136,12 +136,12 @@
       {% if summary.total_spend > 0 %}
       <div class="chip-val">{{ summary.currency }} {{ "{:,.0f}".format(summary.total_spend) }}</div>
       {% else %}
-      <div class="chip-val">—</div>
+      <div class="chip-val">-</div>
       {% endif %}
       <div class="chip-lbl">Total Spend</div>
     </div>
     <div class="stat-chip">
-      <div class="chip-val">{{ summary.last_seen.strftime('%b %d') if summary.last_seen else '—' }}</div>
+      <div class="chip-val">{{ summary.last_seen.strftime('%b %d') if summary.last_seen else '-' }}</div>
       <div class="chip-lbl">Last Activity</div>
     </div>
   </div>
@@ -183,10 +183,10 @@
             {% if r.checked_in_at %}
             <span class="checkin-time"><span class="material-symbols-outlined">check</span> {{ r.checked_in_at.strftime('%b %d %H:%M') }}</span>
             {% else %}
-            <span style="color:var(--text-secondary)">—</span>
+            <span style="color:var(--text-secondary)">-</span>
             {% endif %}
           </td>
-          <td>{{ r.created_at.strftime('%b %d, %Y') if r.created_at else '—' }}</td>
+          <td>{{ r.created_at.strftime('%b %d, %Y') if r.created_at else '-' }}</td>
         </tr>
         {% endfor %}
       </tbody>

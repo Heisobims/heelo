@@ -15,6 +15,7 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -22,11 +23,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base, SoftDeleteMixin, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.affiliate import EventAffiliate
     from app.models.campaign import Campaign
     from app.models.organization import Organization
     from app.models.speaker import EventSpeaker, Sponsor
     from app.models.ticketing import PromoCode, Registration, TicketType, Waitlist
     from app.models.user import User
+    from app.models.vendor import BoothApplication, EventBoothPackage
 
 
 # ── Many-to-many: events ↔ categories ─────────────────────────────────────────
@@ -65,7 +68,7 @@ class EventCategory(Base, TimestampMixin):
 
 
 class Event(Base, SoftDeleteMixin):
-    """Core event entity — owned by an organization."""
+    """Core event entity - owned by an organization."""
 
     __tablename__ = "events"
     __table_args__ = (
@@ -106,7 +109,7 @@ class Event(Base, SoftDeleteMixin):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft", index=True)
     # in_person | virtual | hybrid
     format: Mapped[str] = mapped_column(String(20), nullable=False, default="in_person")
-    # Set when the organizer generates certificates — gates attendee downloads
+    # Set when the organizer generates certificates - gates attendee downloads
     # until they explicitly decide the event is ready (e.g. after confirming
     # no late no-show corrections). Certificates are generated on-the-fly per
     # download, not stored; this is purely an availability gate.
@@ -131,7 +134,7 @@ class Event(Base, SoftDeleteMixin):
     virtual_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     virtual_platform: Mapped[str | None] = mapped_column(String(50), nullable=True)
     # Public livestream URL (YouTube/Vimeo/HLS/generic embed) shown on the
-    # event's live page — distinct from virtual_url, which is the private
+    # event's live page - distinct from virtual_url, which is the private
     # join link only sent to confirmed registrants.
     livestream_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -139,6 +142,16 @@ class Event(Base, SoftDeleteMixin):
     is_featured: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_private: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Fee handling: True = pass platform & gateway fees to buyer; False = absorb into ticket price
+    pass_fees_to_buyer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # Automated countdown reminders
+    reminder_24h_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    reminder_1h_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Recurring event support
     is_recurring: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -196,6 +209,50 @@ class Event(Base, SoftDeleteMixin):
     comments: Mapped[list[EventComment]] = relationship(
         "EventComment", back_populates="event", cascade="all, delete-orphan"
     )
+    booth_packages: Mapped[list[EventBoothPackage]] = relationship(
+        "EventBoothPackage", back_populates="event", cascade="all, delete-orphan"
+    )
+    booth_applications: Mapped[list[BoothApplication]] = relationship(
+        "BoothApplication", back_populates="event", cascade="all, delete-orphan"
+    )
+    affiliates: Mapped[list[EventAffiliate]] = relationship(
+        "EventAffiliate", back_populates="event", cascade="all, delete-orphan"
+    )
+
+    @property
+    def min_price_info(self) -> tuple[float | None, str]:
+        """Return (lowest_price, currency) or (None, 'NGN') if no ticket types."""
+        if not self.ticket_types:
+            return (None, "NGN")
+        visible = [t for t in self.ticket_types if t.is_visible]
+        if not visible:
+            return (None, "NGN")
+        lowest = min(visible, key=lambda t: t.price)
+        return (float(lowest.price), lowest.currency or "NGN")
+
+    @property
+    def is_new(self) -> bool:
+        """True if the event was created within the last 14 days."""
+        if not self.created_at:
+            return False
+        from datetime import UTC, datetime, timedelta
+        return (datetime.now(UTC) - self.created_at) < timedelta(days=14)
+
+    @property
+    def formatted_date_range(self) -> str:
+        """Format date like 'Apr 04 - Dec 19, 2026' or 'Oct 21, 6:45 PM Africa/Lagos'."""
+        if not self.start_datetime:
+            return ""
+        st = self.start_datetime
+        en = self.end_datetime
+        if en and st.date() != en.date():
+            if st.year == en.year:
+                return f"{st.strftime('%b %d')} - {en.strftime('%b %d, %Y')}"
+            return f"{st.strftime('%b %d, %Y')} - {en.strftime('%b %d, %Y')}"
+        time_part = st.strftime("%I:%M %p").lstrip("0")
+        tz_short = (self.timezone or "").split("/")[-1].replace("_", " ")
+        tz_str = f" {tz_short}" if tz_short and tz_short != "UTC" else ""
+        return f"{st.strftime('%b %d')}, {time_part}{tz_str}"
 
     def __repr__(self) -> str:
         return f"<Event {self.slug} status={self.status}>"
@@ -229,11 +286,44 @@ class EventSession(Base, TimestampMixin):
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     # Track (for multi-track events)
     track: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    track_color: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     event: Mapped[Event] = relationship("Event", back_populates="sessions")
+    bookmarks: Mapped[list[EventSessionBookmark]] = relationship(
+        "EventSessionBookmark", back_populates="session", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<EventSession {self.title}>"
+
+
+class EventSessionBookmark(Base, TimestampMixin):
+    """Bookmark of an event session for an attendee's personal itinerary."""
+
+    __tablename__ = "session_bookmarks"
+    __table_args__ = (
+        UniqueConstraint("user_id", "session_id", name="uq_session_bookmark_user_session"),
+        Index("ix_session_bookmarks_user", "user_id"),
+        Index("ix_session_bookmarks_session", "session_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("event_sessions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    user: Mapped[User] = relationship("User")
+    session: Mapped[EventSession] = relationship("EventSession", back_populates="bookmarks")
+
+    def __repr__(self) -> str:
+        return f"<EventSessionBookmark user={self.user_id} session={self.session_id}>"
 
 
 class EventComment(Base, TimestampMixin):

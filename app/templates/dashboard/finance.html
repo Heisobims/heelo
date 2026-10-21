@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Finance — {{ org.name }}{% endblock %}
+{% block title %}Finance | {{ org.name }}{% endblock %}
 
 {% set active_page = 'finance' %}
 
@@ -99,8 +99,8 @@
           {% for order in finance.recent_orders %}
           <tr>
             <td>{{ order.buyer_name or order.buyer_email }}</td>
-            <td>{{ order.event.title if order.event else '—' }}</td>
-            <td style="text-transform:capitalize;">{{ order.payment_provider or '—' }}</td>
+            <td>{{ order.event.title if order.event else '-' }}</td>
+            <td style="text-transform:capitalize;">{{ order.payment_provider or '-' }}</td>
             <td>{{ order.currency }} {{ "{:,.0f}".format(order.net_amount - order.refunded_amount) }}</td>
             <td>
               {% if order.payment_status == "paid" %}
@@ -123,7 +123,7 @@
 
   <p style="font-size:13px; color:var(--text-muted); margin-top:8px;">
     Payouts are handled directly by your connected payment provider.
-    <a href="/org/{{ org.slug }}/settings/payments" style="color:var(--cyan-dark,#009e95); font-weight:600;">Manage payment account →</a>
+    <a href="/org/{{ org.slug }}/settings/payments" style="color:var(--cyan-dark,#C84729); font-weight:600;">Manage payment account →</a>
   </p>
 
 </div>

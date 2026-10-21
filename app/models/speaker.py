@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class Speaker(Base, TimestampMixin):
-    """Speaker profile — reusable across events within an org."""
+    """Speaker profile - reusable across events within an org."""
 
     __tablename__ = "speakers"
     __table_args__ = (Index("ix_speakers_org", "org_id"),)
@@ -31,7 +31,7 @@ class Speaker(Base, TimestampMixin):
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    # Public profile URL slug (GET /speakers/{slug}) — globally unique
+    # Public profile URL slug (GET /speakers/{slug}) - globally unique
     slug: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -40,7 +40,7 @@ class Speaker(Base, TimestampMixin):
     photo_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     # {"twitter": "url", "linkedin": "url", "website": "url"}
     social_links: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    # Invite flow — speaker_invite_token allows speaker to fill their own profile
+    # Invite flow - speaker_invite_token allows speaker to fill their own profile
     invite_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     invite_token: Mapped[str | None] = mapped_column(String(255), nullable=True)
     invite_accepted: Mapped[bool] = mapped_column(nullable=False, default=False)
@@ -114,14 +114,14 @@ class Sponsor(Base, TimestampMixin):
     tier: Mapped[str] = mapped_column(String(20), nullable=False, default="partner")
     sort_order: Mapped[int] = mapped_column(nullable=False, default=0)
 
-    # Trade-show-style exhibitor fields — reuses Sponsor rather than a
+    # Trade-show-style exhibitor fields - reuses Sponsor rather than a
     # separate table, since an exhibitor is just a sponsor entry with a
     # booth instead of (or in addition to) a sponsorship tier.
     is_exhibitor: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     booth_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    # Self-service sponsor portal — the org creates the Sponsor row, then
+    # Self-service sponsor portal - the org creates the Sponsor row, then
     # invites a real Heelo account to claim and manage it (logo/website/
     # description only; tier/booth/category stay organizer-controlled).
     user_id: Mapped[uuid.UUID | None] = mapped_column(

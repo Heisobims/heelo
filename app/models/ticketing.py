@@ -94,7 +94,7 @@ class RegistrationFormField(Base, TimestampMixin):
 
 
 class Registration(Base, TimestampMixin):
-    """A single attendee's ticket — confirmed or pending payment."""
+    """A single attendee's ticket - confirmed or pending payment."""
 
     __tablename__ = "registrations"
     __table_args__ = (
@@ -120,7 +120,7 @@ class Registration(Base, TimestampMixin):
     order_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("orders.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    # Null for guest checkout — linked after account creation if user claims
+    # Null for guest checkout - linked after account creation if user claims
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
@@ -151,6 +151,10 @@ class Registration(Base, TimestampMixin):
     transfer_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Public "refer a friend" code - deliberately NOT the registration's own id,
+    # since that id is also the bare capability-token behind qr.png/badge.pdf/
+    # certificate.pdf. Sharing a referral link must never leak access to those.
+    referral_token: Mapped[str | None] = mapped_column(String(32), nullable=True, unique=True)
 
     event: Mapped[Event] = relationship("Event", back_populates="registrations")
     ticket_type: Mapped[TicketType] = relationship("TicketType", back_populates="registrations")
@@ -192,13 +196,13 @@ class RegistrationAnswer(Base, TimestampMixin):
 
 
 # payment_status values that still count toward revenue (a refund reduces
-# how much of the order's amount counts, but doesn't zero it out — see
+# how much of the order's amount counts, but doesn't zero it out - see
 # Order.refunded_amount).
 REVENUE_STATUSES = ("paid", "partially_refunded", "refunded")
 
 
 class Order(Base, TimestampMixin):
-    """Payment order — contains one or more tickets from the same event."""
+    """Payment order - contains one or more tickets from the same event."""
 
     __tablename__ = "orders"
     __table_args__ = (
@@ -236,11 +240,40 @@ class Order(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("promo_codes.id", ondelete="SET NULL"), nullable=True
     )
     discount_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    # Portion of discount_amount specifically from the referral program (not
+    # organizer-created promo codes) - split out so confirm_order() can have
+    # the platform fee absorb this cost first, rather than the organizer.
+    referral_discount_amount: Mapped[float] = mapped_column(
+        Numeric(12, 2), nullable=False, default=0
+    )
+    # True for every non-free order (the buyer-pays-checkout-fees model is
+    # mandatory) - False only for free orders and for historical orders
+    # placed before that became mandatory. When True, total_amount already
+    # includes platform_fee and gateway_fee_amount on top of the ticket
+    # price, and confirm_order() must not re-derive platform_fee/net_amount
+    # from scratch.
+    fees_passed_to_buyer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Estimated payment-gateway processing fee charged to the buyer on top
+    # of the ticket price, when fees_passed_to_buyer is True. The gateway's
+    # real deducted fee may vary slightly from this estimate (it depends on
+    # the payment method the buyer picks on the gateway's own checkout page,
+    # which isn't known until after this order is created) - any variance is
+    # absorbed by Heelo, never the organizer or the buyer.
+    gateway_fee_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     # Cumulative gross amount refunded back to the buyer across all cancelled
     # items in this order. Subtract from net_amount/total_amount to get what
-    # the organizer actually retains — the platform fee is not returned on
+    # the organizer actually retains - the platform fee is not returned on
     # refund, so this is not simply proportional to net_amount.
     refunded_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    # True when the organizer's net_amount was actually paid out automatically
+    # at charge time (a Paystack/Flutterwave subaccount split or a verified
+    # Stripe Connect destination charge fired for this specific order) - set
+    # once, at initialize_payment() time, and never changed afterward, since
+    # an org's payment-account configuration can change after the fact and
+    # this must reflect what actually happened to *this* order's money, not
+    # the org's current setup. False means Heelo is holding net_amount and
+    # owes it to the organizer - see app/services/payout_service.py.
+    auto_split_applied: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     # UTM / referral tracking
     utm_source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     utm_medium: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -260,7 +293,7 @@ class Order(Base, TimestampMixin):
 
 
 class OrderItem(Base, TimestampMixin):
-    """One line item in an order — quantity of a specific ticket type."""
+    """One line item in an order - quantity of a specific ticket type."""
 
     __tablename__ = "order_items"
 
@@ -313,7 +346,7 @@ class PromoCode(Base, TimestampMixin):
 
 
 class Waitlist(Base, TimestampMixin):
-    """Queue for a sold-out ticket type — auto-notified on cancellation."""
+    """Queue for a sold-out ticket type - auto-notified on cancellation."""
 
     __tablename__ = "waitlists"
     __table_args__ = (Index("ix_waitlists_event_position", "event_id", "position"),)
@@ -336,7 +369,7 @@ class Waitlist(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    # Expiry window after notification — if not claimed, next person is notified
+    # Expiry window after notification - if not claimed, next person is notified
     offer_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

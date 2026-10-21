@@ -1,14 +1,40 @@
-/* Heelo — main.js
+/* Heelo - main.js
    Alpine.js components defined as plain global functions.
    main.js loads BEFORE Alpine (see base.html script order), so these are
    available when Alpine evaluates x-data="componentName()" expressions.
    ------------------------------------------------------------------ */
+
+// ── CSRF ──────────────────────────────────────────────────────────────────────
+// Double-submit token (app/middleware/csrf.py): the server sets a readable
+// csrf_token cookie; every non-GET fetch()/HTMX call must echo it back as
+// X-CSRF-Token. Wrapping fetch once here covers every Alpine component's
+// fetch() call without touching each template individually.
+;(() => {
+  const originalFetch = window.fetch.bind(window)
+  window.fetch = (input, init = {}) => {
+    const method = (init.method || 'GET').toUpperCase()
+    if (method !== 'GET' && method !== 'HEAD') {
+      const token = getCookie('csrf_token') || document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+      if (token) {
+        const headers = new Headers(init.headers || {})
+        headers.set('X-CSRF-Token', token)
+        init = { ...init, headers }
+      }
+    }
+    return originalFetch(input, init)
+  }
+})()
 
 // ── HTMX global config ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('htmx:configRequest', (evt) => {
     const token = getCookie('heelo_access')
     if (token) evt.detail.headers['Authorization'] = `Bearer ${token}`
+
+    const csrfToken = getCookie('csrf_token')
+    if (csrfToken && evt.detail.verb !== 'get') {
+      evt.detail.headers['X-CSRF-Token'] = csrfToken
+    }
   })
 
   document.addEventListener('htmx:responseError', (evt) => {
@@ -20,7 +46,65 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (_) {}
     showInlineError(target, msg)
   })
+
+  initSiteNav()
+  initScrollReveal()
 })
+
+// ── Shared site nav (scroll shadow + mobile hamburger) ─────────────────────────
+// Powers `partials/site_nav.html`, included on every public, non-dashboard page.
+function initSiteNav() {
+  const nav = document.getElementById('site-nav')
+  if (!nav) return
+
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('sld', window.scrollY > 24)
+  }, { passive: true })
+
+  const btn = document.getElementById('site-nav-hamburger')
+  const menu = document.getElementById('site-nav-mobile-menu')
+  if (btn && menu) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      btn.classList.toggle('open')
+      menu.classList.toggle('open')
+    })
+    menu.querySelectorAll('a').forEach((a) => {
+      a.addEventListener('click', () => {
+        btn.classList.remove('open')
+        menu.classList.remove('open')
+      })
+    })
+    document.addEventListener('click', (e) => {
+      if (menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) {
+        btn.classList.remove('open')
+        menu.classList.remove('open')
+      }
+    })
+  }
+}
+
+// ── Lively scroll reveal animations ───────────────────────────────────────────
+function initScrollReveal() {
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.mpl-reveal').forEach(el => el.classList.add('revealed'))
+    return
+  }
+
+  const observer = new IntersectionObserver((entries, obs) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('revealed')
+        obs.unobserve(entry.target)
+      }
+    })
+  }, {
+    threshold: 0.08,
+    rootMargin: '0px 0px -30px 0px'
+  })
+
+  document.querySelectorAll('.mpl-reveal').forEach(el => observer.observe(el))
+}
 
 function getCookie(name) {
   return document.cookie
@@ -44,7 +128,7 @@ function showInlineError(container, message) {
 // Alpine evaluates x-data="loginForm()" by calling window.loginForm(),
 // which works as long as these are defined before Alpine.start() runs.
 //
-// Note: there is no global `registerForm()` here on purpose — the event
+// Note: there is no global `registerForm()` here on purpose: the event
 // ticket-purchase page (events/register.html) defines its own page-local
 // `registerForm()` for x-data="registerForm()". A same-named stub here
 // used to silently clobber it (main.js loads after that inline script but
@@ -78,9 +162,8 @@ function loginForm() {
           this.errors._global = data?.error?.message || 'Login failed.'
           return
         }
-        const role = data.user?.role
         const next = new URLSearchParams(window.location.search).get('next')
-        window.location.href = next || (role === 'attendee' ? '/home' : '/dashboard')
+        window.location.href = next || '/dashboard'
       } catch (_) {
         this.errors._global = 'Network error. Please try again.'
       } finally {
@@ -210,9 +293,13 @@ function roleSelect() {
         })
         if (res.ok) {
           window.location.href = role === 'attendee' ? '/home' : '/dashboard'
+        } else {
+          this.loading = false
+          this.selected = ''
         }
       } catch (_) {
         this.loading = false
+        this.selected = ''
       }
     },
   }

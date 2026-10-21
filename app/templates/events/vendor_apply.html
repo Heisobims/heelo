@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+{% block title %}Apply for Vendor / Exhibitor Booth | {{ event.title }} | Heelo{% endblock %}
+{% block meta_description %}Exhibitor and vendor booth application for {{ event.title }}{% endblock %}
+
+{% block head %}
+<style>
+  [x-cloak] { display: none !important; }
+  body { background: var(--bg-secondary); padding-top: 64px; font-family: var(--font-sans); }
+
+  .booth-nav {
+    position: sticky;
+    top: 64px;
+    z-index: 30;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    height: 52px;
+  }
+  .booth-nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .booth-nav a:hover { color: var(--text-primary); }
+
+  .booth-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  .booth-header-card {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+
+  .package-option {
+    border: 2px solid var(--border-light);
+    border-radius: 14px;
+    padding: 18px 20px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .package-option:hover {
+    border-color: #d1d5db;
+  }
+  .package-option.selected {
+    border-color: var(--cyan, #0A0A0A);
+    background: #fafaf9;
+    box-shadow: 0 0 0 1px var(--cyan, #0A0A0A);
+  }
+
+  .form-section {
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: #ffffff;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--cyan, #0A0A0A);
+    box-shadow: 0 0 0 2px rgba(10,10,10,0.08);
+  }
+
+  .badge-remaining {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #ecfdf5;
+    color: #065f46;
+  }
+  .badge-sold-out {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #fef2f2;
+    color: #991b1b;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="booth-nav">
+  <a href="/e/{{ event.slug }}">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    Back to {{ event.title }}
+  </a>
+</div>
+
+<div class="booth-container" x-data="vendorApplicationForm('{{ event.id }}', '{{ event.slug }}')">
+
+  <!-- Success Screen -->
+  <template x-if="submitted">
+    <div class="booth-header-card" style="text-align:center; padding:48px 24px;">
+      <div style="width:64px; height:64px; border-radius:50%; background:#dcfce7; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 style="font-size:22px; font-weight:800; margin:0 0 8px; color:var(--text-primary);">Booth Application Received!</h2>
+      <p style="font-size:15px; color:var(--text-muted); max-width:480px; margin:0 auto 24px; line-height:1.5;">
+        Thank you for applying. We have sent an acknowledgment email to <strong x-text="form.contact_email"></strong>. The event organizer will review your business requirements.
+      </p>
+      <div style="background:#f9fafb; border:1px solid var(--border-light); border-radius:12px; padding:16px 20px; max-width:420px; margin:0 auto 28px; text-align:left; font-size:13px; line-height:1.6;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="color:#6b7280;">Business:</span>
+          <strong x-text="form.business_name"></strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <span style="color:#6b7280;">Status:</span>
+          <span style="color:#b45309; font-weight:600;">Pending Review</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:#6b7280;">Next Step:</span>
+          <span>Automated invoice on approval</span>
+        </div>
+      </div>
+      <a href="/e/{{ event.slug }}" class="btn btn-secondary" style="display:inline-block; padding:10px 24px;">Return to Event</a>
+    </div>
+  </template>
+
+  <!-- Application Form -->
+  <template x-if="!submitted">
+    <div>
+      <!-- Event Header Card -->
+      <div class="booth-header-card">
+        <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--cyan,#0A0A0A);">Exhibitor & Vendor Portal</span>
+        <h1 style="font-size:24px; font-weight:800; margin:6px 0 10px; color:var(--text-primary);">Apply for an Exhibition Booth</h1>
+        <p style="font-size:14px; color:var(--text-muted); margin:0; line-height:1.5;">
+          Showcase your brand and services at <strong>{{ event.title }}</strong>. Select your preferred booth tier below, provide your requirements, and submit your application for organizer approval.
+        </p>
+        <div style="display:flex; align-items:center; gap:16px; margin-top:14px; font-size:13px; color:var(--text-muted); flex-wrap:wrap;">
+          <span><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">calendar_today</span> {{ event.start_datetime.strftime('%b %d, %Y') if event.start_datetime else 'Date TBD' }}</span>
+          {% if event.venue_name %}<span><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">location_on</span> {{ event.venue_name }}</span>{% endif %}
+          {% if event.venue_city %}<span><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">apartment</span> {{ event.venue_city }}</span>{% endif %}
+        </div>
+      </div>
+
+      <form @submit.prevent="submitApplication()">
+
+        <!-- Step 1: Choose Booth Package -->
+        <div class="form-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <div>
+              <h3 style="font-size:16px; font-weight:700; margin:0 0 4px; color:var(--text-primary);">1. Select Booth Package</h3>
+              <p style="font-size:13px; color:var(--text-muted); margin:0;">Choose the space size and amenities suitable for your exhibition setup.</p>
+            </div>
+          </div>
+
+          {% if booth_packages and booth_packages|length > 0 %}
+          <div style="display:grid; grid-template-columns:1fr; gap:10px;">
+            {% for pkg in booth_packages %}
+            <div class="package-option"
+                 :class="{ 'selected': form.package_id === '{{ pkg.id }}' }"
+                 @click="form.package_id = '{{ pkg.id }}'; selectedPrice = {{ pkg.price }}; selectedCurrency = '{{ pkg.currency }}'">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <strong style="font-size:15px; color:var(--text-primary);">{{ pkg.name }}</strong>
+                    {% if pkg.dimensions %}
+                    <span style="font-size:12px; color:#6b7280; background:#f3f4f6; padding:2px 6px; border-radius:4px;">{{ pkg.dimensions }}</span>
+                    {% endif %}
+                  </div>
+                  {% if pkg.description %}
+                  <p style="font-size:13px; color:var(--text-muted); margin:4px 0 8px; line-height:1.4;">{{ pkg.description }}</p>
+                  {% endif %}
+                  {% if pkg.amenities %}
+                  <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
+                    {% for a in pkg.amenities %}
+                    <span style="font-size:11px; color:#4b5563; background:#f9fafb; border:1px solid #e5e7eb; padding:2px 8px; border-radius:10px;"><span class="material-symbols-outlined" style="font-size:12px; color:#10b981; vertical-align:-1px;">check</span> {{ a }}</span>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+                <div style="text-align:right; flex-shrink:0; margin-left:12px;">
+                  <div style="font-size:18px; font-weight:800; color:var(--text-primary);">{{ pkg.currency }} {{ "{:,.0f}".format(pkg.price) }}</div>
+                  <div style="margin-top:4px;">
+                    {% if pkg.booths_remaining > 0 %}
+                    <span class="badge-remaining">{{ pkg.booths_remaining }} spaces left</span>
+                    {% else %}
+                    <span class="badge-sold-out">Sold Out</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <!-- Default Standard Packages -->
+          <div style="display:grid; grid-template-columns:1fr; gap:10px;">
+            <div class="package-option selected" @click="form.package_id = null; selectedPrice = 0; selectedCurrency = '{{ event.organization.currency or 'USD' }}'">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                  <strong style="font-size:15px; color:var(--text-primary);">Standard Exhibition Space</strong>
+                  <span style="font-size:12px; color:#6b7280; background:#f3f4f6; padding:2px 6px; border-radius:4px; margin-left:6px;">3m x 3m</span>
+                  <p style="font-size:13px; color:var(--text-muted); margin:4px 0 0;">Includes exhibition table, 2 chairs, power outlet, and company name fascia board.</p>
+                </div>
+                <div style="text-align:right;">
+                  <span class="badge-remaining">Available</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Step 2: Business & Contact Information -->
+        <div class="form-section">
+          <h3 style="font-size:16px; font-weight:700; margin:0 0 16px; color:var(--text-primary);">2. Business & Contact Information</h3>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Business / Brand Name *</label>
+              <input type="text" class="form-input" x-model="form.business_name" required placeholder="e.g. Acme Craft Brews & Bites">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Industry / Category *</label>
+              <select class="form-select" x-model="form.category" required>
+                <option value="">Select category...</option>
+                <option value="catering">Catering & Food/Beverage</option>
+                <option value="photography">Photography & Media</option>
+                <option value="videography">Videography & Live stream</option>
+                <option value="decorations">Decor & Experience Design</option>
+                <option value="merchandise">Merchandise & Retail</option>
+                <option value="technology">Software & Hardware Tech</option>
+                <option value="sound_lighting">Sound & Audio/Visual</option>
+                <option value="other">Brand Sponsorship & Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="form-group">
+              <label class="form-label">Contact Person Name *</label>
+              <input type="text" class="form-input" x-model="form.contact_name" required placeholder="e.g. Sarah Jenkins">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Email *</label>
+              <input type="email" class="form-input" x-model="form.contact_email" required placeholder="sarah@acme.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Contact Phone / WhatsApp *</label>
+            <input type="tel" class="form-input" x-model="form.contact_phone" required placeholder="e.g. +1 555 123 4567 or +44 7911 123456">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Company Description & Portfolio Link</label>
+            <textarea class="form-textarea" rows="3" x-model="form.description" placeholder="Briefly describe what your business does and include your website or Instagram link..."></textarea>
+          </div>
+        </div>
+
+        <!-- Step 3: Booth Setup Requirements -->
+        <div class="form-section">
+          <h3 style="font-size:16px; font-weight:700; margin:0 0 6px; color:var(--text-primary);">3. Setup & Power Requirements</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin:0 0 16px;">Let the venue coordinator know what electrical or space amenities you will need during setup.</p>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Special Requirements (Optional)</label>
+            <textarea class="form-textarea" rows="3" x-model="form.booth_requirements" placeholder="e.g. We require 220V power for coffee machines, extra standing banner clearance, 2 additional chairs..."></textarea>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <template x-if="error">
+          <div style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:14px;" x-text="error"></div>
+        </template>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary" :disabled="loading" style="width:100%; padding:14px; font-size:15px; font-weight:700; border-radius:12px; cursor:pointer;">
+          <span x-show="!loading">Submit Booth Application &rarr;</span>
+          <span x-show="loading" x-cloak>Submitting Application...</span>
+        </button>
+
+      </form>
+    </div>
+  </template>
+
+</div>
+
+<script>
+function vendorApplicationForm(eventId, eventSlug) {
+  return {
+    eventId: eventId,
+    eventSlug: eventSlug,
+    loading: false,
+    submitted: false,
+    error: null,
+    selectedPrice: 0,
+    selectedCurrency: '{{ event.organization.currency or 'USD' }}',
+    form: {
+      business_name: '',
+      contact_name: '',
+      contact_email: '',
+      contact_phone: '',
+      category: '',
+      package_id: null,
+      description: '',
+      booth_requirements: '',
+    },
+    async submitApplication() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const resp = await fetch(`/api/v1/events/${this.eventId}/booth-applications`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(this.form),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.detail || data.message || 'Submission failed');
+        }
+        this.submitted = true;
+      } catch (err) {
+        this.error = err.message;
+      } finally {
+        this.loading = false;
+      }
+    }
+  };
+}
+</script>
+{% endblock %}
+

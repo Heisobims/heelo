@@ -48,18 +48,23 @@ async def check_in_by_qr_token(
     if token_event_id != event_id:
         raise HTTPException(400, "QR code is for a different event.")
 
-    return await _do_check_in(db, reg_id)
+    # Belt-and-suspenders: the JWT claim above already binds this token to
+    # event_id, but re-check at the DB layer too rather than trusting the
+    # claim alone.
+    return await _do_check_in(db, reg_id, event_id)
 
 
-async def check_in_by_id(db: AsyncSession, registration_id: uuid.UUID) -> Registration:
+async def check_in_by_id(
+    db: AsyncSession, registration_id: uuid.UUID, event_id: uuid.UUID
+) -> Registration:
     """Manually check in a registration by its UUID (staff portal)."""
-    return await _do_check_in(db, registration_id)
+    return await _do_check_in(db, registration_id, event_id)
 
 
-async def _do_check_in(db: AsyncSession, reg_id: uuid.UUID) -> Registration:
+async def _do_check_in(db: AsyncSession, reg_id: uuid.UUID, event_id: uuid.UUID) -> Registration:
     reg = await db.scalar(
         select(Registration)
-        .where(Registration.id == reg_id)
+        .where(Registration.id == reg_id, Registration.event_id == event_id)
         .options(selectinload(Registration.ticket_type))
     )
     if not reg:
@@ -128,7 +133,7 @@ async def mark_virtual_join(db: AsyncSession, registration_id: uuid.UUID) -> Reg
     Attendee clicked their join link for a virtual/hybrid event. Records the first
     click as attendance (reusing the same checked_in_at/status fields in-person
     check-in uses, so virtual events show up in the same analytics) and logs a
-    Checkin row for audit. Idempotent — repeat clicks (reloading the email, a
+    Checkin row for audit. Idempotent - repeat clicks (reloading the email, a
     second device) just no-op rather than erroring, since this sits in a redirect
     path the attendee shouldn't ever see fail.
 
@@ -146,7 +151,7 @@ async def mark_virtual_join(db: AsyncSession, registration_id: uuid.UUID) -> Reg
     if reg.status not in ("confirmed", "checked_in"):
         return None
 
-    # This link is only ever sent for virtual/hybrid events — for an in-person
+    # This link is only ever sent for virtual/hybrid events - for an in-person
     # registration, don't mark attendance (that's what the door QR scan is for),
     # just let the caller redirect wherever makes sense (event page).
     if reg.event.format == "in_person":
@@ -241,7 +246,7 @@ async def get_live_pulse(db: AsyncSession, event) -> dict:
 
 async def get_checked_in_ids(db: AsyncSession, event_id: uuid.UUID) -> list[str]:
     """
-    Full set of checked-in registration IDs for an event — cheap payload meant to be
+    Full set of checked-in registration IDs for an event - cheap payload meant to be
     cached client-side (kiosk) so offline scans can be checked against recent server
     truth before being accepted, instead of only being caught after a background sync.
     """

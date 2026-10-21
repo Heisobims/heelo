@@ -1,4 +1,4 @@
-"""Post-event feedback — submission, idempotent resubmission, organizer summary."""
+"""Post-event feedback - submission, idempotent resubmission, organizer summary."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def _make_started_event_registration(db: AsyncSession, org, *, status="confirmed"):
-    """A published event that already started, with one registration — feedback can
+    """A published event that already started, with one registration - feedback can
     only be left once an event has actually begun, so the shared `event`/`published_event`
     fixtures (both scheduled 7 days in the future) don't work here."""
     from app.models.event import Event

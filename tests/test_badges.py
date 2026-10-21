@@ -1,4 +1,4 @@
-"""Attendee badge PDF generation — single badge (attendee-facing capability
+"""Attendee badge PDF generation - single badge (attendee-facing capability
 URL, same pattern as the existing QR/calendar endpoints) and bulk print run
 (organizer-facing, for printing badges for everyone checked in at the door).
 """
@@ -45,7 +45,7 @@ class TestBadgePdfGeneration:
         assert _pdf_page_count(pdf_bytes) == 3
 
     def test_handles_missing_brand_color_and_qr(self):
-        # No brand_color, no qr_bytes, no logo — must not raise
+        # No brand_color, no qr_bytes, no logo - must not raise
         data = BadgeData(
             attendee_name="No Frills",
             ticket_type_name="Free",
@@ -157,7 +157,7 @@ class TestBulkBadgesEndpoint:
             headers=user_headers,
         )
         assert resp.status_code == 200
-        # only the cancelled registration should print — 1 page
+        # only the cancelled registration should print - 1 page
         assert _pdf_page_count(resp.content) == 1
 
     async def test_logo_fetch_failure_does_not_break_badge(
@@ -166,7 +166,7 @@ class TestBulkBadgesEndpoint:
         org.logo_url = "https://example.com/does-not-exist.png"
         await db.flush()
         # Patched where it's called from (app.services.badge_service), not on
-        # httpx.AsyncClient globally — that class is shared with the test
+        # httpx.AsyncClient globally - that class is shared with the test
         # client itself and patching it there would break every request.
         with patch(
             "app.services.badge_service._fetch_logo_bytes", new=AsyncMock(return_value=None)

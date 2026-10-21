@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Contacts · {{ org.name }} — Heelo{% endblock %}
+{% block title %}Contacts · {{ org.name }} | Heelo{% endblock %}
 {% set active = 'contacts' %}
 
 {% block head %}
@@ -27,7 +27,7 @@
   .ct-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
   .ct-tag-pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 600; border: 1.5px solid var(--border); background: var(--bg); color: var(--text-secondary); text-decoration: none; transition: all 0.12s; }
   .ct-tag-pill:hover { border-color: var(--text-secondary); color: var(--text); }
-  .ct-tag-pill.active { border-color: var(--cyan); background: rgba(0,255,243,0.06); color: var(--cyan-dark, #00b3a9); }
+  .ct-tag-pill.active { border-color: var(--cyan); background: rgba(232, 89, 56, 0.06); color: var(--cyan-dark, #C84729); }
 
   /* Table */
   .ct-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; overflow-x: auto; }
@@ -44,11 +44,11 @@
 
   /* Inline tag editor */
   .ct-tag-editor { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
-  .ct-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 100px; background: rgba(0,255,243,0.08); color: var(--cyan-dark, #00b3a9); font-size: 11px; font-weight: 600; }
+  .ct-tag { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 100px; background: rgba(232, 89, 56, 0.08); color: var(--cyan-dark, #C84729); font-size: 11px; font-weight: 600; }
   .ct-tag button { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 11px; padding: 0; line-height: 1; opacity: 0.7; }
   .ct-tag button:hover { opacity: 1; }
   .ct-add-tag { font-size: 11px; color: var(--text-muted); background: transparent; border: 1px dashed var(--border); border-radius: 100px; padding: 2px 8px; cursor: pointer; }
-  .ct-add-tag:hover { border-color: var(--cyan); color: var(--cyan-dark, #00b3a9); }
+  .ct-add-tag:hover { border-color: var(--cyan); color: var(--cyan-dark, #C84729); }
 
   /* Pagination */
   .ct-pagination { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
@@ -66,7 +66,7 @@
   <div class="ct-header">
     <div>
       <h1 class="ct-title">Contacts</h1>
-      <p class="ct-sub">{{ total }} contact{{ 's' if total != 1 }} — import via CSV, tag &amp; segment</p>
+      <p class="ct-sub">{{ total }} contact{{ 's' if total != 1 }}, import via CSV, tag &amp; segment</p>
     </div>
     <div style="display:flex;gap:8px;">
       <a href="/org/{{ org.slug }}/registrations" class="btn btn-outline">
@@ -121,9 +121,9 @@
             <div class="ct-name">{{ c.name }}</div>
           </td>
           <td>
-            <div class="ct-email">{{ c.email or '—' }}</div>
+            <div class="ct-email">{{ c.email or '-' }}</div>
           </td>
-          <td style="font-size:0.8rem; color:var(--text-secondary);">{{ c.phone or c.whatsapp_number or '—' }}</td>
+          <td style="font-size:0.8rem; color:var(--text-secondary);">{{ c.phone or c.whatsapp_number or '-' }}</td>
           <td><span class="ct-source">{{ c.source.replace('_', ' ') }}</span></td>
           <td>
             <div
@@ -170,7 +170,7 @@
     <p style="margin:0 0 8px; font-weight:600;">No contacts yet</p>
     <p style="font-size:0.8125rem; margin:0;">
       Import contacts via the
-      <a href="/org/{{ org.slug }}/registrations" style="color:var(--cyan-dark,#00b3a9); text-decoration:none; font-weight:600;">Registrations page</a>
+      <a href="/org/{{ org.slug }}/registrations" style="color:var(--cyan-dark,#C84729); text-decoration:none; font-weight:600;">Registrations page</a>
       CSV import button.
     </p>
   </div>

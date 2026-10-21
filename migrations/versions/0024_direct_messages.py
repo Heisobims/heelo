@@ -1,4 +1,4 @@
-"""Add direct_messages — attendee-to-attendee DMs, gated by an accepted
+"""Add direct_messages - attendee-to-attendee DMs, gated by an accepted
 Connection. No separate conversation table; a thread is just every message
 between two user ids, the same lightweight shape WhatsAppMessage already
 uses for the organizer inbox (thread key = phone there, = other user id here).

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app import plans
 from app.dependencies import DBSession
 from app.permissions import Permission, require_permission
 from app.services import ai_service as ai_svc
@@ -76,6 +77,7 @@ async def generate_event_description(
     org_access: AiUseAccess,
 ):
     org, role, _ = org_access
+    plans.check_and_consume_ai_quota(org.id, org.plan)
 
     gen = ai_svc.stream_event_description(
         title=body.title,
@@ -98,6 +100,7 @@ async def generate_campaign_copy(
     org_access: AiUseAccess,
 ):
     org, role, _ = org_access
+    plans.check_and_consume_ai_quota(org.id, org.plan)
 
     gen = ai_svc.stream_campaign_copy(
         channel=body.channel,
@@ -121,6 +124,7 @@ async def analytics_insights(
     org_access: AiUseAccess,
 ):
     org, role, _ = org_access
+    plans.check_and_consume_ai_quota(org.id, org.plan)
 
     try:
         eid = uuid.UUID(event_id)

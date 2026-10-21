@@ -4,7 +4,7 @@ Periodic cleanup for ticketing.
 Paid checkouts reserve capacity (TicketType.quantity_reserved) at order
 creation, released back only when payment is confirmed. If a buyer abandons
 checkout (closes the tab, payment gateway session expires, no webhook ever
-fires), nothing previously released that reservation — capacity leaked
+fires), nothing previously released that reservation - capacity leaked
 permanently and a popular event could falsely show "sold out". This task
 finds long-pending orders and releases them.
 """
@@ -37,13 +37,15 @@ def _db():
     return _SyncSession()
 
 
-# Payment gateway checkout sessions are normally completed within minutes —
+# Payment gateway checkout sessions are normally completed within minutes -
 # after this window an unpaid order is treated as abandoned.
 _RESERVATION_TIMEOUT_MINUTES = 30
 
 
 @shared_task(name="app.tasks.ticketing.release_stale_reservations")
 def release_stale_reservations() -> None:
+    from sqlalchemy import update as _update
+
     from app.models.ticketing import Order, OrderItem, Registration, TicketType
 
     cutoff = datetime.now(UTC) - timedelta(minutes=_RESERVATION_TIMEOUT_MINUTES)
@@ -57,7 +59,21 @@ def release_stale_reservations() -> None:
         if not stale_orders:
             return
 
+        released_count = 0
         for order in stale_orders:
+            # Atomic claim - a payment webhook/callback could be confirming
+            # this exact order right now (payment_service.confirm_order()
+            # claims the same way), so only release capacity for orders this
+            # UPDATE actually flips to 'failed'; skip any a concurrent
+            # confirmation already won.
+            claim = db.execute(
+                _update(Order)
+                .where(Order.id == order.id, Order.payment_status == "pending")
+                .values(payment_status="failed")
+            )
+            if claim.rowcount == 0:
+                continue
+
             items = db.query(OrderItem).filter(OrderItem.order_id == order.id).all()
             for item in items:
                 tt = db.query(TicketType).filter(TicketType.id == item.ticket_type_id).first()
@@ -67,10 +83,10 @@ def release_stale_reservations() -> None:
             db.query(Registration).filter(Registration.order_id == order.id).update(
                 {"status": "cancelled"}, synchronize_session=False
             )
-            order.payment_status = "failed"
+            released_count += 1
 
         db.commit()
-        log.info("ticketing.stale_reservations_released", order_count=len(stale_orders))
+        log.info("ticketing.stale_reservations_released", order_count=released_count)
 
 
 @shared_task(name="app.tasks.ticketing.expire_waitlist_offers")
@@ -78,7 +94,7 @@ def expire_waitlist_offers() -> None:
     """
     A cancellation offers the freed spot to the next waitlisted person with a
     24h claim window (see ticketing_service.notify_next_waitlist_entry). If
-    they never act, nothing previously moved on to the person behind them —
+    they never act, nothing previously moved on to the person behind them -
     the spot just sat unclaimed forever. This finds expired, unclaimed offers,
     drops them from the queue, and offers the spot to whoever's next.
     """

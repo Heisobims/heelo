@@ -1,14 +1,45 @@
 {% extends "admin/layout.html" %}
-{% block title %}Vendors{% endblock %}
+{% block title %}Vendors &amp; Venues{% endblock %}
 
 {% block content %}
-<div style="margin-bottom:24px;">
-  <h1 style="font-size:1.4rem;font-weight:700;">Vendors &amp; venues</h1>
-  <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">{{ total }} total vendors</p>
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+  <div>
+    <h1 style="font-size:1.4rem;font-weight:700;">Vendors &amp; Marketplace</h1>
+    <p style="color:var(--text-muted,#71717a);font-size:0.85rem;margin-top:4px;">
+      Manage service providers, document verification requests, and earnings disbursements.
+    </p>
+  </div>
 </div>
 
+<!-- Sub-navigation Tabs -->
+<div style="display:flex; gap:8px; border-bottom:1px solid var(--admin-border); margin-bottom:24px; padding-bottom:4px;">
+  <a href="/admin/vendors?tab=directory" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px; font-size:0.85rem; font-weight:600; text-decoration:none; transition:all 0.15s; {% if tab == 'directory' or not tab %}background:var(--admin-accent); color:#fff;{% else %}color:var(--text-muted,#71717a); background:transparent;{% endif %}">
+    <span>Vendor Directory</span>
+    <span style="font-size:0.75rem; opacity:0.85; padding:2px 6px; border-radius:10px; background:rgba(0,0,0,0.15);">{{ total }}</span>
+  </a>
+  <a href="/admin/vendors?tab=verifications" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px; font-size:0.85rem; font-weight:600; text-decoration:none; transition:all 0.15s; {% if tab == 'verifications' %}background:var(--admin-accent); color:#fff;{% else %}color:var(--text-muted,#71717a); background:transparent;{% endif %}">
+    <span>Verification Queue</span>
+    {% if pending_verifications_count > 0 %}
+    <span style="font-size:0.72rem; padding:2px 7px; border-radius:10px; background:#ef4444; color:#fff; font-weight:700;">{{ pending_verifications_count }} pending</span>
+    {% else %}
+    <span style="font-size:0.75rem; opacity:0.85; padding:2px 6px; border-radius:10px; background:rgba(0,0,0,0.15);">0</span>
+    {% endif %}
+  </a>
+  <a href="/admin/vendors?tab=payouts" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:8px; font-size:0.85rem; font-weight:600; text-decoration:none; transition:all 0.15s; {% if tab == 'payouts' %}background:var(--admin-accent); color:#fff;{% else %}color:var(--text-muted,#71717a); background:transparent;{% endif %}">
+    <span>Vendor Payouts</span>
+    {% if pending_payouts_count > 0 %}
+    <span style="font-size:0.72rem; padding:2px 7px; border-radius:10px; background:#f59e0b; color:#18181b; font-weight:700;">{{ pending_payouts_count }} pending</span>
+    {% else %}
+    <span style="font-size:0.75rem; opacity:0.85; padding:2px 6px; border-radius:10px; background:rgba(0,0,0,0.15);">0</span>
+    {% endif %}
+  </a>
+</div>
+
+{% if tab == 'directory' or not tab %}
+<!-- TAB 1: DIRECTORY -->
 <div class="section-card">
   <form method="get" action="/admin/vendors">
+    <input type="hidden" name="tab" value="directory" />
     <div class="search-bar">
       <input name="q" value="{{ q }}" placeholder="Search by business name or slug..." />
       <select name="category">
@@ -27,77 +58,398 @@
     </div>
   </form>
 
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>Business</th><th>Category</th><th>Owner</th><th>Location</th><th>Leads</th><th>Status</th><th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for v in vendors %}
-      <tr id="vendor-{{ v.id }}">
-        <td>
-          <a href="/vendors/{{ v.slug }}" target="_blank">{{ v.business_name }}</a><br>
-          <span style="color:var(--text-muted,#71717a);font-size:0.72rem;">/{{ v.slug }}</span>
-        </td>
-        <td style="text-transform:capitalize;">{{ v.category|replace('_', ' ') }}</td>
-        <td style="font-size:0.78rem;">{{ v.user.email if v.user else '—' }}</td>
-        <td>{{ v.location_city or '—' }}{% if v.location_country %}, {{ v.location_country }}{% endif %}</td>
-        <td>{{ v.lead_count }}</td>
-        <td>
-          <span class="badge {{ 'badge-active' if v.status == 'active' else ('badge-pending' if v.status == 'pending' else 'badge-suspended') }}" id="status-badge-{{ v.id }}">
-            {{ v.status|capitalize }}
-          </span>
-        </td>
-        <td>
-          {% if v.status == 'suspended' %}
-          <button class="btn btn-sm btn-accent" onclick="reinstateVendor('{{ v.id }}', '{{ v.business_name }}')">Reinstate</button>
-          {% else %}
-          <button class="btn btn-sm btn-danger" onclick="suspendVendor('{{ v.id }}', '{{ v.business_name }}')">Suspend</button>
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Business</th>
+          <th>Plan Tier</th>
+          <th>Category</th>
+          <th>Owner</th>
+          <th>Location</th>
+          <th>Rating</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in vendors %}
+        <tr id="vendor-{{ v.id }}">
+          <td>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <a href="/vendors/{{ v.slug }}" target="_blank" style="font-weight:600;">{{ v.business_name }}</a>
+              {% if v.is_verified or v.verification_status == 'approved' %}
+              <span title="Verified Business" class="material-symbols-outlined" style="color:#10b981; font-size:16px;">verified</span>
+              {% endif %}
+            </div>
+            <span style="color:var(--text-muted,#71717a);font-size:0.72rem;">/vendors/{{ v.slug }}</span>
+          </td>
+          <td>
+            <span class="badge" style="background:var(--admin-surface-raised); border:1px solid var(--admin-border); text-transform:uppercase; font-size:0.65rem;">
+              {{ v.subscription_tier or 'free' }}
+            </span>
+          </td>
+          <td style="text-transform:capitalize;">{{ v.category|replace('_', ' ') }}</td>
+          <td style="font-size:0.78rem;">{{ v.user.email if v.user else '' }}</td>
+          <td>{{ v.location_city or '' }}{% if v.location_country %}, {{ v.location_country }}{% endif %}</td>
+          <td>
+            {% if v.reviews_count and v.reviews_count > 0 %}
+            <span style="color:#f59e0b; font-weight:700;"><span class="material-symbols-outlined" style="color:#f59e0b; font-size:14px; vertical-align:-2px;">star</span> {{ "%.1f"|format(v.rating_avg or 5.0) }}</span>
+            <span style="color:var(--text-muted,#71717a); font-size:0.72rem;">({{ v.reviews_count }})</span>
+            {% else %}
+            <span style="color:var(--text-muted,#71717a); font-size:0.75rem;">New</span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge {{ 'badge-active' if v.status == 'active' else ('badge-pending' if v.status == 'pending' else 'badge-suspended') }}" id="status-badge-{{ v.id }}">
+              {{ v.status|capitalize }}
+            </span>
+          </td>
+          <td>
+            {% if v.status == 'suspended' %}
+            <button class="btn btn-sm btn-accent" onclick="reinstateVendor('{{ v.id }}', '{{ v.business_name }}')">Reinstate</button>
+            {% else %}
+            <button class="btn btn-sm btn-danger" onclick="suspendVendor('{{ v.id }}', '{{ v.business_name }}')">Suspend</button>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
   <div class="pagination">
     {% if page > 1 %}
-    <a href="?q={{ q }}&category={{ selected_category }}&status={{ selected_status }}&page={{ page - 1 }}">&larr; Prev</a>
+    <a href="?tab=directory&q={{ q }}&category={{ selected_category }}&status={{ selected_status }}&page={{ page - 1 }}">&larr; Prev</a>
     {% endif %}
     <span class="current">{{ page }}</span>
     {% if page * per_page < total %}
-    <a href="?q={{ q }}&category={{ selected_category }}&status={{ selected_status }}&page={{ page + 1 }}">Next &rarr;</a>
+    <a href="?tab=directory&q={{ q }}&category={{ selected_category }}&status={{ selected_status }}&page={{ page + 1 }}">Next &rarr;</a>
     {% endif %}
     <span class="info">{{ total }} results</span>
   </div>
 </div>
+
+{% elif tab == 'verifications' %}
+<!-- TAB 2: VERIFICATION QUEUE -->
+<div class="section-card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h2 style="font-size:1.05rem; font-weight:700;">Official Vendor Verification Queue</h2>
+      <p style="color:var(--text-muted,#71717a); font-size:0.8rem; margin-top:2px;">
+        Review business certificates (CAC / state registries), government IDs, and compliance documents before issuing the verified checkmark badge.
+      </p>
+    </div>
+    <div style="display:flex; gap:6px;">
+      <a href="/admin/vendors?tab=verifications&verif_status=pending" class="btn btn-sm {% if verif_status == 'pending' %}btn-accent{% else %}btn-ghost{% endif %}">Pending</a>
+      <a href="/admin/vendors?tab=verifications&verif_status=approved" class="btn btn-sm {% if verif_status == 'approved' %}btn-accent{% else %}btn-ghost{% endif %}">Approved</a>
+      <a href="/admin/vendors?tab=verifications&verif_status=rejected" class="btn btn-sm {% if verif_status == 'rejected' %}btn-accent{% else %}btn-ghost{% endif %}">Rejected</a>
+      <a href="/admin/vendors?tab=verifications&verif_status=all" class="btn btn-sm {% if verif_status == 'all' %}btn-accent{% else %}btn-ghost{% endif %}">All</a>
+    </div>
+  </div>
+
+  {% if verification_requests %}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Business / Profile</th>
+          <th>Registration &amp; Tax ID</th>
+          <th>Submitted Documents</th>
+          <th>Notes &amp; Details</th>
+          <th>Submitted</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in verification_requests %}
+        <tr id="verif-row-{{ r.id }}">
+          <td>
+            <div style="font-weight:600;">
+              {% if r.vendor %}
+              <a href="/vendors/{{ r.vendor.slug }}" target="_blank">{{ r.vendor.business_name }}</a>
+              {% else %}
+              <span style="color:var(--text-muted,#71717a);">Unknown Vendor</span>
+              {% endif %}
+            </div>
+            {% if r.vendor and r.vendor.user %}
+            <div style="color:var(--text-muted,#71717a); font-size:0.75rem;">{{ r.vendor.user.email }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <div><strong>Reg:</strong> {{ r.business_registration_number or '' }}</div>
+            <div style="color:var(--text-muted,#71717a); font-size:0.75rem;"><strong>Tax ID:</strong> {{ r.tax_id or '' }}</div>
+          </td>
+          <td>
+            <div style="display:flex; flex-direction:column; gap:4px; font-size:0.78rem;">
+              {% if r.government_id_url %}
+              <a href="{{ r.government_id_url }}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:4px; color:var(--admin-accent);">
+                <span><span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">badge</span> Identity ID</span> &nearr;
+              </a>
+              {% endif %}
+              {% if r.document_urls %}
+                {% for doc in r.document_urls %}
+                <a href="{{ doc }}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:4px; color:var(--admin-accent);">
+                  <span><span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px;">description</span> CAC / Cert {{ loop.index }}</span> &nearr;
+                </a>
+                {% endfor %}
+              {% endif %}
+              {% if not r.government_id_url and not r.document_urls %}
+              <span style="color:var(--text-muted,#71717a);">No files attached</span>
+              {% endif %}
+            </div>
+          </td>
+          <td style="max-width:260px; font-size:0.8rem;">
+            {% if r.notes %}
+            <div style="margin-bottom:4px; color:var(--text,#e4e4e7);">"{{ r.notes }}"</div>
+            {% endif %}
+            {% if r.admin_notes %}
+            <div style="font-size:0.72rem; color:var(--text-muted,#71717a);"><strong>Staff Note:</strong> {{ r.admin_notes }}</div>
+            {% endif %}
+          </td>
+          <td style="font-size:0.78rem; white-space:nowrap;">
+            {{ r.created_at.strftime("%b %-d, %Y") if r.created_at else '' }}
+          </td>
+          <td>
+            <span class="badge {% if r.status == 'approved' %}badge-active{% elif r.status == 'pending' %}badge-pending{% else %}badge-suspended{% endif %}" id="verif-status-{{ r.id }}">
+              {{ r.status|capitalize }}
+            </span>
+          </td>
+          <td>
+            {% if r.status == 'pending' %}
+            <div style="display:flex; gap:6px; align-items:center;" id="verif-actions-{{ r.id }}">
+              <button class="btn btn-sm btn-accent" style="background:#00c853;" onclick="reviewVerification('{{ r.id }}', true, '{{ r.vendor.business_name if r.vendor else 'this vendor' }}')">Approve</button>
+              <button class="btn btn-sm btn-danger" onclick="reviewVerification('{{ r.id }}', false, '{{ r.vendor.business_name if r.vendor else 'this vendor' }}')">Reject</button>
+            </div>
+            {% else %}
+            <span style="font-size:0.75rem; color:var(--text-muted,#71717a);">Reviewed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--text-muted,#71717a); font-size:0.875rem; padding:16px 0;">No verification submissions found matching this filter.</p>
+  {% endif %}
+</div>
+
+{% elif tab == 'payouts' %}
+<!-- TAB 3: VENDOR PAYOUTS -->
+<div class="section-card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h2 style="font-size:1.05rem; font-weight:700;">Vendor Withdrawal Requests</h2>
+      <p style="color:var(--text-muted,#71717a); font-size:0.8rem; margin-top:2px;">
+        Marketplace net vendor earnings from completed bookings awaiting bank payout disbursement.
+      </p>
+    </div>
+    <div style="display:flex; gap:6px;">
+      <a href="/admin/vendors?tab=payouts&payout_status=pending" class="btn btn-sm {% if payout_filter_status == 'pending' %}btn-accent{% else %}btn-ghost{% endif %}">Pending</a>
+      <a href="/admin/vendors?tab=payouts&payout_status=completed" class="btn btn-sm {% if payout_filter_status == 'completed' %}btn-accent{% else %}btn-ghost{% endif %}">Completed</a>
+      <a href="/admin/vendors?tab=payouts&payout_status=all" class="btn btn-sm {% if payout_filter_status == 'all' %}btn-accent{% else %}btn-ghost{% endif %}">All</a>
+    </div>
+  </div>
+
+  {% if vendor_payouts %}
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Vendor</th>
+          <th>Amount</th>
+          <th>Bank Account Details</th>
+          <th>Method</th>
+          <th>Requested</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in vendor_payouts %}
+        <tr id="vendor-payout-row-{{ p.id }}">
+          <td>
+            <div style="font-weight:600;">
+              {% if p.vendor %}
+              <a href="/vendors/{{ p.vendor.slug }}" target="_blank">{{ p.vendor.business_name }}</a>
+              {% else %}
+              <span style="color:var(--text-muted,#71717a);">Unknown</span>
+              {% endif %}
+            </div>
+            {% if p.provider_reference %}
+            <div style="font-size:0.72rem; color:var(--text-muted,#71717a);">Ref: {{ p.provider_reference }}</div>
+            {% endif %}
+          </td>
+          <td style="font-weight:700; font-size:0.92rem;">
+            {{ p.currency or 'NGN' }} {{ "{:,.2f}".format(p.amount) }}
+          </td>
+          <td style="font-size:0.8rem;">
+            {% if p.account_details %}
+              <div><strong>{{ p.account_details.get('bank_name') or 'Bank' }}</strong></div>
+              <div><code>{{ p.account_details.get('account_number') or '' }}</code></div>
+              <div style="color:var(--text-muted,#71717a); font-size:0.72rem;">{{ p.account_details.get('account_name') or '' }}</div>
+            {% else %}
+              <span style="color:var(--text-muted,#71717a);">Manual on file</span>
+            {% endif %}
+          </td>
+          <td style="text-transform:capitalize; font-size:0.78rem;">
+            {{ p.method|replace('_', ' ') }}
+          </td>
+          <td style="font-size:0.78rem; white-space:nowrap;">
+            {{ p.created_at.strftime("%b %-d, %Y") if p.created_at else '' }}
+          </td>
+          <td>
+            <span class="badge {% if p.status == 'completed' %}badge-active{% elif p.status == 'pending' %}badge-pending{% else %}badge-suspended{% endif %}" id="vp-badge-{{ p.id }}">
+              {{ p.status|capitalize }}
+            </span>
+          </td>
+          <td>
+            {% if p.status in ['pending', 'processing'] %}
+            <button class="btn btn-sm btn-primary" onclick="disburseVendorPayout('{{ p.id }}', '{{ p.currency }} {{ "{:,.2f}".format(p.amount) }}', '{{ p.vendor.business_name if p.vendor else 'this vendor' }}')">
+              <span class="material-symbols-outlined" style="font-size:14px; vertical-align:-2px;">bolt</span> Disburse
+            </button>
+            {% else %}
+            <span style="font-size:0.75rem; color:var(--text-muted,#71717a);">Disbursed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="color:var(--text-muted,#71717a); font-size:0.875rem; padding:16px 0;">No vendor withdrawal payouts found matching this filter.</p>
+  {% endif %}
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
+// Vendor Suspension & Reinstatement
 async function suspendVendor(id, name) {
-  if (!confirm(`Suspend "${name}"? Their listing will be hidden from organizers.`)) return;
-  const r = await fetch(`/api/v1/admin/vendors/${id}/suspend`, { method: 'POST' });
+  if (!confirm(`Suspend "${name}"? Their listing will be hidden from organizers and marketplace search.`)) return;
+  const csrf = getAdminCsrfToken();
+  const r = await fetch(`/api/v1/admin/vendors/${id}/suspend`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf }
+  });
   if (r.ok) {
+    showAdminToast(`Vendor "${name}" suspended.`);
     const badge = document.getElementById(`status-badge-${id}`);
-    badge.className = 'badge badge-suspended';
-    badge.textContent = 'Suspended';
-    badge.closest('tr').querySelector('button').outerHTML =
-      `<button class="btn btn-sm btn-accent" onclick="reinstateVendor('${id}','${name}')">Reinstate</button>`;
-  } else { alert('Failed to suspend.'); }
+    if (badge) {
+      badge.className = 'badge badge-suspended';
+      badge.textContent = 'Suspended';
+    }
+    const btn = event?.target;
+    if (btn) {
+      btn.outerHTML = `<button class="btn btn-sm btn-accent" onclick="reinstateVendor('${id}','${name}')">Reinstate</button>`;
+    }
+  } else {
+    showAdminToast('Failed to suspend vendor.', 'error');
+  }
 }
 
 async function reinstateVendor(id, name) {
   if (!confirm(`Reinstate "${name}"?`)) return;
-  const r = await fetch(`/api/v1/admin/vendors/${id}/reinstate`, { method: 'POST' });
+  const csrf = getAdminCsrfToken();
+  const r = await fetch(`/api/v1/admin/vendors/${id}/reinstate`, {
+    method: 'POST',
+    headers: { 'X-CSRF-Token': csrf }
+  });
   if (r.ok) {
+    showAdminToast(`Vendor "${name}" reinstated successfully.`);
     const badge = document.getElementById(`status-badge-${id}`);
-    badge.className = 'badge badge-active';
-    badge.textContent = 'Active';
-    badge.closest('tr').querySelector('button').outerHTML =
-      `<button class="btn btn-sm btn-danger" onclick="suspendVendor('${id}','${name}')">Suspend</button>`;
-  } else { alert('Failed to reinstate.'); }
+    if (badge) {
+      badge.className = 'badge badge-active';
+      badge.textContent = 'Active';
+    }
+    const btn = event?.target;
+    if (btn) {
+      btn.outerHTML = `<button class="btn btn-sm btn-danger" onclick="suspendVendor('${id}','${name}')">Suspend</button>`;
+    }
+  } else {
+    showAdminToast('Failed to reinstate vendor.', 'error');
+  }
+}
+
+// Verification Queue Action
+async function reviewVerification(reqId, approved, vendorName) {
+  let notes = null;
+  if (!approved) {
+    notes = prompt(`Please enter reason for rejecting verification of "${vendorName}":`);
+    if (notes === null) return; // cancelled
+  } else {
+    if (!confirm(`Approve official verified badge for "${vendorName}"?`)) return;
+    notes = "Approved by platform administrator.";
+  }
+
+  const csrf = getAdminCsrfToken();
+  try {
+    const res = await fetch(`/api/v1/vendors/verification/requests/${reqId}/review`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ approved: approved, admin_notes: notes }),
+    });
+    const json = await res.json();
+    if (res.ok && json.success) {
+      showAdminToast(`Vendor verification ${approved ? 'approved' : 'rejected'} successfully.`);
+      const badge = document.getElementById(`verif-status-${reqId}`);
+      if (badge) {
+        badge.className = approved ? 'badge badge-active' : 'badge badge-suspended';
+        badge.textContent = approved ? 'Approved' : 'Rejected';
+      }
+      const actions = document.getElementById(`verif-actions-${reqId}`);
+      if (actions) {
+        actions.innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted,#71717a);">Reviewed</span>`;
+      }
+    } else {
+      showAdminToast(json.error?.message || json.detail || 'Failed to review verification.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error while processing verification.', 'error');
+  }
+}
+
+// Vendor Payout Disbursement
+async function disburseVendorPayout(payoutId, formattedAmount, vendorName) {
+  const ref = prompt(`Disburse ${formattedAmount} to "${vendorName}"?\n\nEnter optional bank transfer reference or press OK to confirm:`, `TRF-${Date.now().toString(36).toUpperCase()}`);
+  if (ref === null) return;
+
+  const csrf = getAdminCsrfToken();
+  try {
+    const res = await fetch(`/api/v1/vendors/admin/payouts/${payoutId}/disburse`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrf
+      },
+      body: JSON.stringify({ provider_reference: ref.trim() || null }),
+    });
+    const json = await res.json();
+    if (res.ok && json.success) {
+      showAdminToast(`Payout disbursed and marked completed.`);
+      const badge = document.getElementById(`vp-badge-${payoutId}`);
+      if (badge) {
+        badge.className = 'badge badge-active';
+        badge.textContent = 'Completed';
+      }
+      const row = document.getElementById(`vendor-payout-row-${payoutId}`);
+      if (row) {
+        const lastTd = row.querySelector('td:last-child');
+        if (lastTd) lastTd.innerHTML = `<span style="font-size:0.75rem; color:var(--text-muted,#71717a);">Disbursed</span>`;
+      }
+    } else {
+      showAdminToast(json.error?.message || json.detail || 'Failed to disburse vendor payout.', 'error');
+    }
+  } catch (err) {
+    showAdminToast('Network error while disbursing payout.', 'error');
+  }
 }
 </script>
 {% endblock %}

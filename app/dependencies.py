@@ -16,7 +16,7 @@ from app.database import get_db
 DBSession = Annotated[AsyncSession, Depends(get_db)]
 
 
-# ── JWT token extraction — header OR httpOnly cookie ─────────────────────────
+# ── JWT token extraction - header OR httpOnly cookie ─────────────────────────
 async def _resolve_token(
     authorization: str | None = Header(default=None),
     heelo_access: str | None = Cookie(default=None),

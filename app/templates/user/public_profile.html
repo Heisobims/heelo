@@ -1,25 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{{ profile_user.full_name }} — Heelo{% endblock %}
+{% block title %}{{ profile_user.full_name }} | Heelo{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
   body { background: var(--bg-secondary); }
 
-  .pp-nav {
-    position: sticky; top: 0; z-index: 40;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
-  }
-  .pp-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
-  .pp-nav-logo span { color: var(--cyan-dark, #00b3a9); }
-  .pp-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-  .pp-btn { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; }
   .pp-btn-primary { background: var(--text-primary); color: #fff; }
-  .pp-btn-outline { border: 1.5px solid var(--border-light); color: var(--text-primary); }
 
-  .pp-wrap { max-width: 760px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+  .pp-wrap { max-width: 760px; margin: 0 auto; padding: 6.5rem 1.5rem 4rem; }
 
   .pp-hero {
     background: #fff; border: 1px solid var(--border-light); border-radius: 16px;
@@ -35,7 +24,7 @@
   .pp-name { font-family: var(--font-serif, 'STK Bureau Serif', Georgia, serif); font-size: 1.5rem; font-weight: 700; margin: 0 0 0.2rem; }
   .pp-handle { font-size: 0.875rem; color: var(--text-muted); }
   .pp-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; margin-top: 0.5rem; }
-  .pp-badge-organizer { background: rgba(0,255,243,0.1); color: var(--cyan-dark, #00b3a9); }
+  .pp-badge-organizer { background: rgba(232, 89, 56, 0.1); color: var(--cyan-dark, #C84729); }
 
   .pp-section-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-secondary); margin-bottom: 0.75rem; }
 
@@ -52,7 +41,7 @@
   .pp-event-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .pp-event-date { font-size: 11px; color: var(--text-muted); }
   .pp-event-status { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 100px; font-size: 10px; font-weight: 700; margin-top: 4px; }
-  .pp-event-status.checked_in { background: rgba(0,255,243,0.1); color: var(--cyan-dark,#00b3a9); }
+  .pp-event-status.checked_in { background: rgba(232, 89, 56, 0.1); color: var(--cyan-dark,#C84729); }
   .pp-event-status.confirmed  { background: rgba(34,197,94,0.1); color: #15803d; }
 
   .pp-empty { text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary); background: #fff; border: 1px solid var(--border-light); border-radius: 14px; font-size: 0.9rem; }
@@ -64,17 +53,7 @@
 {% endblock %}
 
 {% block body %}
-<nav class="pp-nav">
-  <a href="/" class="pp-nav-logo">heelo<span>.</span></a>
-  <div class="pp-nav-right">
-    {% if user %}
-    <a href="/home" class="pp-btn pp-btn-primary">Dashboard</a>
-    {% else %}
-    <a href="/login" class="pp-btn pp-btn-outline">Sign in</a>
-    <a href="/register" class="pp-btn pp-btn-primary">Join free</a>
-    {% endif %}
-  </div>
-</nav>
+{% include "partials/site_nav.html" %}
 
 <div class="pp-wrap">
 

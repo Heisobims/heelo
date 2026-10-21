@@ -23,7 +23,7 @@ config.set_main_option("sqlalchemy.url", settings.DATABASE_URL_SYNC)
 
 # Import all models so Alembic can detect them for autogenerate.
 # These imports are resolved after each model module is created.
-import app.models  # noqa: F401 — registers all models via __init__
+import app.models  # noqa: F401 - registers all models via __init__
 
 target_metadata = Base.metadata
 

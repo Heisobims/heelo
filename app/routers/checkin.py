@@ -76,7 +76,7 @@ async def check_in(
                 rid = uuid.UUID(data.registration_id)
             except (ValueError, TypeError) as err:
                 raise HTTPException(422, "Invalid registration_id.") from err
-            reg = await ci_svc.check_in_by_id(db, rid)
+            reg = await ci_svc.check_in_by_id(db, rid, event.id)
 
     except ci_svc.AlreadyCheckedInError as e:
         return JSONResponse(
@@ -127,7 +127,7 @@ async def undo_check_in(
 async def checkin_checked_in_ids(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
     """
     Lightweight list of already-checked-in registration IDs, polled by the kiosk to
-    keep a local dedup cache fresh — lets it reject an obvious duplicate scan before
+    keep a local dedup cache fresh - lets it reject an obvious duplicate scan before
     even attempting the network call (or while offline), instead of only catching it
     on a later background sync.
     """
@@ -147,7 +147,7 @@ async def checkin_stats(slug: str, event_id: str, db: DBSession, org_access: Org
 
 @router_checkin.get("/check-in/pulse")
 async def checkin_pulse(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
-    """Live-pulse snapshot — capacity fill + per-ticket-tier check-in rate."""
+    """Live-pulse snapshot - capacity fill + per-ticket-tier check-in rate."""
     org, role, is_owner = org_access
     event = await _get_event_for_org(db, event_id, org.id)
     stats = await ci_svc.get_live_pulse(db, event)
@@ -156,7 +156,7 @@ async def checkin_pulse(slug: str, event_id: str, db: DBSession, org_access: Org
 
 @router_checkin.get("/check-in/stream")
 async def checkin_stream(slug: str, event_id: str, db: DBSession, org_access: OrgAccess):
-    """SSE endpoint — pushes live pulse stats every 5 s. Nginx must have proxy_buffering off."""
+    """SSE endpoint - pushes live pulse stats every 5 s. Nginx must have proxy_buffering off."""
     org, role, is_owner = org_access
     event = await _get_event_for_org(db, event_id, org.id)
 

@@ -1,4 +1,4 @@
-"""Waitlist management — organizer-facing list/remove/notify-next on top of
+"""Waitlist management - organizer-facing list/remove/notify-next on top of
 the existing public join flow, plus the notified_at bookkeeping fix that
 makes "notify the next un-notified person" actually advance through the
 queue instead of re-selecting the same person indefinitely.

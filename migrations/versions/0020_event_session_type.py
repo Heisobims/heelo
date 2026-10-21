@@ -1,4 +1,4 @@
-"""Add session_type to event_sessions — lets a session be categorized
+"""Add session_type to event_sessions - lets a session be categorized
 (talk/panel/workshop/networking/break/ceremony) for the agenda builder UI,
 matching what the old Event.extras.agenda blob already tracked per item.
 """

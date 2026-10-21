@@ -18,6 +18,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -39,10 +40,19 @@ from app.schemas.auth import (
     VerifyOTPRequest,
 )
 from app.services.auth_service import AuthService
+from app.utils.rate_limit import check_and_record, get_client_ip
 
 logger = structlog.get_logger()
 
+# Registration/OTP-resend can be spammed to mass-trigger email/SMS at an
+# arbitrary target address - throttle both per-email (targeted abuse) and
+# per-IP (volume abuse), same defense-in-depth convention as login.
+_REGISTER_MAX_PER_EMAIL = 5
+_REGISTER_MAX_PER_IP = 20
+_REGISTER_WINDOW_SECONDS = 60 * 60
+
 templates = Jinja2Templates(directory="app/templates")
+templates.env.globals["settings"] = settings
 
 # ── Two routers: API (JSON) + Pages (HTML) ────────────────────────────────────
 router_api = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
@@ -79,26 +89,48 @@ def _clear_auth_cookies(response: Response) -> None:
 
 # ── HTML page routes ──────────────────────────────────────────────────────────
 @router_pages.get("/register", response_class=HTMLResponse, include_in_schema=False)
-async def page_register(request: Request):
-    """Registration Step 1 — name, email, password."""
+async def page_register(request: Request, next: str | None = None):
+    """Registration Step 1 - name, email, password.
+    If already logged in, redirect to next (or /dashboard) to prevent loop.
+    """
+    token = request.cookies.get(_COOKIE_ACCESS)
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            if payload.get("sub"):
+                target = next if (next and next.startswith("/") and not next.startswith("//")) else "/dashboard"
+                return RedirectResponse(target, status_code=302)
+        except Exception:
+            pass
     return templates.TemplateResponse(request, "auth/register.html")
 
 
 @router_pages.get("/verify", response_class=HTMLResponse, include_in_schema=False)
 async def page_verify(request: Request, email: str = ""):
-    """Registration Step 2 — 6-digit OTP input."""
+    """Registration Step 2 - 6-digit OTP input."""
     return templates.TemplateResponse(request, "auth/verify.html", {"email": email})
 
 
 @router_pages.get("/onboarding/role", response_class=HTMLResponse, include_in_schema=False)
 async def page_role(request: Request):
-    """Registration Step 3 — role selection."""
+    """Registration Step 3 - role selection."""
     return templates.TemplateResponse(request, "auth/role.html")
 
 
 @router_pages.get("/login", response_class=HTMLResponse, include_in_schema=False)
-async def page_login(request: Request):
-    """Login page."""
+async def page_login(request: Request, next: str | None = None):
+    """Login page.
+    If already logged in, redirect to next (or /dashboard).
+    """
+    token = request.cookies.get(_COOKIE_ACCESS)
+    if token:
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            if payload.get("sub"):
+                target = next if (next and next.startswith("/") and not next.startswith("//")) else "/dashboard"
+                return RedirectResponse(target, status_code=302)
+        except Exception:
+            pass
     return templates.TemplateResponse(request, "auth/login.html")
 
 
@@ -120,6 +152,7 @@ async def page_reset_password(request: Request, token: str):
     summary="Register a new account",
 )
 async def register(
+    request: Request,
     data: RegisterRequest,
     db: AsyncSession = Depends(get_db),
 ):
@@ -127,6 +160,18 @@ async def register(
     Create a new unverified user and send a 6-digit OTP to their email.
     The user must verify the OTP via `/auth/verify-otp` before they can log in.
     """
+    check_and_record(
+        f"register_attempts:email:{data.email.lower()}",
+        max_attempts=_REGISTER_MAX_PER_EMAIL,
+        window_seconds=_REGISTER_WINDOW_SECONDS,
+        error_message="Too many attempts for this email. Please try again in an hour.",
+    )
+    check_and_record(
+        f"register_attempts:ip:{get_client_ip(request)}",
+        max_attempts=_REGISTER_MAX_PER_IP,
+        window_seconds=_REGISTER_WINDOW_SECONDS,
+        error_message="Too many attempts. Please try again in an hour.",
+    )
     svc = AuthService(db)
     result = await svc.register(data)
     return result
@@ -154,8 +199,20 @@ async def verify_otp(
 
 
 @router_api.post("/resend-otp", status_code=status.HTTP_204_NO_CONTENT, summary="Resend OTP")
-async def resend_otp(data: ResendOTPRequest, db: AsyncSession = Depends(get_db)):
-    """Invalidate the previous OTP and send a fresh one. Rate-limited at Nginx level."""
+async def resend_otp(request: Request, data: ResendOTPRequest, db: AsyncSession = Depends(get_db)):
+    """Invalidate the previous OTP and send a fresh one."""
+    check_and_record(
+        f"register_attempts:email:{data.email.lower()}",
+        max_attempts=_REGISTER_MAX_PER_EMAIL,
+        window_seconds=_REGISTER_WINDOW_SECONDS,
+        error_message="Too many attempts for this email. Please try again in an hour.",
+    )
+    check_and_record(
+        f"register_attempts:ip:{get_client_ip(request)}",
+        max_attempts=_REGISTER_MAX_PER_IP,
+        window_seconds=_REGISTER_WINDOW_SECONDS,
+        error_message="Too many attempts. Please try again in an hour.",
+    )
     await AuthService(db).resend_otp(data.email)
 
 
@@ -205,7 +262,7 @@ async def refresh_tokens(
     """
     Issue a new access token using the refresh token.
     Accepts the token from the `heelo_refresh` cookie (browser) or the request body (API clients).
-    Implements token rotation — the old refresh token is revoked and a new one is issued.
+    Implements token rotation - the old refresh token is revoked and a new one is issued.
     """
     raw = (heelo_refresh or "") if heelo_refresh else (body.refresh_token if body else "")
     if not raw:
@@ -299,7 +356,7 @@ async def facebook_callback(
 async def forgot_password(data: ForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     """
     Send a password reset link. Always returns 204 regardless of whether the
-    email exists — prevents email enumeration.
+    email exists - prevents email enumeration.
     """
     await AuthService(db).forgot_password(data)
 
@@ -357,6 +414,8 @@ async def update_me(
         user.username = body.username or None
     if body.whatsapp_number is not None:
         user.whatsapp_number = body.whatsapp_number or None
+    if body.avatar_url is not None:
+        user.avatar_url = body.avatar_url or None
     if body.country is not None:
         user.country = body.country or None
     if body.birth_year is not None:
@@ -411,7 +470,7 @@ async def upload_avatar(
     url = await storage.upload_image(
         data,
         folder=f"users/{user.id}/avatar",
-        filename="avatar.jpg",
+        filename=None,
         max_width=400,
         quality=85,
     )
@@ -507,7 +566,7 @@ async def get_notifications(
             }
         )
 
-    # Real notification rows (e.g. connection requests/accepts) — unread first
+    # Real notification rows (e.g. connection requests/accepts) - unread first
     from app.models.notification import Notification
 
     notif_rows = await db.scalars(

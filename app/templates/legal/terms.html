@@ -1,23 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Terms of Service — Heelo{% endblock %}
+{% block title %}Terms of Service | Heelo{% endblock %}
 
 {% block head %}
 <style>
-  .legal-wrap { max-width: 720px; margin: 0 auto; padding: 56px 24px 96px; }
-  .legal-notice { background: rgba(0,255,243,0.08); border: 1px solid rgba(0,255,243,0.25); border-radius: 12px; padding: 16px 20px; font-size: 13.5px; color: var(--text-secondary); margin-bottom: 40px; line-height: 1.6; }
+  .legal-wrap { max-width: 720px; margin: 0 auto; padding: 130px 24px 96px; }
+  .legal-notice { background: rgba(232,89,56,0.08); border: 1px solid rgba(232,89,56,0.25); border-radius: 12px; padding: 16px 20px; font-size: 13.5px; color: var(--text-secondary); margin-bottom: 40px; line-height: 1.6; }
   .legal-title { font-family: var(--font-serif); font-size: clamp(28px, 5vw, 40px); font-weight: 700; margin-bottom: 8px; }
   .legal-updated { color: var(--text-muted); font-size: 13px; margin-bottom: 40px; }
   .legal-wrap h2 { font-size: 18px; font-weight: 700; margin: 36px 0 12px; }
   .legal-wrap p, .legal-wrap li { font-size: 15px; line-height: 1.7; color: var(--text-secondary); }
   .legal-wrap ul { padding-left: 20px; margin: 8px 0 16px; }
-  .legal-wrap a { color: var(--cyan-dark, #00b3a9); }
+  .legal-wrap a { color: var(--cyan-dark, #C84729); }
 </style>
 {% endblock %}
 
 {% block body %}
+{% include "partials/site_nav.html" %}
+
 <div class="legal-wrap">
   <div class="legal-notice">
-    This is a standard starting-point template, not legal advice — Heelo should have it reviewed by a lawyer for its specific jurisdiction and business practices before relying on it.
+    This is a standard starting-point template, not legal advice: Heelo should have it reviewed by a lawyer for its specific jurisdiction and business practices before relying on it.
   </div>
 
   <h1 class="legal-title">Terms of Service</h1>

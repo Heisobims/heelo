@@ -3,7 +3,7 @@ set -euo pipefail
 
 CONCURRENCY="${CELERY_CONCURRENCY:-4}"
 # Must cover every queue named in task_routes (app/tasks/celery_app.py) plus the
-# default "celery" queue — otherwise routed tasks (email/whatsapp/webhooks/...)
+# default "celery" queue - otherwise routed tasks (email/whatsapp/webhooks/...)
 # are published but never consumed.
 QUEUES="${CELERY_QUEUES:-celery,email,whatsapp,webhooks,notifications}"
 

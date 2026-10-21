@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Find a Venue' if venue_mode else 'Vendor Marketplace' }} — Heelo{% endblock %}
+{% block title %}{{ 'Find a Venue' if venue_mode else 'Vendor Marketplace' }} | Heelo{% endblock %}
 {% block meta_description %}{{ 'Find event halls and venues by location and capacity.' if venue_mode else 'Find photographers, caterers, decorators, and more for your next event.' }}{% endblock %}
 
 {% block head %}
@@ -7,87 +7,113 @@
 <style>
   body { background: var(--bg-secondary); }
 
-  .vm-nav {
-    position: sticky; top: 0; z-index: 40;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-  }
-  .vm-nav-inner { display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px; }
-  .vm-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
-  .vm-nav-logo span { color: var(--cyan-dark, #00b3a9); }
-  .vm-nav-links { display: flex; gap: 4px; margin-left: 16px; }
-  .vm-nav-links a { font-size: 13.5px; font-weight: 500; padding: 5px 12px; border-radius: 7px; text-decoration: none; color: var(--text-muted); transition: background 0.12s, color 0.12s; }
-  .vm-nav-links a:hover, .vm-nav-links a.active { background: var(--bg-secondary); color: var(--text-primary); }
-  .vm-nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-  .vm-btn-ghost { padding: 6px 14px; border-radius: 8px; font-size: 13.5px; font-weight: 600; text-decoration: none; color: var(--text-primary); border: 1px solid var(--border-light); }
-  .vm-btn-primary { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--text-primary); color: #fff; }
-  .vm-btn-cyan { padding: 6px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--cyan); color: #000; }
-
-  /* Mobile menu toggle — same pattern as the homepage nav */
-  .vm-hamburger {
-    display: none; flex-direction: column; justify-content: center; gap: 5px;
-    background: none; border: none; cursor: pointer; padding: 6px; margin-left: 4px;
-  }
-  .vm-hamburger span {
-    display: block; width: 20px; height: 1.5px; background: var(--text-primary);
-    transition: transform 200ms, opacity 200ms; border-radius: 2px;
-  }
-  .vm-hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-  .vm-hamburger.open span:nth-child(2) { opacity: 0; }
-  .vm-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-  .vm-mobile-menu {
-    display: none; flex-direction: column;
-    background: #fff; border-bottom: 1px solid var(--border-light);
-    padding: 8px 24px 16px;
-  }
-  .vm-mobile-menu.open { display: flex; }
-  .vm-mobile-menu a {
-    font-size: 15px; font-weight: 500; color: var(--text-primary); text-decoration: none;
-    padding: 13px 0; border-bottom: 1px solid var(--border-light);
-  }
-  .vm-mobile-menu a:last-child { border-bottom: none; }
-  .vm-mobile-cta {
-    margin-top: 8px; background: var(--text-primary) !important; color: #fff !important;
-    border-radius: 10px; padding: 13px 20px !important; text-align: center;
-    font-weight: 600 !important; border-bottom: none !important;
-  }
-
-  @media (max-width: 768px) {
-    .vm-nav-links { display: none; }
-    .vm-hamburger { display: flex; }
-  }
-
-  .vm-hero { padding: 56px 24px 44px; text-align: center; max-width: 640px; margin: 0 auto; }
-  .vm-hero-tag { display: inline-block; padding: 4px 12px; background: rgba(0,255,243,0.08); border: 1px solid rgba(0,255,243,0.25); border-radius: 100px; font-size: 12px; font-weight: 700; color: var(--cyan-dark, #00b3a9); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px; }
+  .vm-hero { padding: 130px 24px 44px; text-align: center; max-width: 640px; margin: 0 auto; }
   .vm-hero h1 { font-family: var(--font-serif); font-size: clamp(26px, 5vw, 42px); font-weight: 700; margin-bottom: 12px; line-height: 1.15; }
   .vm-hero p { color: var(--text-muted); font-size: 15px; line-height: 1.6; margin-bottom: 24px; }
-  .vm-hero-cta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .vm-btn-cyan { padding: 9px 20px; border-radius: 9999px; font-size: 13.5px; font-weight: 700; text-decoration: none; background: var(--text-primary); color: #fff; transition: all 180ms ease; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(19, 27, 23, 0.08); }
+  .vm-btn-cyan:hover { background: #233029; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(19, 27, 23, 0.16); }
 
   .vm-search-bar {
-    max-width: 900px; margin: 0 auto 32px; padding: 0 24px;
-    display: flex; gap: 10px; flex-wrap: wrap;
+    max-width: 1100px; margin: 0 auto 32px; padding: 0 24px;
+    display: flex; gap: 10px; align-items: center; box-sizing: border-box;
+    flex-wrap: nowrap;
   }
-  .vm-search-input { flex: 1; min-width: 200px; position: relative; }
+  .vm-search-input { flex: 1 1 240px; min-width: 180px; position: relative; }
   .vm-search-input input {
-    width: 100%; padding: 10px 14px 10px 40px;
+    width: 100%; height: 46px; padding: 0 16px 0 42px;
     border: 1.5px solid var(--border-light); border-radius: 10px;
     background: #fff; font-size: 14px; font-family: inherit;
-    outline: none; transition: border-color 0.15s; color: var(--text-primary);
+    outline: none; transition: border-color 0.18s ease, box-shadow 0.18s ease; color: var(--text-primary);
+    box-sizing: border-box; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   }
-  .vm-search-input input:focus { border-color: var(--cyan); }
-  .vm-search-input .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .vm-search-input input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+  }
+  .vm-search-input .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; }
   .vm-filter-select {
-    padding: 10px 12px; border: 1.5px solid var(--border-light); border-radius: 10px;
-    background: #fff; font-size: 13.5px; font-family: inherit; color: var(--text-primary);
-    outline: none; cursor: pointer; transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    height: 46px;
+    width: auto !important;
+    min-width: 130px;
+    max-width: 180px;
+    flex: 0 0 auto;
+    padding: 0 36px 0 14px;
+    border: 1.5px solid var(--border-light);
+    border-radius: 10px;
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2356625C' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 13px center;
+    background-size: 14px 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--text-primary);
+    outline: none;
+    cursor: pointer;
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
   }
-  .vm-filter-select:focus { border-color: var(--cyan); }
+  .vm-filter-select::-ms-expand { display: none; }
+  .vm-filter-select:hover {
+    border-color: rgba(19, 27, 23, 0.35);
+    background-color: #FAFAF8;
+  }
+  .vm-filter-select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+    background-color: #fff;
+  }
+  .vm-filter-select option {
+    background: #ffffff;
+    color: var(--text-primary);
+  }
+  .vm-verified-label {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+    cursor: pointer; background: #fff; padding: 0 14px; height: 46px;
+    border: 1.5px solid var(--border-light); border-radius: 10px; color: var(--text-primary);
+    user-select: none; flex: 0 0 auto; white-space: nowrap; box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
   .vm-search-btn {
-    padding: 10px 22px; background: var(--text-primary); color: #fff;
+    height: 46px;
+    padding: 0 24px; background: var(--text-primary); color: #fff;
     border: none; border-radius: 10px; font-size: 14px; font-weight: 700;
-    cursor: pointer; font-family: inherit; transition: opacity 0.15s;
+    cursor: pointer; font-family: inherit; transition: opacity 0.15s, transform 0.1s;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-sizing: border-box; flex: 0 0 auto; white-space: nowrap;
   }
-  .vm-search-btn:hover { opacity: 0.85; }
+  .vm-search-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+  @media (max-width: 960px) {
+    .vm-search-bar {
+      flex-wrap: wrap;
+    }
+    .vm-search-input {
+      flex: 1 1 100%;
+    }
+    .vm-filter-select {
+      flex: 1 1 calc(50% - 6px);
+      min-width: 120px;
+      max-width: none;
+    }
+    .vm-verified-label {
+      flex: 1 1 100%;
+      justify-content: center;
+    }
+    .vm-search-btn {
+      flex: 1 1 100%;
+    }
+  }
+  @media (max-width: 520px) {
+    .vm-filter-select {
+      flex: 1 1 100%;
+    }
+  }
 
   .vm-cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 0 24px 24px; max-width: 900px; margin: 0 auto; scrollbar-width: none; }
   .vm-cat-pills::-webkit-scrollbar { display: none; }
@@ -98,113 +124,203 @@
   }
   .vm-cat-pill:hover, .vm-cat-pill.active { border-color: var(--text-primary); color: var(--text-primary); background: var(--bg-secondary); }
 
-  .vm-results-header { max-width: 1100px; margin: 0 auto 16px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .vm-results-header { max-width: 1240px; margin: 0 auto 16px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
   .vm-results-count { font-size: 13.5px; color: var(--text-muted); }
 
-  /* Bento grid — fixed column count (instead of auto-fill) so the explicit
-     spans below land predictably, with dense packing to fill any gaps left
-     by the wide/tall cards. */
+  /* Multi-column uniform grid matching events listing: 4 columns on desktop, 5 on widescreen */
   .vm-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 230px;
-    grid-auto-flow: dense; gap: 20px; max-width: 1100px; margin: 0 auto; padding: 0 24px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 28px 20px;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
   }
-  .vm-card:nth-child(6n+1) { grid-column: span 2; grid-row: span 2; }
-  .vm-card:nth-child(6n+4) { grid-row: span 2; }
-  .vm-card:nth-child(6n)   { grid-column: span 2; }
-
-  @media (max-width: 860px) {
-    .vm-grid { grid-template-columns: repeat(2, 1fr); }
-    .vm-card:nth-child(6n+1) { grid-column: span 2; }
-    .vm-card:nth-child(6n)   { grid-column: span 2; }
+  @media (min-width: 1380px) {
+    .vm-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      max-width: 1400px;
+    }
+    .vm-results-header {
+      max-width: 1400px;
+    }
   }
-  @media (max-width: 560px) {
-    .vm-grid { grid-template-columns: 1fr; grid-auto-rows: auto; }
-    .vm-card:nth-child(n) { grid-column: span 1 !important; grid-row: span 1 !important; }
-    /* .vm-card-cover fills its height via flex:1 against the 230px row
-       height set above — with grid-auto-rows switched to auto here there's
-       no height left to fill into, so it'd collapse to 0. Fall back to a
-       fixed aspect-ratio instead. */
-    .vm-card-cover { flex: none; aspect-ratio: 4/3; }
+  @media (max-width: 1080px) {
+    .vm-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px 18px;
+    }
+  }
+  @media (max-width: 768px) {
+    .vm-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px 14px;
+      padding: 0 16px 64px;
+    }
+  }
+  @media (max-width: 480px) {
+    .vm-grid {
+      grid-template-columns: 1fr;
+      gap: 20px;
+      padding: 0 16px 60px;
+    }
   }
 
   .vm-card {
-    background: transparent; border: none; border-radius: 0;
-    text-decoration: none; color: inherit; display: flex; flex-direction: column;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .vm-card-cover { width: 100%; flex: 1; min-height: 0; background: linear-gradient(135deg, #0d0d0d, #1a1a1a); position: relative; overflow: hidden; border-radius: 10px; }
-  .vm-card-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; transition: transform 0.35s ease; }
-  .vm-card:hover .vm-card-cover img { transform: scale(1.035); }
-  .vm-card-cover::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.05); border-radius: 10px; pointer-events: none; }
-  .vm-card-cover-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 40px; opacity: 0.15; z-index: 1; }
-  .vm-card-body { flex-shrink: 0; padding: 14px 2px 0; }
-  .vm-card-cat { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
-  .vm-card-name { font-family: var(--font-serif); font-size: 18px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; margin-bottom: 6px; }
-  .vm-card-tagline { font-size: 13px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 10px; }
-  .vm-card-footer { display: flex; align-items: center; justify-content: space-between; }
-  .vm-card-location { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-muted); }
-  .vm-card-price { font-size: 11px; padding: 3px 9px; border-radius: 100px; font-weight: 600; }
-  .vm-card-price.budget { background: rgba(34,197,94,0.1); color: #15803d; }
-  .vm-card-price.mid { background: rgba(245,158,11,0.1); color: #b45309; }
-  .vm-card-price.premium { background: rgba(168,85,247,0.1); color: #7e22ce; }
-  .vm-verified { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; color: var(--cyan-dark, #00b3a9); margin-left: 4px; }
+  .vm-card:hover {
+    transform: translateY(-3px);
+  }
+  .vm-card-cover {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #f4f4f5;
+  }
+  .vm-card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 12px;
+    transition: transform 0.35s ease;
+  }
+  .vm-card:hover .vm-card-cover img {
+    transform: scale(1.03);
+  }
+  .vm-card-cover-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #18181B, #27272A);
+  }
+  .vm-card-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 2;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: rgba(19, 27, 23, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #ffffff;
+    letter-spacing: 0.01em;
+  }
+  .vm-card-rating {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 2;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    background: rgba(19, 27, 23, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #FBBF24;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .vm-card-body {
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .vm-card-title-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+  .vm-verified-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .vm-card-name {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #131B17;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+    min-width: 0;
+  }
+  .vm-card-location {
+    font-size: 13px;
+    color: #71717A;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+  }
+  .vm-card-tagline {
+    font-size: 12.5px;
+    color: #71717A;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+  }
+  .vm-card-price {
+    margin-top: 3px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #059669;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    line-height: 1.35;
+  }
 
-  .vm-empty { max-width: 420px; margin: 48px auto; text-align: center; padding: 0 24px; }
+  .vm-empty { max-width: 420px; margin: 48px auto 96px; text-align: center; padding: 0 24px; }
   .vm-empty-icon { width: 56px; height: 56px; background: var(--bg-secondary); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-
-  .vm-cta-strip { background: linear-gradient(135deg, #0a0a0a, #1a1a1a); color: #fff; padding: 56px 24px; text-align: center; margin-top: 64px; }
-  .vm-cta-strip h2 { font-family: var(--font-serif); font-size: clamp(22px, 4vw, 36px); font-weight: 700; margin-bottom: 12px; }
-  .vm-cta-strip p { color: rgba(255,255,255,0.65); font-size: 15px; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto; }
 </style>
 {% endblock %}
 
 {% block body %}
-<!-- Nav -->
-<nav class="vm-nav">
-  <div class="vm-nav-inner">
-    <a href="/" class="vm-nav-logo">heelo<span>.</span></a>
-    <div class="vm-nav-links">
-      <a href="/events">Events</a>
-      <a href="/vendors" class="{{ 'active' if not venue_mode }}">Vendors</a>
-      <a href="/venues" class="{{ 'active' if venue_mode }}">Venues</a>
-    </div>
-    <div class="vm-nav-right">
-      <a href="/vendor-signup" class="vm-btn-ghost">List your business</a>
-      {% if user %}
-      <a href="/home" class="vm-btn-primary">Dashboard</a>
-      {% else %}
-      <a href="/login" class="vm-btn-primary">Sign in</a>
-      {% endif %}
-      <button class="vm-hamburger" id="vm-hamburger" aria-label="Toggle menu">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </div>
-  <div class="vm-mobile-menu" id="vm-mobile-menu">
-    <a href="/events">Events</a>
-    <a href="/vendors">Vendors</a>
-    <a href="/venues">Venues</a>
-    <a href="/vendor-signup">List your business</a>
-    {% if user %}
-    <a href="/home" class="vm-mobile-cta">Dashboard</a>
-    {% else %}
-    <a href="/login" class="vm-mobile-cta">Sign in →</a>
-    {% endif %}
-  </div>
-</nav>
+{% include "partials/site_nav.html" %}
 
 <!-- Hero -->
 <div class="vm-hero">
   {% if venue_mode %}
-  <div class="vm-hero-tag">Venue Directory</div>
   <h1>Find a venue for your event</h1>
-  <p>Browse halls and event spaces by location and guest capacity — reach out directly to the venue owner to check availability.</p>
+  <p>Browse halls and event spaces by location and guest capacity, reach out directly to the venue owner to check availability.</p>
   {% else %}
-  <div class="vm-hero-tag">Vendor Marketplace</div>
   <h1>Find the perfect vendor for your event</h1>
-  <p>Browse vetted photographers, caterers, decorators, security, and more — all in one place. Every booking supports African event businesses.</p>
+  <p>Browse vetted photographers, caterers, decorators, security, and more, all in one place. Every booking supports exceptional independent event creators and businesses.</p>
   {% endif %}
   <div class="vm-hero-cta">
     <a href="/vendor-signup" class="vm-btn-cyan">List your business →</a>
+  </div>
+
+  <div style="margin-top:24px; padding:12px 18px; border-radius:12px; background:rgba(232,89,56,0.06); border:1px solid rgba(232,89,56,0.2); display:inline-flex; align-items:center; gap:10px; font-size:13px; text-align:left;">
+    <span class="material-symbols-outlined" style="color:var(--cyan); font-size:20px; flex-shrink:0;">storefront</span>
+    <span>
+      <strong>Looking to exhibit at an event?</strong> Organizers now accept booth and exhibitor applications directly on Heelo with automated invoice approval.
+    </span>
   </div>
 </div>
 
@@ -215,7 +331,7 @@
     <input type="search" name="q" placeholder="{{ 'Search venues by name…' if venue_mode else 'Search vendors by name or service…' }}" value="{{ q or '' }}">
   </div>
   <select name="city" class="vm-filter-select">
-    <option value="">{{ 'Event location — any city' if venue_mode else 'All cities' }}</option>
+    <option value="">{{ 'Event location: any city' if venue_mode else 'All cities' }}</option>
     {% for c in cities %}
     <option value="{{ c }}" {% if city == c %}selected{% endif %}>{{ c }}</option>
     {% endfor %}
@@ -236,6 +352,17 @@
     <option value="mid" {% if price_range == 'mid' %}selected{% endif %}>Mid-range</option>
     <option value="premium" {% if price_range == 'premium' %}selected{% endif %}>Premium</option>
   </select>
+  <select name="sort_by" class="vm-filter-select">
+    <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>Sort: Relevance</option>
+    <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Sort: Highest Rated</option>
+    <option value="popularity" {% if sort_by == 'popularity' %}selected{% endif %}>Sort: Most Popular</option>
+    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Sort: Price Low → High</option>
+    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Sort: Price High → Low</option>
+  </select>
+  <label class="vm-verified-label">
+    <input type="checkbox" name="verified_only" value="true" {% if verified_only %}checked{% endif %} style="accent-color:var(--cyan); cursor:pointer;">
+    <span>Verified only</span>
+  </label>
   {% endif %}
   <button type="submit" class="vm-search-btn">Search</button>
 </form>
@@ -244,8 +371,45 @@
 <!-- Category pills -->
 <div class="vm-cat-pills">
   <a href="/vendors?{{ query_without_cat }}" class="vm-cat-pill {% if not category %}active{% endif %}">All</a>
-  {% set cat_icons = {'photography': 'photo_camera', 'videography': 'videocam', 'catering': 'restaurant', 'decorations': 'auto_awesome', 'security': 'security', 'entertainment': 'music_note', 'mc': 'mic', 'venue': 'account_balance', 'sound_lighting': 'lightbulb', 'branding': 'palette', 'logistics': 'local_shipping', 'other': 'more_horiz'} %}
-  {% set cat_labels = {'photography': 'Photography', 'videography': 'Videography', 'catering': 'Catering', 'decorations': 'Decorations', 'security': 'Security', 'entertainment': 'Entertainment', 'mc': 'MC / Host', 'venue': 'Venue', 'sound_lighting': 'Sound & Lighting', 'branding': 'Branding', 'logistics': 'Logistics', 'other': 'Other'} %}
+  {% set cat_icons = {
+    'catering': 'restaurant',
+    'photography': 'photo_camera',
+    'videography': 'videocam',
+    'decorations': 'auto_awesome',
+    'event_planning': 'event',
+    'sound_lighting': 'lightbulb',
+    'entertainment': 'music_note',
+    'djs': 'headphones',
+    'equipment_rentals': 'chair',
+    'branding': 'palette',
+    'security': 'security',
+    'logistics': 'local_shipping',
+    'makeup_beauty': 'face',
+    'ushers_staffing': 'badge',
+    'cakes_desserts': 'cake',
+    'venue': 'account_balance',
+    'mc': 'mic',
+    'other': 'more_horiz'
+  } %}
+  {% set cat_labels = {
+    'catering': 'Catering',
+    'photography': 'Photography',
+    'videography': 'Videography',
+    'decorations': 'Decorations',
+    'event_planning': 'Event Planning',
+    'sound_lighting': 'Sound & Lighting',
+    'entertainment': 'Entertainment',
+    'djs': 'DJs',
+    'equipment_rentals': 'Rentals',
+    'branding': 'Branding & Print',
+    'security': 'Security',
+    'logistics': 'Logistics',
+    'makeup_beauty': 'Makeup & Beauty',
+    'ushers_staffing': 'Ushers & Staff',
+    'cakes_desserts': 'Cakes & Desserts',
+    'venue': 'Venues',
+    'other': 'Other'
+  } %}
   {% for cat_key, cat_label in cat_labels.items() %}
   <a href="/vendors?{{ query_with_cat(cat_key) }}" class="vm-cat-pill {% if category == cat_key %}active{% endif %}">
     <span class="material-symbols-outlined" style="font-size:13px;">{{ cat_icons.get(cat_key, 'more_horiz') }}</span> {{ cat_label }}
@@ -266,27 +430,60 @@
   {% for v in vendors %}
   <a href="/vendors/{{ v.slug }}" class="vm-card">
     <div class="vm-card-cover">
+      {% if v.is_featured %}
+      <span class="vm-card-badge" style="background:rgba(217,119,6,0.85); color:#fff;"><span class="material-symbols-outlined" style="font-size:13px; vertical-align:-2px;">star</span> Featured</span>
+      {% elif venue_mode and v.capacity %}
+      <span class="vm-card-badge">{{ "{:,}".format(v.capacity) }} Guests</span>
+      {% elif venue_mode %}
+      <span class="vm-card-badge">Venue</span>
+      {% else %}
+      <span class="vm-card-badge">{{ v.category | replace('_', ' ') | title }}</span>
+      {% endif %}
+
+      {% if v.reviews_count and v.reviews_count > 0 %}
+      <span class="vm-card-rating">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="#FBBF24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        {{ "%.1f"|format(v.rating_avg) }}
+      </span>
+      {% endif %}
+
       {% if v.cover_image_url %}
-      <img src="{{ v.cover_image_url }}" alt="{{ v.business_name }}">
+      <img src="{{ v.cover_image_url }}" alt="{{ v.business_name }}" loading="lazy">
       {% else %}
       <div class="vm-card-cover-placeholder">
-        <span class="material-symbols-outlined" style="font-size:2rem; opacity:0.35; color:#fff;">{{ cat_icons.get(v.category, 'more_horiz') }}</span>
+        <span class="material-symbols-outlined" style="font-size:2rem; opacity:0.35; color:#fff;">{{ cat_icons.get(v.category, 'account_balance' if venue_mode else 'more_horiz') }}</span>
       </div>
       {% endif %}
     </div>
     <div class="vm-card-body">
-      <div class="vm-card-cat">{{ v.category | replace('_', ' ') | title }}{% if v.is_verified %} <span class="vm-verified"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--cyan-dark,#00b3a9)"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg> Verified</span>{% endif %}</div>
-      <div class="vm-card-name">{{ v.business_name }}</div>
-      <div class="vm-card-tagline">{{ v.tagline or v.description[:80] + '…' if v.description else 'Event vendor on Heelo' }}</div>
-      <div class="vm-card-footer">
-        <div class="vm-card-location">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          {{ v.location_city or 'Nigeria' }}
-        </div>
+      <div class="vm-card-title-row">
+        {% if v.is_verified or v.verification_status == 'verified' %}
+        <span class="vm-verified-icon" title="Verified Business">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="#7C3AED" style="vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        </span>
+        {% endif %}
+        <span class="vm-card-name" title="{{ v.business_name }}">{{ v.business_name }}</span>
+      </div>
+      <div class="vm-card-location">
+        {{ v.address or v.location_city or ('Location TBA') }}
+      </div>
+      <div class="vm-card-tagline">
         {% if venue_mode and v.capacity %}
-        <span class="vm-card-price">Up to {{ "{:,}".format(v.capacity) }} guests</span>
+        Up to {{ "{:,}".format(v.capacity) }} guests · Venue
+        {% else %}
+        {{ v.tagline or (v.description[:80] ~ '…' if v.description else (v.category | replace('_', ' ') | title ~ ' on Heelo')) }}
+        {% endif %}
+      </div>
+      <div class="vm-card-price">
+        {% if v.starting_price %}
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+        From {{ v.currency | currency_symbol }}{{ "{:,.2f}".format(v.starting_price) }}
+        {% elif venue_mode and v.capacity %}
+        Capacity: {{ "{:,}".format(v.capacity) }}
         {% elif v.price_range %}
-        <span class="vm-card-price {{ v.price_range }}">{{ {'budget': 'Budget', 'mid': 'Mid-range', 'premium': 'Premium'}.get(v.price_range, v.price_range) }}</span>
+        {{ {'budget': 'Budget-friendly', 'mid': 'Mid-range', 'premium': 'Premium'}.get(v.price_range, v.price_range) }}
+        {% else %}
+        Contact for Quote
         {% endif %}
       </div>
     </div>
@@ -303,39 +500,5 @@
 </div>
 {% endif %}
 
-<!-- CTA strip for vendor sign-up -->
-<div class="vm-cta-strip">
-  {% if venue_mode %}
-  <h2>Own or manage an event hall?</h2>
-  <p>List your venue on Heelo and get discovered by event organizers searching by location and capacity.</p>
-  <a href="/vendor-signup" style="display:inline-block;padding:12px 28px;background:var(--cyan);color:#000;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">
-    List your venue — it's free
-  </a>
-  {% else %}
-  <h2>Are you an event vendor?</h2>
-  <p>List your business on Heelo and get discovered by thousands of event organizers across Africa.</p>
-  <a href="/vendor-signup" style="display:inline-block;padding:12px 28px;background:var(--cyan);color:#000;font-weight:700;font-size:15px;border-radius:10px;text-decoration:none;">
-    List your business — it's free
-  </a>
-  {% endif %}
-</div>
-
-<script>
-(function () {
-  var btn = document.getElementById('vm-hamburger');
-  var menu = document.getElementById('vm-mobile-menu');
-  if (btn && menu) {
-    btn.addEventListener('click', function () {
-      btn.classList.toggle('open');
-      menu.classList.toggle('open');
-    });
-    menu.querySelectorAll('a').forEach(function (a) {
-      a.addEventListener('click', function () {
-        btn.classList.remove('open');
-        menu.classList.remove('open');
-      });
-    });
-  }
-})();
-</script>
+<div style="height: 48px;"></div>
 {% endblock %}

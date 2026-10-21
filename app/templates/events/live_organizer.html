@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Live — {{ event.title }} — Heelo{% endblock %}
+{% block title %}Live · {{ event.title }} | Heelo{% endblock %}
 
 {% block head %}
 {{ super() }}
@@ -30,7 +30,7 @@
 {% block main_content %}
 <div style="max-width:780px; margin:0 auto; padding:28px 20px;" x-data="liveOrganizer()" x-init="load()">
   <div class="lo-header">
-    <div class="lo-title">Live — {{ event.title }}</div>
+    <div class="lo-title">Live · {{ event.title }}</div>
     <a class="btn btn-secondary btn-sm" href="/e/{{ event.slug }}/live" target="_blank">
       <span class="material-symbols-outlined" style="font-size:15px;">open_in_new</span> Open audience view
     </a>
@@ -85,7 +85,7 @@
       <template x-for="(opt, i) in draft.options" :key="i">
         <div class="form-group" style="display:flex; gap:8px; align-items:center;">
           <input type="text" class="form-input" x-model="draft.options[i]" :placeholder="'Option ' + (i + 1)">
-          <button type="button" class="btn btn-secondary btn-sm" @click="draft.options.splice(i,1)" x-show="draft.options.length > 2">✕</button>
+          <button type="button" class="btn btn-secondary btn-sm" @click="draft.options.splice(i,1)" x-show="draft.options.length > 2" style="display:inline-flex; align-items:center; justify-content:center;"><span class="material-symbols-outlined" style="font-size:16px;">close</span></button>
         </div>
       </template>
       <button type="button" class="btn btn-secondary btn-sm" @click="draft.options.push('')" style="margin-bottom:10px;">+ Add option</button>

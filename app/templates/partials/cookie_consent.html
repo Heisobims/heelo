@@ -1,0 +1,542 @@
+<!-- ── Cookie Consent Banner & Preferences Modal ────────────────────────────── -->
+<div id="heelo-cookie-consent" class="hcc-container" style="display: none;" role="region" aria-label="Cookie consent banner">
+  <div class="hcc-card">
+
+    <!-- ── Main View ────────────────────────────────────────── -->
+    <div id="hcc-main-view" class="hcc-view">
+      <div class="hcc-header">
+        <div class="hcc-icon-pill">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E85938" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"></path>
+            <path d="M8.5 8.5v.01"></path>
+            <path d="M16 15.5v.01"></path>
+            <path d="M12 12v.01"></path>
+            <path d="M11 17v.01"></path>
+            <path d="M7 13v.01"></path>
+          </svg>
+        </div>
+        <div class="hcc-header-text">
+          <h4 class="hcc-title">We value your privacy</h4>
+          <span class="hcc-sub-badge">Cookie Preferences</span>
+        </div>
+      </div>
+
+      <p class="hcc-body-text">
+        Heelo uses essential cookies to ensure secure logins and seamless ticket checkouts. With your permission, we also use analytical cookies to improve event discovery. Learn more in our 
+        <a href="/privacy" class="hcc-link" target="_blank">Privacy Policy</a> and <a href="/terms" class="hcc-link" target="_blank">Terms</a>.
+      </p>
+
+      <div class="hcc-actions">
+        <button type="button" class="hcc-btn hcc-btn-primary" id="hcc-btn-accept-all">Accept All</button>
+        <button type="button" class="hcc-btn hcc-btn-secondary" id="hcc-btn-reject">Essential Only</button>
+        <button type="button" class="hcc-btn hcc-btn-ghost" id="hcc-btn-customize">Customize</button>
+      </div>
+    </div>
+
+    <!-- ── Preferences Detail View ──────────────────────────── -->
+    <div id="hcc-prefs-view" class="hcc-view" style="display: none;">
+      <div class="hcc-header">
+        <button type="button" class="hcc-back-btn" id="hcc-btn-back" aria-label="Back to summary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <div class="hcc-header-text">
+          <h4 class="hcc-title">Manage Cookie Preferences</h4>
+        </div>
+      </div>
+
+      <div class="hcc-categories">
+        <!-- 1. Necessary -->
+        <div class="hcc-category-row">
+          <div class="hcc-cat-info">
+            <div class="hcc-cat-title">Strictly Necessary</div>
+            <p class="hcc-cat-desc">Required for core platform security, organizer login, CSRF tokens, and ticketing checkouts.</p>
+          </div>
+          <span class="hcc-status-locked">Always Active</span>
+        </div>
+
+        <!-- 2. Analytics -->
+        <div class="hcc-category-row">
+          <div class="hcc-cat-info">
+            <div class="hcc-cat-title">Analytics &amp; Performance</div>
+            <p class="hcc-cat-desc">Anonymized telemetry and metrics helping us understand how organizers and attendees discover events.</p>
+          </div>
+          <label class="hcc-toggle" aria-label="Toggle analytics cookies">
+            <input type="checkbox" id="hcc-check-analytics" checked>
+            <span class="hcc-toggle-track"></span>
+          </label>
+        </div>
+
+        <!-- 3. Functional & Marketing -->
+        <div class="hcc-category-row">
+          <div class="hcc-cat-info">
+            <div class="hcc-cat-title">Functional &amp; Referral Tracking</div>
+            <p class="hcc-cat-desc">Remembers display preferences and tracks ambassador referral links for promoter commissions.</p>
+          </div>
+          <label class="hcc-toggle" aria-label="Toggle functional cookies">
+            <input type="checkbox" id="hcc-check-functional" checked>
+            <span class="hcc-toggle-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="hcc-actions" style="margin-top: 16px;">
+        <button type="button" class="hcc-btn hcc-btn-primary" id="hcc-btn-save-prefs" style="flex: 1.2;">Save Preferences</button>
+        <button type="button" class="hcc-btn hcc-btn-secondary" id="hcc-btn-accept-all-from-prefs" style="flex: 1;">Accept All</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+/* ── Cookie Consent Floating Card Styles ── */
+.hcc-container {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  max-width: 440px;
+  width: calc(100% - 48px);
+  z-index: 999998;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+  box-sizing: border-box;
+}
+
+.hcc-card {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid rgba(19, 27, 23, 0.12);
+  box-shadow: 0 18px 48px -6px rgba(19, 27, 23, 0.2), 0 0 0 1px rgba(19, 27, 23, 0.04);
+  padding: 22px 24px;
+  box-sizing: border-box;
+  animation: hccSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes hccSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.hcc-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.hcc-icon-pill {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(232, 89, 56, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.hcc-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.hcc-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #131B17;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.hcc-sub-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #56625C;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.hcc-back-btn {
+  background: none;
+  border: 1px solid rgba(19, 27, 23, 0.12);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #131B17;
+  transition: all 140ms ease;
+  flex-shrink: 0;
+}
+.hcc-back-btn:hover {
+  background: #FAF7F2;
+  border-color: rgba(19, 27, 23, 0.25);
+}
+
+.hcc-body-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #56625C;
+  margin: 0 0 18px 0;
+}
+
+.hcc-link {
+  color: #E85938;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+}
+.hcc-link:hover {
+  color: #C84729;
+}
+
+.hcc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hcc-btn {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  border: none;
+  transition: all 140ms ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hcc-btn-primary {
+  background: #E85938;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(232, 89, 56, 0.25);
+}
+.hcc-btn-primary:hover {
+  background: #C84729;
+}
+
+.hcc-btn-secondary {
+  background: #FAF7F2;
+  color: #131B17;
+  border: 1px solid rgba(19, 27, 23, 0.12);
+}
+.hcc-btn-secondary:hover {
+  background: #ffffff;
+  border-color: rgba(19, 27, 23, 0.25);
+}
+
+.hcc-btn-ghost {
+  background: transparent;
+  color: #56625C;
+  padding: 8px 10px;
+}
+.hcc-btn-ghost:hover {
+  color: #131B17;
+  text-decoration: underline;
+}
+
+/* ── Preference Categories ── */
+.hcc-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 4px;
+}
+
+.hcc-category-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #FAF7F2;
+  border: 1px solid rgba(19, 27, 23, 0.06);
+}
+
+.hcc-cat-info {
+  flex: 1;
+}
+
+.hcc-cat-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #131B17;
+  margin-bottom: 2px;
+}
+
+.hcc-cat-desc {
+  font-size: 11.5px;
+  color: #56625C;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.hcc-status-locked {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Toggle Switch ── */
+.hcc-toggle {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.hcc-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.hcc-toggle-track {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #D1D5DB;
+  border-radius: 34px;
+  transition: all 0.2s ease;
+}
+
+.hcc-toggle-track:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.hcc-toggle input:checked + .hcc-toggle-track {
+  background-color: #E85938;
+}
+
+.hcc-toggle input:checked + .hcc-toggle-track:before {
+  transform: translateX(16px);
+}
+
+@media (max-width: 640px) {
+  .hcc-container {
+    bottom: 14px;
+    left: 14px;
+    right: 14px;
+    width: auto;
+    max-width: none;
+  }
+  .hcc-card {
+    padding: 18px 18px;
+  }
+  .hcc-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .hcc-btn {
+    width: 100%;
+    padding: 10px 14px;
+  }
+}
+</style>
+
+<script>
+(function() {
+  var CONSENT_KEY = 'heelo_cookie_consent';
+
+  function getSavedConsent() {
+    try {
+      var item = localStorage.getItem(CONSENT_KEY);
+      if (item) return JSON.parse(item);
+    } catch (_) {}
+    return null;
+  }
+
+  function setConsent(prefs) {
+    try {
+      localStorage.setItem(CONSENT_KEY, JSON.stringify(prefs));
+      // Also set a document cookie so server-side or subdomains can inspect if needed
+      document.cookie = CONSENT_KEY + '=' + (prefs.analytics ? 'all' : 'essential') + '; path=/; max-age=' + (365*24*60*60) + '; SameSite=Lax';
+    } catch (_) {}
+
+    // Synchronize Google Consent Mode if gtag is present
+    if (typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', {
+        'analytics_storage': prefs.analytics ? 'granted' : 'denied',
+        'ad_storage': prefs.marketing ? 'granted' : 'denied',
+        'personalization_storage': prefs.marketing ? 'granted' : 'denied'
+      });
+    }
+
+    hideBanner();
+  }
+
+  function hideBanner() {
+    var banner = document.getElementById('heelo-cookie-consent');
+    if (!banner) return;
+    banner.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    banner.style.opacity = '0';
+    banner.style.transform = 'translateY(10px) scale(0.96)';
+    setTimeout(function() {
+      banner.style.display = 'none';
+    }, 220);
+  }
+
+  function showBanner(showPrefs) {
+    var banner = document.getElementById('heelo-cookie-consent');
+    if (!banner) return;
+    var mainView = document.getElementById('hcc-main-view');
+    var prefsView = document.getElementById('hcc-prefs-view');
+
+    if (showPrefs) {
+      if (mainView) mainView.style.display = 'none';
+      if (prefsView) prefsView.style.display = 'block';
+    } else {
+      if (mainView) mainView.style.display = 'block';
+      if (prefsView) prefsView.style.display = 'none';
+    }
+
+    banner.style.display = 'block';
+    banner.style.opacity = '0';
+    banner.style.transform = 'translateY(14px) scale(0.97)';
+    setTimeout(function() {
+      banner.style.transition = 'opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+      banner.style.opacity = '1';
+      banner.style.transform = 'translateY(0) scale(1)';
+    }, 30);
+  }
+
+  // Expose global helper to reopen anytime (e.g. from footer)
+  window.openCookieConsent = function() {
+    var saved = getSavedConsent();
+    if (saved) {
+      var analyticsEl = document.getElementById('hcc-check-analytics');
+      var functionalEl = document.getElementById('hcc-check-functional');
+      if (analyticsEl) analyticsEl.checked = !!saved.analytics;
+      if (functionalEl) functionalEl.checked = !!saved.marketing;
+    }
+    showBanner(true);
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var saved = getSavedConsent();
+    if (!saved) {
+      // Delay slightly for smooth page entrance without CLS
+      setTimeout(function() {
+        showBanner(false);
+      }, 600);
+    } else {
+      // Apply saved consent to gtag if present
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          'analytics_storage': saved.analytics ? 'granted' : 'denied',
+          'ad_storage': saved.marketing ? 'granted' : 'denied'
+        });
+      }
+    }
+
+    // Attach listeners
+    var btnAcceptAll = document.getElementById('hcc-btn-accept-all');
+    if (btnAcceptAll) {
+      btnAcceptAll.addEventListener('click', function() {
+        setConsent({
+          essential: true,
+          analytics: true,
+          marketing: true,
+          timestamp: new Date().toISOString()
+        });
+      });
+    }
+
+    var btnReject = document.getElementById('hcc-btn-reject');
+    if (btnReject) {
+      btnReject.addEventListener('click', function() {
+        setConsent({
+          essential: true,
+          analytics: false,
+          marketing: false,
+          timestamp: new Date().toISOString()
+        });
+      });
+    }
+
+    var btnCustomize = document.getElementById('hcc-btn-customize');
+    if (btnCustomize) {
+      btnCustomize.addEventListener('click', function() {
+        var mainView = document.getElementById('hcc-main-view');
+        var prefsView = document.getElementById('hcc-prefs-view');
+        if (mainView) mainView.style.display = 'none';
+        if (prefsView) prefsView.style.display = 'block';
+      });
+    }
+
+    var btnBack = document.getElementById('hcc-btn-back');
+    if (btnBack) {
+      btnBack.addEventListener('click', function() {
+        var mainView = document.getElementById('hcc-main-view');
+        var prefsView = document.getElementById('hcc-prefs-view');
+        if (prefsView) prefsView.style.display = 'none';
+        if (mainView) mainView.style.display = 'block';
+      });
+    }
+
+    var btnSavePrefs = document.getElementById('hcc-btn-save-prefs');
+    if (btnSavePrefs) {
+      btnSavePrefs.addEventListener('click', function() {
+        var analyticsChecked = !!(document.getElementById('hcc-check-analytics')?.checked);
+        var functionalChecked = !!(document.getElementById('hcc-check-functional')?.checked);
+        setConsent({
+          essential: true,
+          analytics: analyticsChecked,
+          marketing: functionalChecked,
+          timestamp: new Date().toISOString()
+        });
+      });
+    }
+
+    var btnAcceptAllPrefs = document.getElementById('hcc-btn-accept-all-from-prefs');
+    if (btnAcceptAllPrefs) {
+      btnAcceptAllPrefs.addEventListener('click', function() {
+        setConsent({
+          essential: true,
+          analytics: true,
+          marketing: true,
+          timestamp: new Date().toISOString()
+        });
+      });
+    }
+  });
+})();
+</script>

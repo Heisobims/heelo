@@ -1,6 +1,6 @@
 """Add optional country and birth_year to users, for audience insights/filtering.
 
-Both are opt-in, user-set fields (not collected at signup) — added to power
+Both are opt-in, user-set fields (not collected at signup) - added to power
 admin audience insights and filtering by region/age bracket, without forcing
 new required fields on the registration flow.
 """

@@ -1,4 +1,4 @@
-"""Add brand_color to organizations — an optional hex accent color that
+"""Add brand_color to organizations - an optional hex accent color that
 carries the org's branding into checkout and the public event page, on top
 of the logo that already existed.
 """

@@ -18,6 +18,7 @@ class SessionCreateRequest(BaseModel):
     end_datetime: datetime
     location_or_stream_url: str | None = None
     track: str | None = Field(None, max_length=100)
+    track_color: str | None = Field(None, max_length=30)
     sort_order: int = 0
 
 
@@ -30,6 +31,7 @@ class SessionUpdateRequest(BaseModel):
     end_datetime: datetime | None = None
     location_or_stream_url: str | None = None
     track: str | None = Field(None, max_length=100)
+    track_color: str | None = Field(None, max_length=30)
     sort_order: int | None = None
 
 
@@ -47,6 +49,8 @@ class SessionOut(BaseModel):
     end_datetime: datetime
     location_or_stream_url: str | None
     track: str | None
+    track_color: str | None = None
+    is_bookmarked: bool = False
     sort_order: int
 
     model_config = {"from_attributes": True}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block subject %}Booth Application Received: {{ event.title }}{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;font-weight:900;color:#000000;line-height:1.2;">
+  Booth Application Received
+</h1>
+<p style="margin:0 0 20px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#555555;line-height:1.5;">
+  Hi {{ contact_name }}, thank you for applying to exhibit at <strong>{{ event.title }}</strong>! The event organizer has received your application and is reviewing your details.
+</p>
+
+<!-- Application summary -->
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:24px;">
+  <tr>
+    <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+      <span style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;display:block;">Business / Brand</span>
+      <strong style="font-size:15px;color:#111827;">{{ business_name }}</strong>
+    </td>
+  </tr>
+  {% if package_name %}
+  <tr>
+    <td style="padding:16px 20px;border-bottom:1px solid #e5e7eb;">
+      <span style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;display:block;">Booth Package</span>
+      <strong style="font-size:15px;color:#111827;">{{ package_name }}</strong>
+      <span style="color:#6b7280;font-size:14px;"> · {{ currency }} {{ "{:,.2f}".format(price) }}</span>
+    </td>
+  </tr>
+  {% endif %}
+  <tr>
+    <td style="padding:16px 20px;">
+      <span style="font-size:12px;text-transform:uppercase;color:#6b7280;font-weight:600;display:block;">Status</span>
+      <span style="display:inline-block;background:#fef3c7;color:#92400e;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;margin-top:4px;">Pending Review</span>
+    </td>
+  </tr>
+</table>
+
+<p style="margin:0 0 24px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#555555;line-height:1.5;">
+  Once your booth is approved by the organizer, you will receive an automated notification with your official invoice and payment link to secure your space.
+</p>
+
+<p style="margin:0;font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#333333;line-height:1.6;">
+  Warm regards,<br />
+  <strong>The {{ org_name or 'Event' }} Team</strong>
+</p>
+{% endblock %}
+

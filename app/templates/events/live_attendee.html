@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Live — {{ event.title }} — Heelo{% endblock %}
+{% block title %}Live · {{ event.title }} | Heelo{% endblock %}
 
 {% block head %}
-{% if org and org.brand_color %}
-<style>:root { --cyan: {{ org.brand_color }}; --cyan-hover: {{ org.brand_color }}; --border-focus: {{ org.brand_color }}; }</style>
+{% if org and org.display_brand_color %}
+<style>:root { --cyan: {{ org.display_brand_color }}; --cyan-hover: {{ org.display_brand_color }}; --border-focus: {{ org.display_brand_color }}; }</style>
 {% endif %}
 <style>
   [x-cloak] { display: none !important; }
@@ -15,7 +15,7 @@
     display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 52px;
   }
   .lv-nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.04em; text-decoration: none; color: var(--text-primary); }
-  .lv-nav-logo span { color: var(--cyan-dark, #00b3a9); }
+  .lv-nav-logo span { color: var(--cyan-dark, #C84729); }
   .lv-wrap { max-width: 560px; margin: 0 auto; padding: 24px 20px 60px; }
   .lv-event-title { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; text-align: center; }
   .lv-video-wrap { position: relative; width: 100%; aspect-ratio: 16/9; background: #0A0A0A; border-radius: 14px; overflow: hidden; margin-bottom: 16px; }
@@ -28,7 +28,7 @@
   .lv-option { position: relative; border: 1.5px solid var(--border-light); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; cursor: pointer; overflow: hidden; transition: border-color .12s; }
   .lv-option:hover { border-color: var(--cyan); }
   .lv-option.voted { cursor: default; }
-  .lv-option-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(0,255,243,0.12); z-index: 0; transition: width .3s; }
+  .lv-option-fill { position: absolute; top: 0; left: 0; bottom: 0; background: {{ (org.display_brand_color if org else None) | to_rgba(0.12) }}; z-index: 0; transition: width .3s; }
   .lv-option-label { position: relative; z-index: 1; display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; }
   .lv-empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 12px 0; }
 
@@ -41,7 +41,7 @@
   .lv-question { display: flex; gap: 10px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
   .lv-question:last-child { border-bottom: none; }
   .lv-upvote-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 40px; flex-shrink: 0; padding: 6px 0; border: 1.5px solid var(--border-light); border-radius: 8px; background: #fff; cursor: pointer; font-weight: 700; font-size: 12px; color: var(--text-secondary); }
-  .lv-upvote-btn.upvoted { border-color: var(--cyan); color: var(--cyan-dark, #00b3a9); }
+  .lv-upvote-btn.upvoted { border-color: var(--cyan); color: var(--cyan-dark, #C84729); }
   .lv-question-body { font-size: 14px; line-height: 1.5; }
   .lv-question-author { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
   .lv-question-answered { display: inline-block; font-size: 10px; font-weight: 700; color: #15803d; background: rgba(34,197,94,0.1); padding: 2px 7px; border-radius: 100px; margin-top: 4px; }
@@ -97,7 +97,7 @@
     </div>
 
     <template x-if="questions.length === 0">
-      <div class="lv-empty">No questions yet — be the first to ask.</div>
+      <div class="lv-empty">No questions yet: be the first to ask.</div>
     </template>
     <template x-for="q in questions" :key="q.id">
       <div class="lv-question">

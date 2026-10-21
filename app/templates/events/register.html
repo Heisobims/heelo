@@ -1,461 +1,1215 @@
 {% extends "base.html" %}
-{% block title %}Register — {{ event.title }} — Heelo{% endblock %}
+{% block title %}Register · {{ event.title }} | Heelo{% endblock %}
 {% block meta_description %}Register for {{ event.title }}{% endblock %}
 
 {% block head %}
-{% set cyan_text = (org.brand_color | contrast_text('#0A0A0A')) if org and org.brand_color else '#0A0A0A' %}
-{% if org and org.brand_color %}
-<style>
-  :root { --cyan: {{ org.brand_color }}; --cyan-hover: {{ org.brand_color }}; --border-focus: {{ org.brand_color }}; }
-  /* The org's brand color can be dark/saturated (unlike platform cyan, which
-     is always light) — repoint this page's cyan-background buttons at a
-     contrast-safe text color instead of assuming black always reads. */
-  .btn-primary { color: {{ cyan_text }}; }
-</style>
-{% endif %}
+{% set cyan_text = (org.display_brand_color | contrast_text('#FFFFFF')) if org and org.display_brand_color else '#FFFFFF' %}
 <style>
   [x-cloak] { display: none !important; }
-  body { background: var(--bg-secondary); }
+  
+  :root {
+    --reg-primary: {% if org and org.display_brand_color %}{{ org.display_brand_color }}{% else %}var(--cyan, #E85938){% endif %};
+    --reg-primary-hover: {% if org and org.display_brand_color %}{{ org.display_brand_color }}{% else %}var(--cyan-hover, #D04526){% endif %};
+    --reg-primary-text: {{ cyan_text }};
+    --reg-border: var(--border-light, #EFEAE3);
+    --reg-text: var(--text-primary, #131B17);
+    --reg-muted: var(--text-muted, #7A8680);
+    --reg-secondary: var(--text-secondary, #46524C);
+  }
 
+  body {
+    background: #F8F6F2;
+    padding-top: 64px;
+    color: var(--reg-text);
+    font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Sticky Top Navigation ── */
   .reg-nav {
     position: sticky;
-    top: 0;
+    top: 64px;
     z-index: 40;
-    background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 24px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(19, 27, 23, 0.08);
     height: 52px;
+    padding: 0 24px;
   }
-
-  .reg-container {
-    max-width: 640px;
+  .reg-nav-inner {
+    max-width: 960px;
     margin: 0 auto;
-    padding: 32px 24px 80px;
-  }
-
-  .ticket-card {
-    background: #fff;
-    border: 1.5px solid var(--border-light);
-    border-radius: 14px;
-    padding: 18px 20px;
-    margin-bottom: 12px;
-    transition: border-color 0.15s;
-    cursor: default;
-  }
-
-  .ticket-card.selected {
-    border-color: var(--cyan);
-    background: #f0fffe;
-  }
-
-  .ticket-card.sold-out {
-    opacity: 0.5;
-  }
-
-  .qty-control {
+    height: 100%;
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .reg-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+  .reg-nav-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--reg-secondary);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(19, 27, 23, 0.04);
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+  .reg-nav-back:hover {
+    background: rgba(19, 27, 23, 0.08);
+    color: var(--reg-text);
+  }
+  .reg-nav-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--reg-muted);
+    min-width: 0;
+  }
+  .reg-nav-breadcrumbs a {
+    color: var(--reg-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .reg-nav-breadcrumbs a:hover {
+    color: var(--reg-text);
+  }
+  .reg-nav-breadcrumbs .event-title {
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--reg-secondary);
+  }
+  .reg-nav-secure {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #15803d;
+    background: #f0fdf4;
+    border: 1px solid #dcfce7;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  .qty-btn {
-    width: 34px;
-    height: 34px;
-    border: 1.5px solid var(--border-light);
-    border-radius: 8px;
-    background: #fff;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
+  /* ── Layout Container ── */
+  .reg-container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 24px 96px;
+  }
+
+  /* ── Stepper ── */
+  .reg-stepper {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-primary);
-    transition: all 0.12s;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .reg-step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .reg-step-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1.5px solid var(--reg-border);
+    color: var(--reg-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .reg-step-label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--reg-muted);
+    transition: color 0.2s ease;
+  }
+  .reg-step-item.active .reg-step-circle {
+    background: var(--reg-primary);
+    border-color: var(--reg-primary);
+    color: var(--reg-primary-text);
+    box-shadow: 0 3px 10px rgba(232, 89, 56, 0.3);
+  }
+  .reg-step-item.active .reg-step-label {
+    color: var(--reg-text);
+    font-weight: 700;
+  }
+  .reg-step-item.completed .reg-step-circle {
+    background: #15803d;
+    border-color: #15803d;
+    color: #ffffff;
+  }
+  .reg-step-item.completed .reg-step-label {
+    color: var(--reg-text);
+  }
+  .reg-step-line {
+    width: 48px;
+    height: 2px;
+    background: var(--reg-border);
+    border-radius: 2px;
+    transition: background 0.2s ease;
+  }
+  .reg-step-line.completed {
+    background: #15803d;
   }
 
-  .qty-btn:hover:not(:disabled) { border-color: var(--cyan); }
-  .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  /* ── Event Header Card ── */
+  .reg-event-card {
+    background: #ffffff;
+    border: 1px solid var(--reg-border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  }
+  .reg-event-img {
+    width: 76px;
+    height: 76px;
+    border-radius: 12px;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .reg-event-placeholder {
+    width: 76px;
+    height: 76px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(232,89,56,0.1), rgba(232,89,56,0.22));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--reg-primary);
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .reg-event-details {
+    flex: 1;
+    min-width: 0;
+  }
+  .reg-event-title {
+    font-family: var(--font-serif);
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--reg-text);
+    margin: 0 0 8px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .reg-event-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13px;
+    color: var(--reg-muted);
+    flex-wrap: wrap;
+  }
+  .reg-event-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .reg-event-meta-item i {
+    color: var(--reg-primary);
+    font-size: 14px;
+  }
 
-  .form-group {
+  /* ── Step 1: Tickets List ── */
+  .reg-section-header {
     margin-bottom: 18px;
   }
+  .reg-section-title {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--reg-text);
+    margin: 0 0 6px;
+  }
+  .reg-section-subtitle {
+    font-size: 13.5px;
+    color: var(--reg-muted);
+    margin: 0;
+  }
 
+  .reg-referral-banner {
+    background: rgba(232,89,56,0.08);
+    border: 1px solid rgba(232,89,56,0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 13.5px;
+    color: #9C2E15;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.45;
+  }
+
+  .ticket-card {
+    background: #ffffff;
+    border: 1.5px solid var(--reg-border);
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin-bottom: 14px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+  }
+  .ticket-card:hover {
+    border-color: rgba(19, 27, 23, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+  }
+  .ticket-card.selected {
+    border-color: var(--reg-primary);
+    background: #ffffff;
+    box-shadow: 0 0 0 1px var(--reg-primary), 0 8px 24px rgba(232, 89, 56, 0.08);
+  }
+  .ticket-card.sold-out {
+    opacity: 0.55;
+    background: #FAFAFA;
+    pointer-events: none;
+  }
+  .ticket-card-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .ticket-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .ticket-header-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .ticket-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--reg-text);
+  }
+  .ticket-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .ticket-badge.vip {
+    background: rgba(147, 51, 234, 0.1);
+    color: #7e22ce;
+    border: 1px solid rgba(147, 51, 234, 0.2);
+  }
+  .ticket-badge.early_bird {
+    background: rgba(232, 89, 56, 0.1);
+    color: var(--reg-primary);
+    border: 1px solid rgba(232, 89, 56, 0.2);
+  }
+  .ticket-stock-alert {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+  .ticket-desc {
+    font-size: 13.5px;
+    color: var(--reg-muted);
+    line-height: 1.5;
+    margin-top: 4px;
+    max-width: 520px;
+  }
+  .ticket-pricing-action {
+    text-align: right;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .ticket-price {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--reg-text);
+    line-height: 1.1;
+  }
+  .ticket-price-sub {
+    font-size: 11.5px;
+    color: var(--reg-muted);
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  /* ── Tactile Quantity Selector ── */
+  .qty-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #F8F6F2;
+    border: 1px solid var(--reg-border);
+    border-radius: 12px;
+    padding: 4px 6px;
+  }
+  .qty-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: #ffffff;
+    color: var(--reg-text);
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: all 0.14s ease;
+  }
+  .qty-btn:hover:not(:disabled) {
+    background: var(--reg-primary);
+    color: #ffffff;
+    transform: scale(1.05);
+  }
+  .qty-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .qty-val {
+    min-width: 28px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--reg-text);
+  }
+
+  /* ── Running Total (Step 1 Bottom) ── */
+  .reg-total-strip {
+    background: #ffffff;
+    border: 1px solid var(--reg-border);
+    border-radius: 16px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    margin-top: 18px;
+  }
+  .reg-total-label {
+    font-size: 14px;
+    color: var(--reg-muted);
+    font-weight: 500;
+  }
+  .reg-total-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--reg-text);
+  }
+  .reg-continue-btn {
+    width: 100%;
+    margin-top: 16px;
+    height: 52px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--reg-primary);
+    color: var(--reg-primary-text);
+    border: none;
+    cursor: pointer;
+    transition: all 0.16s ease;
+    box-shadow: 0 4px 14px rgba(232, 89, 56, 0.28);
+  }
+  .reg-continue-btn:hover:not(:disabled) {
+    background: var(--reg-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(232, 89, 56, 0.36);
+  }
+  .reg-continue-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* ── Step 2 Two-Column Grid ── */
+  .reg-step2-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  @media (min-width: 860px) {
+    .reg-step2-grid {
+      grid-template-columns: 1.35fr 1fr;
+      align-items: start;
+    }
+  }
+
+  /* ── Form Section Cards ── */
+  .reg-card {
+    background: #ffffff;
+    border: 1px solid var(--reg-border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+  }
+  .reg-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--reg-muted);
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .reg-card-title i {
+    color: var(--reg-primary);
+    font-size: 15px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
   .form-group label {
     display: block;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 6px;
-    color: var(--text-secondary);
+    color: var(--reg-secondary);
   }
-
   .form-group input,
   .form-group textarea,
   .form-group select {
     width: 100%;
-    padding: 10px 14px;
-    border: 1.5px solid var(--border-light);
+    height: 44px;
+    padding: 0 14px;
+    border: 1.5px solid var(--reg-border);
     border-radius: 10px;
     font-size: 14px;
     font-family: inherit;
-    background: #fff;
-    transition: border-color 0.15s;
+    background: #ffffff;
+    transition: all 0.15s ease;
     box-sizing: border-box;
+    color: var(--reg-text);
   }
-
+  .form-group textarea {
+    height: auto;
+    padding: 12px 14px;
+  }
   .form-group input:focus,
   .form-group textarea:focus,
   .form-group select:focus {
     outline: none;
-    border-color: var(--cyan);
+    border-color: var(--reg-primary);
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
   }
 
-  .form-group select {
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6B6B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    padding-right: 40px;
-    cursor: pointer;
-  }
-
-  .order-summary {
-    background: var(--bg-secondary);
+  /* WhatsApp Opt-in Card */
+  .reg-whatsapp-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
     border-radius: 12px;
-    padding: 16px;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .reg-whatsapp-box:hover {
+    border-color: #86efac;
+  }
+  .reg-whatsapp-icon {
+    font-size: 24px;
+    color: #25D366;
+    flex-shrink: 0;
+  }
+  .reg-whatsapp-text {
+    font-size: 13px;
+    color: #14532d;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  /* Attendee Cards */
+  .reg-attendee-card {
+    background: #FBF9F6;
+    border: 1px solid var(--reg-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .reg-attendee-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--reg-text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .reg-attendee-title i {
+    color: var(--reg-primary);
+    font-size: 13px;
+  }
+
+  /* Promo Box */
+  .reg-promo-box {
+    background: #ffffff;
+    border: 1px solid var(--reg-border);
+    border-radius: 16px;
+    padding: 20px 24px;
     margin-bottom: 20px;
   }
-
-  .order-summary-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    margin-bottom: 8px;
-    color: var(--text-secondary);
+  .reg-promo-toggle {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--reg-primary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity 0.15s;
   }
-
-  .order-summary-total {
-    display: flex;
-    justify-content: space-between;
-    font-size: 16px;
-    font-weight: 700;
-    border-top: 1px solid var(--border-light);
-    padding-top: 10px;
-    margin-top: 4px;
+  .reg-promo-toggle:hover {
+    text-decoration: underline;
   }
-
-  .attendee-section {
-    background: var(--bg-secondary);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
-  .promo-row {
+  .reg-promo-input-row {
     display: flex;
     gap: 8px;
-    align-items: flex-end;
+    margin-top: 12px;
+  }
+  .reg-promo-apply-btn {
+    height: 44px;
+    padding: 0 18px;
+    background: var(--reg-text);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .reg-promo-apply-btn:hover {
+    background: #2D3748;
   }
 
-  .promo-row .form-group {
-    flex: 1;
-    margin-bottom: 0;
+  /* ── Order Summary Sticky Card ── */
+  .reg-summary-card {
+    background: #ffffff;
+    border: 1px solid var(--reg-border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+    position: sticky;
+    top: 130px;
+  }
+  .reg-summary-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--reg-text);
+    border-bottom: 1px solid var(--reg-border);
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .reg-summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: var(--reg-secondary);
+    margin-bottom: 10px;
+  }
+  .reg-summary-line.discount {
+    color: #15803d;
+    font-weight: 600;
+  }
+  .reg-summary-total-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-top: 2px dashed var(--reg-border);
+    padding-top: 16px;
+    margin-top: 14px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--reg-text);
+  }
+  .reg-summary-total-val {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--reg-primary);
+  }
+  .reg-guarantee-pill {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.45;
+    margin-top: 18px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .reg-guarantee-pill i {
+    color: #0284c7;
+    font-size: 16px;
+    margin-top: 1px;
+    flex-shrink: 0;
+  }
+  .reg-submit-btn {
+    width: 100%;
+    height: 52px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--reg-primary);
+    color: var(--reg-primary-text);
+    border: none;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.16s ease;
+    box-shadow: 0 4px 14px rgba(232, 89, 56, 0.28);
+  }
+  .reg-submit-btn:hover:not(:disabled) {
+    background: var(--reg-primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(232, 89, 56, 0.36);
+  }
+  .reg-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 </style>
 {% endblock %}
 
 {% block body %}
+{% include "partials/site_nav.html" %}
+
+<!-- Sticky Breadcrumb Navigation -->
 <nav class="reg-nav">
-  <a href="/" style="font-family:var(--font-serif); font-size:18px; font-weight:700; color:var(--text-primary); text-decoration:none;">heelo</a>
-  <span style="color:var(--border-color);">›</span>
-  <a href="/e/{{ event.slug }}" style="font-size:13px; color:var(--text-muted); text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px;">{{ event.title }}</a>
-  <span style="color:var(--border-color);">›</span>
-  <span style="font-size:13px; color:var(--text-secondary); font-weight:500;">Register</span>
+  <div class="reg-nav-inner">
+    <div class="reg-nav-left">
+      <a href="/e/{{ event.slug }}" class="reg-nav-back">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Event details</span>
+      </a>
+      <div class="reg-nav-breadcrumbs">
+        <a href="/events">Events</a>
+        <span style="opacity:0.4;">/</span>
+        <a href="/e/{{ event.slug }}" class="event-title">{{ event.title }}</a>
+        <span style="opacity:0.4;">/</span>
+        <span style="color:var(--reg-text); font-weight:600;">Register</span>
+      </div>
+    </div>
+    <div class="reg-nav-secure">
+      <i class="fa-solid fa-lock"></i>
+      <span>Secure checkout</span>
+    </div>
+  </div>
 </nav>
 
-<div id="reg-loading" style="text-align:center; padding:80px 0; color:var(--text-muted);">
-  <span class="material-symbols-outlined" style="font-size:32px; opacity:0.4;">hourglass_empty</span>
-  <div style="font-size:14px; margin-top:10px;">Loading…</div>
+<div id="reg-loading" style="text-align:center; padding:90px 20px; color:var(--reg-muted);">
+  <i class="fa-solid fa-circle-notch fa-spin" style="font-size:32px; color:var(--reg-primary); margin-bottom:12px;"></i>
+  <div style="font-size:14px; font-weight:500;">Loading ticket options...</div>
 </div>
 
 <div class="reg-container" x-data="registerForm()" x-cloak x-init="document.getElementById('reg-loading').remove()">
 
-  <!-- Step indicator -->
-  <div style="display:flex; align-items:center; gap:8px; margin-bottom:28px;">
-    <div style="width:24px; height:24px; border-radius:50%; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;"
-         :style="step >= 1 ? 'background:var(--cyan);color:{{ cyan_text }};' : 'background:var(--bg-secondary);color:var(--text-muted);'">1</div>
-    <div style="font-size:13px; font-weight:500;" :style="step === 1 ? 'color:var(--text-primary)' : 'color:var(--text-muted)'">Select tickets</div>
-    <div style="flex:1; height:1px; background:var(--border-light); margin:0 4px;"></div>
-    <div style="width:24px; height:24px; border-radius:50%; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;"
-         :style="step >= 2 ? 'background:var(--cyan);color:{{ cyan_text }};' : 'background:var(--bg-secondary);color:var(--text-muted);'">2</div>
-    <div style="font-size:13px; font-weight:500;" :style="step === 2 ? 'color:var(--text-primary)' : 'color:var(--text-muted)'">Your details</div>
+  <!-- Connected Stepper -->
+  <div class="reg-stepper">
+    <div class="reg-step-item" :class="{ 'active': step === 1, 'completed': step > 1 }">
+      <div class="reg-step-circle">
+        <template x-if="step > 1">
+          <i class="fa-solid fa-check" style="font-size:12px;"></i>
+        </template>
+        <template x-if="step <= 1">
+          <span>1</span>
+        </template>
+      </div>
+      <span class="reg-step-label">Select tickets</span>
+    </div>
+
+    <div class="reg-step-line" :class="{ 'completed': step > 1 }"></div>
+
+    <div class="reg-step-item" :class="{ 'active': step === 2 }">
+      <div class="reg-step-circle">2</div>
+      <span class="reg-step-label">Attendee details</span>
+    </div>
+
+    <div class="reg-step-line"></div>
+
+    <div class="reg-step-item">
+      <div class="reg-step-circle">3</div>
+      <span class="reg-step-label">Payment</span>
+    </div>
   </div>
 
-  <!-- Event info strip -->
-  <div style="background:#fff; border:1px solid var(--border-light); border-radius:12px; padding:14px 18px; margin-bottom:24px; display:flex; align-items:center; gap:14px;">
+  <!-- Event Header Banner Card -->
+  <div class="reg-event-card">
     {% if event.cover_image_url %}
-    <img src="{{ event.cover_image_url }}" alt="" style="width:48px; height:34px; border-radius:6px; object-fit:cover; flex-shrink:0;">
-    {% elif org and org.logo_url %}
-    <img src="{{ org.logo_url }}" alt="{{ org.name }}" style="width:34px; height:34px; border-radius:8px; object-fit:cover; flex-shrink:0;">
+    <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" class="reg-event-img">
+    {% elif org and org.display_logo_url %}
+    <img src="{{ org.display_logo_url }}" alt="{{ org.name }}" class="reg-event-img">
+    {% else %}
+    <div class="reg-event-placeholder">
+      <i class="fa-solid fa-ticket"></i>
+    </div>
     {% endif %}
-    <div style="min-width:0;">
-      <div style="font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ event.title }}</div>
-      <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-        {{ event.start_datetime.strftime('%a, %d %b %Y · %H:%M') if event.start_datetime else 'Date TBD' }}
-        {% if event.venue_city %} · {{ event.venue_city }}{% endif %}
+
+    <div class="reg-event-details">
+      <h1 class="reg-event-title">{{ event.title }}</h1>
+      <div class="reg-event-meta-row">
+        <div class="reg-event-meta-item">
+          <i class="fa-regular fa-calendar"></i>
+          <span>{{ event.start_datetime.strftime('%a, %d %b %Y · %H:%M') if event.start_datetime else 'Date to be announced' }}</span>
+        </div>
+        {% if event.venue_name or event.venue_city %}
+        <div class="reg-event-meta-item">
+          <i class="fa-solid fa-location-dot"></i>
+          <span>{{ [event.venue_name, event.venue_city]|reject('none')|join(', ') }}</span>
+        </div>
+        {% endif %}
+        {% if org %}
+        <div class="reg-event-meta-item">
+          <i class="fa-regular fa-building"></i>
+          <span>Organized by {{ org.name }}</span>
+        </div>
+        {% endif %}
       </div>
     </div>
-    {% if org and org.logo_url and event.cover_image_url %}
-    <img src="{{ org.logo_url }}" alt="{{ org.name }}" style="width:28px; height:28px; border-radius:6px; object-fit:cover; flex-shrink:0; margin-left:auto;" title="Organized by {{ org.name }}">
-    {% endif %}
   </div>
 
-  <!-- ── Step 1: Select tickets ─────────────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════════════════
+       STEP 1: CHOOSE TICKETS
+       ══════════════════════════════════════════════════════════════════ -->
   <div x-show="step === 1">
-    <h2 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin-bottom:16px;">Choose tickets</h2>
+    <div class="reg-section-header">
+      <h2 class="reg-section-title">Choose tickets</h2>
+      <p class="reg-section-subtitle">Select the quantity of tickets you wish to purchase below.</p>
+    </div>
 
-    <div x-show="_referralCode" x-cloak style="background:#00FFF318; border:1px solid #00FFF3; border-radius:10px; padding:10px 14px; font-size:13px; margin-bottom:16px;">
-      🎉 You were invited by a friend — a referral discount applies at checkout if you're eligible.
+    <div x-show="_referralCode" x-cloak class="reg-referral-banner">
+      <i class="fa-solid fa-gift" style="font-size:18px;"></i>
+      <div><strong>Special invitation applied:</strong> A partner referral discount will be automatically reflected at checkout if eligible.</div>
     </div>
 
     {% if not ticket_types %}
-    <div style="text-align:center; padding:40px 0; color:var(--text-muted);">
-      <p style="font-size:15px;">No tickets available for this event.</p>
+    <div style="text-align:center; padding:48px 20px; background:#fff; border-radius:16px; border:1px solid var(--reg-border); color:var(--reg-muted);">
+      <i class="fa-solid fa-ticket-simple" style="font-size:36px; opacity:0.35; margin-bottom:12px;"></i>
+      <p style="font-size:15px; font-weight:600; margin:0;">No tickets are currently available for this event.</p>
     </div>
     {% else %}
 
-    {% for tt in ticket_types %}
-    <div
-      class="ticket-card"
-      :class="{
-        'selected': getQty('{{ tt.id }}') > 0,
-        'sold-out': {{ 'true' if tt.quantity is not none and (tt.quantity_sold + tt.quantity_reserved) >= tt.quantity else 'false' }}
-      }"
-    >
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-        <div style="flex:1; min-width:0;">
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span style="font-size:15px; font-weight:600;">{{ tt.name }}</span>
-            {% if tt.tier == 'vip' %}
-            <span style="font-size:11px; font-weight:600; padding:2px 8px; border-radius:100px; background:#FF3ECB22; color:#FF3ECB;">VIP</span>
-            {% elif tt.tier == 'early_bird' %}
-            <span style="font-size:11px; font-weight:600; padding:2px 8px; border-radius:100px; background:#00FFF322; color:#00897b;">Early Bird</span>
-            {% endif %}
-            {% if tt.quantity is not none and (tt.quantity - tt.quantity_sold - tt.quantity_reserved) <= 10 and (tt.quantity - tt.quantity_sold - tt.quantity_reserved) > 0 %}
-            <span style="font-size:11px; color:#D0021B; font-weight:500;">Only {{ tt.quantity - tt.quantity_sold - tt.quantity_reserved }} left!</span>
-            {% endif %}
-          </div>
-          {% if tt.description %}
-          <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">{{ tt.description }}</div>
-          {% endif %}
-          {% if tt.quantity is not none and (tt.quantity_sold + tt.quantity_reserved) >= tt.quantity %}
-          <div style="font-size:13px; color:#D0021B; font-weight:500; margin-top:4px;">Sold out</div>
-          {% endif %}
-        </div>
-        <div style="text-align:right; flex-shrink:0;">
-          <div style="font-size:17px; font-weight:700; margin-bottom:8px;">
-            {% if tt.price == 0 %}Free{% else %}{{ tt.currency }} {{ "{:,.0f}".format(tt.price) }}{% endif %}
-          </div>
-          {% if tt.quantity is none or (tt.quantity_sold + tt.quantity_reserved) < tt.quantity %}
-          <div class="qty-control">
-            <button class="qty-btn" type="button"
-              @click="dec('{{ tt.id }}')"
-              :disabled="getQty('{{ tt.id }}') <= 0">−</button>
-            <span style="font-size:15px; font-weight:600; min-width:20px; text-align:center;" x-text="getQty('{{ tt.id }}')">0</span>
-            <button class="qty-btn" type="button"
-              @click="inc('{{ tt.id }}', {{ tt.max_per_order | tojson }})"
-              :disabled="{{ tt.max_per_order | tojson }} !== null && getQty('{{ tt.id }}') >= {{ tt.max_per_order | tojson }}">+</button>
-          </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-    {% endfor %}
+    <div class="reg-tickets-wrap">
+      {% for tt in ticket_types %}
+      {% set is_sold_out = tt.quantity is not none and (tt.quantity_sold + tt.quantity_reserved) >= tt.quantity %}
+      {% set remaining_qty = (tt.quantity - tt.quantity_sold - tt.quantity_reserved) if tt.quantity is not none else none %}
+      <div
+        class="ticket-card"
+        :class="{
+          'selected': getQty('{{ tt.id }}') > 0,
+          'sold-out': {{ 'true' if is_sold_out else 'false' }}
+        }"
+      >
+        <div class="ticket-card-inner">
+          <div class="ticket-info">
+            <div class="ticket-header-row">
+              <span class="ticket-name">{{ tt.name }}</span>
+              {% if tt.tier == 'vip' %}
+              <span class="ticket-badge vip">VIP</span>
+              {% elif tt.tier == 'early_bird' %}
+              <span class="ticket-badge early_bird">Early Bird</span>
+              {% endif %}
+              {% if remaining_qty is not none and remaining_qty <= 10 and remaining_qty > 0 %}
+              <span class="ticket-stock-alert">
+                <i class="fa-solid fa-fire"></i> Only {{ remaining_qty }} left!
+              </span>
+              {% endif %}
+            </div>
 
-    <!-- Running total -->
-    <div style="background:#fff; border:1px solid var(--border-light); border-radius:12px; padding:16px 20px; margin-top:8px; display:flex; align-items:center; justify-content:space-between;">
-      <div>
-        <div style="font-size:14px; color:var(--text-muted);" x-text="totalTickets > 0 ? totalTickets + ' ticket' + (totalTickets > 1 ? 's' : '') : 'No tickets selected'"></div>
+            {% if tt.description %}
+            <div class="ticket-desc">{{ tt.description }}</div>
+            {% endif %}
+
+            {% if is_sold_out %}
+            <div style="font-size:12.5px; color:#dc2626; font-weight:600; margin-top:6px;">
+              <i class="fa-solid fa-circle-xmark"></i> Sold out
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="ticket-pricing-action">
+            <div class="ticket-price">
+              {% if tt.price == 0 %}Free{% else %}{{ tt.currency | currency_symbol }}{{ "{:,.0f}".format(tt.price) }}{% endif %}
+            </div>
+            <div class="ticket-price-sub">per attendee</div>
+
+            {% if not is_sold_out %}
+            <div class="qty-control">
+              <button class="qty-btn" type="button"
+                @click="dec('{{ tt.id }}')"
+                :disabled="getQty('{{ tt.id }}') <= 0"
+                aria-label="Decrease quantity">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              <span class="qty-val" x-text="getQty('{{ tt.id }}')">0</span>
+              <button class="qty-btn" type="button"
+                @click="inc('{{ tt.id }}', {{ tt.max_per_order | tojson }})"
+                :disabled="{{ tt.max_per_order | tojson }} !== null && getQty('{{ tt.id }}') >= {{ tt.max_per_order | tojson }}"
+                aria-label="Increase quantity">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+            {% endif %}
+          </div>
+        </div>
       </div>
-      <div style="font-size:18px; font-weight:700;" x-text="formatAmount(rawTotal)"></div>
+      {% endfor %}
+    </div>
+
+    <!-- Running Total Strip -->
+    <div class="reg-total-strip">
+      <div>
+        <div class="reg-total-label" x-text="totalTickets > 0 ? totalTickets + ' ticket' + (totalTickets > 1 ? 's' : '') + ' selected' : 'No tickets selected'"></div>
+      </div>
+      <div class="reg-total-value" x-text="formatAmount(rawTotal)"></div>
     </div>
 
     <button
       type="button"
-      class="btn btn-primary btn-full"
-      style="margin-top:16px; font-size:15px; height:48px;"
+      class="reg-continue-btn"
       @click="goToDetails()"
       :disabled="!hasSelection"
-    >Continue →</button>
+    >
+      <span>Continue to details</span>
+      <i class="fa-solid fa-arrow-right"></i>
+    </button>
 
     {% endif %}
   </div>
 
-  <!-- ── Step 2: Attendee details ───────────────────────────────────────── -->
+  <!-- ══════════════════════════════════════════════════════════════════
+       STEP 2: ATTENDEE DETAILS & SUMMARY
+       ══════════════════════════════════════════════════════════════════ -->
   <div x-show="step === 2">
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
-      <button type="button" @click="step=1" style="background:transparent; border:none; cursor:pointer; color:var(--text-muted); font-size:14px; padding:0; display:flex; align-items:center; gap:4px;">
-        ← Back
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+      <button type="button" @click="goToTickets()" class="reg-nav-back" style="cursor:pointer; border:none;">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Back to tickets</span>
       </button>
-      <h2 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin:0;">Your details</h2>
+      <h2 class="reg-section-title" style="margin:0;">Attendee details</h2>
     </div>
 
     <form @submit.prevent="submit">
+      <div class="reg-step2-grid">
 
-      <!-- Buyer / contact -->
-      <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:20px; margin-bottom:16px;">
-        <div style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px;">Contact information</div>
-        <div class="form-group">
-          <label>Full name *</label>
-          <input type="text" x-model="buyer.name" required placeholder="Your full name">
-        </div>
-        <div class="form-group">
-          <label>Email address *</label>
-          <input type="email" x-model="buyer.email" required placeholder="you@example.com">
-        </div>
-        <div class="form-group" :style="buyer.phone ? '' : 'margin-bottom:0;'">
-          <label>Phone number</label>
-          <input type="tel" x-model="buyer.phone" placeholder="+234 800 000 0000">
-        </div>
-        <div class="form-group" style="margin-bottom:0;" x-show="buyer.phone" x-cloak>
-          <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;">
-            <input type="checkbox" x-model="buyer.whatsappConsent" style="width:auto;">
-            <span>Send my ticket and event reminders via WhatsApp</span>
-          </label>
-        </div>
-      </div>
+        <!-- Left Form Column -->
+        <div>
+          <!-- Buyer / Contact Information -->
+          <div class="reg-card">
+            <h3 class="reg-card-title">
+              <i class="fa-regular fa-user"></i>
+              <span>Contact information</span>
+            </h3>
 
-      <!-- Per-attendee details if multiple tickets -->
-      <template x-if="totalTickets > 1">
-        <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:20px; margin-bottom:16px;">
-          <div style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Attendee details</div>
-          <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Leave blank to use your contact info for each ticket.</div>
-          <template x-for="(att, i) in attendees" :key="i">
-            <div class="attendee-section">
-              <div style="font-size:13px; font-weight:600; margin-bottom:12px;" x-text="'Attendee ' + (i + 1)"></div>
-              <div class="form-group">
-                <label>Name</label>
-                <input type="text" x-model="att.name" :placeholder="i === 0 ? buyer.name : 'Full name'">
-              </div>
-              <div class="form-group" style="margin-bottom:0;">
-                <label>Email</label>
-                <input type="email" x-model="att.email" :placeholder="i === 0 ? buyer.email : 'attendee@example.com'">
-              </div>
-            </div>
-          </template>
-        </div>
-      </template>
-
-      <!-- Custom form fields (filtered to fields that apply to the selected ticket types) -->
-      <template x-if="visibleFormFields().length > 0">
-        <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:20px; margin-bottom:16px;">
-          <div style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px;">Additional information</div>
-          <template x-for="(f, i) in visibleFormFields()" :key="f.id">
-            <div class="form-group" :style="i === visibleFormFields().length - 1 ? 'margin-bottom:0;' : ''">
-              <label x-text="f.label + (f.is_required ? ' *' : '')"></label>
-              <template x-if="f.field_type === 'long_text'">
-                <textarea x-model="answers[f.id]" rows="3" :required="f.is_required" :placeholder="f.label"></textarea>
-              </template>
-              <template x-if="f.field_type === 'dropdown'">
-                <select x-model="answers[f.id]" :required="f.is_required">
-                  <option value="">— Select —</option>
-                  <template x-for="opt in (f.options || [])" :key="opt">
-                    <option :value="opt" x-text="opt"></option>
-                  </template>
-                </select>
-              </template>
-              <template x-if="f.field_type === 'checkbox'">
-                <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;">
-                  <input type="checkbox" x-model="answers[f.id]" style="width:auto; margin:0;">
-                  <span style="font-size:14px;" x-text="f.label"></span>
-                </label>
-              </template>
-              <template x-if="!['long_text','dropdown','checkbox'].includes(f.field_type)">
-                <input type="text" x-model="answers[f.id]" :required="f.is_required" :placeholder="f.label">
-              </template>
-            </div>
-          </template>
-        </div>
-      </template>
-
-      <!-- Promo code -->
-      <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:20px; margin-bottom:16px;" x-data="{ showPromo: false }">
-        <button type="button" @click="showPromo = !showPromo" style="background:transparent; border:none; padding:0; font-size:14px; color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; gap:6px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-          Have a promo code?
-        </button>
-        <div x-show="showPromo" x-transition style="margin-top:14px;">
-          <div class="promo-row">
             <div class="form-group">
-              <label>Promo code</label>
-              <input type="text" x-model="promo" placeholder="EARLYBIRD20" style="text-transform:uppercase;">
+              <label>Full name *</label>
+              <input type="text" x-model="buyer.name" required placeholder="e.g. Alex Morgan">
             </div>
-            <button type="button" @click="applyPromo()"
-              style="height:42px; padding:0 16px; border:1.5px solid var(--border-light); border-radius:9px; background:#fff; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap; transition:border-color 0.15s; flex-shrink:0;"
-              onmouseover="this.style.borderColor='var(--text-secondary)'" onmouseout="this.style.borderColor='var(--border-light)'">Apply</button>
+
+            <div class="form-group">
+              <label>Email address *</label>
+              <input type="email" x-model="buyer.email" required placeholder="alex@example.com">
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Phone number</label>
+              <input type="tel" x-model="buyer.phone" placeholder="e.g. +1 555 123 4567 or +44 7911 123456">
+            </div>
+
+            <div x-show="buyer.phone" x-cloak>
+              <label class="reg-whatsapp-box">
+                <i class="fa-brands fa-whatsapp reg-whatsapp-icon"></i>
+                <div style="flex:1;">
+                  <div class="reg-whatsapp-text">Send tickets and event updates to WhatsApp</div>
+                  <div style="font-size:11.5px; color:#15803d; opacity:0.85;">Receive immediate PDF pass delivery directly in your chat.</div>
+                </div>
+                <input type="checkbox" x-model="buyer.whatsappConsent" style="width:18px; height:18px; accent-color:#16a34a; margin:0;">
+              </label>
+            </div>
           </div>
-          <div x-show="promoApplied" style="display:none; font-size:13px; color:#007A33; margin-top:6px; font-weight:500;">
-            Promo code applied — discount applied below.
+
+          <!-- Multiple Attendees -->
+          <template x-if="totalTickets > 1">
+            <div class="reg-card">
+              <h3 class="reg-card-title">
+                <i class="fa-solid fa-users"></i>
+                <span>Attendee information</span>
+              </h3>
+              <p style="font-size:13px; color:var(--reg-muted); margin:0 0 16px;">
+                Leave fields blank to use your main contact details for each ticket.
+              </p>
+
+              <template x-for="(att, i) in attendees" :key="i">
+                <div class="reg-attendee-card">
+                  <div class="reg-attendee-title">
+                    <i class="fa-solid fa-ticket"></i>
+                    <span x-text="'Attendee ' + (i + 1)"></span>
+                  </div>
+                  <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" x-model="att.name" :placeholder="i === 0 ? buyer.name : 'Full name for attendee ' + (i + 1)">
+                  </div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label>Email address</label>
+                    <input type="email" x-model="att.email" :placeholder="i === 0 ? buyer.email : 'attendee' + (i + 1) + '@example.com'">
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Custom Organizer Form Questions -->
+          <template x-if="visibleFormFields().length > 0">
+            <div class="reg-card">
+              <h3 class="reg-card-title">
+                <i class="fa-solid fa-clipboard-question"></i>
+                <span>Additional information</span>
+              </h3>
+              <template x-for="(f, i) in visibleFormFields()" :key="f.id">
+                <div class="form-group" :style="i === visibleFormFields().length - 1 ? 'margin-bottom:0;' : ''">
+                  <label x-text="f.label + (f.is_required ? ' *' : '')"></label>
+                  <template x-if="f.field_type === 'long_text'">
+                    <textarea x-model="answers[f.id]" rows="3" :required="f.is_required" :placeholder="f.label"></textarea>
+                  </template>
+                  <template x-if="f.field_type === 'dropdown'">
+                    <select x-model="answers[f.id]" :required="f.is_required">
+                      <option value="">Select option</option>
+                      <template x-for="opt in (f.options || [])" :key="opt">
+                        <option :value="opt" x-text="opt"></option>
+                      </template>
+                    </select>
+                  </template>
+                  <template x-if="f.field_type === 'checkbox'">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;">
+                      <input type="checkbox" x-model="answers[f.id]" style="width:auto; margin:0;">
+                      <span style="font-size:14px;" x-text="f.label"></span>
+                    </label>
+                  </template>
+                  <template x-if="!['long_text','dropdown','checkbox'].includes(f.field_type)">
+                    <input type="text" x-model="answers[f.id]" :required="f.is_required" :placeholder="f.label">
+                  </template>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Promo Code Card -->
+          <div class="reg-promo-box" x-data="{ showPromo: false }">
+            <button type="button" @click="showPromo = !showPromo" class="reg-promo-toggle">
+              <i class="fa-solid fa-tag"></i>
+              <span x-text="showPromo ? 'Hide promo code field' : 'Have a promo or discount code?'"></span>
+            </button>
+            <div x-show="showPromo" x-transition style="margin-top:14px;">
+              <div class="reg-promo-input-row">
+                <input type="text" x-model="promo" placeholder="e.g. EARLYBIRD20" style="text-transform:uppercase; height:44px;">
+                <button type="button" @click="applyPromo()" class="reg-promo-apply-btn">Apply</button>
+              </div>
+              <div x-show="promoApplied" style="display:none; font-size:13px; color:#15803d; margin-top:8px; font-weight:600;">
+                <i class="fa-solid fa-check-circle"></i> Promo code applied successfully.
+              </div>
+              <div x-show="promoError" x-text="promoError" style="display:none; font-size:13px; color:#dc2626; margin-top:8px;"></div>
+            </div>
           </div>
-          <div x-show="promoError" x-text="promoError" style="display:none; font-size:13px; color:#D0021B; margin-top:6px;"></div>
         </div>
+
+        <!-- Right Summary Column (Sticky) -->
+        <div>
+          <div class="reg-summary-card">
+            <div class="reg-summary-title">
+              <span>Order summary</span>
+              <span class="reg-nav-secure" style="font-size:11px; padding:2px 8px;">
+                <i class="fa-solid fa-lock"></i> SSL Protected
+              </span>
+            </div>
+
+            <!-- Itemized breakdown -->
+            <template x-for="[ttId, qty] in Object.entries(quantities).filter(([,q])=>q>0)" :key="ttId">
+              <div class="reg-summary-line">
+                <span x-text="getTicketName(ttId) + ' × ' + qty"></span>
+                <span style="font-weight:600;" x-text="formatAmount(getTicketPrice(ttId) * qty)"></span>
+              </div>
+            </template>
+
+            <!-- Promo discount -->
+            <div class="reg-summary-line discount" x-show="discountAmount > 0" style="display:none;">
+              <span>Promo discount</span>
+              <span x-text="'−' + formatAmount(discountAmount)"></span>
+            </div>
+
+            <!-- Fee handling -->
+            <template x-if="subtotalAfterDiscount > 0 && passFeesToBuyer">
+              <div>
+                <div class="reg-summary-line" style="font-size:13px; color:var(--reg-muted);">
+                  <span>Service fee ({{ platform_fee_percent | round(1) }}%)</span>
+                  <span x-text="formatAmount(platformFeeEstimate)"></span>
+                </div>
+                <div class="reg-summary-line" style="font-size:13px; color:var(--reg-muted);">
+                  <span>Processing fee (est.)</span>
+                  <span x-text="formatAmount(gatewayFeeEstimate)"></span>
+                </div>
+              </div>
+            </template>
+
+            <template x-if="subtotalAfterDiscount > 0 && !passFeesToBuyer">
+              <div class="reg-summary-line" style="font-size:12.5px;">
+                <span style="color:var(--reg-muted);">Payment processing</span>
+                <span style="color:#15803d; font-weight:600;">Included in face value</span>
+              </div>
+            </template>
+
+            <!-- Total Line -->
+            <div class="reg-summary-total-line">
+              <span>Total amount</span>
+              <span class="reg-summary-total-val" x-text="total === 0 ? 'Free' : formatAmount(total)"></span>
+            </div>
+
+            <div x-show="total > 0 && passFeesToBuyer" style="font-size:11.5px; color:var(--reg-muted); margin-top:8px; line-height:1.45;">
+              Includes platform service fees and estimated processing. Final payment gateway rate depends on your selected card or bank.
+            </div>
+
+            <!-- Error Banner -->
+            <div x-show="error" x-text="error" style="display:none; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; padding:12px; border-radius:10px; font-size:13px; margin-top:16px;"></div>
+
+            <!-- Submit CTA Button -->
+            <button
+              type="submit"
+              class="reg-submit-btn"
+              :disabled="submitting"
+            >
+              <template x-if="!submitting">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                  <span x-text="total === 0 ? 'Complete free registration' : 'Proceed to payment'"></span>
+                  <i class="fa-solid fa-lock" style="font-size:13px;"></i>
+                </span>
+              </template>
+              <template x-if="submitting">
+                <span style="display:inline-flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-circle-notch fa-spin"></i>
+                  <span>Securing your order...</span>
+                </span>
+              </template>
+            </button>
+
+            <!-- Guarantee Box -->
+            <div class="reg-guarantee-pill">
+              <i class="fa-solid fa-shield-halved"></i>
+              <div>
+                <strong style="display:block; color:#0f172a; margin-bottom:2px;">Heelo Buyer Protection</strong>
+                Tickets are 100% verified. Instant digital pass delivery to your email and Apple Wallet.
+              </div>
+            </div>
+
+            <p style="font-size:11.5px; color:var(--reg-muted); text-align:center; margin:16px 0 0; line-height:1.5;">
+              By completing this registration, you agree to Heelo's <a href="/terms" target="_blank" style="color:var(--reg-muted); text-decoration:underline;">Terms</a> and <a href="/privacy" target="_blank" style="color:var(--reg-muted); text-decoration:underline;">Privacy Policy</a>.
+            </p>
+          </div>
+        </div>
+
       </div>
-
-      <!-- Order summary -->
-      <div class="order-summary">
-        <div style="font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px;">Order summary</div>
-        <template x-for="[ttId, qty] in Object.entries(quantities).filter(([,q])=>q>0)" :key="ttId">
-          <div class="order-summary-row">
-            <span x-text="getTicketName(ttId) + ' × ' + qty"></span>
-            <span x-text="formatAmount(getTicketPrice(ttId) * qty)"></span>
-          </div>
-        </template>
-        <div class="order-summary-row" x-show="discountAmount > 0" style="color:#007A33; display:none;">
-          <span>Promo discount</span>
-          <span x-text="'−' + formatAmount(discountAmount)"></span>
-        </div>
-        <div class="order-summary-total">
-          <span>Total</span>
-          <span x-text="total === 0 ? 'Free' : formatAmount(total)"></span>
-        </div>
-      </div>
-
-      <!-- Error message -->
-      <div x-show="error" x-text="error" class="alert alert-danger" style="display:none; margin-bottom:16px;"></div>
-
-      <!-- Submit -->
-      <button
-        type="submit"
-        class="btn btn-primary btn-full"
-        style="font-size:15px; height:48px;"
-        :class="{'btn-loading': submitting}"
-        :disabled="submitting"
-      >
-        <span class="btn-label" x-text="total === 0 ? 'Complete registration' : 'Proceed to payment'"></span>
-      </button>
-
-      <p style="font-size:12px; color:var(--text-muted); text-align:center; margin-top:12px;">
-        By registering you agree to Heelo's <a href="/terms" style="color:var(--text-muted);">Terms of Service</a>.
-        Your ticket details will be sent to your email.
-      </p>
     </form>
   </div>
 
 </div>
 
+{% if not org or org.show_powered_by %}
+<div style="text-align:center; padding:0 20px 36px;">
+  <a href="/" style="font-size:12.5px; color:var(--reg-muted); text-decoration:none;">Powered by <strong style="color:var(--reg-text);">heelo</strong></a>
+</div>
+{% endif %}
+
 <script>
 const _ticketTypes = {{ ticket_types_json | safe }};
 const _formFields = {{ form_fields_json | safe }};
 const _eventSlug = {{ event.slug | tojson }};
-const _currency = {{ (ticket_types[0].currency if ticket_types else (org.currency if org else 'NGN')) | tojson }};
+const _feeConfig = {{ fee_config_json | safe }};
+const _platformFeePercent = {{ platform_fee_percent }};
+const _passFeesToBuyer = {{ 'true' if event.pass_fees_to_buyer else 'false' }};
+
+function grossUpForBuyerFees(subtotal) {
+  const platformFee = subtotal * (_platformFeePercent / 100);
+  if (!_feeConfig) return { total: subtotal + platformFee, platformFee, gatewayFee: 0 };
+  const { rate, fixed, fixed_waived_below, cap } = _feeConfig;
+  const base = subtotal + platformFee;
+  let total = (base + fixed) / (1 - rate);
+  if (fixed > 0 && total < fixed_waived_below) total = base / (1 - rate);
+  if (cap !== null && (total - base) > cap) total = base + cap;
+  const gatewayFee = total - subtotal - platformFee;
+  return { total, platformFee, gatewayFee };
+}
+const _currency = {{ (ticket_types[0].currency if ticket_types else (org.currency if org else 'USD')) | tojson }};
+const _currencySymbol = {{ ((ticket_types[0].currency if ticket_types else (org.currency if org else 'USD')) | currency_symbol) | tojson }};
 
 // Pre-selected quantities from event page (URL params: t_<uuid>=<qty>)
-// Only keep UUIDs that exist in _ticketTypes (guards against stale URLs)
 const _preSelected = (() => {
   const p = new URLSearchParams(window.location.search);
   const result = {};
@@ -471,8 +1225,7 @@ const _preSelected = (() => {
 })();
 const _preTotal = Object.values(_preSelected).reduce((a, b) => a + b, 0);
 
-// Referral link capture — global (not nested in registerForm()) so `x-show="_referralCode"`
-// can read it directly, same as _eventSlug/_preSelected above.
+// Referral link capture
 const _referralCode = (() => {
   const fromUrl = new URLSearchParams(window.location.search).get('ref');
   if (fromUrl) sessionStorage.setItem('_referral_code', fromUrl);
@@ -488,7 +1241,6 @@ function registerForm() {
       utm_campaign: p.get('utm_campaign') || sessionStorage.getItem('_utm_campaign') || null,
     };
   })();
-  // persist UTM params across page navigations within the session
   if (_utmParams.utm_source)   sessionStorage.setItem('_utm_source',   _utmParams.utm_source);
   if (_utmParams.utm_medium)   sessionStorage.setItem('_utm_medium',   _utmParams.utm_medium);
   if (_utmParams.utm_campaign) sessionStorage.setItem('_utm_campaign', _utmParams.utm_campaign);
@@ -539,8 +1291,28 @@ function registerForm() {
       return sum;
     },
 
-    get total() {
+    get subtotalAfterDiscount() {
       return Math.max(0, this.rawTotal - this.discountAmount);
+    },
+
+    get passFeesToBuyer() {
+      return _passFeesToBuyer;
+    },
+
+    get platformFeeEstimate() {
+      if (this.subtotalAfterDiscount <= 0 || !_passFeesToBuyer) return 0;
+      return grossUpForBuyerFees(this.subtotalAfterDiscount).platformFee;
+    },
+
+    get gatewayFeeEstimate() {
+      if (this.subtotalAfterDiscount <= 0 || !_passFeesToBuyer) return 0;
+      return grossUpForBuyerFees(this.subtotalAfterDiscount).gatewayFee;
+    },
+
+    get total() {
+      const subtotal = this.subtotalAfterDiscount;
+      if (subtotal <= 0 || !_passFeesToBuyer) return subtotal;
+      return grossUpForBuyerFees(subtotal).total;
     },
 
     getQty(ttId) {
@@ -569,7 +1341,8 @@ function registerForm() {
 
     formatAmount(n) {
       if (n === 0) return 'Free';
-      return _currency + ' ' + parseFloat(n).toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+      const sym = _currencySymbol || (_currency + ' ');
+      return sym + parseFloat(n).toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
     },
 
     goToDetails() {
@@ -581,6 +1354,11 @@ function registerForm() {
         phone: '',
       }));
       this.step = 2;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    goToTickets() {
+      this.step = 1;
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
@@ -659,7 +1437,6 @@ function registerForm() {
         } else if (order.payment_status === 'paid') {
           window.location.href = `/orders/${order.id}/confirmation`;
         } else {
-          // Order created but payment init failed — send to pending page with retry button
           window.location.href = `/orders/${order.id}/confirmation?pending=1`;
         }
       } catch {

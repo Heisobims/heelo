@@ -1,4 +1,4 @@
-"""Auth flow — register, login, token refresh, logout."""
+"""Auth flow - register, login, token refresh, logout."""
 
 from __future__ import annotations
 
@@ -33,6 +33,55 @@ async def test_register_duplicate_email_returns_409(client: AsyncClient, user):
         },
     )
     assert resp.status_code == 409
+
+
+async def test_register_rate_limited_per_email(client: AsyncClient, monkeypatch):
+    """Regression test: /register and /resend-otp had zero throttling, so
+    either could be spammed to mass-trigger OTP emails at any target
+    inbox. Now backed by the same fail-open Redis counter as login."""
+    from app.routers import auth as auth_router
+    from app.utils import rate_limit as rl
+
+    fake = _FakeRedis()
+    monkeypatch.setattr(rl, "_redis", lambda: fake)
+
+    email = "rate-limited@example.com"
+    for i in range(auth_router._REGISTER_MAX_PER_EMAIL):
+        resp = await client.post(
+            "/api/v1/auth/register",
+            json={
+                "full_name": "Rate Limited",
+                "email": email,
+                "password": "Str0ngP@ss!",
+                "role": "organizer",
+            },
+        )
+        assert resp.status_code == 201, f"attempt {i} should have succeeded"
+
+    resp = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "full_name": "Rate Limited",
+            "email": email,
+            "password": "Str0ngP@ss!",
+            "role": "organizer",
+        },
+    )
+    assert resp.status_code == 429
+
+
+async def test_register_not_rate_limited_when_redis_unavailable(client: AsyncClient):
+    for i in range(10):
+        resp = await client.post(
+            "/api/v1/auth/register",
+            json={
+                "full_name": "No Redis",
+                "email": f"no-redis-{i}@example.com",
+                "password": "Str0ngP@ss!",
+                "role": "organizer",
+            },
+        )
+        assert resp.status_code == 201
 
 
 async def test_login_returns_tokens(client: AsyncClient, user):
@@ -71,9 +120,90 @@ async def test_login_unknown_email_returns_401(client: AsyncClient):
     assert resp.status_code == 401
 
 
+class _FakeRedis:
+    """Minimal in-memory stand-in for the subset of the redis-py API the
+    login rate limiter uses - Redis isn't running in the test environment,
+    so this lets us exercise the actual limiting logic instead of just its
+    fail-open no-Redis path."""
+
+    def __init__(self):
+        self.counts: dict[str, int] = {}
+
+    def get(self, key):
+        val = self.counts.get(key)
+        return str(val) if val is not None else None
+
+    def incr(self, key):
+        self.counts[key] = self.counts.get(key, 0) + 1
+        return self.counts[key]
+
+    def expire(self, key, seconds):
+        pass
+
+    def delete(self, key):
+        self.counts.pop(key, None)
+
+
+async def test_login_rate_limited_after_too_many_failed_attempts(
+    client: AsyncClient, user, monkeypatch
+):
+    """Regression test: /login had zero in-app throttling and relied
+    entirely on an unverifiable Nginx-level comment. Now backed by a Redis
+    attempt counter (defense-in-depth, fails open if Redis is unreachable)."""
+    from app.services import auth_service
+
+    fake = _FakeRedis()
+    monkeypatch.setattr(auth_service, "_login_redis", lambda: fake)
+
+    for _ in range(auth_service._LOGIN_MAX_ATTEMPTS):
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"email": user.email, "password": "wrongpassword"},
+        )
+        assert resp.status_code == 401
+
+    resp = await client.post(
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "password123"},  # correct password
+    )
+    assert resp.status_code == 429
+
+
+async def test_login_rate_limit_resets_on_success(client: AsyncClient, user, monkeypatch):
+    from app.services import auth_service
+
+    fake = _FakeRedis()
+    monkeypatch.setattr(auth_service, "_login_redis", lambda: fake)
+
+    for _ in range(auth_service._LOGIN_MAX_ATTEMPTS - 1):
+        await client.post(
+            "/api/v1/auth/login",
+            json={"email": user.email, "password": "wrongpassword"},
+        )
+
+    resp = await client.post(
+        "/api/v1/auth/login",
+        json={"email": user.email, "password": "password123"},
+    )
+    assert resp.status_code == 200
+    assert fake.counts.get(f"login_attempts:{user.email.lower()}") is None
+
+
+async def test_login_not_rate_limited_when_redis_unavailable(client: AsyncClient, user):
+    """Fails open - Redis isn't running in dev/test, and login must keep
+    working exactly as before, same convention as every other
+    Redis-dependent feature in this codebase."""
+    for _ in range(10):
+        resp = await client.post(
+            "/api/v1/auth/login",
+            json={"email": user.email, "password": "wrongpassword"},
+        )
+        assert resp.status_code == 401
+
+
 async def test_access_protected_endpoint_with_valid_token(client: AsyncClient, user_headers):
     resp = await client.get("/api/v1/organizations", headers=user_headers)
-    # 200 or empty list — just not 401
+    # 200 or empty list - just not 401
     assert resp.status_code != 401
 
 

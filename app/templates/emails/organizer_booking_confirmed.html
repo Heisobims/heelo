@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block subject %}Booking Confirmed: {{ vendor_name }} for {{ event_name }}{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 12px;font-family:Georgia,serif;font-size:24px;font-weight:900;color:#000000;line-height:1.2;">
+  Your Vendor Booking is Confirmed!
+</h1>
+<p style="margin:0 0 24px;font-family:system-ui,-apple-system,sans-serif;font-size:15px;color:#555555;line-height:1.6;">
+  Hello <strong>{{ requester_name }}</strong>,<br />
+  Your payment of <strong>₦{{ "{:,.2f}".format(total_amount) }}</strong> has been verified. <strong>{{ vendor_name }}</strong> is officially booked for <strong>{{ event_name }}</strong>.
+</p>
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-radius:12px;background:#FAF7F2;border:1px solid #EFEAE3;margin-bottom:24px;">
+  <tr>
+    <td style="padding:20px 24px;">
+      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-family:system-ui,-apple-system,sans-serif;font-size:14px;color:#131B17;line-height:1.8;">
+        <tr>
+          <td style="color:#56625C;width:140px;"><strong>Booking Reference:</strong></td>
+          <td><strong style="font-family:monospace;">{{ booking_reference }}</strong></td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Vendor:</strong></td>
+          <td><strong>{{ vendor_name }}</strong></td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Event:</strong></td>
+          <td><strong>{{ event_name }}</strong></td>
+        </tr>
+        {% if event_date %}
+        <tr>
+          <td style="color:#56625C;"><strong>Event Date:</strong></td>
+          <td>{{ event_date }}</td>
+        </tr>
+        {% endif %}
+        {% if event_location %}
+        <tr>
+          <td style="color:#56625C;"><strong>Venue:</strong></td>
+          <td>{{ event_location }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td style="color:#56625C;"><strong>Amount Paid:</strong></td>
+          <td><strong style="color:#131B17;">₦{{ "{:,.2f}".format(total_amount) }}</strong></td>
+        </tr>
+        <tr>
+          <td style="color:#56625C;"><strong>Payment Ref:</strong></td>
+          <td>{{ payment_reference }}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:16px;margin-bottom:24px;font-family:system-ui,-apple-system,sans-serif;font-size:13.5px;color:#065f46;line-height:1.5;">
+  <strong>Heelo Escrow Protection Guarantee:</strong> Your funds are securely held in escrow until the event service is fulfilled. If any dispute arises, our Trust &amp; Safety team intervenes with official dispute resolution.
+</div>
+
+<table border="0" cellpadding="0" cellspacing="0">
+  <tr>
+    <td style="background:#E85938;border-radius:9999px;">
+      <a href="{{ frontend_url }}/vendors/{{ vendor_slug }}" style="display:inline-block;padding:14px 28px;font-family:system-ui,-apple-system,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;">
+        View Vendor Profile &amp; Contact Info →
+      </a>
+    </td>
+  </tr>
+</table>
+{% endblock %}
+

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Rate {{ event.title }} — Heelo{% endblock %}
+{% block title %}Rate {{ event.title }} | Heelo{% endblock %}
 
 {% block head %}
 <style>
@@ -19,7 +19,7 @@
 
     <div x-show="!submitted">
       <h1 class="h1" style="margin-bottom:10px;">How was {{ event.title }}?</h1>
-      <p class="text-secondary" style="margin-bottom:28px;">Hi {{ reg.attendee_name }} — your feedback helps the organizer make the next one even better.</p>
+      <p class="text-secondary" style="margin-bottom:28px;">Hi {{ reg.attendee_name }}, your feedback helps the organizer make the next one even better.</p>
 
       <div x-show="error" class="alert alert-danger mb-4" x-text="error" style="display:none;"></div>
 
@@ -46,7 +46,7 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#007A33" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       </div>
       <h1 class="h1" style="margin-bottom:10px;">Thanks for the feedback!</h1>
-      <p class="text-secondary">The organizer will see this — it genuinely helps.</p>
+      <p class="text-secondary">The organizer will see this: it genuinely helps.</p>
     </div>
 
   </div>

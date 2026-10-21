@@ -1,4 +1,4 @@
-{# HTMX partial — replaces #crm-results on search/filter change #}
+{# HTMX partial - replaces #crm-results on search/filter change #}
 <div id="crm-results">
   {% if registrations %}
   <div class="crm-table-wrap">
@@ -41,7 +41,7 @@
             {% endif %}
           </td>
           <td>
-            <div class="cell-main">{{ r.created_at.strftime('%b %d, %Y') if r.created_at else '—' }}</div>
+            <div class="cell-main">{{ r.created_at.strftime('%b %d, %Y') if r.created_at else '-' }}</div>
             {% if r.checked_in_at %}
             <div class="att-sub checked-in"><span class="material-symbols-outlined">check</span><span>Checked in {{ r.checked_in_at.strftime('%H:%M') }}</span></div>
             {% endif %}

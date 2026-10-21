@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -13,6 +14,7 @@ from sqlalchemy.orm import selectinload
 from app.models.event import Event, EventCategory, event_category_link
 from app.models.organization import Organization
 from app.schemas.event import DEFAULT_SECTION_ORDER, EventCreateRequest, EventUpdateRequest
+from app.utils.cache import cache_get, cache_set
 
 logger = structlog.get_logger()
 
@@ -20,7 +22,7 @@ logger = structlog.get_logger()
 def get_effective_section_order(event: Event) -> list[dict]:
     """The event's saved section_order, with any section keys it's missing
     (e.g. added to DEFAULT_SECTION_ORDER after this event last saved a custom
-    order) appended as visible — so a new section type never silently stays
+    order) appended as visible - so a new section type never silently stays
     hidden on events that already customized their layout."""
     saved = event.section_order or []
     seen = {s["key"] for s in saved}
@@ -77,6 +79,7 @@ async def create_event(
         password=data.password,
         vibe_tags=data.vibe_tags,
         extras=data.extras,
+        pass_fees_to_buyer=data.pass_fees_to_buyer,
         status="draft",
     )
     event.categories = []
@@ -93,7 +96,11 @@ async def get_event_by_id(db: AsyncSession, event_id: uuid.UUID) -> Event | None
     return await db.scalar(
         select(Event)
         .where(Event.id == event_id, Event.deleted_at.is_(None))
-        .options(selectinload(Event.categories))
+        .options(
+            selectinload(Event.categories),
+            selectinload(Event.ticket_types),
+            selectinload(Event.organization),
+        )
     )
 
 
@@ -101,7 +108,11 @@ async def get_event_by_slug(db: AsyncSession, slug: str) -> Event | None:
     return await db.scalar(
         select(Event)
         .where(Event.slug == slug, Event.deleted_at.is_(None))
-        .options(selectinload(Event.categories))
+        .options(
+            selectinload(Event.categories),
+            selectinload(Event.ticket_types),
+            selectinload(Event.organization),
+        )
     )
 
 
@@ -203,6 +214,7 @@ async def duplicate_event(
         virtual_platform=source.virtual_platform,
         max_capacity=source.max_capacity,
         is_private=source.is_private,
+        pass_fees_to_buyer=source.pass_fees_to_buyer,
         vibe_tags=list(source.vibe_tags),
         status="draft",
     )
@@ -221,7 +233,7 @@ async def duplicate_event(
     return clone
 
 
-# Safety bound on series generation — a mistyped far-future end_date shouldn't
+# Safety bound on series generation - a mistyped far-future end_date shouldn't
 # silently create hundreds of draft events.
 MAX_RECURRING_INSTANCES = 52
 
@@ -251,7 +263,7 @@ async def generate_recurring_series(
     Generate the occurrences of a recurring event as new draft events, each a
     full copy of `parent` (including ticket types) with start/end shifted
     forward by the recurrence interval. Always drafts, regardless of the
-    parent's own status — an organizer reviews and publishes each occurrence
+    parent's own status - an organizer reviews and publishes each occurrence
     (or bulk-publishes) rather than a bad end date silently going live across
     every date in the series.
     """
@@ -367,7 +379,11 @@ async def list_org_events(
         base_q.order_by(Event.created_at.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
-        .options(selectinload(Event.categories))
+        .options(
+            selectinload(Event.categories),
+            selectinload(Event.ticket_types),
+            selectinload(Event.organization),
+        )
     )
     events = list(events_result.all())
 
@@ -389,6 +405,291 @@ async def list_org_events(
     return result, total
 
 
+_LANDING_CACHE_TTL_SECONDS = 60
+
+# The DB's EventCategory.icon column doesn't reliably hold Material Symbols
+# ligature names (it mixes in names from an earlier icon set, e.g.
+# "briefcase"/"graduation-cap") - same reason app/templates/vendors/list.html
+# keeps its own cat_icons map rather than trusting the DB value directly.
+_CATEGORY_ICONS: dict[str, str] = {
+    "technology": "computer",
+    "business": "work",
+    "music": "music_note",
+    "arts-culture": "palette",
+    "sports-fitness": "sports_soccer",
+    "food-drink": "restaurant",
+    "education": "school",
+    "health-wellness": "self_improvement",
+    "networking": "groups",
+    "startup-innovation": "rocket_launch",
+    "finance": "payments",
+    "faith-spirituality": "auto_awesome",
+    "community": "diversity_3",
+    "government-politics": "account_balance",
+    "weddings-celebrations": "favorite",
+    "nightlife-parties": "nightlife",
+    "hangouts-meetups": "celebration",
+    "concerts-live-shows": "mic",
+    "other": "grid_view",
+}
+
+
+def _serialize_showcase_event(event: Event) -> dict:
+    return {
+        "slug": event.slug,
+        "title": event.title,
+        "cover_image_url": event.cover_image_url,
+        "start_datetime": event.start_datetime.isoformat(),
+        "format": event.format,
+        "venue_city": event.venue_city,
+        "organization": {"name": event.organization.name},
+        "ticket_types": [{"price": float(tt.price)} for tt in event.ticket_types],
+    }
+
+
+def _hydrate_cached_showcase_event(row: dict) -> dict:
+    row = dict(row)
+    row["start_datetime"] = datetime.fromisoformat(row["start_datetime"])
+    return row
+
+
+async def get_landing_categories_with_events(
+    db: AsyncSession, *, max_categories: int = 6, events_per_category: int = 4
+) -> list[dict]:
+    """Real upcoming events grouped by category, for the landing page's
+    "browse by category" section. Over-fetches a batch of upcoming public
+    events (same eligibility as the old flat showcase this replaces),
+    groups them by category in Python, and returns only categories that
+    actually have at least one live event - ordered by how many events they
+    have, most first, so the default/first tab is never empty.
+
+    Cached briefly, same convention as the rest of this file's public-page
+    queries - cache rows are plain dicts, not ORM instances; the template
+    reads plain field/attribute access either way (Jinja's getattr-then-
+    getitem fallback)."""
+    cache_key = f"landing_categories_with_events:{max_categories}:{events_per_category}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        try:
+            return [
+                {
+                    "category": bucket["category"],
+                    "events": [_hydrate_cached_showcase_event(e) for e in bucket["events"]],
+                }
+                for bucket in json.loads(cached)
+            ]
+        except (ValueError, KeyError, TypeError):
+            pass  # corrupt/stale cache entry - fall through to a live query
+
+    now = datetime.now(UTC)
+    candidates = (
+        (
+            await db.scalars(
+                select(Event)
+                .options(
+                    selectinload(Event.organization),
+                    selectinload(Event.ticket_types),
+                    selectinload(Event.categories),
+                )
+                .where(
+                    Event.status.in_(["published", "live"]),
+                    Event.deleted_at.is_(None),
+                    Event.is_private == False,  # noqa: E712
+                    Event.start_datetime >= now,
+                )
+                .order_by(Event.is_featured.desc(), Event.start_datetime.asc())
+                .limit(200)
+            )
+        )
+        .unique()
+        .all()
+    )
+
+    grouped: dict[uuid.UUID, dict] = {}
+    for event in candidates:
+        for category in event.categories:
+            bucket = grouped.setdefault(
+                category.id,
+                {
+                    "category": {
+                        "name": category.name,
+                        "slug": category.slug,
+                        "icon": _CATEGORY_ICONS.get(category.slug, "grid_view"),
+                    },
+                    "events": [],
+                },
+            )
+            if len(bucket["events"]) < events_per_category:
+                bucket["events"].append(event)
+
+    buckets = sorted(grouped.values(), key=lambda b: len(b["events"]), reverse=True)
+    buckets = buckets[:max_categories]
+
+    cache_set(
+        cache_key,
+        json.dumps(
+            [
+                {
+                    "category": b["category"],
+                    "events": [_serialize_showcase_event(e) for e in b["events"]],
+                }
+                for b in buckets
+            ]
+        ),
+        ttl_seconds=_LANDING_CACHE_TTL_SECONDS,
+    )
+    return buckets
+
+
+def _pad_thumbnails(thumbnails: list[str], count: int) -> list[str]:
+    """Cycle whatever real thumbnails exist up to exactly `count` entries, so
+    the marquee always reads as a full row - never returns a fabricated URL,
+    only repeats real ones. Empty in, empty out (template renders the
+    icon-placeholder fallback when there are zero real event covers yet)."""
+    if not thumbnails:
+        return []
+    return [thumbnails[i % len(thumbnails)] for i in range(count)]
+
+
+async def get_platform_proof(db: AsyncSession, *, thumbnail_count: int = 5) -> dict:
+    """A single honest usage stat plus a handful of real event cover images,
+    for the landing page's social-proof marquee - no fabricated numbers:
+    event_count is a live COUNT of every non-draft event ever run on the
+    platform, so it's always accurate whatever the real number is, in dev
+    or production alike."""
+    cache_key = f"platform_proof:{thumbnail_count}"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        try:
+            data = json.loads(cached)
+            data["thumbnails"] = _pad_thumbnails(data["thumbnails"], thumbnail_count)
+            return data
+        except (ValueError, KeyError):
+            pass  # corrupt/stale cache entry - fall through to a live query
+
+    event_count = (
+        await db.scalar(
+            select(func.count(Event.id)).where(
+                Event.status.in_(["published", "live", "ended"]),
+                Event.deleted_at.is_(None),
+            )
+        )
+        or 0
+    )
+    raw_thumbnails = list(
+        await db.scalars(
+            select(Event.cover_image_url)
+            .where(
+                Event.status.in_(["published", "live", "ended"]),
+                Event.deleted_at.is_(None),
+                Event.is_private == False,  # noqa: E712
+                Event.cover_image_url.isnot(None),
+            )
+            .order_by(Event.created_at.desc())
+            .limit(thumbnail_count)
+        )
+    )
+
+    cache_set(
+        cache_key,
+        json.dumps({"event_count": event_count, "thumbnails": raw_thumbnails}),
+        ttl_seconds=_LANDING_CACHE_TTL_SECONDS,
+    )
+    return {
+        "event_count": event_count,
+        "thumbnails": _pad_thumbnails(raw_thumbnails, thumbnail_count),
+    }
+
+
+async def get_spotlight_event(db: AsyncSession) -> Event | dict | None:
+    """The single best real event to feature as a case-study spotlight on
+    the landing page (a real substitute for a customer testimonial - Heelo
+    has no real customers to quote yet, but it does have real events
+    actually running) - featured first, then soonest-starting. Same
+    eligibility and caching convention as get_landing_categories_with_events."""
+    cache_key = "landing_spotlight_event"
+    cached = cache_get(cache_key)
+    if cached is not None:
+        try:
+            data = json.loads(cached)
+            return _hydrate_cached_showcase_event(data) if data else None
+        except (ValueError, KeyError, TypeError):
+            pass  # corrupt/stale cache entry - fall through to a live query
+
+    now = datetime.now(UTC)
+    event = await db.scalar(
+        select(Event)
+        .options(selectinload(Event.organization), selectinload(Event.ticket_types))
+        .where(
+            Event.status.in_(["published", "live"]),
+            Event.deleted_at.is_(None),
+            Event.is_private == False,  # noqa: E712
+            Event.start_datetime >= now,
+        )
+        .order_by(Event.is_featured.desc(), Event.start_datetime.asc())
+        .limit(1)
+    )
+
+    cache_set(
+        cache_key,
+        json.dumps(_serialize_showcase_event(event) if event else None),
+        ttl_seconds=_LANDING_CACHE_TTL_SECONDS,
+    )
+    return event
+
+
+CURATED_EVENT_SECTIONS: dict[str, dict] = {
+    "featured": {
+        "key": "featured",
+        "title": "Featured Events",
+        "subtitle": "Hand-picked and spotlighted events you shouldn't miss",
+        "anchor": "featured",
+        "badge": "Featured",
+        "icon": "auto_awesome",
+    },
+    "weekend": {
+        "key": "weekend",
+        "title": "Upcoming This Weekend",
+        "subtitle": "Get out and explore exciting events happening this weekend",
+        "anchor": "weekend",
+        "badge": "This Weekend",
+        "icon": "weekend",
+    },
+    "new": {
+        "key": "new",
+        "title": "New on Heelo",
+        "subtitle": "Freshly added events and newly published experiences",
+        "anchor": "new",
+        "badge": "Just Added",
+        "icon": "fiber_new",
+    },
+    "above_10k": {
+        "key": "above_10k",
+        "title": "Events Above 10,000",
+        "subtitle": "Conferences, festivals, and premium VIP experiences",
+        "anchor": "above-10k",
+        "badge": "Above 10k",
+        "icon": "diamond",
+    },
+    "below_10k": {
+        "key": "below_10k",
+        "title": "Events Under 10,000",
+        "subtitle": "Affordable outings, community gatherings, and meetups under ₦10,000",
+        "anchor": "under-10k",
+        "badge": "Under 10k",
+        "icon": "confirmation_number",
+    },
+    "free": {
+        "key": "free",
+        "title": "Zero Dime Event",
+        "subtitle": "Free entry events: reserve your spot without spending a dime",
+        "anchor": "zero-dime",
+        "badge": "Zero Dime",
+        "icon": "savings",
+    },
+}
+
+
 async def search_public_events(
     db: AsyncSession,
     *,
@@ -397,11 +698,15 @@ async def search_public_events(
     city: str | None = None,
     country: str | None = None,
     category_slug: str | None = None,
+    curated_section: str | None = None,
     from_date: datetime | None = None,
     to_date: datetime | None = None,
     page: int = 1,
     per_page: int = 20,
 ) -> tuple[list[Event], int]:
+    from sqlalchemy import and_, extract
+    from app.models.ticketing import TicketType
+
     stmt = select(Event).where(
         Event.status.in_(["published", "live"]),
         Event.deleted_at.is_(None),
@@ -433,14 +738,81 @@ async def search_public_events(
             .where(EventCategory.slug == category_slug)
         )
 
+    order_by_clause = Event.start_datetime.asc()
+
+    if curated_section:
+        sec = curated_section.lower().replace("-", "_").strip()
+        if sec == "featured":
+            stmt = stmt.where(Event.is_featured == True)
+        elif sec in ("weekend", "this_weekend"):
+            # Events taking place on Friday (5), Saturday (6), or Sunday (7)
+            stmt = stmt.where(extract("isodow", Event.start_datetime).in_([5, 6, 7]))
+        elif sec in ("new", "new_on_heelo"):
+            order_by_clause = Event.created_at.desc()
+        elif sec in ("above_10k", "above10k"):
+            stmt = stmt.where(
+                Event.ticket_types.any(
+                    and_(TicketType.is_visible == True, TicketType.price >= 10000)
+                )
+            )
+        elif sec in ("below_10k", "below10k", "under_10k", "under10k"):
+            stmt = stmt.where(
+                Event.ticket_types.any(
+                    and_(TicketType.is_visible == True, TicketType.price > 0, TicketType.price < 10000)
+                )
+            )
+        elif sec in ("free", "zero_dime", "zerodime"):
+            stmt = stmt.where(
+                ~Event.ticket_types.any(
+                    and_(TicketType.is_visible == True, TicketType.price > 0)
+                )
+            )
+
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     result = await db.scalars(
-        stmt.order_by(Event.start_datetime.asc())
+        stmt.order_by(order_by_clause)
         .offset((page - 1) * per_page)
         .limit(per_page)
-        .options(selectinload(Event.categories))
+        .options(
+            selectinload(Event.categories),
+            selectinload(Event.ticket_types),
+            selectinload(Event.organization),
+        )
     )
     return list(result.all()), total
+
+
+async def get_curated_event_sections(
+    db: AsyncSession,
+    *,
+    limit_per_section: int = 12,
+) -> list[dict]:
+    """Fetch events grouped by the 6 curated discovery sections for the /events page:
+    - featured
+    - weekend (Upcoming this weekend)
+    - new (New on Heelo)
+    - above_10k (Events above 10,000)
+    - below_10k (Events under 10,000)
+    - free (Zero dime events)
+
+    Returns a list of section metadata dicts containing up to limit_per_section events
+    (default 12) for horizontal 4-in-a-row scrolling and the total count for the section.
+    """
+    sections = []
+    for key, conf in CURATED_EVENT_SECTIONS.items():
+        events, total = await search_public_events(
+            db,
+            curated_section=key,
+            page=1,
+            per_page=limit_per_section,
+        )
+        sections.append({
+            **conf,
+            "events": events,
+            "total": total,
+            "view_all_url": f"/events?category_section={key}",
+        })
+    return sections
 
 
 async def get_discovery_feed(
@@ -453,7 +825,7 @@ async def get_discovery_feed(
     Feed-style ranking for the /discover page: upcoming events soonest-first,
     with same-day events ordered by popularity (confirmed registration count).
 
-    Location proximity is intentionally not ranked server-side — there's no
+    Location proximity is intentionally not ranked server-side - there's no
     stored user location, so the feed template re-sorts the fetched page
     client-side using browser geolocation when available (see discover.html).
     Returns a list of (event, registration_count) tuples.
@@ -471,14 +843,18 @@ async def get_discovery_feed(
         stmt.order_by(Event.start_datetime.asc())
         .offset((page - 1) * per_page)
         .limit(per_page)
-        .options(selectinload(Event.categories))
+        .options(
+            selectinload(Event.categories),
+            selectinload(Event.ticket_types),
+            selectinload(Event.organization),
+        )
     )
     events = list(result.all())
 
     counts = await _batch_registration_counts(db, [e.id for e in events])
 
     # Secondary sort: within the same day, more popular events surface first.
-    # (Cross-page reordering is out of scope for v1 — see docstring.)
+    # (Cross-page reordering is out of scope for v1 - see docstring.)
     ranked = sorted(
         events,
         key=lambda e: (e.start_datetime.date(), -counts.get(e.id, 0), e.start_datetime),

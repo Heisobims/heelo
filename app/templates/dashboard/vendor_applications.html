@@ -1,0 +1,527 @@
+{% extends "dashboard/layout.html" %}
+{% block title %}Vendors & Booth Applications | {{ org.name }} | Heelo{% endblock %}
+{% set active_page = 'vendors' %}
+
+{% block main_content %}
+<div class="dash-content" x-data="vendorApplicationsManager('{{ org.slug }}')">
+
+  <!-- Breadcrumb -->
+  <div style="font-size:13px; color:var(--text-muted); margin-bottom:16px; display:flex; align-items:center; gap:6px;">
+    <a href="/org/{{ org.slug }}" style="color:var(--text-muted); text-decoration:none;">{{ org.name }}</a>
+    <span>›</span>
+    <span>Vendors & Exhibitor Booths</span>
+  </div>
+
+  <!-- Header -->
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div>
+      <h1 style="font-size:24px; font-weight:800; margin:0 0 4px; color:var(--text-primary); font-family:var(--font-serif);">
+        Vendor & Exhibitor Management
+      </h1>
+      <p style="font-size:14px; color:var(--text-muted); margin:0;">
+        Review booth applications, assign space numbers, and send automated invoices to exhibitors.
+      </p>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button @click.stop="openPackageModal()" class="btn btn-secondary btn-sm" type="button" style="display:flex; align-items:center; gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Booth Package
+      </button>
+    </div>
+  </div>
+
+  <!-- Metrics Ribbon -->
+  <div class="metrics-grid" style="margin-bottom:24px;">
+    <div class="metric-card">
+      <div class="metric-label">Total Applications</div>
+      <div class="metric-value" x-text="metrics.total">0</div>
+      <div class="metric-change">All events</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Pending Review</div>
+      <div class="metric-value" style="color:#d97706;" x-text="metrics.pending">0</div>
+      <div class="metric-change">Awaiting your approval</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Approved (Unpaid)</div>
+      <div class="metric-value" style="color:#2563eb;" x-text="metrics.approved">0</div>
+      <div class="metric-change">Invoice link sent</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Confirmed Booths</div>
+      <div class="metric-value" style="color:#16a34a;" x-text="metrics.paid">0</div>
+      <div class="metric-change">Reserved & paid</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Booth Revenue</div>
+      <div class="metric-value" x-text="metrics.revenue_display">NGN 0</div>
+      <div class="metric-change">Exhibitor fees</div>
+    </div>
+  </div>
+
+  <!-- Filters & Search -->
+  <div style="background:#ffffff; border:1px solid var(--border-light); border-radius:14px; padding:16px 20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <!-- Status filter pills -->
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+      <button type="button" @click="filterStatus = 'all'; applyFilter()" class="btn btn-sm" :class="filterStatus === 'all' ? 'btn-primary' : 'btn-secondary'">All</button>
+      <button type="button" @click="filterStatus = 'pending'; applyFilter()" class="btn btn-sm" :class="filterStatus === 'pending' ? 'btn-primary' : 'btn-secondary'">Pending</button>
+      <button type="button" @click="filterStatus = 'approved'; applyFilter()" class="btn btn-sm" :class="filterStatus === 'approved' ? 'btn-primary' : 'btn-secondary'">Approved</button>
+      <button type="button" @click="filterStatus = 'paid'; applyFilter()" class="btn btn-sm" :class="filterStatus === 'paid' ? 'btn-primary' : 'btn-secondary'">Paid / Confirmed</button>
+      <button type="button" @click="filterStatus = 'rejected'; applyFilter()" class="btn btn-sm" :class="filterStatus === 'rejected' ? 'btn-primary' : 'btn-secondary'">Rejected</button>
+    </div>
+
+    <!-- Event filter dropdown bar -->
+    {% if events and events|length > 0 %}
+    <div class="aff-event-filter-wrap">
+      <label class="aff-filter-label">Filter by Event:</label>
+      <select 
+        class="aff-event-select"
+        :class="{ 'active': selectedEventId }"
+        x-model="selectedEventId" 
+        @change="applyFilter()" 
+      >
+        <option value="">All Events ({{ events|length }})</option>
+        {% for ev in events %}
+        <option value="{{ ev.id }}">{{ ev.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Applications List / Table -->
+  <div style="background:#ffffff; border:1px solid var(--border-light); border-radius:14px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+    
+    <!-- Loading State -->
+    <div x-show="loading" style="padding:40px; text-align:center; color:var(--text-muted); font-size:14px;">
+      Loading booth applications...
+    </div>
+
+    <!-- Empty State -->
+    <div x-show="!loading && applications.length === 0" style="padding:48px 24px; text-align:center;">
+      <div style="width:48px; height:48px; border-radius:50%; background:#f3f4f6; display:flex; align-items:center; justify-content:center; margin:0 auto 12px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+      </div>
+      <h3 style="font-size:16px; font-weight:700; margin:0 0 4px; color:var(--text-primary);">No booth applications found</h3>
+      <p style="font-size:13px; color:var(--text-muted); margin:0;">Exhibitor applications will appear here as vendors submit them.</p>
+    </div>
+
+    <!-- Table -->
+    <div x-show="!loading && applications.length > 0" style="overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px; text-align:left;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border-light); background:#f9fafb; color:#6b7280; font-size:12px; text-transform:uppercase;">
+            <th style="padding:12px 18px; font-weight:600;">Exhibitor / Business</th>
+            <th style="padding:12px 18px; font-weight:600;">Event</th>
+            <th style="padding:12px 18px; font-weight:600;">Package & Fee</th>
+            <th style="padding:12px 18px; font-weight:600;">Assigned Booth</th>
+            <th style="padding:12px 18px; font-weight:600;">Status</th>
+            <th style="padding:12px 18px; font-weight:600; text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="app in applications" :key="app.id">
+            <tr style="border-bottom:1px solid var(--border-light); transition:background 0.15s ease;">
+              <!-- Business & Contact -->
+              <td style="padding:14px 18px;">
+                <strong style="font-size:14px; color:var(--text-primary); display:block;" x-text="app.business_name"></strong>
+                <span style="font-size:12px; color:var(--text-muted);" x-text="app.category"></span>
+                <div style="font-size:12px; color:#6b7280; margin-top:2px;">
+                  <span x-text="app.contact_name"></span> · <span x-text="app.contact_email"></span>
+                </div>
+                <template x-if="app.booth_requirements">
+                  <div style="margin-top:4px; font-size:11px; color:#4b5563; background:#f3f4f6; padding:2px 6px; border-radius:4px; display:inline-block;" x-text="'Req: ' + app.booth_requirements"></div>
+                </template>
+              </td>
+
+              <!-- Event -->
+              <td style="padding:14px 18px; color:var(--text-primary);" x-text="app.event_title || ''"></td>
+
+              <!-- Package & Fee -->
+              <td style="padding:14px 18px;">
+                <div style="font-weight:600; color:var(--text-primary);" x-text="app.package_name || 'Standard'"></div>
+                <div style="font-size:12px; color:var(--text-muted);" x-text="app.currency + ' ' + Number(app.price).toLocaleString()"></div>
+              </td>
+
+              <!-- Booth # -->
+              <td style="padding:14px 18px;">
+                <span x-show="app.assigned_booth_number" style="background:#e5e7eb; font-weight:700; padding:2px 8px; border-radius:4px; font-size:12px;" x-text="app.assigned_booth_number"></span>
+                <span x-show="!app.assigned_booth_number" style="color:#9ca3af; font-size:12px;">Unassigned</span>
+              </td>
+
+              <!-- Status -->
+              <td style="padding:14px 18px;">
+                <span class="status-badge" :class="app.status" x-text="app.status"></span>
+              </td>
+
+              <!-- Actions -->
+              <td style="padding:14px 18px; text-align:right;">
+                <div style="display:flex; justify-content:flex-end; gap:8px; align-items:center;">
+
+                  <!-- Pending Actions -->
+                  <template x-if="app.status === 'pending'">
+                    <div style="display:flex; gap:6px;">
+                      <button type="button" @click="openApproveModal(app)" class="btn btn-primary btn-sm" style="padding:4px 10px; font-size:12px;">Approve</button>
+                      <button type="button" @click="rejectApp(app)" class="btn btn-secondary btn-sm" style="padding:4px 10px; font-size:12px; color:#dc2626;">Reject</button>
+                    </div>
+                  </template>
+
+                  <!-- Approved Actions -->
+                  <template x-if="app.status === 'approved'">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                      <button type="button" @click="copyPaymentLink(app)" class="btn btn-secondary btn-sm" style="padding:4px 8px; font-size:12px;" title="Copy Invoice / Payment Link">
+                        Copy Link
+                      </button>
+                      <button type="button" @click="markPaid(app)" class="btn btn-secondary btn-sm" style="padding:4px 8px; font-size:12px; color:#16a34a;" title="Mark Paid Manually">
+                        Mark Paid
+                      </button>
+                    </div>
+                  </template>
+
+                  <!-- Paid Status Indicator -->
+                  <template x-if="app.status === 'paid'">
+                    <span style="font-size:12px; color:#16a34a; font-weight:600; display:flex; align-items:center; gap:4px;">
+                      <span class="material-symbols-outlined" style="font-size:15px; color:#16a34a;">check</span> Confirmed
+                    </span>
+                  </template>
+
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Approve Modal -->
+  <div class="vd-modal-overlay" x-show="approveModalOpen" x-cloak x-transition>
+    <div class="vd-modal" @click.outside="approveModalOpen = false" style="max-width:480px;">
+      <div class="vd-modal-header">
+        <h3 class="vd-modal-title">Approve Booth Application</h3>
+        <button type="button" @click="approveModalOpen = false" class="vd-modal-close"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+      </div>
+      <div style="font-size:13.5px; color:var(--text-muted); margin:-10px 0 20px; line-height:1.5;">
+        Approving this application will automatically generate an invoice and email a secure payment link to <strong x-text="targetApp?.contact_email" style="color:var(--text-primary);"></strong>.
+      </div>
+
+      <div class="vd-form-group">
+        <label class="vd-form-label">Assign Booth Number / Space ID (Optional)</label>
+        <input type="text" class="vd-form-input" x-model="boothNumberInput" placeholder="e.g. Booth B-12, Pavilion A">
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+        <button type="button" class="vd-btn vd-btn-outline" @click="approveModalOpen = false">Cancel</button>
+        <button type="button" class="vd-btn vd-btn-accent" @click="confirmApprove()" :disabled="approving">
+          <span x-show="!approving">Approve &amp; Send Invoice &rarr;</span>
+          <span x-show="approving">Sending...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Booth Package Modal -->
+  <div class="vd-modal-overlay" x-show="packageModalOpen" x-cloak x-transition @click.self="packageModalOpen = false">
+    <div class="vd-modal" @click.outside="packageModalOpen = false">
+      <div class="vd-modal-header">
+        <h3 class="vd-modal-title">Create Booth Package</h3>
+        <button type="button" @click="packageModalOpen = false" class="vd-modal-close"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+      </div>
+      <div style="font-size:13.5px; color:var(--text-muted); margin:-10px 0 20px;">
+        Configure an exhibitor booth tier with dimensions and amenities.
+      </div>
+
+      {% if not events or events|length == 0 %}
+      <div style="background:#fef3c7; border:1px solid #fde68a; color:#92400e; padding:16px; border-radius:12px; font-size:13.5px; margin-bottom:20px; text-align:left;">
+        <strong>No events found:</strong> You must create at least one event in this organization before configuring booth packages.
+        <div style="margin-top:12px;">
+          <a href="/org/{{ org.slug }}/events/new" class="vd-btn vd-btn-accent" style="padding:8px 16px; font-size:13px; text-decoration:none;">Create an Event &rarr;</a>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button type="button" class="vd-btn vd-btn-outline" @click="packageModalOpen = false">Close</button>
+      </div>
+      {% else %}
+      <form @submit.prevent="createPackage()">
+        <div class="vd-form-group">
+          <label class="vd-form-label" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Select Event <span style="color:var(--cyan,#E85938);">*</span></span>
+            <span style="font-size:11.5px; font-weight:500; color:var(--text-muted,#56625C);">Choose event for this package</span>
+          </label>
+          <select class="vd-event-select" x-model="newPackage.event_id" required>
+            <option value="">Select an event...</option>
+            {% for ev in events %}
+            <option value="{{ ev.id }}">{{ ev.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="vd-form-group">
+          <label class="vd-form-label">Package Name *</label>
+          <input type="text" class="vd-form-input" x-model="newPackage.name" required placeholder="e.g. Standard Booth (3x3m), Corner Pavilion">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div class="vd-form-group">
+            <label class="vd-form-label">Price *</label>
+            <input type="number" step="0.01" min="0" class="vd-form-input" x-model="newPackage.price" required placeholder="50000">
+          </div>
+          <div class="vd-form-group">
+            <label class="vd-form-label">Currency</label>
+            <input type="text" class="vd-form-input" x-model="newPackage.currency" required placeholder="NGN" maxlength="3" style="text-transform:uppercase;">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div class="vd-form-group">
+            <label class="vd-form-label">Dimensions</label>
+            <input type="text" class="vd-form-input" x-model="newPackage.dimensions" placeholder="e.g. 3m x 3m">
+          </div>
+          <div class="vd-form-group">
+            <label class="vd-form-label">Total Booths Available</label>
+            <input type="number" class="vd-form-input" x-model="newPackage.total_booths" min="1" max="1000" placeholder="10">
+          </div>
+        </div>
+
+        <div class="vd-form-group">
+          <label class="vd-form-label">Amenities Included (comma separated)</label>
+          <input type="text" class="vd-form-input" x-model="newPackage.amenities_raw" placeholder="2 Chairs, 1 Table, Power Outlet, Fascia Board">
+        </div>
+
+        <div x-show="packageError" x-text="packageError" style="font-size:12.5px; color:#dc2626; font-weight:600; margin-bottom:14px; padding:10px 14px; background:#fef2f2; border:1px solid #fee2e2; border-radius:10px;" x-cloak></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+          <button type="button" class="vd-btn vd-btn-outline" @click="packageModalOpen = false">Cancel</button>
+          <button type="submit" class="vd-btn vd-btn-accent" :disabled="creatingPackage">
+            <span x-show="!creatingPackage">Create Package</span>
+            <span x-show="creatingPackage">Saving...</span>
+          </button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+function vendorApplicationsManager(orgSlug) {
+  return {
+    orgSlug: orgSlug,
+    loading: true,
+    applications: [],
+    selectedEventId: '',
+    filterStatus: 'all',
+    metrics: { total: 0, pending: 0, approved: 0, paid: 0, revenue_display: 'NGN 0' },
+
+    approveModalOpen: false,
+    targetApp: null,
+    boothNumberInput: '',
+    approving: false,
+
+    packageModalOpen: false,
+    creatingPackage: false,
+    packageError: '',
+    newPackage: {
+      event_id: '{{ events[0].id if events and events|length > 0 else "" }}',
+      name: '',
+      price: '',
+      currency: '{{ org.currency or "NGN" }}',
+      dimensions: '',
+      total_booths: 10,
+      amenities_raw: 'Table, 2 Chairs, Power Outlet',
+    },
+
+    openPackageModal() {
+      if (this.selectedEventId) {
+        this.newPackage.event_id = this.selectedEventId;
+      } else if (!this.newPackage.event_id && '{{ events[0].id if events and events|length > 0 else "" }}') {
+        this.newPackage.event_id = '{{ events[0].id if events and events|length > 0 else "" }}';
+      }
+      this.packageError = '';
+      this.packageModalOpen = true;
+    },
+
+    async init() {
+      await this.loadApplications();
+    },
+
+    async loadApplications() {
+      this.loading = true;
+      try {
+        let url = `/api/v1/organizations/${this.orgSlug}/booth-applications?page=1&per_page=100`;
+        if (this.selectedEventId) url += `&event_id=${this.selectedEventId}`;
+        if (this.filterStatus && this.filterStatus !== 'all') url += `&status=${this.filterStatus}`;
+
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (data.success) {
+          this.applications = data.data;
+          this.calculateMetrics();
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    calculateMetrics() {
+      let pending = 0, approved = 0, paid = 0, rev = 0;
+      this.applications.forEach(a => {
+        if (a.status === 'pending') pending++;
+        else if (a.status === 'approved') approved++;
+        else if (a.status === 'paid') {
+          paid++;
+          rev += Number(a.price) || 0;
+        }
+      });
+      this.metrics.total = this.applications.length;
+      this.metrics.pending = pending;
+      this.metrics.approved = approved;
+      this.metrics.paid = paid;
+      this.metrics.revenue_display = 'NGN ' + rev.toLocaleString();
+    },
+
+    async applyFilter() {
+      await this.loadApplications();
+    },
+
+    openApproveModal(app) {
+      this.targetApp = app;
+      this.boothNumberInput = app.assigned_booth_number || '';
+      this.approveModalOpen = true;
+    },
+
+    async confirmApprove() {
+      if (!this.targetApp) return;
+      this.approving = true;
+      try {
+        const resp = await fetch(`/api/v1/organizations/${this.orgSlug}/booth-applications/${this.targetApp.id}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assigned_booth_number: this.boothNumberInput || null }),
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          this.approveModalOpen = false;
+          await this.loadApplications();
+          if (window.toast) window.toast('Booth application approved & invoice sent!', 'success');
+        }
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        this.approving = false;
+      }
+    },
+
+    async rejectApp(app) {
+      if (!confirm(`Reject booth application from ${app.business_name}?`)) return;
+      try {
+        const resp = await fetch(`/api/v1/organizations/${this.orgSlug}/booth-applications/${app.id}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'Space unavailable or requirements not met.' }),
+        });
+        if (resp.ok) {
+          await this.loadApplications();
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    },
+
+    copyPaymentLink(app) {
+      const url = app.invoice_url || `${window.location.origin}/booths/${app.id}/pay`;
+      navigator.clipboard.writeText(url);
+      if (window.toast) window.toast('Payment link copied to clipboard!', 'info');
+      else alert('Payment link copied!');
+    },
+
+    async markPaid(app) {
+      if (!confirm(`Mark booth as paid manually for ${app.business_name}?`)) return;
+      try {
+        const resp = await fetch(`/api/v1/booth-applications/${app.id}/confirm-payment?reference=manual_${Date.now()}`, {
+          method: 'POST',
+        });
+        if (resp.ok) {
+          await this.loadApplications();
+          if (window.toast) window.toast('Booth marked as confirmed and paid!', 'success');
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    },
+
+    async createPackage() {
+      this.packageError = '';
+      if (!this.newPackage.event_id) {
+        this.packageError = 'Please select an event for this booth package.';
+        return;
+      }
+      if (!this.newPackage.name || !this.newPackage.name.trim()) {
+        this.packageError = 'Package name is required.';
+        return;
+      }
+      const priceVal = parseFloat(this.newPackage.price);
+      if (isNaN(priceVal) || priceVal < 0) {
+        this.packageError = 'Please specify a valid price (greater than or equal to 0).';
+        return;
+      }
+
+      this.creatingPackage = true;
+      try {
+        const amenities = this.newPackage.amenities_raw
+          ? this.newPackage.amenities_raw.split(',').map(s => s.trim()).filter(Boolean)
+          : [];
+        const payload = {
+          name: this.newPackage.name.trim(),
+          price: priceVal,
+          currency: (this.newPackage.currency || '{{ org.currency or "NGN" }}').trim().toUpperCase(),
+          dimensions: this.newPackage.dimensions && this.newPackage.dimensions.trim() ? this.newPackage.dimensions.trim() : null,
+          total_booths: parseInt(this.newPackage.total_booths) || 10,
+          amenities: amenities,
+        };
+        const resp = await fetch(`/api/v1/organizations/${this.orgSlug}/events/${this.newPackage.event_id}/booth-packages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.success) {
+          this.packageModalOpen = false;
+          this.newPackage = {
+            event_id: this.selectedEventId || '{{ events[0].id if events and events|length > 0 else "" }}',
+            name: '',
+            price: '',
+            currency: '{{ org.currency or "NGN" }}',
+            dimensions: '',
+            total_booths: 10,
+            amenities_raw: 'Table, 2 Chairs, Power Outlet',
+          };
+          if (window.toast) window.toast('Booth package created successfully!', 'success');
+          else alert('Booth package created successfully!');
+          await this.loadApplications();
+        } else {
+          let msg = 'Failed to create package.';
+          if (data.error && data.error.message) {
+            msg = data.error.message;
+          } else if (typeof data.detail === 'string') {
+            msg = data.detail;
+          } else if (Array.isArray(data.detail)) {
+            msg = data.detail.map(d => d.msg || JSON.stringify(d)).join(', ');
+          }
+          this.packageError = msg;
+        }
+      } catch (err) {
+        this.packageError = err.message || 'An unexpected network error occurred.';
+      } finally {
+        this.creatingPackage = false;
+      }
+    }
+  };
+}
+</script>
+{% endblock %}
+

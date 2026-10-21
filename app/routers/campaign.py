@@ -68,7 +68,7 @@ async def create_campaign(
 
 # ── Audience count preview ────────────────────────────────────────────────────
 #
-# Must be registered before GET /{campaign_id} — FastAPI matches routes in
+# Must be registered before GET /{campaign_id} - FastAPI matches routes in
 # registration order, and "/_audience-count" would otherwise be captured by
 # the {campaign_id} path parameter, fail UUID parsing, and 422.
 
@@ -151,7 +151,7 @@ async def send_or_schedule(
         c = await camp_svc.schedule_campaign(db, c, data.scheduled_at)
         return {"success": True, "data": _campaign_dict(c), "message": "Campaign scheduled."}
     else:
-        c = await camp_svc.send_now(db, c)
+        c = await camp_svc.send_now(db, c, org_plan=org.plan)
         return {"success": True, "data": _campaign_dict(c), "message": "Campaign is sending."}
 
 

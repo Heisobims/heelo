@@ -1,0 +1,1565 @@
+{% extends "dashboard/layout.html" %} {% block title %}Affiliates & Ambassadors
+| {{ org.name }} | Heelo{% endblock %} {% set active_page = 'affiliates' %} {%
+block main_content %}
+<div class="dash-content" x-data="affiliatesDashboard('{{ org.slug }}')">
+  <!-- Breadcrumb -->
+  <div
+    style="
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    "
+  >
+    <a
+      href="/org/{{ org.slug }}"
+      style="color: var(--text-muted); text-decoration: none"
+      >{{ org.name }}</a
+    >
+    <span>›</span>
+    <span>Affiliates & Promoters</span>
+  </div>
+
+  <!-- Header -->
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    "
+  >
+    <div>
+      <h1
+        style="
+          font-size: 24px;
+          font-weight: 800;
+          margin: 0 0 4px;
+          color: var(--text-primary);
+          font-family: var(--font-serif);
+        "
+      >
+        Affiliate & Referral Tracking
+      </h1>
+      <p style="font-size: 14px; color: var(--text-muted); margin: 0">
+        Track promoter links, ticket sales driven by ambassadors, and disburse
+        commission payouts.
+      </p>
+    </div>
+    <div style="display: flex; gap: 10px">
+      <button
+        @click.stop="openNewModal()"
+        class="btn btn-primary btn-sm"
+        type="button"
+        style="display: flex; align-items: center; gap: 6px"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Ambassador
+      </button>
+    </div>
+  </div>
+
+  <!-- Metrics Ribbon -->
+  <div class="metrics-grid" style="margin-bottom: 24px">
+    <div class="metric-card">
+      <div class="metric-label">Active Ambassadors</div>
+      <div class="metric-value" x-text="metrics.total">0</div>
+      <div class="metric-change">Promoters tracking sales</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Clicks Driven</div>
+      <div class="metric-value" style="color: #2563eb" x-text="metrics.clicks">
+        0
+      </div>
+      <div class="metric-change">Total link visits</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Tickets Sold</div>
+      <div class="metric-value" style="color: #16a34a" x-text="metrics.tickets">
+        0
+      </div>
+      <div class="metric-change">Attributed sales</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Gross Sales Driven</div>
+      <div class="metric-value" x-text="metrics.gross_display">NGN 0</div>
+      <div class="metric-change">Revenue from ambassadors</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Commission Owed</div>
+      <div
+        class="metric-value"
+        style="color: #d97706"
+        x-text="metrics.owed_display"
+      >
+        NGN 0
+      </div>
+      <div class="metric-change">Pending disbursement</div>
+    </div>
+  </div>
+
+  <style>
+    /* Affiliates Toolbar & Filter Styling */
+    .aff-toolbar {
+      background: #ffffff;
+      border: 1px solid var(--border-light, #efeae3);
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      box-shadow: 0 1px 4px rgba(19, 27, 23, 0.02);
+    }
+    .aff-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      flex: 1;
+    }
+    .aff-search-wrap {
+      position: relative;
+      min-width: 200px;
+      max-width: 280px;
+      flex: 1;
+    }
+    .aff-search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted, #56625c);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+    .aff-search-input {
+      width: 100%;
+      height: 38px;
+      padding: 0 12px 0 36px;
+      border-radius: 9px;
+      border: 1.5px solid var(--border-light, #efeae3);
+      background: var(--bg-secondary, #faf7f2);
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text-primary, #131b17);
+      outline: none;
+      box-sizing: border-box;
+      transition: all 160ms ease;
+    }
+    .aff-search-input:focus {
+      border-color: var(--cyan, #e85938);
+      background: #ffffff;
+      box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+    }
+
+    /* Filter by Event Dropdown Bar */
+    .aff-event-filter-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .aff-filter-label {
+      font-size: 12.5px;
+      color: var(--text-muted, #56625c);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .aff-event-select {
+      height: 38px;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 0 36px 0 14px;
+      border-radius: 9px;
+      border: 1.5px solid var(--border-light, #efeae3);
+      background: var(--bg-secondary, #faf7f2)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2356625C' stroke-width='2.2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+        no-repeat right 12px center;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      color: var(--text-primary, #131b17);
+      min-width: 190px;
+      max-width: 290px;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+      font-family: inherit;
+      outline: none;
+      transition: all 160ms ease;
+    }
+    .aff-event-select:hover {
+      border-color: rgba(19, 27, 23, 0.25);
+      background-color: #ffffff;
+    }
+    .aff-event-select:focus {
+      border-color: var(--cyan, #e85938);
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+    }
+    .aff-event-select.active {
+      border-color: var(--cyan, #e85938);
+      background-color: rgba(232, 89, 56, 0.06);
+      color: var(--cyan-dark, #c84729);
+      font-weight: 700;
+    }
+
+    /* Segmented Toggle: All vs. Owed Payouts */
+    .aff-segmented-toggle {
+      display: inline-flex;
+      align-items: center;
+      background: var(--bg-secondary, #faf7f2);
+      padding: 3px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border-light, #efeae3);
+      gap: 2px;
+    }
+    .aff-toggle-btn {
+      border: none;
+      background: transparent;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-muted, #56625c);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 140ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+    .aff-toggle-btn:hover {
+      color: var(--text-primary, #131b17);
+    }
+    .aff-toggle-btn.active {
+      background: #ffffff;
+      color: var(--text-primary, #131b17);
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(19, 27, 23, 0.08);
+    }
+    .aff-toggle-btn.active-owed {
+      background: #ffffff;
+      color: #d97706;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(217, 119, 6, 0.14);
+    }
+    .aff-badge-count {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 700;
+      background: rgba(19, 27, 23, 0.08);
+      color: inherit;
+    }
+    .aff-badge-count.owed {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    /* Reset Filter Button */
+    .aff-reset-btn {
+      background: transparent;
+      border: none;
+      color: var(--cyan-dark, #c84729);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-family: inherit;
+      transition: all 140ms ease;
+    }
+    .aff-reset-btn:hover {
+      background: rgba(232, 89, 56, 0.08);
+    }
+
+    /* Table Header Event Column Select */
+    .aff-col-select {
+      height: 28px;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 0 22px 0 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border-light, #efeae3);
+      background: var(--bg-secondary, #faf7f2)
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2356625C' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")
+        no-repeat right 6px center;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      color: var(--text-primary, #131b17);
+      max-width: 140px;
+      text-overflow: ellipsis;
+      font-family: inherit;
+      box-sizing: border-box;
+      transition: all 140ms ease;
+    }
+    .aff-col-select:hover {
+      background-color: #ffffff;
+      border-color: rgba(19, 27, 23, 0.3);
+    }
+    .aff-col-select.active {
+      border-color: var(--cyan, #e85938);
+      background-color: rgba(232, 89, 56, 0.08);
+      color: var(--cyan-dark, #c84729);
+    }
+
+    /* Row Event Pill */
+    .aff-row-event-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--bg-secondary, #faf7f2);
+      border: 1px solid var(--border-light, #efeae3);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary, #131b17);
+      cursor: pointer;
+      transition: all 140ms ease;
+    }
+    .aff-row-event-pill:hover {
+      background: rgba(232, 89, 56, 0.08);
+      border-color: rgba(232, 89, 56, 0.25);
+      color: var(--cyan-dark, #c84729);
+      transform: translateY(-1px);
+    }
+  </style>
+
+  <!-- Filters & Search Toolbar -->
+  <div class="aff-toolbar">
+    <div class="aff-toolbar-left">
+      <!-- Search input -->
+      <div class="aff-search-wrap">
+        <span class="aff-search-icon">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </span>
+        <input
+          type="text"
+          class="aff-search-input"
+          x-model="searchQuery"
+          placeholder="Search ambassadors, codes..."
+        />
+      </div>
+
+      <!-- Filter by Event dropdown bar -->
+      {% if events and events|length > 0 %}
+      <div class="aff-event-filter-wrap">
+        <label class="aff-filter-label">Filter by Event:</label>
+        <select
+          class="aff-event-select"
+          :class="{ 'active': selectedEventId }"
+          x-model="selectedEventId"
+          @change="loadAffiliates()"
+        >
+          <option value="">All Events ({{ events|length }})</option>
+          {% for ev in events %}
+          <option value="{{ ev.id }}">{{ ev.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <!-- All / Owed Payout Toggle -->
+      <div class="aff-segmented-toggle">
+        <button
+          type="button"
+          class="aff-toggle-btn"
+          :class="{ 'active': filterStatus === 'all' }"
+          @click="filterStatus = 'all'"
+        >
+          <span>All</span>
+          <span class="aff-badge-count" x-text="affiliates.length"></span>
+        </button>
+        <button
+          type="button"
+          class="aff-toggle-btn"
+          :class="{ 'active-owed': filterStatus === 'owed' }"
+          @click="filterStatus = 'owed'"
+        >
+          <span>Owed Payouts</span>
+          <span
+            class="aff-badge-count owed"
+            x-text="affiliates.filter(a => Number(a.commission_owed) > 0).length"
+          ></span>
+        </button>
+      </div>
+
+      <!-- Reset Filters Button -->
+      <button
+        type="button"
+        class="aff-reset-btn"
+        x-show="selectedEventId || searchQuery || filterStatus !== 'all'"
+        @click="clearEventFilter()"
+        x-cloak
+        title="Reset all filters"
+      >
+        <span>Reset Filters</span>
+        <span
+          class="material-symbols-outlined"
+          style="font-size: 14px; vertical-align: -2px"
+          >close</span
+        >
+      </button>
+    </div>
+
+    <!-- Active Count Display -->
+    <div
+      style="font-size: 12.5px; color: var(--text-muted); white-space: nowrap"
+    >
+      <span x-text="filteredAffiliates.length"></span> of
+      <span x-text="affiliates.length"></span> ambassador<span
+        x-text="affiliates.length === 1 ? '' : 's'"
+      ></span>
+    </div>
+  </div>
+
+  <!-- Table Container -->
+  <div
+    style="
+      background: #ffffff;
+      border: 1px solid var(--border-light);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+    "
+  >
+    <!-- Loading -->
+    <div
+      x-show="loading"
+      style="
+        padding: 40px;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+      "
+    >
+      Loading ambassadors...
+    </div>
+
+    <!-- Empty State -->
+    <div
+      x-show="!loading && affiliates.length === 0"
+      style="padding: 48px 24px; text-align: center"
+    >
+      <div
+        style="
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: #f3f4f6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 12px;
+        "
+      >
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#9ca3af"
+          stroke-width="2"
+        >
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      </div>
+      <h3
+        style="
+          font-size: 16px;
+          font-weight: 700;
+          margin: 0 0 4px;
+          color: var(--text-primary);
+        "
+      >
+        No ambassadors registered yet
+      </h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 16px">
+        Create promoter links to let influencers, creators, and partners earn
+        commission selling tickets.
+      </p>
+      <button
+        @click="newModalOpen = true"
+        class="btn btn-primary btn-sm"
+        type="button"
+      >
+        Add First Ambassador
+      </button>
+    </div>
+
+    <!-- No Match for Current Filter -->
+    <div
+      x-show="!loading && affiliates.length > 0 && filteredAffiliates.length === 0"
+      style="padding: 40px 24px; text-align: center"
+    >
+      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px">
+        No ambassadors match your active search or event filter.
+      </p>
+      <button
+        @click="clearEventFilter()"
+        class="btn btn-secondary btn-sm"
+        type="button"
+      >
+        Clear Filters
+      </button>
+    </div>
+
+    <!-- Table -->
+    <div
+      x-show="!loading && filteredAffiliates.length > 0"
+      style="overflow-x: auto"
+    >
+      <table
+        style="
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 13px;
+          text-align: left;
+        "
+      >
+        <thead>
+          <tr
+            style="
+              border-bottom: 1px solid var(--border-light);
+              background: #f9fafb;
+              color: #6b7280;
+              font-size: 12px;
+              text-transform: uppercase;
+            "
+          >
+            <th style="padding: 12px 18px; font-weight: 600">Promoter</th>
+            <th style="padding: 12px 18px; font-weight: 600; min-width: 200px">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  gap: 8px;
+                "
+              >
+                <div style="display: flex; align-items: center; gap: 6px">
+                  <span>Event</span>
+                  <span
+                    x-show="selectedEventId"
+                    x-cloak
+                    style="
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 3px;
+                      background: rgba(232, 89, 56, 0.12);
+                      color: var(--cyan-dark, #c84729);
+                      padding: 1px 6px;
+                      border-radius: 100px;
+                      font-size: 10.5px;
+                      text-transform: none;
+                      font-weight: 700;
+                    "
+                  >
+                    Filtered
+                    <button
+                      type="button"
+                      @click.stop="clearEventFilter()"
+                      style="
+                        background: none;
+                        border: none;
+                        color: inherit;
+                        cursor: pointer;
+                        padding: 0;
+                        line-height: 1;
+                        font-size: 11px;
+                        display: inline-flex;
+                        align-items: center;
+                      "
+                      title="Clear event filter"
+                    >
+                      <span
+                        class="material-symbols-outlined"
+                        style="font-size: 12px"
+                        >close</span
+                      >
+                    </button>
+                  </span>
+                </div>
+                {% if events and events|length > 0 %}
+                <div style="position: relative" @click.stop>
+                  <select
+                    class="aff-col-select"
+                    :class="{ 'active': selectedEventId }"
+                    x-model="selectedEventId"
+                    @change="loadAffiliates()"
+                    title="Filter table by Event"
+                  >
+                    <option value="">All Events</option>
+                    {% for ev in events %}
+                    <option value="{{ ev.id }}">{{ ev.title }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                {% endif %}
+              </div>
+            </th>
+            <th style="padding: 12px 18px; font-weight: 600">
+              Referral Link / Code
+            </th>
+            <th style="padding: 12px 18px; font-weight: 600">Clicks / Sales</th>
+            <th style="padding: 12px 18px; font-weight: 600">Commission</th>
+            <th style="padding: 12px 18px; font-weight: 600">Owed</th>
+            <th style="padding: 12px 18px; font-weight: 600; text-align: right">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="a in filteredAffiliates" :key="a.id">
+            <tr
+              style="
+                border-bottom: 1px solid var(--border-light);
+                transition: background 0.15s ease;
+              "
+            >
+              <!-- Promoter -->
+              <td style="padding: 14px 18px">
+                <strong
+                  style="
+                    font-size: 14px;
+                    color: var(--text-primary);
+                    display: block;
+                  "
+                  x-text="a.promoter_name"
+                ></strong>
+                <span
+                  style="font-size: 12px; color: var(--text-muted)"
+                  x-text="a.promoter_email"
+                ></span>
+                <span
+                  x-show="a.has_automated_payout"
+                  style="
+                    font-size: 10px;
+                    background: #ecfdf5;
+                    color: #065f46;
+                    padding: 1px 5px;
+                    border-radius: 4px;
+                    margin-left: 4px;
+                  "
+                  >Bank Connected</span
+                >
+              </td>
+
+              <!-- Event Column UI -->
+              <td style="padding: 14px 18px">
+                <div style="display: flex; align-items: center; gap: 6px">
+                  <div
+                    class="aff-row-event-pill"
+                    @click="selectedEventId = a.event_id; loadAffiliates()"
+                    title="Click to filter by this event"
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <span
+                      x-text="a.event_title || 'General / All Events'"
+                    ></span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Code & Link -->
+              <td style="padding: 14px 18px">
+                <div style="display: flex; align-items: center; gap: 6px">
+                  <span
+                    style="
+                      background: #f3f4f6;
+                      padding: 2px 8px;
+                      border-radius: 4px;
+                      font-family: monospace;
+                      font-weight: 700;
+                      color: #111827;
+                    "
+                    x-text="a.affiliate_code"
+                  ></span>
+                  <button
+                    type="button"
+                    @click="copyLink(a)"
+                    style="
+                      background: none;
+                      border: none;
+                      cursor: pointer;
+                      color: #6b7280;
+                      padding: 2px;
+                    "
+                    title="Copy tracking link"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path
+                        d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+
+              <!-- Clicks & Tickets -->
+              <td style="padding: 14px 18px">
+                <span
+                  style="font-weight: 700; color: var(--text-primary)"
+                  x-text="a.tickets_sold"
+                ></span>
+                tickets
+                <div
+                  style="font-size: 12px; color: var(--text-muted)"
+                  x-text="a.clicks_count + ' clicks'"
+                ></div>
+              </td>
+
+              <!-- Commission Rate & Earned -->
+              <td style="padding: 14px 18px">
+                <div style="font-weight: 600; color: var(--text-primary)">
+                  <span
+                    x-text="a.commission_type === 'percentage' ? a.commission_rate + '%' : 'NGN ' + a.commission_rate"
+                  ></span>
+                </div>
+                <div
+                  style="font-size: 12px; color: var(--text-muted)"
+                  x-text="'Total earned: NGN ' + Number(a.commission_earned).toLocaleString()"
+                ></div>
+              </td>
+
+              <!-- Owed -->
+              <td style="padding: 14px 18px">
+                <div
+                  style="font-weight: 700"
+                  :style="a.commission_owed > 0 ? 'color:#d97706;' : 'color:#16a34a;'"
+                  x-text="'NGN ' + Number(a.commission_owed).toLocaleString()"
+                ></div>
+                <span
+                  class="status-badge"
+                  :class="a.payout_status"
+                  x-text="a.payout_status"
+                  style="font-size: 10px; padding: 2px 6px"
+                ></span>
+              </td>
+
+              <!-- Actions -->
+              <td style="padding: 14px 18px; text-align: right">
+                <div style="display: flex; justify-content: flex-end; gap: 6px">
+                  <button
+                    type="button"
+                    x-show="a.commission_owed > 0"
+                    @click="openPayoutModal(a)"
+                    class="btn btn-primary btn-sm"
+                    style="padding: 4px 10px; font-size: 12px"
+                  >
+                    Disburse Payout
+                  </button>
+                  <button
+                    type="button"
+                    @click="viewHistory(a)"
+                    class="btn btn-secondary btn-sm"
+                    style="padding: 4px 8px; font-size: 12px"
+                  >
+                    History
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- New Ambassador Modal -->
+  <div
+    class="vd-modal-overlay"
+    x-show="newModalOpen"
+    x-cloak
+    x-transition
+    @click.self="newModalOpen = false"
+  >
+    <div class="vd-modal" @click.outside="newModalOpen = false">
+      <div class="vd-modal-header">
+        <h3 class="vd-modal-title">Add Ambassador / Promoter</h3>
+        <button
+          type="button"
+          @click="newModalOpen = false"
+          class="vd-modal-close"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px"
+            >close</span
+          >
+        </button>
+      </div>
+      <div
+        style="
+          font-size: 13.5px;
+          color: var(--text-muted);
+          margin: -10px 0 20px;
+        "
+      >
+        Configure a personalized promoter link and commission rule.
+      </div>
+
+      {% if not events or events|length == 0 %}
+      <div
+        style="
+          background: #fef3c7;
+          border: 1px solid #fde68a;
+          color: #92400e;
+          padding: 16px;
+          border-radius: 12px;
+          font-size: 13.5px;
+          margin-bottom: 20px;
+          text-align: left;
+        "
+      >
+        <strong>No events found:</strong> You must create at least one event in
+        this organization before adding ambassadors.
+        <div style="margin-top: 12px">
+          <a
+            href="/org/{{ org.slug }}/events/new"
+            class="vd-btn vd-btn-accent"
+            style="padding: 8px 16px; font-size: 13px; text-decoration: none"
+            >Create an Event &rarr;</a
+          >
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end">
+        <button
+          type="button"
+          class="vd-btn vd-btn-outline"
+          @click="newModalOpen = false"
+        >
+          Close
+        </button>
+      </div>
+      {% else %}
+      <form @submit.prevent="createAmbassador()">
+        <div class="vd-form-group">
+          <label
+            class="vd-form-label"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <span
+              >Select Event
+              <span style="color: var(--cyan, #e85938)">*</span></span
+            >
+            <span
+              style="
+                font-size: 11.5px;
+                font-weight: 500;
+                color: var(--text-muted, #56625c);
+              "
+              >Choose event for this ambassador</span
+            >
+          </label>
+          <select class="vd-event-select" x-model="newAff.event_id" required>
+            <option value="">Select an event...</option>
+            {% for ev in events %}
+            <option value="{{ ev.id }}">{{ ev.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+          <div class="vd-form-group">
+            <label class="vd-form-label">Promoter Name *</label>
+            <input
+              type="text"
+              class="vd-form-input"
+              x-model="newAff.promoter_name"
+              required
+              placeholder="e.g. Alex Morgan"
+            />
+          </div>
+          <div class="vd-form-group">
+            <label class="vd-form-label">Promoter Email *</label>
+            <input
+              type="email"
+              class="vd-form-input"
+              x-model="newAff.promoter_email"
+              required
+              placeholder="alex@gmail.com"
+            />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+          <div class="vd-form-group">
+            <label class="vd-form-label">Custom Referral Code *</label>
+            <input
+              type="text"
+              class="vd-form-input"
+              x-model="newAff.affiliate_code"
+              required
+              placeholder="e.g. ALEX10"
+              style="text-transform: uppercase"
+            />
+          </div>
+          <div class="vd-form-group">
+            <label class="vd-form-label">Phone / WhatsApp</label>
+            <input
+              type="tel"
+              class="vd-form-input"
+              x-model="newAff.promoter_phone"
+              placeholder="e.g. +1 555 123 4567 or +44 7911 123456"
+            />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+          <div class="vd-form-group">
+            <label class="vd-form-label">Commission Type</label>
+            <select class="vd-form-select" x-model="newAff.commission_type">
+              <option value="percentage">Percentage (%) of ticket</option>
+              <option value="fixed">
+                Fixed amount ({{ org.currency or 'NGN' }}) per ticket
+              </option>
+            </select>
+          </div>
+          <div class="vd-form-group">
+            <label class="vd-form-label">Commission Value *</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0.1"
+              class="vd-form-input"
+              x-model="newAff.commission_rate"
+              required
+              placeholder="10"
+            />
+          </div>
+        </div>
+
+        <!-- Optional Bank Details -->
+        <div
+          style="
+            background: var(--bg-secondary, #faf7f2);
+            border: 1.5px solid var(--border-light, #efeae3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+          "
+        >
+          <span
+            style="
+              font-size: 12.5px;
+              font-weight: 700;
+              color: var(--text-primary);
+              display: block;
+              margin-bottom: 8px;
+            "
+            >Bank Account for Automated Transfers (Optional)</span
+          >
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+            <input
+              type="text"
+              class="vd-form-input"
+              style="font-size: 12.5px"
+              x-model="newAff.payout_bank_code"
+              placeholder="Bank Code (e.g. 058 GTB)"
+            />
+            <input
+              type="text"
+              class="vd-form-input"
+              style="font-size: 12.5px"
+              x-model="newAff.payout_account_number"
+              placeholder="10-digit Account Number"
+            />
+          </div>
+        </div>
+
+        <div
+          x-show="affError"
+          x-text="affError"
+          style="
+            font-size: 12.5px;
+            color: #dc2626;
+            font-weight: 600;
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            background: #fef2f2;
+            border: 1px solid #fee2e2;
+            border-radius: 10px;
+          "
+          x-cloak
+        ></div>
+
+        <div
+          style="
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+          "
+        >
+          <button
+            type="button"
+            class="vd-btn vd-btn-outline"
+            @click="newModalOpen = false"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="vd-btn vd-btn-accent"
+            :disabled="creating"
+          >
+            <span x-show="!creating">Create Ambassador</span>
+            <span x-show="creating">Saving...</span>
+          </button>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Disburse Payout Modal -->
+  <div class="vd-modal-overlay" x-show="payoutModalOpen" x-cloak x-transition>
+    <div
+      class="vd-modal"
+      @click.outside="payoutModalOpen = false"
+      style="max-width: 480px"
+    >
+      <div class="vd-modal-header">
+        <h3 class="vd-modal-title">Disburse Commission Payout</h3>
+        <button
+          type="button"
+          @click="payoutModalOpen = false"
+          class="vd-modal-close"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px"
+            >close</span
+          >
+        </button>
+      </div>
+
+      <div
+        style="
+          padding: 14px 18px;
+          background: var(--bg-secondary, #faf7f2);
+          border-radius: 12px;
+          margin-bottom: 20px;
+          font-size: 14px;
+          border: 1.5px solid var(--border-light, #efeae3);
+        "
+      >
+        Paying commission to
+        <strong x-text="targetAff?.promoter_name"></strong>. Outstanding owed:
+        <strong
+          style="color: var(--cyan-dark, #c84729)"
+          x-text="'NGN ' + Number(targetAff?.commission_owed).toLocaleString()"
+        ></strong>
+      </div>
+
+      <form @submit.prevent="submitPayout()">
+        <div class="vd-form-group">
+          <label class="vd-form-label">Payout Amount (NGN) *</label>
+          <input
+            type="number"
+            step="0.01"
+            class="vd-form-input"
+            x-model="payoutAmount"
+            :max="targetAff?.commission_owed"
+            required
+          />
+        </div>
+
+        <div class="vd-form-group">
+          <label class="vd-form-label">Payment Method</label>
+          <select class="vd-form-select" x-model="payoutMethod">
+            <option value="manual">Manual Transfer / Bank Wire Recorded</option>
+            <template x-if="targetAff?.has_automated_payout">
+              <option value="paystack_transfer">
+                Direct Automated Paystack Transfer
+              </option>
+            </template>
+          </select>
+        </div>
+
+        <div class="vd-form-group">
+          <label class="vd-form-label">Notes / Reference (Optional)</label>
+          <input
+            type="text"
+            class="vd-form-input"
+            x-model="payoutNotes"
+            placeholder="e.g. Cleared via GTBank App ref #9981"
+          />
+        </div>
+
+        <div
+          style="
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+          "
+        >
+          <button
+            type="button"
+            class="vd-btn vd-btn-outline"
+            @click="payoutModalOpen = false"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="vd-btn vd-btn-accent"
+            :disabled="submittingPayout"
+          >
+            <span x-show="!submittingPayout"
+              >Confirm &amp; Disburse &rarr;</span
+            >
+            <span x-show="submittingPayout">Processing...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Payout History Modal -->
+  <div class="vd-modal-overlay" x-show="historyModalOpen" x-cloak x-transition>
+    <div
+      class="vd-modal"
+      @click.outside="historyModalOpen = false"
+      style="max-width: 540px"
+    >
+      <div class="vd-modal-header">
+        <h3 class="vd-modal-title">Commission Payout History</h3>
+        <button
+          type="button"
+          @click="historyModalOpen = false"
+          class="vd-modal-close"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px"
+            >close</span
+          >
+        </button>
+      </div>
+
+      <div
+        x-show="historyList.length === 0"
+        style="
+          padding: 24px;
+          text-align: center;
+          color: var(--text-muted);
+          font-size: 13px;
+        "
+      >
+        No payouts recorded yet for this ambassador.
+      </div>
+
+      <div
+        x-show="historyList.length > 0"
+        style="max-height: 300px; overflow-y: auto"
+      >
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px">
+          <thead>
+            <tr
+              style="
+                border-bottom: 1px solid var(--border-light);
+                color: #6b7280;
+                text-transform: uppercase;
+                font-size: 11px;
+              "
+            >
+              <th style="padding: 8px 0">Date</th>
+              <th style="padding: 8px 0">Amount</th>
+              <th style="padding: 8px 0">Method</th>
+              <th style="padding: 8px 0; text-align: right">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="p in historyList" :key="p.id">
+              <tr style="border-bottom: 1px solid var(--border-light)">
+                <td
+                  style="padding: 10px 0; color: #6b7280"
+                  x-text="new Date(p.created_at).toLocaleDateString()"
+                ></td>
+                <td
+                  style="padding: 10px 0; font-weight: 700"
+                  x-text="p.currency + ' ' + Number(p.amount).toLocaleString()"
+                ></td>
+                <td
+                  style="padding: 10px 0; color: #4b5563"
+                  x-text="p.method"
+                ></td>
+                <td style="padding: 10px 0; text-align: right">
+                  <span
+                    style="color: #16a34a; font-weight: 600"
+                    x-text="p.status"
+                  ></span>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 24px">
+        <button
+          type="button"
+          class="vd-btn vd-btn-outline"
+          @click="historyModalOpen = false"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function affiliatesDashboard(orgSlug) {
+    return {
+      orgSlug: orgSlug,
+      loading: true,
+      affiliates: [],
+      selectedEventId: "",
+      searchQuery: "",
+      filterStatus: "all",
+      metrics: {
+        total: 0,
+        clicks: 0,
+        tickets: 0,
+        gross_display: "NGN 0",
+        owed_display: "NGN 0",
+      },
+
+      get filteredAffiliates() {
+        let list = this.affiliates || [];
+        if (this.searchQuery && this.searchQuery.trim()) {
+          const q = this.searchQuery.toLowerCase().trim();
+          list = list.filter(
+            (a) =>
+              (a.promoter_name && a.promoter_name.toLowerCase().includes(q)) ||
+              (a.promoter_email &&
+                a.promoter_email.toLowerCase().includes(q)) ||
+              (a.affiliate_code &&
+                a.affiliate_code.toLowerCase().includes(q)) ||
+              (a.event_title && a.event_title.toLowerCase().includes(q)),
+          );
+        }
+        if (this.filterStatus === "owed") {
+          list = list.filter((a) => Number(a.commission_owed) > 0);
+        }
+        return list;
+      },
+
+      clearEventFilter() {
+        this.selectedEventId = "";
+        this.searchQuery = "";
+        this.filterStatus = "all";
+        this.loadAffiliates();
+      },
+
+      newModalOpen: false,
+      creating: false,
+      affError: "",
+      newAff: {
+        event_id: '{{ events[0].id if events and events|length > 0 else "" }}',
+        promoter_name: "",
+        promoter_email: "",
+        promoter_phone: "",
+        affiliate_code: "",
+        commission_type: "percentage",
+        commission_rate: 10.0,
+        payout_bank_code: "",
+        payout_account_number: "",
+      },
+
+      openNewModal() {
+        if (this.selectedEventId) {
+          this.newAff.event_id = this.selectedEventId;
+        } else if (
+          !this.newAff.event_id &&
+          '{{ events[0].id if events and events|length > 0 else "" }}'
+        ) {
+          this.newAff.event_id =
+            '{{ events[0].id if events and events|length > 0 else "" }}';
+        }
+        this.affError = "";
+        this.newModalOpen = true;
+      },
+
+      payoutModalOpen: false,
+      targetAff: null,
+      payoutAmount: 0,
+      payoutMethod: "manual",
+      payoutNotes: "",
+      submittingPayout: false,
+
+      historyModalOpen: false,
+      historyList: [],
+
+      async init() {
+        await this.loadAffiliates();
+      },
+
+      async loadAffiliates() {
+        this.loading = true;
+        try {
+          let url = `/api/v1/organizations/${this.orgSlug}/affiliates`;
+          if (this.selectedEventId) url += `?event_id=${this.selectedEventId}`;
+          const resp = await fetch(url);
+          const data = await resp.json();
+          if (data.success) {
+            this.affiliates = data.data;
+            this.computeMetrics();
+          }
+        } catch (err) {
+          console.error(err);
+        } finally {
+          this.loading = false;
+        }
+      },
+
+      computeMetrics() {
+        let clicks = 0,
+          tickets = 0,
+          gross = 0,
+          owed = 0;
+        this.affiliates.forEach((a) => {
+          clicks += a.clicks_count || 0;
+          tickets += a.tickets_sold || 0;
+          gross += Number(a.gross_sales) || 0;
+          owed += Number(a.commission_owed) || 0;
+        });
+        this.metrics.total = this.affiliates.length;
+        this.metrics.clicks = clicks;
+        this.metrics.tickets = tickets;
+        this.metrics.gross_display = "NGN " + gross.toLocaleString();
+        this.metrics.owed_display = "NGN " + owed.toLocaleString();
+      },
+
+      copyLink(a) {
+        const link = `${window.location.origin}/r/${a.affiliate_code}`;
+        navigator.clipboard.writeText(link);
+        if (window.toast)
+          window.toast("Promoter link copied to clipboard!", "info");
+        else alert("Promoter link copied!");
+      },
+
+      async createAmbassador() {
+        this.affError = "";
+        if (!this.newAff.event_id) {
+          this.affError = "Please select an event for this ambassador.";
+          return;
+        }
+        if (!this.newAff.promoter_name || !this.newAff.promoter_name.trim()) {
+          this.affError = "Promoter name is required.";
+          return;
+        }
+        if (!this.newAff.promoter_email || !this.newAff.promoter_email.trim()) {
+          this.affError = "Promoter email is required.";
+          return;
+        }
+        if (!this.newAff.affiliate_code || !this.newAff.affiliate_code.trim()) {
+          this.affError = "Referral code is required.";
+          return;
+        }
+        const rateVal = parseFloat(this.newAff.commission_rate);
+        if (isNaN(rateVal) || rateVal <= 0) {
+          this.affError =
+            "Please enter a valid commission rate greater than 0.";
+          return;
+        }
+
+        this.creating = true;
+        try {
+          const payload = {
+            promoter_name: this.newAff.promoter_name.trim(),
+            promoter_email: this.newAff.promoter_email.trim().toLowerCase(),
+            affiliate_code: this.newAff.affiliate_code.trim().toUpperCase(),
+            commission_type: this.newAff.commission_type || "percentage",
+            commission_rate: rateVal,
+            promoter_phone:
+              this.newAff.promoter_phone && this.newAff.promoter_phone.trim()
+                ? this.newAff.promoter_phone.trim()
+                : null,
+            payout_bank_code:
+              this.newAff.payout_bank_code &&
+              this.newAff.payout_bank_code.trim()
+                ? this.newAff.payout_bank_code.trim()
+                : null,
+            payout_account_number:
+              this.newAff.payout_account_number &&
+              this.newAff.payout_account_number.trim()
+                ? this.newAff.payout_account_number.trim()
+                : null,
+          };
+
+          const resp = await fetch(
+            `/api/v1/organizations/${this.orgSlug}/events/${this.newAff.event_id}/affiliates`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            },
+          );
+          const data = await resp.json().catch(() => ({}));
+          if (resp.ok && data.success) {
+            this.newModalOpen = false;
+            this.newAff = {
+              event_id:
+                this.selectedEventId ||
+                '{{ events[0].id if events and events|length > 0 else "" }}',
+              promoter_name: "",
+              promoter_email: "",
+              promoter_phone: "",
+              affiliate_code: "",
+              commission_type: "percentage",
+              commission_rate: 10.0,
+              payout_bank_code: "",
+              payout_account_number: "",
+            };
+            await this.loadAffiliates();
+            if (window.toast)
+              window.toast("Ambassador created successfully!", "success");
+            else alert("Ambassador created successfully!");
+          } else {
+            let msg = "Failed to create ambassador.";
+            if (data.error && data.error.message) {
+              msg = data.error.message;
+            } else if (typeof data.detail === "string") {
+              msg = data.detail;
+            } else if (Array.isArray(data.detail)) {
+              msg = data.detail
+                .map((d) => d.msg || JSON.stringify(d))
+                .join(", ");
+            }
+            this.affError = msg;
+          }
+        } catch (err) {
+          this.affError =
+            err.message || "An unexpected network error occurred.";
+        } finally {
+          this.creating = false;
+        }
+      },
+
+      openPayoutModal(a) {
+        this.targetAff = a;
+        this.payoutAmount = a.commission_owed;
+        this.payoutMethod = a.has_automated_payout
+          ? "paystack_transfer"
+          : "manual";
+        this.payoutNotes = "";
+        this.payoutModalOpen = true;
+      },
+
+      async submitPayout() {
+        this.submittingPayout = true;
+        try {
+          const resp = await fetch(
+            `/api/v1/organizations/${this.orgSlug}/affiliates/${this.targetAff.id}/payout`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                amount: parseFloat(this.payoutAmount),
+                method: this.payoutMethod,
+                notes: this.payoutNotes || null,
+              }),
+            },
+          );
+          const data = await resp.json().catch(() => ({}));
+          if (resp.ok && data.success) {
+            this.payoutModalOpen = false;
+            await this.loadAffiliates();
+            if (window.toast)
+              window.toast("Commission payout disbursed!", "success");
+          } else {
+            let msg = "Failed to disburse payout.";
+            if (data.error && data.error.message) msg = data.error.message;
+            else if (typeof data.detail === "string") msg = data.detail;
+            else if (Array.isArray(data.detail))
+              msg = data.detail
+                .map((d) => d.msg || JSON.stringify(d))
+                .join(", ");
+            alert(msg);
+          }
+        } catch (err) {
+          alert(err.message || "Network error occurred.");
+        } finally {
+          this.submittingPayout = false;
+        }
+      },
+
+      async viewHistory(a) {
+        try {
+          const resp = await fetch(
+            `/api/v1/organizations/${this.orgSlug}/affiliates/${a.id}/payouts`,
+          );
+          const data = await resp.json();
+          if (data.success) {
+            this.historyList = data.data;
+            this.historyModalOpen = true;
+          }
+        } catch (err) {
+          alert(err.message);
+        }
+      },
+    };
+  }
+</script>
+{% endblock %}

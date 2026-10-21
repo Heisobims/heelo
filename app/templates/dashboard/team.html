@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Team — {{ org.name }} — Heelo{% endblock %}
+{% block title %}Team · {{ org.name }} | Heelo{% endblock %}
 {% set active_page = 'team' %}
 
 {% block head %}
@@ -40,7 +40,7 @@
     letter-spacing: 0.02em;
     text-transform: capitalize;
   }
-  .role-badge.admin { background: rgba(0,255,243,0.12); color: #009e95; }
+  .role-badge.admin { background: rgba(232, 89, 56, 0.12); color: #C84729; }
   .role-badge.organizer { background: rgba(99,102,241,0.1); color: #4f46e5; }
   .role-badge.finance { background: rgba(34,197,94,0.1); color: #15803d; }
   .role-badge.checkin_staff { background: rgba(249,115,22,0.1); color: #c2410c; }
@@ -97,7 +97,7 @@
     </div>
 
     <!-- Feedback -->
-    <div x-show="feedback.msg" :class="feedback.type === 'error' ? 'alert alert-danger' : 'alert'" style="display:none; margin-bottom:16px; background:rgba(0,255,243,0.08); border:1px solid var(--cyan); color:#009e95; border-radius:8px; padding:12px 16px; font-size:13px;">
+    <div x-show="feedback.msg" :class="feedback.type === 'error' ? 'alert alert-danger' : 'alert'" style="display:none; margin-bottom:16px; background:rgba(232, 89, 56, 0.08); border:1px solid var(--cyan); color:#C84729; border-radius:8px; padding:12px 16px; font-size:13px;">
       <span class="material-symbols-outlined" x-text="feedback.type === 'error' ? 'cancel' : 'check_circle'"></span>
       <span x-text="feedback.msg" style="margin-left:6px;"></span>
     </div>
@@ -149,7 +149,7 @@
           <!-- Actions (admins only, and can't remove yourself) -->
           {% if user_role == 'admin' or is_owner %}
           <div x-show="m.user_id !== currentUserId" style="display:flex; align-items:center; gap:6px;">
-            <!-- Role picker (active members only — pending invites don't have a
+            <!-- Role picker (active members only: pending invites don't have a
                  role to change yet, so the select is replaced with a status pill) -->
             <template x-if="m.status === 'active'">
               <select
@@ -164,6 +164,19 @@
                 <option value="finance">Finance</option>
                 <option value="checkin_staff">Check-in staff</option>
               </select>
+            </template>
+            <!-- Resend invite (pending invites only) -->
+            <template x-if="m.status === 'invite_pending'">
+              <button
+                type="button"
+                class="btn btn-secondary btn-icon"
+                style="width:36px; height:36px; flex-shrink:0;"
+                :disabled="m.updating"
+                @click="resendInvite(m)"
+                title="Resend invite"
+              >
+                <span class="material-symbols-outlined" style="font-size:16px;">send</span>
+              </button>
             </template>
             <!-- Remove / cancel invite -->
             <button
@@ -187,7 +200,7 @@
       <p class="team-card-title">Role permissions</p>
       <div class="role-desc-row">
         <div><span class="role-badge admin">Admin</span></div>
-        <div>Full access — manage events, team, settings, finance, and payouts.</div>
+        <div>Full access: manage events, team, settings, finance, and payouts.</div>
       </div>
       <div class="role-desc-row">
         <div><span class="role-badge organizer">Organizer</span></div>
@@ -222,10 +235,10 @@
           <div class="form-group" style="margin-bottom:0;">
             <label class="form-label">Role</label>
             <select class="form-select" x-model="inviteRole">
-              <option value="organizer">Organizer — can create and manage events</option>
-              <option value="admin">Admin — full access</option>
-              <option value="finance">Finance — revenue and payouts</option>
-              <option value="checkin_staff">Check-in staff — ticket scanning only</option>
+              <option value="organizer">Organizer · can create and manage events</option>
+              <option value="admin">Admin · full access</option>
+              <option value="finance">Finance · revenue and payouts</option>
+              <option value="checkin_staff">Check-in staff · ticket scanning only</option>
             </select>
           </div>
         </div>
@@ -280,7 +293,7 @@ function teamManager() {
         this.inviteEmail = '';
         this.inviteRole = 'organizer';
         this.showFeedback('Invitation sent!');
-        /* Add the real pending member row (server-assigned id — needed so
+        /* Add the real pending member row (server-assigned id: needed so
            this invite can be cancelled without a page reload) */
         const m = data.data.member;
         this.members.push({
@@ -334,6 +347,22 @@ function teamManager() {
         }
         this.members = this.members.filter(m => m.id !== member.id);
         this.showFeedback(member.status === 'invite_pending' ? 'Invite cancelled.' : 'Member removed.');
+      } catch { this.showFeedback('Network error.', 'error'); }
+      finally { member.updating = false; }
+    },
+
+    async resendInvite(member) {
+      member.updating = true;
+      try {
+        const res = await fetch(`/api/v1/organizations/${orgSlug}/members/${member.id}/resend-invite`, {
+          method: 'POST', credentials: 'include',
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          this.showFeedback(data.error?.message || 'Could not resend invite.', 'error');
+          return;
+        }
+        this.showFeedback('Invite resent.');
       } catch { this.showFeedback('Network error.', 'error'); }
       finally { member.updating = false; }
     },

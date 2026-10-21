@@ -128,7 +128,8 @@ class UpdateProfileRequest(BaseModel):
     full_name: str | None = Field(None, min_length=2, max_length=255)
     username: str | None = Field(None, min_length=2, max_length=50, pattern=r"^[a-z0-9_]+$")
     whatsapp_number: str | None = Field(None, max_length=30)
-    # Opt-in demographics — never required, used for audience insights.
+    avatar_url: str | None = None
+    # Opt-in demographics - never required, used for audience insights.
     country: str | None = Field(None, min_length=2, max_length=2)
     birth_year: int | None = Field(None, ge=1920)
 

@@ -1,5 +1,9 @@
 # Local Postgres data dir (pgserver)
 .pgdata/
+.pgdata_local/
+
+# Local Redis data dir (redislite)
+.redis_local/
 
 # Python
 __pycache__/
@@ -54,4 +58,9 @@ app/static/uploads/
 *.pem
 *.key
 *.crt
+
+# Temporary & database dumps
+*.rdb
+*.tar.gz
+
 ssl/

@@ -1,53 +1,326 @@
 {% extends "base.html" %}
-{% block title %}Discover events — Heelo{% endblock %}
-{% block meta_description %}Find and register for events happening near you and around Africa.{% endblock %}
+{% block title %}My Hub | Heelo{% endblock %}
+{% block meta_description %}Manage your event tickets, discover trending events, and access your organizer and vendor dashboards.{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/dashboard.css">
+<link rel="stylesheet" href="/static/css/dashboard.css?v=7">
+<style>
+  .hub-container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+  .hub-welcome-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-light, #EFEAE3);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    box-shadow: 0 2px 14px rgba(19, 27, 23, 0.04);
+  }
+  .hub-welcome-profile {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .hub-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--primary, #E85938);
+    color: #FFFFFF;
+    font-size: 24px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(232, 89, 56, 0.25);
+  }
+  .hub-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .hub-user-name {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary, #131B17);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .hub-badges-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .hub-welcome-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .hub-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .hub-stat-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-light, #EFEAE3);
+    border-radius: 16px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 130px;
+    box-shadow: 0 1px 4px rgba(19, 27, 23, 0.04);
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hub-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(19, 27, 23, 0.07);
+  }
+  .hub-stat-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .hub-stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--bg-secondary, #FAF7F2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary, #131B17);
+    font-size: 16px;
+  }
+  .hub-stat-val {
+    font-family: var(--font-serif);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary, #131B17);
+    line-height: 1;
+  }
+  .hub-stat-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text-primary, #131B17);
+    margin-bottom: 2px;
+  }
+  .hub-stat-sub {
+    font-size: 12px;
+    color: var(--text-muted, #8C9791);
+  }
+  .hub-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .hub-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary, #131B17);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hub-ticket-card {
+    background: #FFFFFF;
+    border: 1px solid var(--border-light, #EFEAE3);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 4px rgba(19, 27, 23, 0.04);
+    transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hub-ticket-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(19, 27, 23, 0.06);
+  }
+  .hub-date-badge {
+    background: rgba(232, 89, 56, 0.08);
+    border: 1px solid rgba(232, 89, 56, 0.2);
+    border-radius: 12px;
+    padding: 10px 14px;
+    text-align: center;
+    min-width: 64px;
+    flex-shrink: 0;
+  }
+  .hub-date-month {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--primary, #E85938);
+    letter-spacing: 0.05em;
+  }
+  .hub-date-day {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-primary, #131B17);
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .hub-category-pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 24px;
+    scrollbar-width: none;
+  }
+  .hub-category-pills::-webkit-scrollbar {
+    display: none;
+  }
+  .hub-cat-pill {
+    padding: 7px 16px;
+    border-radius: 9999px;
+    background: #FFFFFF;
+    border: 1px solid var(--border-light, #EFEAE3);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #131B17);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 160ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hub-cat-pill:hover {
+    background: var(--bg-secondary, #FAF7F2);
+    border-color: rgba(19, 27, 23, 0.25);
+    transform: translateY(-1px);
+  }
+  .hub-cta-banner {
+    background: linear-gradient(135deg, #131B17 0%, #1c2721 100%);
+    border-radius: 20px;
+    padding: 36px 40px;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    margin-top: 40px;
+  }
+  @media (max-width: 768px) {
+    .hub-welcome-card {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 20px;
+    }
+    .hub-welcome-actions {
+      width: 100%;
+    }
+    .hub-welcome-actions .btn {
+      flex: 1;
+    }
+    .hub-ticket-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .hub-cta-banner {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 24px;
+    }
+  }
+</style>
 {% endblock %}
 
 {% block body %}
-<!-- Attendee nav -->
-<header class="dash-topnav">
-  <a href="/" class="dash-topnav-logo">heelo</a>
+<!-- Attendee Top Navigation -->
+<header class="dash-topnav" style="position:sticky; top:0; z-index:100; background:#ffffff; border-bottom:1px solid var(--border-light, #EFEAE3);">
+  <a href="/" class="dash-topnav-logo" style="text-decoration:none;">heelo</a>
 
-  <div style="flex:1; max-width:400px; margin:0 16px;">
-    <div style="position:relative;">
-      <input
-        type="search"
-        placeholder="Search events…"
-        style="width:100%; padding:8px 12px 8px 36px; border:1px solid var(--border-light); border-radius:20px; font-size:14px; background:var(--bg-secondary); outline:none;"
-        onkeydown="if(event.key==='Enter'&&this.value.trim())window.location.href='/events?q='+encodeURIComponent(this.value.trim())"
-        name="q"
-      >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    </div>
+  <!-- Universal Event Search -->
+  <div style="flex:1; min-width:0; max-width:440px; margin:0 16px;">
+    <form action="/events" method="GET" style="margin:0;">
+      <div style="position:relative;">
+        <input
+          type="search"
+          name="q"
+          placeholder="Search events, cities, topics…"
+          style="width:100%; height:38px; padding:0 14px 0 36px; border:1.5px solid var(--border-light, #EFEAE3); border-radius:20px; font-size:13.5px; background:var(--bg-secondary, #FAF7F2); outline:none; transition:border-color 160ms;"
+          onfocus="this.style.borderColor='var(--primary, #E85938)'; this.style.background='#ffffff';"
+          onblur="this.style.borderColor='var(--border-light, #EFEAE3)'; this.style.background='var(--bg-secondary, #FAF7F2)';"
+        >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted, #8C9791)" stroke-width="2.2" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+    </form>
   </div>
 
   <div class="dash-topnav-actions">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <a href="/events" class="vd-btn vd-btn-ghost vd-btn-sm" style="text-decoration:none;">Find Events</a>
+      <a href="/vendors" class="vd-btn vd-btn-ghost vd-btn-sm" style="text-decoration:none;">Find Vendor</a>
+      <a href="/venues" class="vd-btn vd-btn-ghost vd-btn-sm" style="text-decoration:none;">Find Venue</a>
+      <a href="/my-tickets" class="vd-btn vd-btn-ghost vd-btn-sm" style="text-decoration:none;">My Tickets</a>
+      {% if orgs %}
+      <a href="/dashboard" class="vd-btn vd-btn-outline vd-btn-sm" style="text-decoration:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Org Dashboard</span>
+      </a>
+      {% else %}
+      <a href="/host" class="vd-btn vd-btn-accent vd-btn-sm" style="text-decoration:none;">Host an event</a>
+      {% endif %}
+    </div>
+
+    <!-- User Profile Dropdown -->
     <div style="position:relative;" x-data="{ open: false }">
-      <button class="user-avatar-btn" @click="open = !open" type="button" title="{{ user.full_name }}">
+      <button class="user-avatar-btn" @click="open = !open" type="button" title="{{ user.full_name }}" style="cursor:pointer;">
         {% if user.avatar_url %}<img src="{{ user.avatar_url }}" alt="{{ user.full_name }}">
         {% else %}{{ user.full_name[0].upper() }}{% endif %}
       </button>
-      <div x-show="open" x-transition class="user-menu-dropdown" style="display:none;">
-        <div class="user-menu-header">
-          <div class="user-menu-name">{{ user.full_name }}</div>
-          <div class="user-menu-email">{{ user.email }}</div>
+      <div x-show="open" x-cloak @click.outside="open = false" x-transition class="user-menu-dropdown" style="display:none; position:absolute; right:0; top:46px; background:#ffffff; border:1px solid var(--border-light, #EFEAE3); border-radius:14px; box-shadow:0 12px 32px rgba(19,27,23,0.12); width:240px; padding:8px; z-index:200;">
+        <div style="padding:10px 12px; border-bottom:1px solid var(--border-light, #EFEAE3); margin-bottom:6px;">
+          <div style="font-weight:700; font-size:14px; color:var(--text-primary, #131B17);">{{ user.full_name }}</div>
+          <div style="font-size:12px; color:var(--text-muted, #8C9791); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ user.email }}</div>
         </div>
-        <a href="/profile" class="user-menu-item">
+        <a href="/profile" class="user-menu-item" style="display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13px; color:var(--text-primary); text-decoration:none; border-radius:8px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Your profile
+          Account Profile &amp; Settings
         </a>
-        <a href="/my-tickets" class="user-menu-item">
+        <a href="/my-tickets" class="user-menu-item" style="display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13px; color:var(--text-primary); text-decoration:none; border-radius:8px;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"/></svg>
-          My tickets
+          My Tickets &amp; Passes
         </a>
-        <div style="border-top:1px solid var(--border-light);margin:4px 0;"></div>
+        {% if orgs %}
+        <a href="/dashboard" class="user-menu-item" style="display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13px; color:var(--text-primary); text-decoration:none; border-radius:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Organizer Dashboard
+        </a>
+        {% endif %}
+        {% if vendor %}
+        <a href="/my-vendor-dashboard" class="user-menu-item" style="display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13px; color:var(--text-primary); text-decoration:none; border-radius:8px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Vendor Dashboard
+        </a>
+        {% endif %}
+        <div style="border-top:1px solid var(--border-light, #EFEAE3); margin:6px 0;"></div>
         <button
           class="user-menu-item danger"
           @click="fetch('/api/v1/auth/logout',{method:'POST',credentials:'include'}).then(()=>window.location.href='/login')"
           type="button"
+          style="display:flex; align-items:center; gap:8px; padding:8px 12px; font-size:13px; color:#c92a2a; border-radius:8px; width:100%; border:none; background:none; cursor:pointer;"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
           Sign out
@@ -57,74 +330,272 @@
   </div>
 </header>
 
-<!-- Main content -->
-<div style="background:var(--bg-secondary); min-height:calc(100vh - 56px); padding:32px 24px;">
-  <div style="max-width:1100px; margin:0 auto;">
+<!-- Main Hub Body -->
+<div style="background:var(--bg-secondary, #FAF7F2); min-height:calc(100vh - 56px);">
+  <div class="hub-container">
 
-    <!-- Welcome banner (first visit) -->
-    <div class="animate-in" style="margin-bottom:28px;">
-      <h1 style="font-family:var(--font-serif); font-size:28px; font-weight:700; margin-bottom:6px;">
-        Welcome, {{ user.full_name.split()[0] }}.
-      </h1>
-      <p class="text-secondary">Discover events, connect with people, and make memories.</p>
-    </div>
-
-    <!-- Upcoming events grid -->
-    {% if upcoming_events %}
-    <div style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between;">
-      <h2 style="font-size:17px; font-weight:600;">Upcoming events</h2>
-      <a href="/events" style="font-size:14px; color:var(--text-secondary); text-decoration:none;">Browse all →</a>
-    </div>
-
-    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;" class="animate-in animate-in-delay-1">
-      {% for event in upcoming_events %}
-      <a href="/e/{{ event.slug }}" style="background:#fff; border:1px solid var(--border-light); border-radius:14px; text-decoration:none; color:inherit; overflow:hidden; display:block; transition:box-shadow 0.15s, transform 0.15s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.1)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
-        <!-- Cover image -->
-        <div style="width:100%; aspect-ratio:16/7; background:linear-gradient(135deg,#0A0A0A 0%,#1a1a1a 100%); overflow:hidden; position:relative;">
-          {% if event.cover_image_url %}
-          <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" style="width:100%;height:100%;object-fit:cover;">
+    <!-- Welcome Hero Banner -->
+    <div class="hub-welcome-card animate-in">
+      <div class="hub-welcome-profile">
+        <div class="hub-avatar">
+          {% if user.avatar_url %}
+          <img src="{{ user.avatar_url }}" alt="{{ user.full_name }}">
           {% else %}
-          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-            <span style="font-family:var(--font-serif);font-size:32px;font-weight:700;color:rgba(255,255,255,0.06);">{{ event.title[0] }}</span>
-          </div>
+          {{ user.full_name[0].upper() }}
           {% endif %}
-          <!-- Format badge -->
-          <span style="position:absolute;top:10px;left:10px;font-size:10px;font-weight:600;padding:3px 8px;border-radius:100px;background:rgba(0,0,0,0.6);color:#fff;backdrop-filter:blur(4px);">
-            {{ event.format | replace('_', ' ') | title }}
-          </span>
         </div>
-
-        <!-- Info -->
-        <div style="padding:16px;">
-          <h3 style="font-size:15px;font-weight:600;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ event.title }}</h3>
-          <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px;">
-            {% if event.start_datetime %}{{ event.start_datetime.strftime('%a, %d %b %Y · %H:%M') }}{% endif %}
-            {% if event.venue_city %} · {{ event.venue_city }}{% endif %}
-          </p>
-          <div style="display:flex;align-items:center;justify-content:space-between;">
-            <span style="font-size:13px;font-weight:600;color:var(--text-primary);">
-              {# Ticket price shown in Step 5 when ticket types are linked #}
-              View event
-            </span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <div>
+          <h1 class="hub-user-name">Welcome back, {{ user.full_name.split()[0] }}!</h1>
+          <div class="hub-badges-row">
+            <span class="status-badge approved">Member</span>
+            {% if orgs %}
+            <span class="status-badge live">Event Host</span>
+            {% endif %}
+            {% if vendor %}
+            <span class="status-badge paid">Verified Vendor</span>
+            {% endif %}
+            {% if user.whatsapp_number %}
+            <span class="status-badge completed"><i class="fa-brands fa-whatsapp" style="margin-right:4px;"></i>WhatsApp Linked</span>
+            {% endif %}
           </div>
+        </div>
+      </div>
+
+      <div class="hub-welcome-actions">
+        <a href="/profile" class="vd-btn vd-btn-outline vd-btn-sm" style="text-decoration:none;">Account Settings</a>
+        {% if orgs %}
+        <a href="/dashboard" class="vd-btn vd-btn-accent vd-btn-sm" style="text-decoration:none;">Organizer Dashboard &rarr;</a>
+        {% else %}
+        <a href="/host" class="vd-btn vd-btn-accent vd-btn-sm" style="text-decoration:none;">Host an Event</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- 4 Key Hub Pillars -->
+    <div class="hub-stats-grid">
+      <!-- Pillar 1: Tickets -->
+      <a href="/my-tickets" class="hub-stat-card" style="text-decoration:none; color:inherit;">
+        <div>
+          <div class="hub-stat-top">
+            <span class="hub-stat-icon" style="background:#eff6ff; color:#1d4ed8;"><span class="material-symbols-outlined" style="font-size:22px;">confirmation_number</span></span>
+            <span class="hub-stat-val">{{ upcoming_tickets | length }}</span>
+          </div>
+          <div class="hub-stat-title">Active Event Tickets</div>
+          <div class="hub-stat-sub">
+            {% if upcoming_tickets %}
+            Ready to attend ({{ total_tickets }} all-time)
+            {% else %}
+            No active passes · Find an event
+            {% endif %}
+          </div>
+        </div>
+        <div style="font-size:12.5px; font-weight:700; color:var(--primary, #E85938); margin-top:12px; display:flex; align-items:center; gap:4px;">
+          Manage tickets &rarr;
         </div>
       </a>
-      {% endfor %}
+
+      <!-- Pillar 2: Organizer Suite -->
+      <a href="{% if orgs %}/dashboard{% else %}/host{% endif %}" class="hub-stat-card" style="text-decoration:none; color:inherit;">
+        <div>
+          <div class="hub-stat-top">
+            <span class="hub-stat-icon" style="background:#fef3c7; color:#b45309;"><span class="material-symbols-outlined" style="font-size:22px;">bolt</span></span>
+            <span class="hub-stat-val">{% if orgs %}{{ orgs | length }}{% else %}Free{% endif %}</span>
+          </div>
+          <div class="hub-stat-title">{% if orgs %}Hosted Organizations{% else %}Host Your Own Events{% endif %}</div>
+          <div class="hub-stat-sub">
+            {% if orgs %}
+            {{ orgs[0]['org'].name }}
+            {% else %}
+            Sell tickets, manage booths &amp; payouts
+            {% endif %}
+          </div>
+        </div>
+        <div style="font-size:12.5px; font-weight:700; color:var(--primary, #E85938); margin-top:12px; display:flex; align-items:center; gap:4px;">
+          {% if orgs %}Open organizer studio &rarr;{% else %}Create an event &rarr;{% endif %}
+        </div>
+      </a>
+
+      <!-- Pillar 3: Vendor Hub -->
+      <a href="{% if vendor %}/my-vendor-dashboard{% else %}/vendors{% endif %}" class="hub-stat-card" style="text-decoration:none; color:inherit;">
+        <div>
+          <div class="hub-stat-top">
+            <span class="hub-stat-icon" style="background:#ecfdf5; color:#047857;"><span class="material-symbols-outlined" style="font-size:22px;">storefront</span></span>
+            <span class="hub-stat-val">{% if vendor %}Active{% else %}Explore{% endif %}</span>
+          </div>
+          <div class="hub-stat-title">{% if vendor %}Vendor Workspace{% else %}Event Vendor Directory{% endif %}</div>
+          <div class="hub-stat-sub">
+            {% if vendor %}
+            {{ vendor.business_name }}
+            {% else %}
+            Hire photographers, DJs &amp; catering
+            {% endif %}
+          </div>
+        </div>
+        <div style="font-size:12.5px; font-weight:700; color:var(--primary, #E85938); margin-top:12px; display:flex; align-items:center; gap:4px;">
+          {% if vendor %}View RFQs &amp; bookings &rarr;{% else %}Browse vendors &rarr;{% endif %}
+        </div>
+      </a>
+
+      <!-- Pillar 4: Profile & Preferences -->
+      <a href="/profile" class="hub-stat-card" style="text-decoration:none; color:inherit;">
+        <div>
+          <div class="hub-stat-top">
+            <span class="hub-stat-icon" style="background:#f3f4f6; color:#374151;"><span class="material-symbols-outlined" style="font-size:22px;">person</span></span>
+            <span class="hub-stat-val">Active</span>
+          </div>
+          <div class="hub-stat-title">Profile &amp; Security</div>
+          <div class="hub-stat-sub">{{ user.email }}</div>
+        </div>
+        <div style="font-size:12.5px; font-weight:700; color:var(--primary, #E85938); margin-top:12px; display:flex; align-items:center; gap:4px;">
+          Edit profile settings &rarr;
+        </div>
+      </a>
     </div>
 
-    {% else %}
-    <!-- No events yet -->
-    <div class="empty-state-card animate-in animate-in-delay-1" style="max-width:380px;">
-      <div class="empty-state-icon">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <!-- Active Tickets Spotlight (If User Has Upcoming Tickets) -->
+    {% if upcoming_tickets %}
+    <div style="margin-bottom:36px;">
+      <div class="hub-section-header">
+        <h2 class="hub-section-title">
+          <span class="material-symbols-outlined" style="font-size:20px; vertical-align:-3px; color:var(--primary, #E85938); margin-right:4px;">confirmation_number</span>
+          <span>Your Upcoming Events ({{ upcoming_tickets | length }})</span>
+        </h2>
+        <a href="/my-tickets" class="vd-btn vd-btn-ghost vd-btn-xs" style="text-decoration:none;">View All Tickets &rarr;</a>
       </div>
-      <h2 class="empty-state-title">No events yet</h2>
-      <p class="empty-state-body">
-        When organizers publish events, they'll show up here. Check back soon.
-      </p>
+
+      {% for reg in upcoming_tickets %}
+      <div class="hub-ticket-card">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="hub-date-badge">
+            <div class="hub-date-month">{{ reg.event.start_datetime.strftime('%b') if reg.event and reg.event.start_datetime else 'TBA' }}</div>
+            <div class="hub-date-day">{{ reg.event.start_datetime.strftime('%d') if reg.event and reg.event.start_datetime else '--' }}</div>
+          </div>
+          <div>
+            <h3 style="font-size:16px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">
+              <a href="/e/{{ reg.event.slug }}" style="text-decoration:none; color:inherit;">{{ reg.event.title }}</a>
+            </h3>
+            <div style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <span><span class="material-symbols-outlined" style="font-size:14px; vertical-align:-2px;">schedule</span> {{ reg.event.start_datetime.strftime('%A · %I:%M %p') if reg.event and reg.event.start_datetime else '' }}</span>
+              <span><span class="material-symbols-outlined" style="font-size:14px; vertical-align:-2px;">location_on</span> {{ reg.event.venue_name or reg.event.venue_city or 'Online' }}</span>
+              <span class="status-badge paid">{{ reg.ticket_type.name if reg.ticket_type else 'Pass' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-family:var(--font-mono); font-size:12px; font-weight:700; background:#f3f4f6; padding:4px 10px; border-radius:6px; color:#111827;">{{ reg.ticket_code }}</span>
+          <a href="/my-tickets" class="vd-btn vd-btn-accent vd-btn-sm" style="text-decoration:none;">View QR Code</a>
+        </div>
+      </div>
+      {% endfor %}
     </div>
     {% endif %}
+
+    <!-- Curated Category Discovery Chips -->
+    <div style="margin-bottom:32px;">
+      <div class="hub-section-header">
+        <h2 class="hub-section-title">
+          <span class="material-symbols-outlined" style="font-size:20px; vertical-align:-3px; color:var(--primary, #E85938); margin-right:4px;">category</span>
+          <span>Explore by Category</span>
+        </h2>
+        <a href="/events" class="vd-btn vd-btn-ghost vd-btn-xs" style="text-decoration:none;">See all &rarr;</a>
+      </div>
+
+      <div class="hub-category-pills">
+        <a href="/events" class="hub-cat-pill" style="border-color:var(--primary, #E85938); color:var(--primary, #E85938); background:rgba(232,89,56,0.06);">All Events</a>
+        <a href="/events?q=Music" class="hub-cat-pill"><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">music_note</span> Music &amp; Concerts</a>
+        <a href="/events?q=Tech" class="hub-cat-pill"><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">computer</span> Tech &amp; Startups</a>
+        <a href="/events?q=Food" class="hub-cat-pill"><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">restaurant</span> Food, Wine &amp; Drinks</a>
+        <a href="/events?q=Business" class="hub-cat-pill"><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">handshake</span> Business &amp; Networking</a>
+        <a href="/events?q=Arts" class="hub-cat-pill"><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">palette</span> Arts, Culture &amp; Fashion</a>
+        <a href="/events?q=Nightlife" class="hub-cat-pill"><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">nightlife</span> Parties &amp; Nightlife</a>
+        <a href="/vendors" class="hub-cat-pill" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;"><span class="material-symbols-outlined" style="font-size:15px; vertical-align:-2px;">storefront</span> Hire Event Vendors</a>
+      </div>
+    </div>
+
+    <!-- Upcoming Events Grid -->
+    <div style="margin-bottom:32px;">
+      <div class="hub-section-header">
+        <h2 class="hub-section-title">
+          <span class="material-symbols-outlined" style="font-size:20px; vertical-align:-3px; color:var(--primary, #E85938); margin-right:4px;">local_fire_department</span>
+          <span>Upcoming &amp; Trending Events</span>
+        </h2>
+        <a href="/events" class="vd-btn vd-btn-ghost vd-btn-xs" style="text-decoration:none;">Browse All Events &rarr;</a>
+      </div>
+
+      {% if upcoming_events %}
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:20px;">
+        {% for event in upcoming_events %}
+        <a href="/e/{{ event.slug }}" style="background:#fff; border:1px solid var(--border-light, #EFEAE3); border-radius:16px; text-decoration:none; color:inherit; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; transition:box-shadow 160ms ease, transform 160ms ease;" onmouseover="this.style.boxShadow='0 8px 24px rgba(19,27,23,0.08)';this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='';this.style.transform=''">
+          <div>
+            <!-- Cover image -->
+            <div style="width:100%; aspect-ratio:16/8; background:linear-gradient(135deg,#131B17 0%,#24332c 100%); overflow:hidden; position:relative;">
+              {% if event.cover_image_url %}
+              <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" style="width:100%; height:100%; object-fit:cover;">
+              {% else %}
+              <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center;">
+                <span style="font-family:var(--font-serif); font-size:36px; font-weight:700; color:rgba(255,255,255,0.12);">{{ event.title[0] }}</span>
+              </div>
+              {% endif %}
+              <!-- Format badge -->
+              <span style="position:absolute; top:10px; left:10px; font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:100px; background:rgba(19,27,23,0.75); color:#fff; backdrop-filter:blur(4px);">
+                {{ event.format | replace('_', ' ') | title }}
+              </span>
+            </div>
+
+            <!-- Event Details -->
+            <div style="padding:16px;">
+              <h3 style="font-size:15px; font-weight:700; margin-bottom:6px; color:var(--text-primary); line-height:1.3; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
+                {{ event.title }}
+              </h3>
+              <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px; line-height:1.4;">
+                {% if event.start_datetime %}<span class="material-symbols-outlined" style="font-size:14px; vertical-align:-2px;">calendar_today</span> {{ event.start_datetime.strftime('%a, %d %b %Y · %I:%M %p') }}{% endif %}
+                {% if event.venue_city %}<br><span class="material-symbols-outlined" style="font-size:14px; vertical-align:-2px;">location_on</span> {{ event.venue_city }}{% endif %}
+              </p>
+            </div>
+          </div>
+
+          <div style="padding:0 16px 16px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #FAF7F2; padding-top:12px;">
+            <span style="font-size:13px; font-weight:700; color:var(--primary, #E85938);">
+              {% if event.is_free %}Free Admission{% else %}Get Tickets &rarr;{% endif %}
+            </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary, #E85938)" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="background:#fff; border:1px solid var(--border-light, #EFEAE3); border-radius:16px; padding:48px 24px; text-align:center;">
+        <div style="font-size:36px; margin-bottom:12px; color:var(--text-muted);"><span class="material-symbols-outlined" style="font-size:48px;">festival</span></div>
+        <h3 style="font-size:17px; font-weight:700; margin-bottom:6px;">No upcoming events listed yet</h3>
+        <p style="font-size:13.5px; color:var(--text-secondary); max-width:420px; margin:0 auto 20px;">
+          Be the first to host an event or check back soon as organizers publish new experiences.
+        </p>
+        <a href="/host" class="vd-btn vd-btn-accent vd-btn-sm" style="text-decoration:none;">Host the First Event</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Bottom Action CTA Banner -->
+    <div class="hub-cta-banner">
+      <div>
+        <span style="display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; background:rgba(232,89,56,0.2); color:#FF875C; padding:3px 10px; border-radius:100px; margin-bottom:12px;">Organizer &amp; Vendor Suite</span>
+        <h2 style="font-family:var(--font-serif); font-size:24px; font-weight:700; margin-bottom:8px; line-height:1.2;">
+          Host your own event with zero platform upfront costs
+        </h2>
+        <p style="font-size:14px; color:#A4B2AA; max-width:540px; line-height:1.6; margin-bottom:0;">
+          Launch ticket registration, manage booth packages, assign promoters with tracking links, send WhatsApp ticket reminders, and receive automated Paystack bank transfers.
+        </p>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px; flex-shrink:0;">
+        <a href="/host" class="vd-btn vd-btn-accent" style="padding:12px 24px; font-size:14.5px; text-decoration:none;">
+          Host an Event &rarr;
+        </a>
+        <a href="/vendors" class="vd-btn vd-btn-outline" style="background:transparent; border-color:rgba(255,255,255,0.25); color:#ffffff; padding:12px 24px; font-size:14.5px; text-decoration:none;">
+          Find Event Vendors
+        </a>
+      </div>
+    </div>
 
   </div>
 </div>

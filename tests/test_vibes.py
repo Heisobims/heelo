@@ -1,4 +1,4 @@
-"""Event vibe tags — free-form organizer-typed tags, replacing rigid categories."""
+"""Event vibe tags - free-form organizer-typed tags, replacing rigid categories."""
 
 from __future__ import annotations
 

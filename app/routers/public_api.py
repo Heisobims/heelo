@@ -1,5 +1,5 @@
 """
-Public REST API — authenticated via X-API-Key header.
+Public REST API - authenticated via X-API-Key header.
 Org context is derived from the API key's org_id.
 Base path: /api/public/v1/
 """
@@ -54,7 +54,7 @@ async def _check_rate_limit(x_api_key: str | None = Header(default=None)) -> Non
     except HTTPException:
         raise
     except Exception as err:
-        # Redis unavailable — fail open, but make the outage visible.
+        # Redis unavailable - fail open, but make the outage visible.
         logger.warning("public_api.rate_limit_check_failed", error=str(err))
 
 
@@ -243,7 +243,7 @@ async def check_in(event_id: str, body: CheckInRequest, db: DBSession, auth: Aut
         if body.qr_token:
             reg = await ci_svc.check_in_by_qr_token(db, body.qr_token, event.id)
         elif body.registration_id:
-            reg = await ci_svc.check_in_by_id(db, uuid.UUID(body.registration_id))
+            reg = await ci_svc.check_in_by_id(db, uuid.UUID(body.registration_id), event.id)
         else:
             raise HTTPException(422, "Provide qr_token or registration_id.")
     except ci_svc.AlreadyCheckedInError as e:

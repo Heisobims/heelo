@@ -1,12 +1,17 @@
 """
-Top-level HTML page routes — dashboard redirect, attendee home, accept-invite.
+Top-level HTML page routes - dashboard redirect, attendee home, accept-invite.
 Org-specific pages (overview, team, settings) live in routers/organization_pages.py.
 """
 
 from __future__ import annotations
 
+from datetime import datetime
+import uuid
+from uuid import UUID
+
+import structlog
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,12 +19,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.dependencies import DBSession
 from app.permissions import Permission, require_page_permission
+from app.services import billing_service as billing_svc
 from app.services import organization_service as org_svc
-from app.utils.color import contrasting_text_color
+from app.utils.color import contrasting_text_color, to_rgba
+from app.utils.currency import currency_symbol
 
 router_pages = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
 templates.env.filters["contrast_text"] = contrasting_text_color
+templates.env.filters["to_rgba"] = to_rgba
+templates.env.filters["currency_symbol"] = currency_symbol
+templates.env.globals["settings"] = settings
+templates.env.globals["currency_symbol"] = currency_symbol
+logger = structlog.get_logger()
 
 
 # ── Legal ─────────────────────────────────────────────────────────────────────
@@ -91,8 +103,88 @@ async def unsubscribe_page(token: str, request: Request, db: DBSession):
     )
 
 
+@router_pages.get("/transfer/{token}", response_class=HTMLResponse)
+async def transfer_claim_page(token: str, request: Request, db: DBSession):
+    from app.services import ticketing_service as tk_svc
+
+    reg = await tk_svc.get_registration_by_transfer_token(db, token)
+    return templates.TemplateResponse(
+        "events/transfer_claim.html",
+        {"request": request, "token": token, "reg": reg},
+    )
+
+
+# ── SEO ───────────────────────────────────────────────────────────────────────
+
+
+@router_pages.get("/robots.txt", response_class=PlainTextResponse, include_in_schema=False)
+async def robots_txt() -> str:
+    lines = [
+        "User-agent: *",
+        "Disallow: /dashboard",
+        "Disallow: /admin",
+        "Disallow: /org/",
+        "Disallow: /api/",
+        "Disallow: /my-tickets",
+        "Disallow: /my-vendor-profile",
+        "Disallow: /onboarding",
+        "",
+        f"Sitemap: {settings.FRONTEND_URL}/sitemap.xml",
+    ]
+    return "\n".join(lines)
+
+
+def _sitemap_url(loc: str, *, lastmod: datetime | None = None, priority: str = "0.5") -> str:
+    lastmod_tag = f"<lastmod>{lastmod.date().isoformat()}</lastmod>" if lastmod else ""
+    return f"<url><loc>{loc}</loc>{lastmod_tag}<priority>{priority}</priority></url>"
+
+
+@router_pages.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml(db: DBSession) -> Response:
+    from app.services import event_service as ev_svc
+    from app.services import vendor_service as vsvc
+
+    base = settings.FRONTEND_URL.rstrip("/")
+    entries = [
+        _sitemap_url(base + "/", priority="1.0"),
+        _sitemap_url(base + "/pricing", priority="0.8"),
+        _sitemap_url(base + "/events", priority="0.8"),
+        _sitemap_url(base + "/vendors", priority="0.7"),
+    ]
+
+    events, _ = await ev_svc.search_public_events(db, per_page=1000)
+    for event in events:
+        entries.append(
+            _sitemap_url(
+                f"{base}/e/{event.slug}",
+                lastmod=event.updated_at,
+                priority="0.6",
+            )
+        )
+
+    vendors, _ = await vsvc.list_vendors(db, per_page=500)
+    for vendor in vendors:
+        entries.append(
+            _sitemap_url(
+                f"{base}/vendors/{vendor.slug}",
+                lastmod=vendor.updated_at,
+                priority="0.5",
+            )
+        )
+
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        + "".join(entries)
+        + "</urlset>"
+    )
+    return Response(content=xml, media_type="application/xml")
+
+
 @router_pages.get("/", response_class=HTMLResponse)
-async def landing_page(request: Request):
+async def landing_page(request: Request, db: DBSession):
+    from app.services import event_service as ev_svc
+
     token = request.cookies.get("heelo_access")
     is_logged_in = False
     if token:
@@ -101,9 +193,18 @@ async def landing_page(request: Request):
             is_logged_in = True
         except JWTError:
             pass
+    categories_with_events = await ev_svc.get_landing_categories_with_events(db, max_categories=8)
+    proof = await ev_svc.get_platform_proof(db)
+    spotlight_event = await ev_svc.get_spotlight_event(db)
     return templates.TemplateResponse(
         "home/landing.html",
-        {"request": request, "is_logged_in": is_logged_in},
+        {
+            "request": request,
+            "is_logged_in": is_logged_in,
+            "categories_with_events": categories_with_events,
+            "proof": proof,
+            "spotlight_event": spotlight_event,
+        },
     )
 
 
@@ -134,7 +235,7 @@ async def feedback_page(registration_id: str, request: Request, db: DBSession):
 
 
 def _current_user_or_none(request: Request):
-    """Return user from cookie without raising — used for soft auth on public pages."""
+    """Return user from cookie without raising - used for soft auth on public pages."""
     return None
 
 
@@ -175,26 +276,59 @@ async def dashboard(request: Request, db: DBSession):
     if not user:
         return RedirectResponse("/login?next=/dashboard", status_code=302)
 
-    # Attendees without org: go to their home feed
-    if user.role == "attendee" and not orgs:
-        return RedirectResponse("/home", status_code=302)
+    from app.services import vendor_service as vsvc
+    vendor = await vsvc.get_vendor_by_user(db, user.id)
 
-    # Single org owner/member: go straight to that org
+    # Single org owner/member: go straight to that org overview
     if len(orgs) == 1:
         return RedirectResponse(f"/org/{orgs[0]['org'].slug}", status_code=302)
 
-    # No orgs yet: show org creation wizard
-    if not orgs:
+    # Multiple orgs: show picker
+    if len(orgs) > 1:
+        return templates.TemplateResponse(
+            "dashboard/org_picker.html",
+            {"request": request, "user": user, "orgs": orgs},
+        )
+
+    # If user has a vendor profile and no event orgs: go to vendor dashboard
+    if vendor and not orgs:
+        return RedirectResponse("/my-vendor-dashboard", status_code=302)
+
+    # Organizers without org yet: show org creation wizard
+    if user.role in ("organizer", "both") and not orgs:
         return templates.TemplateResponse(
             "dashboard/org_create.html",
             {"request": request, "user": user},
         )
 
-    # Multiple orgs: show picker
-    return templates.TemplateResponse(
-        "dashboard/org_picker.html",
-        {"request": request, "user": user, "orgs": orgs},
-    )
+    # Attendees: go to their rich personal home hub
+    return RedirectResponse("/home", status_code=302)
+
+
+# ── Host an event / Create event routing ─────────────────────────────────────
+
+
+@router_pages.get("/create", response_class=HTMLResponse)
+@router_pages.get("/host", response_class=HTMLResponse)
+@router_pages.get("/events/new", response_class=HTMLResponse)
+async def host_event(request: Request, db: DBSession):
+    """Smart entrypoint for 'Host an event' / 'Create event'.
+    If not logged in -> redirect to login/register with next=/host.
+    If logged in with 1 org -> redirect directly to /org/{slug}/events/new.
+    If logged in with multiple orgs -> redirect to /dashboard.
+    If logged in with 0 orgs -> redirect to /org/new to set up organization.
+    """
+    user, orgs = await _get_auth_context(request, db)
+    if not user:
+        return RedirectResponse("/register?next=/host", status_code=302)
+
+    if len(orgs) == 1:
+        slug = orgs[0]["org"].slug
+        return RedirectResponse(f"/org/{slug}/events/new", status_code=302)
+    elif len(orgs) > 1:
+        return RedirectResponse("/dashboard", status_code=302)
+    else:
+        return RedirectResponse("/org/new", status_code=302)
 
 
 # ── Org overview page ─────────────────────────────────────────────────────────
@@ -315,33 +449,56 @@ async def attendee_home(request: Request, db: DBSession):
     if not user:
         return RedirectResponse("/login?next=/home", status_code=302)
 
-    # If user is an organizer, redirect to dashboard
-    if user.role in ("organizer", "both") and orgs:
-        return RedirectResponse("/dashboard", status_code=302)
-
     from datetime import UTC, datetime
-
     from sqlalchemy import select
-
     from app.models.event import Event
+    from app.services import ticketing_service as tk_svc
+    from app.services import event_service as ev_svc
+    from app.services import vendor_service as vsvc
 
+    now = datetime.now(UTC)
+
+    # 1. Fetch user's active registrations & tickets
+    registrations, total_tickets = await tk_svc.get_user_registrations(
+        db,
+        user_id=user.id,
+        email=user.email,
+        page=1,
+        per_page=10,
+    )
+    upcoming_tickets = [r for r in registrations if r.event and r.event.start_datetime and r.event.start_datetime >= now]
+    past_tickets = [r for r in registrations if r.event and r.event.start_datetime and r.event.start_datetime < now]
+
+    # 2. Check vendor profile
+    vendor = await vsvc.get_vendor_by_user(db, user.id)
+
+    # 3. Upcoming events to discover
     upcoming = await db.scalars(
         select(Event)
         .where(
             Event.status == "published",
             Event.deleted_at.is_(None),
-            Event.end_datetime >= datetime.now(UTC),
+            Event.end_datetime >= now,
         )
         .order_by(Event.start_datetime.asc())
         .limit(12)
     )
+
+    # 4. Categories for discovery chips
+    categories = await ev_svc.get_all_categories(db)
 
     return templates.TemplateResponse(
         "home/index.html",
         {
             "request": request,
             "user": user,
+            "orgs": orgs,
+            "vendor": vendor,
             "upcoming_events": list(upcoming.all()),
+            "upcoming_tickets": upcoming_tickets,
+            "past_tickets": past_tickets,
+            "total_tickets": total_tickets,
+            "categories": categories,
         },
     )
 
@@ -546,6 +703,15 @@ async def org_event_detail(slug: str, event_id: str, request: Request, db: DBSes
         "whatsapp_connected": False,
     }
 
+    from app.services import affiliate_service as aff_svc
+    from app.services import vendor_service as vend_svc
+
+    booth_packages = await vend_svc.list_booth_packages(db, event.id)
+    booth_applications, _ = await vend_svc.list_booth_applications(
+        db, event_id=event.id, per_page=100
+    )
+    event_affiliates = await aff_svc.list_org_affiliates(db, org.id, event_id=event.id)
+
     return templates.TemplateResponse(
         "events/organizer_detail.html",
         _dash_ctx(
@@ -562,6 +728,9 @@ async def org_event_detail(slug: str, event_id: str, request: Request, db: DBSes
             promo_codes=promo_codes,
             platform_fee_percent=f"{float(pay_svc.PLATFORM_FEE_PERCENT) * 100:g}",
             recurring_children=recurring_children,
+            booth_packages=booth_packages,
+            booth_applications=booth_applications,
+            affiliates=event_affiliates,
             active_page="events",
         ),
     )
@@ -732,6 +901,12 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
     sponsor_rows = await spn_svc.list_sponsors(db, event.id)
     sponsors = [SponsorOut.model_validate(s).model_dump(mode="json") for s in sponsor_rows]
     session_rows = await ag_svc.list_sessions(db, event.id)
+    bookmarked_ids = set()
+    if user:
+        bookmarked_ids = await ag_svc.get_user_bookmarked_session_ids(
+            db, event_id=event.id, user_id=user.id
+        )
+
     sessions = [SessionOut.model_validate(s).model_dump(mode="json") for s in session_rows]
     speaker_id_to_name = {s["speaker_id"]: s["name"] for s in speakers}
     for sess, row in zip(sessions, session_rows, strict=True):
@@ -740,6 +915,11 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
         ]
         sess["time"] = row.start_datetime.strftime("%H:%M")
         sess["end_time"] = row.end_datetime.strftime("%H:%M")
+        sess["day_date"] = row.start_datetime.strftime("%Y-%m-%d")
+        sess["day_label"] = row.start_datetime.strftime("%A, %b %d")
+        sess["room_or_stage"] = row.location_or_stream_url
+        sess["track_color"] = row.track_color
+        sess["is_bookmarked"] = row.id in bookmarked_ids
 
     follower_count = await inbox_svc.get_follower_count(db, event.org_id)
     is_following = False
@@ -771,6 +951,10 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
                 )
             )
 
+    from app.services import vendor_service as vend_svc
+
+    booth_packages = await vend_svc.list_booth_packages(db, event.id, active_only=True)
+
     return templates.TemplateResponse(
         "events/public.html",
         {
@@ -782,6 +966,8 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
             "speakers": speakers,
             "sponsors": sponsors,
             "sessions": sessions,
+            "booth_packages": booth_packages,
+            "has_booth_packages": len(booth_packages) > 0,
             "follower_count": follower_count,
             "is_following": is_following,
             "is_interested": is_interested,
@@ -795,7 +981,7 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
 
 @router_pages.get("/e/{event_slug}/live", response_class=HTMLResponse)
 async def event_live_page(event_slug: str, request: Request, db: DBSession):
-    """Public — no login required, matching the anonymous-Q&A product
+    """Public - no login required, matching the anonymous-Q&A product
     decision. Anyone with the event link can vote and ask questions."""
     from sqlalchemy import select
 
@@ -888,6 +1074,10 @@ async def register_page(event_slug: str, request: Request, db: DBSession):
         ]
     )
 
+    from app.services import payment_service as pay_svc
+
+    fee_config = pay_svc.fee_estimate_config(org.currency if org else "NGN")
+
     return templates.TemplateResponse(
         "events/register.html",
         {
@@ -899,6 +1089,8 @@ async def register_page(event_slug: str, request: Request, db: DBSession):
             "form_fields": form_fields,
             "ticket_types_json": ticket_types_json,
             "form_fields_json": form_fields_json,
+            "platform_fee_percent": float(pay_svc.PLATFORM_FEE_PERCENT) * 100,
+            "fee_config_json": _json.dumps(fee_config),
         },
     )
 
@@ -958,6 +1150,7 @@ async def event_widget(event_slug: str, request: Request, db: DBSession):
         {
             "request": request,
             "event": event,
+            "org": event.organization,
             "ticket_types": ticket_types,
             "form_fields": form_fields,
             "ticket_types_json": ticket_types_json,
@@ -997,20 +1190,42 @@ async def flutterwave_callback(
     tx_ref: str = "",
     transaction_id: str = "",
 ):
+    import uuid
+
     from fastapi.responses import RedirectResponse
 
     from app.services import payment_service as pay_svc
 
+    # tx_ref is "heelo_{order_id}" (see _initialize_flutterwave) - recover
+    # the order id up front so a failed/errored verification can still send
+    # the buyer back to their own order instead of a bare homepage redirect.
+    fallback_url = "/?error=payment_failed"
+    if tx_ref.startswith("heelo_"):
+        try:
+            order_id = uuid.UUID(tx_ref[len("heelo_") :])
+            fallback_url = f"/orders/{order_id}/confirmation?pending=1&error=1"
+        except ValueError:
+            pass
+
     if status == "successful" and transaction_id:
         try:
-            order = await pay_svc.verify_flutterwave(db, int(transaction_id))
-        except (ValueError, Exception):
-            order = None
+            tx_id = int(transaction_id)
+        except ValueError:
+            logger.warning("payment.flutterwave_callback_bad_transaction_id", tx_ref=tx_ref)
+            return RedirectResponse(fallback_url, status_code=302)
+
+        try:
+            order = await pay_svc.verify_flutterwave(db, tx_id)
+        except Exception as err:
+            logger.warning(
+                "payment.flutterwave_callback_verify_failed", tx_ref=tx_ref, error=str(err)
+            )
+            return RedirectResponse(fallback_url, status_code=302)
 
         if order and order.payment_status == "paid":
             return RedirectResponse(f"/orders/{order.id}/confirmation", status_code=302)
 
-    return RedirectResponse("/?error=payment_failed", status_code=302)
+    return RedirectResponse(fallback_url, status_code=302)
 
 
 @router_pages.get("/payments/stripe/return", response_class=HTMLResponse)
@@ -1056,7 +1271,7 @@ async def kiosk_page(slug: str, event_id: str, request: Request, db: DBSession):
 
 @router_pages.get("/org/{slug}/events/{event_id}/pulse", response_class=HTMLResponse)
 async def pulse_page(slug: str, event_id: str, request: Request, db: DBSession):
-    """Glanceable mid-event dashboard — check-in rate, capacity fill, ticket tiers, live via SSE."""
+    """Glanceable mid-event dashboard - check-in rate, capacity fill, ticket tiers, live via SSE."""
     import uuid as _uuid
 
     user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
@@ -1138,6 +1353,8 @@ async def payment_settings(slug: str, request: Request, db: DBSession):
     accounts = await acc_svc.list_payment_accounts(db, org.id)
     banks = await acc_svc.list_paystack_banks()
     banks_json = _json.dumps(banks)
+    flutterwave_banks = await acc_svc.list_flutterwave_banks()
+    flutterwave_banks_json = _json.dumps(flutterwave_banks)
 
     onboarding = await org_svc.get_onboarding_state(db, org.id)
     sidebar_state = {
@@ -1158,11 +1375,51 @@ async def payment_settings(slug: str, request: Request, db: DBSession):
             sidebar_state,
             accounts=accounts,
             banks_json=banks_json,
+            flutterwave_banks_json=flutterwave_banks_json,
             is_owner=is_owner,
             user_role=role,
             active_page="settings",
         ),
     )
+
+
+@router_pages.get("/org/{slug}/settings/payments/stripe/return", response_class=HTMLResponse)
+async def stripe_connect_return(slug: str, request: Request, db: DBSession):
+    """Stripe redirects the organizer's browser here after Express
+    onboarding - re-check status with Stripe (the account.updated webhook
+    also does this, but that can race the browser redirect, so this is the
+    synchronous confirmation path)."""
+    from app.services import payment_account_service as acc_svc
+
+    user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
+    if not user or not org or not role:
+        return RedirectResponse(f"/login?next=/org/{slug}/settings/payments", status_code=302)
+
+    account = await acc_svc.get_default_payment_account(db, org.id, "stripe")
+    if account:
+        account = await acc_svc.refresh_stripe_connect_status(db, account)
+
+    query = "stripe_connected=1" if account and account.is_verified else "stripe_pending=1"
+    return RedirectResponse(f"/org/{slug}/settings/payments?{query}", status_code=302)
+
+
+@router_pages.get("/org/{slug}/settings/payments/stripe/refresh", response_class=HTMLResponse)
+async def stripe_connect_refresh(slug: str, request: Request, db: DBSession):
+    """Stripe redirects here if the organizer's onboarding link expired
+    before they finished - regenerate a fresh one and send them straight
+    back into onboarding."""
+    from app.services import payment_account_service as acc_svc
+
+    user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
+    if not user or not org or not role:
+        return RedirectResponse(f"/login?next=/org/{slug}/settings/payments", status_code=302)
+
+    account = await acc_svc.get_default_payment_account(db, org.id, "stripe")
+    if not account:
+        return RedirectResponse(f"/org/{slug}/settings/payments", status_code=302)
+
+    url = await acc_svc.create_stripe_onboarding_link(account, org)
+    return RedirectResponse(url, status_code=302)
 
 
 @router_pages.get("/org/{slug}/campaigns", response_class=HTMLResponse)
@@ -1597,7 +1854,7 @@ async def crm_list(slug: str, request: Request, db: DBSession):
 @router_pages.get("/org/{slug}/checkin", response_class=HTMLResponse)
 async def checkin_hub(slug: str, request: Request, db: DBSession):
     """
-    Org-wide check-in hub — Kiosk and the check-in dashboard are event-scoped
+    Org-wide check-in hub - Kiosk and the check-in dashboard are event-scoped
     (need to know which event), but the sidebar is org-scoped, so this page
     is the jumping-off point: pick the event, then open Kiosk or the dashboard.
     """
@@ -1783,6 +2040,7 @@ async def order_pay(order_id: str, request: Request, db: DBSession):
 # ── My Tickets ───────────────────────────────────────────────────────────────
 
 
+@router_pages.get("/dashboard/my-tickets", response_class=HTMLResponse)
 @router_pages.get("/my-tickets", response_class=HTMLResponse)
 async def my_tickets(request: Request, db: DBSession, page: int = 1):
     from datetime import UTC, datetime
@@ -1818,6 +2076,13 @@ async def my_tickets(request: Request, db: DBSession, page: int = 1):
 
     total_pages = math.ceil(total / 20) if total else 1
 
+    base = str(request.base_url).rstrip("/")
+    mt_transfer_urls = {
+        str(r.id): f"{base}/transfer/{r.transfer_token}"
+        for r in registrations
+        if r.status == "transfer_pending" and r.transfer_token
+    }
+
     return templates.TemplateResponse(
         "dashboard/my_tickets.html",
         {
@@ -1833,13 +2098,14 @@ async def my_tickets(request: Request, db: DBSession, page: int = 1):
             "total": total,
             "page": page,
             "total_pages": total_pages,
+            "mt_transfer_urls": mt_transfer_urls,
         },
     )
 
 
 @router_pages.get("/my-tickets/{registration_id}", response_class=HTMLResponse)
 async def ticket_view(registration_id: str, request: Request, db: DBSession):
-    """A single printable ticket — branded, self-hosted QR, print-optimized."""
+    """A single printable ticket - branded, self-hosted QR, print-optimized."""
     import uuid as _uuid
 
     from sqlalchemy import select
@@ -1887,6 +2153,18 @@ async def ticket_view(registration_id: str, request: Request, db: DBSession):
             "gcal_url": gcal_url(reg.event),
         },
     )
+
+
+@router_pages.get("/my-bookings", response_class=HTMLResponse)
+async def my_bookings(request: Request, db: DBSession):
+    user, _orgs = await _get_auth_context(request, db)
+    if not user:
+        return RedirectResponse("/login?next=/my-bookings", status_code=302)
+    from app.services import vendor_service as vsvc
+    vendor = await vsvc.get_vendor_by_user(db, user.id)
+    if vendor:
+        return RedirectResponse("/my-vendor-dashboard?tab=bookings", status_code=302)
+    return RedirectResponse("/home", status_code=302)
 
 
 # ── User profile ─────────────────────────────────────────────────────────────
@@ -1953,6 +2231,9 @@ async def org_settings(slug: str, request: Request, db: DBSession):
         "has_registrations": False,
         "whatsapp_connected": onboarding.has_whatsapp,
     }
+
+    from app.plans import PlanFeature, has_feature
+
     return templates.TemplateResponse(
         "dashboard/org_settings.html",
         _dash_ctx(
@@ -1965,6 +2246,8 @@ async def org_settings(slug: str, request: Request, db: DBSession):
             is_owner=is_owner,
             user_role=role,
             active_page="settings",
+            has_custom_domain_feature=has_feature(org.plan, PlanFeature.CUSTOM_DOMAIN),
+            has_sso_feature=has_feature(org.plan, PlanFeature.SSO),
         ),
     )
 
@@ -2046,6 +2329,25 @@ async def org_plan(slug: str, request: Request, db: DBSession):
         "has_registrations": False,
         "whatsapp_connected": onboarding.has_whatsapp,
     }
+
+    from app.plans import get_limits, get_quota_usage
+
+    limits = get_limits(org.plan)
+    wa_used = get_quota_usage(org.id, "whatsapp")
+    ai_used = get_quota_usage(org.id, "ai")
+    usage = {
+        "whatsapp_used": wa_used,
+        "whatsapp_limit": limits.whatsapp_messages_per_month,
+        "whatsapp_pct": min(100, round(100 * wa_used / limits.whatsapp_messages_per_month))
+        if limits.whatsapp_messages_per_month
+        else 0,
+        "ai_used": ai_used,
+        "ai_limit": limits.ai_generations_per_month,
+        "ai_pct": min(100, round(100 * ai_used / limits.ai_generations_per_month))
+        if limits.ai_generations_per_month
+        else 0,
+    }
+
     return templates.TemplateResponse(
         "dashboard/plan.html",
         _dash_ctx(
@@ -2058,8 +2360,115 @@ async def org_plan(slug: str, request: Request, db: DBSession):
             is_owner=is_owner,
             user_role=role,
             active_page="plan",
+            usage=usage,
+            invoices=await billing_svc.list_invoices(db, org.id),
         ),
     )
+
+
+# ── Plan billing (upgrade / renew / downgrade) ─────────────────────────────────
+
+
+@router_pages.get("/org/{slug}/plan/upgrade/{plan}")
+async def plan_upgrade(slug: str, plan: str, request: Request, db: DBSession):
+    user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
+    if not user:
+        return RedirectResponse(f"/login?next=/org/{slug}/plan", status_code=302)
+    require_page_permission(Permission.ORG_SETTINGS_EDIT, role, org)
+
+    try:
+        checkout_url = await billing_svc.start_plan_checkout(db, org, plan, initiated_by=user.id)
+        return RedirectResponse(checkout_url, status_code=302)
+    except HTTPException:
+        return RedirectResponse(f"/org/{slug}/plan?payment_failed=1", status_code=302)
+
+
+@router_pages.post("/org/{slug}/plan/downgrade")
+async def plan_downgrade(slug: str, request: Request, db: DBSession):
+    user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
+    if not user:
+        return RedirectResponse(f"/login?next=/org/{slug}/plan", status_code=302)
+    require_page_permission(Permission.ORG_SETTINGS_EDIT, role, org)
+
+    await billing_svc.schedule_downgrade(db, org)
+    return RedirectResponse(f"/org/{slug}/plan?downgrade_scheduled=1", status_code=302)
+
+
+@router_pages.post("/org/{slug}/plan/downgrade/cancel")
+async def plan_downgrade_cancel(slug: str, request: Request, db: DBSession):
+    user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
+    if not user:
+        return RedirectResponse(f"/login?next=/org/{slug}/plan", status_code=302)
+    require_page_permission(Permission.ORG_SETTINGS_EDIT, role, org)
+
+    await billing_svc.cancel_scheduled_downgrade(db, org)
+    return RedirectResponse(f"/org/{slug}/plan?downgrade_cancelled=1", status_code=302)
+
+
+@router_pages.get("/billing/callback", response_class=HTMLResponse)
+async def plan_billing_paystack_callback(request: Request, db: DBSession, reference: str = ""):
+    from app.services import payment_service as pay_svc
+
+    if not reference.startswith("heelo_plan_"):
+        return RedirectResponse("/?error=invalid_reference", status_code=302)
+
+    invoice = await pay_svc.verify_paystack_plan(db, reference)
+    if not invoice:
+        return RedirectResponse("/?error=payment_failed", status_code=302)
+
+    await billing_svc.confirm_plan_invoice(db, invoice)
+    org = await org_svc.get_organization_by_id(db, invoice.org_id)
+    target = f"/org/{org.slug}/plan?upgraded=1" if org else "/dashboard?upgraded=1"
+    return RedirectResponse(target, status_code=302)
+
+
+@router_pages.get("/billing/flutterwave/callback", response_class=HTMLResponse)
+async def plan_billing_flutterwave_callback(
+    request: Request,
+    db: DBSession,
+    status: str = "",
+    tx_ref: str = "",
+    transaction_id: str = "",
+):
+    from app.services import payment_service as pay_svc
+
+    if status == "successful" and transaction_id:
+        try:
+            tx_id = int(transaction_id)
+        except ValueError:
+            tx_id = None
+
+        invoice = None
+        if tx_id is not None:
+            try:
+                invoice = await pay_svc.verify_flutterwave_plan(db, tx_id)
+            except Exception as err:
+                logger.warning("billing.flutterwave_verify_failed", tx_ref=tx_ref, error=str(err))
+
+        if invoice:
+            await billing_svc.confirm_plan_invoice(db, invoice)
+            org = await org_svc.get_organization_by_id(db, invoice.org_id)
+            target = f"/org/{org.slug}/plan?upgraded=1" if org else "/dashboard?upgraded=1"
+            return RedirectResponse(target, status_code=302)
+
+    return RedirectResponse("/?error=payment_failed", status_code=302)
+
+
+@router_pages.get("/billing/stripe/return", response_class=HTMLResponse)
+async def plan_billing_stripe_return(request: Request, db: DBSession, session_id: str = ""):
+    from app.services import payment_service as pay_svc
+
+    if not session_id:
+        return RedirectResponse("/?error=missing_session", status_code=302)
+
+    invoice = await pay_svc.verify_stripe_plan_session(db, session_id)
+    if not invoice:
+        return RedirectResponse("/?error=payment_failed", status_code=302)
+
+    await billing_svc.confirm_plan_invoice(db, invoice)
+    org = await org_svc.get_organization_by_id(db, invoice.org_id)
+    target = f"/org/{org.slug}/plan?upgraded=1" if org else "/dashboard?upgraded=1"
+    return RedirectResponse(target, status_code=302)
 
 
 # ── Developer settings ────────────────────────────────────────────────────────
@@ -2148,9 +2557,14 @@ async def public_events_list(
     q: str | None = None,
     city: str | None = None,
     format: str | None = None,
+    category: str | None = None,
+    category_section: str | None = None,
+    filter: str | None = None,
+    section: str | None = None,
+    view: str | None = None,
     page: int = 1,
 ):
-    from sqlalchemy import distinct
+    from sqlalchemy import distinct, func
     from sqlalchemy import select as _select
 
     from app.models.event import Event
@@ -2158,11 +2572,56 @@ async def public_events_list(
 
     user, orgs = await _get_auth_context(request, db)
 
-    per_page = 24
-    events, total = await ev_svc.search_public_events(
-        db, q=q, city=city, format=format, page=page, per_page=per_page
-    )
-    total_pages = (total + per_page - 1) // per_page
+    raw_section = category_section or filter or section
+    active_section = None
+    active_section_info = None
+    is_view_all = (view == "all" or raw_section == "all")
+
+    if raw_section and not is_view_all:
+        norm_key = raw_section.lower().replace("-", "_").strip()
+        if norm_key in ("zero_dime", "zerodime"):
+            norm_key = "free"
+        elif norm_key in ("this_weekend",):
+            norm_key = "weekend"
+        elif norm_key in ("new_on_heelo",):
+            norm_key = "new"
+        elif norm_key in ("under_10k", "under10k"):
+            norm_key = "below_10k"
+        active_section = norm_key
+        active_section_info = ev_svc.CURATED_EVENT_SECTIONS.get(norm_key)
+
+    is_filtered_view = bool(q or city or format or category or active_section or is_view_all)
+
+    total_all_events = 0
+    if is_filtered_view:
+        per_page = 24
+        events, total = await ev_svc.search_public_events(
+            db,
+            q=q,
+            city=city,
+            format=format,
+            category_slug=category,
+            curated_section=active_section,
+            page=page,
+            per_page=per_page,
+        )
+        total_pages = (total + per_page - 1) // per_page
+        sections = []
+    else:
+        events = []
+        total = 0
+        total_pages = 0
+        sections = await ev_svc.get_curated_event_sections(db, limit_per_section=12)
+        total_all_events = (
+            await db.scalar(
+                _select(func.count(Event.id)).where(
+                    Event.status.in_(["published", "live"]),
+                    Event.deleted_at.is_(None),
+                    Event.is_private == False,
+                )
+            )
+            or 0
+        )
 
     city_rows = await db.scalars(
         _select(distinct(Event.venue_city))
@@ -2171,10 +2630,20 @@ async def public_events_list(
         .limit(50)
     )
     cities = [c for c in city_rows.all() if c]
+    categories = await ev_svc.get_all_categories(db)
+    category_name = next((c.name for c in categories if c.slug == category), category)
 
     def qs_without(param: str) -> str:
         params = dict(request.query_params)
-        params.pop(param, None)
+        if param in ("category_section", "filter", "section"):
+            params.pop("category_section", None)
+            params.pop("filter", None)
+            params.pop("section", None)
+        elif param == "view":
+            params.pop("view", None)
+        else:
+            params.pop(param, None)
+        params.pop("page", None)
         return "&".join(f"{k}={v}" for k, v in params.items())
 
     def qs_with_page(p: int) -> str:
@@ -2187,14 +2656,23 @@ async def public_events_list(
         {
             "request": request,
             "user": user,
+            "is_filtered_view": is_filtered_view,
+            "is_view_all": is_view_all,
+            "sections": sections,
             "events": events,
             "total": total,
+            "total_all_events": total_all_events,
             "page": page,
             "total_pages": total_pages,
             "q": q,
             "city": city,
             "format": format,
+            "category": category,
+            "category_name": category_name,
+            "active_section": active_section,
+            "active_section_info": active_section_info,
             "cities": cities,
+            "categories": categories,
             "query_string_without": qs_without,
             "query_string_with_page": qs_with_page,
         },
@@ -2204,7 +2682,7 @@ async def public_events_list(
 @router_pages.get("/discover", response_class=HTMLResponse)
 async def discover_feed(request: Request, db: DBSession, page: int = 1):
     """
-    Feed-style event discovery — vertical scroll, one card at a time.
+    Feed-style event discovery - vertical scroll, one card at a time.
     Additive alongside /events; does not replace the existing listing page.
     """
     from app.services import connection_service as conn_svc
@@ -2250,6 +2728,9 @@ async def vendor_list(
     category: str | None = None,
     city: str | None = None,
     price_range: str | None = None,
+    min_rating: float | None = None,
+    verified_only: bool = False,
+    sort_by: str = "relevance",
     page: int = 1,
 ):
     from sqlalchemy import distinct
@@ -2260,8 +2741,16 @@ async def vendor_list(
 
     user, orgs = await _get_auth_context(request, db)
 
-    vendors, total = await vsvc.list_vendors(
-        db, q=q, category=category, city=city, price_range=price_range, page=page
+    vendors, total = await vsvc.list_vendors_advanced(
+        db,
+        q=q,
+        category=category,
+        city=city,
+        price_range=price_range,
+        min_rating=min_rating,
+        verified_only=verified_only,
+        sort_by=sort_by,
+        page=page,
     )
 
     city_rows = await db.scalars(
@@ -2293,6 +2782,9 @@ async def vendor_list(
             "category": category,
             "city": city,
             "price_range": price_range,
+            "min_rating": min_rating,
+            "verified_only": verified_only,
+            "sort_by": sort_by,
             "cities": cities,
             "query_without_cat": qs_without_cat(),
             "query_with_cat": qs_with_cat,
@@ -2310,7 +2802,7 @@ async def venue_list(
     min_capacity: int | None = None,
     page: int = 1,
 ):
-    """Venue discovery — a pre-filtered, location-first view of vendors in the
+    """Venue discovery - a pre-filtered, location-first view of vendors in the
     "venue" category, so event planners can find a hall near their proposed
     event location without wading through the general vendor marketplace."""
     from sqlalchemy import distinct
@@ -2365,6 +2857,11 @@ async def vendor_detail(vendor_slug: str, request: Request, db: DBSession):
         raise HTTPException(404, "Vendor not found.")
 
     primary_org = orgs[0]["org"] if orgs else None
+    is_owner = bool(user and vendor.user_id == user.id)
+
+    services = await vsvc.list_vendor_services(db, vendor.id, active_only=True)
+    reviews = await vsvc.list_vendor_reviews(db, vendor.id)
+    reviews_total = len(reviews)
 
     return templates.TemplateResponse(
         "vendors/detail.html",
@@ -2372,7 +2869,99 @@ async def vendor_detail(vendor_slug: str, request: Request, db: DBSession):
             "request": request,
             "user": user,
             "vendor": vendor,
+            "services": services,
+            "reviews": reviews,
+            "reviews_total": reviews_total,
             "org": primary_org,
+            "is_owner": is_owner,
+        },
+    )
+
+
+@router_pages.get("/vendors/bookings/{booking_id}/pay", response_class=HTMLResponse)
+async def vendor_booking_checkout_page(
+    booking_id: uuid.UUID,
+    request: Request,
+    db: DBSession,
+    reference: str | None = None,
+    verify: bool = False,
+):
+    from app.services import vendor_service as vsvc
+
+    user, orgs = await _get_auth_context(request, db)
+    booking = await vsvc.get_booking_by_id(db, booking_id)
+    if not booking:
+        raise HTTPException(404, "Booking not found.")
+
+    if verify and reference:
+        booking = await vsvc.confirm_booking_payment(db, booking, payment_reference=reference)
+
+    vendor = await vsvc.get_vendor_by_id(db, booking.vendor_id)
+    return templates.TemplateResponse(
+        "vendors/booking_pay.html",
+        {
+            "request": request,
+            "user": user,
+            "booking": booking,
+            "vendor": vendor,
+            "reference": reference or booking.payment_reference,
+            "verified": booking.status == "confirmed",
+        },
+    )
+
+
+@router_pages.get("/my-vendor-dashboard", response_class=HTMLResponse)
+async def my_vendor_dashboard(request: Request, db: DBSession):
+    import uuid
+    from app.services import vendor_service as vsvc
+    from app.models.vendor import (
+        VendorPayout,
+        VendorVerificationRequest,
+    )
+    from sqlalchemy import select
+
+    user, orgs = await _get_auth_context(request, db)
+    if not user:
+        return RedirectResponse("/login?next=/my-vendor-dashboard", status_code=302)
+
+    vendor = await vsvc.get_vendor_by_user(db, user.id)
+    if not vendor:
+        return RedirectResponse("/vendor-signup", status_code=302)
+
+    tab = request.query_params.get("tab", "overview")
+
+    services = await vsvc.list_vendor_services(db, vendor.id, active_only=False)
+    inquiries = await vsvc.list_vendor_inquiries(db, vendor.id)
+    bookings = await vsvc.list_vendor_bookings(db, vendor_id=vendor.id)
+    reviews = await vsvc.list_vendor_reviews(db, vendor.id)
+
+    payouts = await db.scalars(
+        select(VendorPayout)
+        .where(VendorPayout.vendor_id == vendor.id)
+        .order_by(VendorPayout.created_at.desc())
+    )
+
+    verif_req = await db.scalar(
+        select(VendorVerificationRequest)
+        .where(VendorVerificationRequest.vendor_id == vendor.id)
+        .order_by(VendorVerificationRequest.created_at.desc())
+    )
+
+    return templates.TemplateResponse(
+        "vendors/dashboard.html",
+        {
+            "request": request,
+            "user": user,
+            "vendor": vendor,
+            "tab": tab,
+            "services": services,
+            "inquiries": inquiries,
+            "bookings": bookings,
+            "reviews": reviews,
+            "payouts": list(payouts.all()),
+            "verif_req": verif_req,
+            "plans": vsvc.get_vendor_subscription_plans(vendor.currency),
+            "featured_price": vsvc.get_featured_pricing("marketplace_top", 30, vendor.currency)[0],
         },
     )
 
@@ -2726,3 +3315,141 @@ async def my_vendor_leads(request: Request, db: DBSession):
             "per_page": 20,
         },
     )
+
+
+# ── Organizer Vendors & Booth Applications ─────────────────────────────────────
+
+
+@router_pages.get("/org/{slug}/vendors", response_class=HTMLResponse)
+async def org_vendors_page(slug: str, request: Request, db: DBSession):
+    user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
+    if not user:
+        return RedirectResponse(f"/login?next=/org/{slug}/vendors", status_code=302)
+    if not org or not role:
+        raise HTTPException(403, "Access denied.")
+
+    from app.services import event_service as ev_svc
+
+    events, _ = await ev_svc.list_org_events(db, org.id, page=1, per_page=100)
+    onboarding = await org_svc.get_onboarding_state(db, org.id)
+    sidebar_state = {
+        "has_events": onboarding.has_event,
+        "has_revenue": False,
+        "has_registrations": False,
+        "whatsapp_connected": False,
+    }
+
+    return templates.TemplateResponse(
+        "dashboard/vendor_applications.html",
+        _dash_ctx(
+            request,
+            user,
+            org,
+            orgs,
+            onboarding,
+            sidebar_state,
+            events=events,
+            active_page="vendors",
+        ),
+    )
+
+
+# ── Organizer Affiliates & Promoters ───────────────────────────────────────────
+
+
+@router_pages.get("/org/{slug}/affiliates", response_class=HTMLResponse)
+async def org_affiliates_page(slug: str, request: Request, db: DBSession):
+    user, orgs, org, role, is_owner = await _org_page_ctx(request, db, slug)
+    if not user:
+        return RedirectResponse(f"/login?next=/org/{slug}/affiliates", status_code=302)
+    if not org or not role:
+        raise HTTPException(403, "Access denied.")
+
+    from app.services import event_service as ev_svc
+
+    events, _ = await ev_svc.list_org_events(db, org.id, page=1, per_page=100)
+    onboarding = await org_svc.get_onboarding_state(db, org.id)
+    sidebar_state = {
+        "has_events": onboarding.has_event,
+        "has_revenue": False,
+        "has_registrations": False,
+        "whatsapp_connected": False,
+    }
+
+    return templates.TemplateResponse(
+        "dashboard/affiliates.html",
+        _dash_ctx(
+            request,
+            user,
+            org,
+            orgs,
+            onboarding,
+            sidebar_state,
+            events=events,
+            active_page="affiliates",
+        ),
+    )
+
+
+# ── Public Exhibitor Booth Application ─────────────────────────────────────────
+
+
+@router_pages.get("/events/{event_slug}/apply-vendor", response_class=HTMLResponse)
+@router_pages.get("/e/{event_slug}/apply-vendor", response_class=HTMLResponse)
+async def event_vendor_apply_page(event_slug: str, request: Request, db: DBSession):
+    from sqlalchemy import select
+
+    from app.models.organization import Organization
+    from app.services import event_service as ev_svc
+    from app.services import vendor_service as vsvc
+
+    event = await ev_svc.get_event_by_slug(db, event_slug)
+    if not event or event.deleted_at is not None:
+        raise HTTPException(404, "Event not found.")
+
+    org = await db.scalar(select(Organization).where(Organization.id == event.org_id))
+    booth_packages = await vsvc.list_booth_packages(db, event.id, active_only=True)
+
+    return templates.TemplateResponse(
+        "events/vendor_apply.html",
+        {
+            "request": request,
+            "event": event,
+            "org": org,
+            "booth_packages": booth_packages,
+        },
+    )
+
+
+# ── Exhibitor Booth Payment & Confirmation ─────────────────────────────────────
+
+
+@router_pages.get("/booths/{app_id}/pay", response_class=HTMLResponse)
+async def booth_payment_page(app_id: uuid.UUID, request: Request, db: DBSession):
+    from app.services import vendor_service as vsvc
+
+    app = await vsvc.get_booth_application(db, app_id)
+    if not app:
+        raise HTTPException(404, "Booth application not found.")
+
+    reference = request.query_params.get("reference")
+    confirmed = request.query_params.get("confirmed")
+    verify = request.query_params.get("verify")
+    if (confirmed or verify) and app.status != "paid":
+        app = await vsvc.confirm_booth_payment(db, app, payment_reference=reference)
+        try:
+            from app.tasks.email import send_booth_application_confirmed
+
+            send_booth_application_confirmed.delay(str(app.id))
+        except Exception:
+            pass
+
+    return templates.TemplateResponse(
+        "events/booth_pay.html",
+        {
+            "request": request,
+            "app": app,
+            "event": app.event,
+        },
+    )
+

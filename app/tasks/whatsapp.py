@@ -150,7 +150,7 @@ def _reminder_hours(event) -> list[float]:
 @shared_task(name="app.tasks.whatsapp.send_event_reminders")
 def send_event_reminders() -> None:
     """
-    Hourly Beat task — for each upcoming event, checks its configured reminder
+    Hourly Beat task - for each upcoming event, checks its configured reminder
     offsets (default 24h + 1h before start) and WhatsApps attendees who are
     within +/-1h of a due offset. Uses Redis dedup per (event, offset).
     """
@@ -180,7 +180,21 @@ def send_event_reminders() -> None:
 
         for event in events:
             hours_until = (event.start_datetime - now).total_seconds() / 3600
-            due_offsets = [h for h in _reminder_hours(event) if abs(hours_until - h) <= 1]
+            due_offsets: list[float] = []
+
+            # 24-hour countdown reminder
+            if 22.0 <= hours_until <= 26.0:
+                due_offsets.append(24.0)
+
+            # 1-hour countdown reminder
+            if 0.5 <= hours_until <= 1.5:
+                due_offsets.append(1.0)
+
+            # Custom configured offsets
+            for h in _reminder_hours(event):
+                if h not in (24.0, 1.0) and abs(hours_until - h) <= 0.75:
+                    due_offsets.append(h)
+
             if not due_offsets:
                 continue
 
@@ -439,7 +453,7 @@ def handle_incoming_message(from_phone: str, message_text: str) -> None:
             wa.send_text_sync(from_phone, reply)
 
 
-# ── Structured keyword Q&A (v1: no NLP — see app/services/ai_service.py for
+# ── Structured keyword Q&A (v1: no NLP - see app/services/ai_service.py for
 # the LLM-based responder, which exists but is intentionally not used here) ───
 
 _LOCATION_KEYWORDS = ("where", "location", "venue", "address", "held")
@@ -474,7 +488,7 @@ def _most_recent_event_context(db, from_phone: str):
 
 
 def _structured_reply(db, from_phone: str, message_text: str) -> str:
-    """Keyword/menu-based Q&A for common attendee questions — no LLM involved."""
+    """Keyword/menu-based Q&A for common attendee questions - no LLM involved."""
     text = message_text.strip().lower()
 
     reg, event = _most_recent_event_context(db, from_phone)
@@ -482,11 +496,11 @@ def _structured_reply(db, from_phone: str, message_text: str) -> str:
         return wa.HELP_TEXT
 
     if any(kw in text for kw in _LOCATION_KEYWORDS):
-        return f"*{event.title}* is at:\n📍 {wa.location_label(event)}"
+        return f"*{event.title}* is at:\nVenue: {wa.location_label(event)}"
 
     if any(kw in text for kw in _TIME_KEYWORDS):
         when = wa.date_label(event) or "Date/time TBA"
-        return f"*{event.title}* starts:\n📅 {when}"
+        return f"*{event.title}* starts:\nDate: {when}"
 
     if any(kw in text for kw in _GUEST_KEYWORDS):
         from app.models.ticketing import TicketType
@@ -498,11 +512,11 @@ def _structured_reply(db, from_phone: str, message_text: str) -> str:
         )
         if tt and tt.max_per_order > 1:
             return (
-                f"Group tickets are available for *{event.title}* — "
+                f"Group tickets are available for *{event.title}* - "
                 "get your guest their own ticket at checkout so they're on the list too."
             )
         return (
-            "Each attendee needs their own ticket to enter — "
+            "Each attendee needs their own ticket to enter - "
             "please have your guest register separately."
         )
 

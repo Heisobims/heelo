@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 class Checkin(Base, TimestampMixin):
     """
-    A single check-in event — one row per scan.
+    A single check-in event - one row per scan.
     One registration may have multiple rows if the event uses session-level check-in.
     """
 

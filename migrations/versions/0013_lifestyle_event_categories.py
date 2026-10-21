@@ -1,4 +1,4 @@
-"""Add lifestyle/social event categories — weddings, nightlife, hangouts, concerts.
+"""Add lifestyle/social event categories - weddings, nightlife, hangouts, concerts.
 
 The existing taxonomy skewed toward professional/conference events (Technology,
 Business, Networking...). Heelo is meant to host any kind of event, so this

@@ -12,7 +12,7 @@ from app.models.community import EventInterest
 
 
 async def mark_interested(db: AsyncSession, user_id: uuid.UUID, event_id: uuid.UUID) -> None:
-    """Idempotent — marking twice is a no-op, not an error."""
+    """Idempotent - marking twice is a no-op, not an error."""
     stmt = (
         pg_insert(EventInterest)
         .values(id=uuid.uuid4(), user_id=user_id, event_id=event_id)
@@ -45,7 +45,7 @@ async def is_interested(db: AsyncSession, user_id: uuid.UUID, event_id: uuid.UUI
 async def interested_event_ids_for_user(
     db: AsyncSession, user_id: uuid.UUID, event_ids: list[uuid.UUID]
 ) -> set[uuid.UUID]:
-    """Batch check — which of these event_ids has the user marked interested? For card badges."""
+    """Batch check - which of these event_ids has the user marked interested? For card badges."""
     if not event_ids:
         return set()
     rows = await db.scalars(

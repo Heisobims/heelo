@@ -48,7 +48,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
-      # Must cover every queue in task_routes (app/tasks/celery_app.py) — routed
+      # Must cover every queue in task_routes (app/tasks/celery_app.py) - routed
       # tasks are otherwise published but never consumed by this worker.
       CELERY_QUEUES: celery,email,whatsapp,webhooks,notifications
       CELERY_CONCURRENCY: "2"
@@ -88,7 +88,7 @@ services:
     networks:
       - heelo_net
 
-  # ── Celery Flower (task monitoring — not exposed publicly) ──────────────────
+  # ── Celery Flower (task monitoring - not exposed publicly) ──────────────────
   flower:
     build:
       context: .

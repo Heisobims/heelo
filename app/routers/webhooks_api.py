@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import uuid
+from typing import Annotated
 
 import structlog
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.dependencies import DBSession, OrgAccess
+from app import plans
+from app.dependencies import DBSession
+from app.permissions import Permission, require_permission
 from app.services import webhook_service as wh_svc
 
 logger = structlog.get_logger()
@@ -15,6 +18,8 @@ router_webhooks_api = APIRouter(
     prefix="/api/v1/organizations/{slug}/webhooks",
     tags=["webhooks"],
 )
+
+WebhooksManageAccess = Annotated[tuple, Depends(require_permission(Permission.WEBHOOKS_MANAGE))]
 
 
 class SubscriptionIn(BaseModel):
@@ -42,7 +47,7 @@ def _sub_dict(sub) -> dict:
 
 
 @router_webhooks_api.get("")
-async def list_subscriptions(slug: str, db: DBSession, org_access: OrgAccess):
+async def list_subscriptions(slug: str, db: DBSession, org_access: WebhooksManageAccess):
     org, role, is_owner = org_access
     subs = await wh_svc.list_subscriptions(db, org.id)
     return {"success": True, "data": [_sub_dict(s) for s in subs]}
@@ -50,9 +55,12 @@ async def list_subscriptions(slug: str, db: DBSession, org_access: OrgAccess):
 
 @router_webhooks_api.post("", status_code=201)
 async def create_subscription(
-    slug: str, body: SubscriptionIn, db: DBSession, org_access: OrgAccess
+    slug: str, body: SubscriptionIn, db: DBSession, org_access: WebhooksManageAccess
 ):
     org, role, is_owner = org_access
+
+    existing = await wh_svc.list_subscriptions(db, org.id)
+    plans.check_webhook_limit(len(existing), org.plan)
 
     # Validate event types
     invalid = [e for e in body.events if e not in wh_svc.WEBHOOK_EVENTS]
@@ -69,13 +77,17 @@ async def create_subscription(
     return {
         "success": True,
         "data": {**_sub_dict(sub), "secret": sub.secret},
-        "warning": "Save the secret now — it will not be shown again.",
+        "warning": "Save the secret now - it will not be shown again.",
     }
 
 
 @router_webhooks_api.patch("/{sub_id}")
 async def update_subscription(
-    slug: str, sub_id: str, body: SubscriptionUpdate, db: DBSession, org_access: OrgAccess
+    slug: str,
+    sub_id: str,
+    body: SubscriptionUpdate,
+    db: DBSession,
+    org_access: WebhooksManageAccess,
 ):
     org, role, is_owner = org_access
     sub = await wh_svc.get_subscription(db, uuid.UUID(sub_id), org.id)
@@ -99,7 +111,9 @@ async def update_subscription(
 
 
 @router_webhooks_api.delete("/{sub_id}")
-async def delete_subscription(slug: str, sub_id: str, db: DBSession, org_access: OrgAccess):
+async def delete_subscription(
+    slug: str, sub_id: str, db: DBSession, org_access: WebhooksManageAccess
+):
     org, role, is_owner = org_access
     sub = await wh_svc.get_subscription(db, uuid.UUID(sub_id), org.id)
     if not sub:
@@ -109,7 +123,7 @@ async def delete_subscription(slug: str, sub_id: str, db: DBSession, org_access:
 
 
 @router_webhooks_api.get("/{sub_id}/deliveries")
-async def list_deliveries(slug: str, sub_id: str, db: DBSession, org_access: OrgAccess):
+async def list_deliveries(slug: str, sub_id: str, db: DBSession, org_access: WebhooksManageAccess):
     org, role, is_owner = org_access
     sub = await wh_svc.get_subscription(db, uuid.UUID(sub_id), org.id)
     if not sub:
@@ -136,7 +150,7 @@ async def list_deliveries(slug: str, sub_id: str, db: DBSession, org_access: Org
 
 
 @router_webhooks_api.post("/{sub_id}/test")
-async def test_webhook(slug: str, sub_id: str, db: DBSession, org_access: OrgAccess):
+async def test_webhook(slug: str, sub_id: str, db: DBSession, org_access: WebhooksManageAccess):
     """Send a test ping directly to the webhook URL, bypassing event filtering."""
     from app.models.api import WebhookDelivery
 
@@ -156,7 +170,7 @@ async def test_webhook(slug: str, sub_id: str, db: DBSession, org_access: OrgAcc
         status="pending",
     )
     db.add(delivery)
-    # Commit before dispatching — the Celery worker uses a separate DB
+    # Commit before dispatching - the Celery worker uses a separate DB
     # connection and can't see this row until the transaction commits.
     await db.commit()
 

@@ -42,7 +42,7 @@ class TestCancelRegistrationService:
     async def test_refund_reverses_platform_fee_on_the_refunded_amount(
         self, db, paid_registration, order, ticket_type
     ):
-        """A refund shouldn't let the platform keep a fee on money given back —
+        """A refund shouldn't let the platform keep a fee on money given back -
         the fee on the refunded ticket's price is reversed and added back to
         what the organizer nets."""
         original_platform_fee = float(order.platform_fee)
@@ -60,7 +60,7 @@ class TestCancelRegistrationService:
         )
         assert float(order.net_amount) == pytest.approx(original_net_amount + expected_fee_reversed)
         # Fee-reversal-adjusted net revenue should equal exactly what's left unrefunded,
-        # net of fee — the whole point of tracking it this way.
+        # net of fee - the whole point of tracking it this way.
         assert float(order.net_amount) - float(order.refunded_amount) == pytest.approx(0.0)
 
     async def test_partial_refund_when_sibling_registration_remains(

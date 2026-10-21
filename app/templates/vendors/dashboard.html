@@ -1,0 +1,1845 @@
+{% extends "base.html" %}
+{% block title %}Vendor Command Center | {{ vendor.business_name }} | Heelo{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css">
+<style>
+  body { 
+    background: var(--bg-secondary, #FAF7F2); 
+    color: var(--text-primary, #131B17);
+    font-family: 'Bricolage Grotesque', var(--font-sans, sans-serif);
+  }
+
+  /* Main Container & Top Spacing (for fixed site-nav) */
+  .vd-dash-wrap {
+    min-height: 100vh;
+    padding-top: 84px; /* Clearance for fixed 64px navbar */
+    padding-bottom: 80px;
+  }
+  .vd-dash-container { 
+    max-width: 1180px; 
+    margin: 0 auto; 
+    padding: 0 24px; 
+  }
+
+  /* Command Center Header Card */
+  .vd-hub-header {
+    background: #ffffff;
+    border: 1px solid var(--border-light, #EFEAE3);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(19, 27, 23, 0.03);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .vd-hub-identity {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .vd-hub-logo {
+    width: 68px;
+    height: 68px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--cyan, #E85938), #B33D22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffffff;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(232, 89, 56, 0.2);
+  }
+  .vd-hub-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .vd-hub-meta-title {
+    font-size: clamp(20px, 3vw, 26px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .vd-hub-sub {
+    font-size: 13.5px;
+    color: var(--text-muted, #56625C);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .vd-hub-sub a {
+    color: var(--cyan-dark, #C84729);
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .vd-hub-sub a:hover {
+    text-decoration: underline;
+  }
+  .vd-hub-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* Navigation Tabs */
+  .vd-nav-tabs { 
+    display: flex; 
+    gap: 6px; 
+    border-bottom: 1.5px solid var(--border-light, #EFEAE3); 
+    margin-bottom: 28px; 
+    overflow-x: auto; 
+    scrollbar-width: none; 
+    padding-bottom: 2px;
+  }
+  .vd-nav-tabs::-webkit-scrollbar { display: none; }
+  .vd-nav-tab { 
+    padding: 10px 18px; 
+    font-size: 13.5px; 
+    font-weight: 700; 
+    color: var(--text-muted, #56625C); 
+    text-decoration: none; 
+    border-bottom: 2.5px solid transparent; 
+    margin-bottom: -3.5px; 
+    white-space: nowrap; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 8px; 
+    cursor: pointer; 
+    transition: all 160ms ease;
+    border-radius: 8px 8px 0 0;
+  }
+  .vd-nav-tab:hover { 
+    color: var(--text-primary, #131B17); 
+    background: rgba(19, 27, 23, 0.02);
+  }
+  .vd-nav-tab.active { 
+    color: var(--text-primary, #131B17); 
+    border-bottom-color: var(--cyan, #E85938); 
+    background: rgba(232, 89, 56, 0.04);
+  }
+  .vd-tab-count {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 800;
+    background: var(--bg-secondary, #FAF7F2);
+    border: 1px solid var(--border-light, #EFEAE3);
+    color: var(--text-muted, #56625C);
+  }
+  .vd-nav-tab.active .vd-tab-count {
+    background: var(--cyan, #E85938);
+    color: #ffffff;
+    border-color: var(--cyan);
+  }
+
+  /* Metric Stat Cards */
+  .vd-stat-grid { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); 
+    gap: 16px; 
+    margin-bottom: 28px; 
+  }
+  .vd-stat-card { 
+    background: #ffffff; 
+    border: 1px solid var(--border-light, #EFEAE3); 
+    border-radius: 16px; 
+    padding: 22px; 
+    box-shadow: 0 2px 8px rgba(19,27,23,0.02); 
+    transition: all 160ms ease;
+  }
+  .vd-stat-card:hover {
+    border-color: rgba(19, 27, 23, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(19,27,23,0.05);
+  }
+  .vd-stat-label { 
+    font-size: 12px; 
+    color: var(--text-muted, #56625C); 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em; 
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .vd-stat-num { 
+    font-size: 26px; 
+    font-weight: 800; 
+    letter-spacing: -0.02em;
+    color: var(--text-primary, #131B17); 
+  }
+  .vd-stat-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Content Cards */
+  .vd-card { 
+    background: #ffffff; 
+    border: 1px solid var(--border-light, #EFEAE3); 
+    border-radius: 18px; 
+    padding: 28px; 
+    margin-bottom: 24px; 
+    box-shadow: 0 2px 10px rgba(19,27,23,0.02); 
+  }
+  .vd-card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    margin-bottom: 22px; 
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .vd-card-title { 
+    font-size: 18px; 
+    font-weight: 800; 
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  /* Pills & Badges */
+  .vd-pill { 
+    padding: 4px 10px; 
+    border-radius: 9999px; 
+    font-size: 11.5px; 
+    font-weight: 700; 
+    text-transform: capitalize; 
+    display: inline-flex; 
+    align-items: center; 
+    gap: 4px; 
+  }
+  .vd-pill.confirmed, .vd-pill.active, .vd-pill.completed, .vd-pill.approved { 
+    background: #ecfdf5; 
+    color: #065f46; 
+    border: 1px solid #a7f3d0;
+  }
+  .vd-pill.pending, .vd-pill.pending_payment { 
+    background: #fffbeb; 
+    color: #b45309; 
+    border: 1px solid #fde68a;
+  }
+  .vd-pill.cancelled, .vd-pill.rejected { 
+    background: #fef2f2; 
+    color: #991b1b; 
+    border: 1px solid #fecaca;
+  }
+
+  /* Tables */
+  .vd-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border-light, #EFEAE3);
+  }
+  .vd-table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    font-size: 13.5px; 
+    text-align: left;
+  }
+  .vd-table th { 
+    padding: 12px 16px; 
+    font-size: 11.5px; 
+    font-weight: 700; 
+    color: var(--text-muted, #56625C); 
+    text-transform: uppercase; 
+    letter-spacing: 0.05em;
+    background: var(--bg-secondary, #FAF7F2); 
+    border-bottom: 1px solid var(--border-light, #EFEAE3); 
+  }
+  .vd-table td { 
+    padding: 14px 16px; 
+    border-bottom: 1px solid var(--border-light, #EFEAE3); 
+    vertical-align: middle;
+  }
+  .vd-table tr:last-child td {
+    border-bottom: none;
+  }
+  .vd-table tr:hover td {
+    background: #fafaf9;
+  }
+
+  /* Buttons */
+  .vd-btn {
+    height: 44px;
+    padding: 0 20px;
+    border-radius: 9999px;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    user-select: none;
+    box-sizing: border-box;
+    transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .vd-btn:hover {
+    transform: translateY(-1px);
+  }
+  .vd-btn:active {
+    transform: scale(0.98);
+  }
+  .vd-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.25);
+  }
+  .vd-btn-primary {
+    background: var(--text-primary, #131B17);
+    color: #ffffff !important;
+    border-color: transparent;
+  }
+  .vd-btn-primary:hover {
+    background: #233029;
+    box-shadow: 0 4px 14px rgba(19, 27, 23, 0.2);
+  }
+  .vd-btn-primary:active {
+    background: #0E1411;
+  }
+  .vd-btn-accent {
+    background: var(--cyan, #E85938);
+    color: #ffffff !important;
+    border-color: transparent;
+  }
+  .vd-btn-accent:hover {
+    background: var(--primary-hover, #D44727);
+    box-shadow: 0 4px 14px rgba(232, 89, 56, 0.28);
+  }
+  .vd-btn-accent:active {
+    background: #C84729;
+  }
+  .vd-btn-secondary, .vd-btn-outline {
+    background: #ffffff;
+    border: 1.5px solid var(--border-light, #EFEAE3);
+    color: var(--text-primary, #131B17);
+  }
+  .vd-btn-secondary:hover, .vd-btn-outline:hover {
+    background: var(--bg-secondary, #FAF7F2);
+    border-color: rgba(19, 27, 23, 0.25);
+    box-shadow: 0 2px 8px rgba(19, 27, 23, 0.05);
+  }
+  .vd-btn-secondary:active, .vd-btn-outline:active {
+    background: #EFEAE3;
+  }
+
+  /* Form Elements */
+  .vd-form-group {
+    margin-bottom: 16px;
+  }
+  .vd-form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text-primary, #131B17);
+  }
+  .vd-form-input, .vd-form-select, .vd-form-textarea {
+    width: 100%;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-light, #EFEAE3);
+    background: #ffffff;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: var(--text-primary, #131B17);
+    outline: none;
+    box-sizing: border-box;
+    transition: all 160ms ease;
+  }
+  .vd-form-input:focus, .vd-form-select:focus, .vd-form-textarea:focus {
+    border-color: var(--cyan, #E85938);
+    box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+  }
+
+  /* Modals */
+  .vd-modal-overlay { 
+    position: fixed; 
+    inset: 0; 
+    background: rgba(19, 27, 23, 0.65); 
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    z-index: 99999; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 20px; 
+    box-sizing: border-box;
+  }
+  .vd-modal { 
+    background: #ffffff; 
+    width: 100%; 
+    max-width: 580px; 
+    max-height: 90vh; 
+    overflow-y: auto; 
+    border-radius: 20px; 
+    padding: 32px; 
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.24); 
+    position: relative;
+    box-sizing: border-box;
+    animation: vdModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes vdModalFadeIn {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .vd-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .vd-modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0;
+  }
+  .vd-modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: var(--text-muted);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+{% include "partials/site_nav.html" %}
+
+<div class="vd-dash-wrap" x-data="vendorHub()">
+  <div class="vd-dash-container">
+
+    <!-- Hub Header Card -->
+    <div class="vd-hub-header">
+      <div class="vd-hub-identity">
+        <div class="vd-hub-logo">
+          <template x-if="profileForm.logo_url">
+            <img :src="profileForm.logo_url" alt="{{ vendor.business_name }}">
+          </template>
+          <template x-if="!profileForm.logo_url">
+            <span>{{ vendor.business_name[0].upper() }}</span>
+          </template>
+        </div>
+        <div>
+          <h1 class="vd-hub-meta-title">
+            <span>{{ vendor.business_name }}</span>
+            {% if vendor.is_verified or vendor.verification_status == 'approved' %}
+            <span class="vd-pill approved" title="Verified Business: Legal credentials checked">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              Verified
+            </span>
+            {% endif %}
+            <span class="vd-pill" style="background:rgba(232,89,56,0.1); color:var(--cyan-dark,#C84729); text-transform:uppercase;">
+              {{ vendor.subscription_tier }} Plan
+            </span>
+          </h1>
+          <div class="vd-hub-sub">
+            <span>Vendor Command Center</span>
+            <span>•</span>
+            <span style="text-transform:capitalize;">{{ vendor.category | replace('_', ' ') }}</span>
+            {% if vendor.location_city %}
+            <span>•</span>
+            <span>{{ vendor.location_city }}</span>
+            {% endif %}
+            <span>•</span>
+            <a href="/vendors/{{ vendor.slug }}" target="_blank">View Live Public Profile <span class="material-symbols-outlined" style="font-size:14px; vertical-align:-2px;">open_in_new</span></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="vd-hub-actions">
+        <button type="button" @click="activeTab = 'profile'" class="vd-btn vd-btn-secondary">
+          <span class="material-symbols-outlined" style="font-size:16px;">edit</span>
+          Edit Profile
+        </button>
+        <button type="button" @click="showServiceModal = true" class="vd-btn vd-btn-accent">
+          <span class="material-symbols-outlined" style="font-size:16px;">add</span>
+          Add Service
+        </button>
+        <button type="button" @click="showPayoutModal = true" class="vd-btn vd-btn-primary">
+          <span class="material-symbols-outlined" style="font-size:16px;">payments</span>
+          Withdraw Earnings
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="vd-nav-tabs">
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'overview' }" @click="activeTab = 'overview'">
+        <span class="material-symbols-outlined" style="font-size:18px;">analytics</span> Overview
+      </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'services' }" @click="activeTab = 'services'">
+        <span class="material-symbols-outlined" style="font-size:18px;">inventory_2</span> Services
+        <span class="vd-tab-count">{{ services | length }}</span>
+      </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'inquiries' }" @click="activeTab = 'inquiries'">
+        <span class="material-symbols-outlined" style="font-size:18px;">mail</span> Inquiries &amp; RFQs
+        <span class="vd-tab-count">{{ inquiries | length }}</span>
+      </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'bookings' }" @click="activeTab = 'bookings'">
+        <span class="material-symbols-outlined" style="font-size:18px;">event_available</span> Bookings
+        <span class="vd-tab-count">{{ bookings | length }}</span>
+      </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'payouts' }" @click="activeTab = 'payouts'">
+        <span class="material-symbols-outlined" style="font-size:18px;">account_balance_wallet</span> Payouts &amp; Earnings
+      </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'reviews' }" @click="activeTab = 'reviews'">
+        <span class="material-symbols-outlined" style="font-size:18px;">reviews</span> Customer Reviews
+        <span class="vd-tab-count">{{ reviews | length }}</span>
+      </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'profile' }" @click="activeTab = 'profile'">
+        <span class="material-symbols-outlined" style="font-size:18px;">storefront</span> Profile &amp; Settings
+      </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'monetization' }" @click="activeTab = 'monetization'">
+        <span class="material-symbols-outlined" style="font-size:18px;">rocket_launch</span> Growth &amp; Upgrades
+      </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'verification' }" @click="activeTab = 'verification'">
+        <span class="material-symbols-outlined" style="font-size:18px;">verified_user</span> Verification
+      </div>
+    </div>
+
+    <!-- TAB 1: OVERVIEW -->
+    <div x-show="activeTab === 'overview'">
+      <!-- Stats Ribbon -->
+      <div class="vd-stat-grid">
+        <div class="vd-stat-card">
+          <div class="vd-stat-label">
+            <span>Available Balance</span>
+            <span class="material-symbols-outlined" style="font-size:18px; color:var(--cyan-dark,#C84729);">account_balance_wallet</span>
+          </div>
+          <div class="vd-stat-num" style="color:var(--cyan-dark,#C84729);">{{ vendor.currency | currency_symbol }}{{ "{:,.2f}".format(vendor.payable_balance) }}</div>
+          <div class="vd-stat-sub">Ready for bank transfer</div>
+        </div>
+        <div class="vd-stat-card">
+          <div class="vd-stat-label">
+            <span>Held in Escrow</span>
+            <span class="material-symbols-outlined" style="font-size:18px; color:#2563eb;">lock</span>
+          </div>
+          <div class="vd-stat-num" style="color:#2563eb;">{{ vendor.currency | currency_symbol }}{{ "{:,.2f}".format(vendor.escrow_balance or 0.0) }}</div>
+          <div class="vd-stat-sub">Releases upon delivery</div>
+        </div>
+        <div class="vd-stat-card">
+          <div class="vd-stat-label">
+            <span>Lifetime Earned</span>
+            <span class="material-symbols-outlined" style="font-size:18px; color:#15803d;">trending_up</span>
+          </div>
+          <div class="vd-stat-num">{{ vendor.currency | currency_symbol }}{{ "{:,.2f}".format(vendor.total_earned) }}</div>
+          <div class="vd-stat-sub">Net after platform commissions</div>
+        </div>
+        <div class="vd-stat-card">
+          <div class="vd-stat-label">
+            <span>Total Bookings</span>
+            <span class="material-symbols-outlined" style="font-size:18px; color:#2563eb;">event_available</span>
+          </div>
+          <div class="vd-stat-num">{{ bookings | length }}</div>
+          <div class="vd-stat-sub">Confirmed &amp; fulfilled events</div>
+        </div>
+        <div class="vd-stat-card">
+          <div class="vd-stat-label">
+            <span>Lead Credits</span>
+            <span class="material-symbols-outlined" style="font-size:18px; color:#7c3aed;">bolt</span>
+          </div>
+          <div class="vd-stat-num">{{ vendor.lead_credits_balance }}</div>
+          <div class="vd-stat-sub">Direct client inquiry unlocks</div>
+        </div>
+        <div class="vd-stat-card">
+          <div class="vd-stat-label">
+            <span>Client Rating</span>
+            <span class="material-symbols-outlined" style="font-size:18px; color:#f59e0b; font-variation-settings:'FILL' 1;">star</span>
+          </div>
+          <div class="vd-stat-num" style="display:flex; align-items:center; gap:6px;">
+            <span class="material-symbols-outlined" style="color:#f59e0b; font-size:18px; vertical-align:-2px;">star</span>
+            <span>{{ "%.1f"|format(vendor.rating_avg) }}</span>
+          </div>
+          <div class="vd-stat-sub">{{ vendor.reviews_count or (reviews | length) }} verified reviews</div>
+        </div>
+      </div>
+
+      <!-- Quick Action Alert if pending inquiries exist -->
+      {% set pending_inqs = inquiries | selectattr('status', 'equalto', 'pending') | list %}
+      {% if pending_inqs %}
+      <div style="background:rgba(232,89,56,0.06); border:1.5px solid rgba(232,89,56,0.25); border-radius:14px; padding:16px 20px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="material-symbols-outlined" style="color:var(--cyan); font-size:24px;">priority_high</span>
+          <div>
+            <div style="font-weight:700; font-size:14.5px; color:var(--text-primary);">You have {{ pending_inqs | length }} pending event inquiry awaiting a quote!</div>
+            <div style="font-size:13px; color:var(--text-muted);">Responding within 2 hours boosts booking conversion by 4x.</div>
+          </div>
+        </div>
+        <button type="button" @click="activeTab = 'inquiries'" class="vd-btn vd-btn-accent" style="font-size:12.5px; padding:7px 16px;">
+          Review Inquiries →
+        </button>
+      </div>
+      {% endif %}
+
+      <!-- Recent Bookings Table -->
+      <div class="vd-card">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Recent Event Bookings</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">Itemized orders and direct package bookings</div>
+          </div>
+          <button type="button" @click="activeTab = 'bookings'" class="vd-btn vd-btn-secondary" style="font-size:12px; padding:6px 14px;">View All ({{ bookings | length }})</button>
+        </div>
+
+        {% if bookings %}
+        <div class="vd-table-wrap">
+          <table class="vd-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Event &amp; Date</th>
+                <th>Client</th>
+                <th>Total Value</th>
+                <th>Your Earnings</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in bookings[:5] %}
+              <tr>
+                <td><strong style="font-family:monospace; color:var(--text-primary);">{{ b.booking_reference }}</strong></td>
+                <td>
+                  <div style="font-weight:600; color:var(--text-primary);">{{ b.event_name or 'Private Event' }}</div>
+                  <div style="font-size:12px; color:var(--text-muted);">{{ b.event_date.strftime('%B %d, %Y') if b.event_date else 'Date TBD' }}</div>
+                </td>
+                <td>{{ b.requester.full_name if b.requester else 'Client' }}</td>
+                <td>{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</td>
+                <td><strong style="color:#15803d;">{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.vendor_earnings) }}</strong></td>
+                <td><span class="vd-pill {{ b.status }}">{{ b.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:48px 20px; background:var(--bg-secondary); border-radius:14px;">
+          <span class="material-symbols-outlined" style="font-size:40px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; display:block;">event_busy</span>
+          <div style="font-weight:700; font-size:15px; margin-bottom:4px;">No bookings received yet</div>
+          <div style="font-size:13px; color:var(--text-muted); max-width:420px; margin:0 auto 16px;">
+            Create fixed service packages and respond to client quote inquiries to start receiving confirmed bookings with escrow protection.
+          </div>
+          <button type="button" @click="showServiceModal = true" class="vd-btn vd-btn-accent" style="font-size:13px;">
+            + Create Service Package
+          </button>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB 2: SERVICES OFFERED -->
+    <div x-show="activeTab === 'services'" x-cloak>
+      <div class="vd-card">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Published Service Packages</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">Fixed packages and bookable deliverables displayed on your marketplace profile.</div>
+          </div>
+          <button type="button" @click="showServiceModal = true" class="vd-btn vd-btn-accent">
+            + Add New Service
+          </button>
+        </div>
+
+        {% if services %}
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:18px;">
+          {% for s in services %}
+          <div style="border:1.5px solid var(--border-light, #EFEAE3); border-radius:16px; padding:22px; background:#ffffff; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.02);">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px;">
+                <div>
+                  <h3 style="font-size:17px; font-weight:800; margin:0 0 4px; color:var(--text-primary);">{{ s.title }}</h3>
+                  <span style="font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-muted);">
+                    {{ s.category | replace('_', ' ') }} • {{ s.duration_hours or 0 }} hrs
+                  </span>
+                </div>
+                <div style="font-size:18px; font-weight:800; color:var(--text-primary); text-align:right;">
+                  {{ s.currency | currency_symbol }}{{ "{:,.0f}".format(s.price) }}
+                </div>
+              </div>
+
+              {% if s.description %}
+              <div style="font-size:13.5px; color:var(--text-secondary); line-height:1.6; margin-bottom:14px;">
+                {{ s.description }}
+              </div>
+              {% endif %}
+
+              {% if s.inclusions %}
+              <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:16px;">
+                {% for inc in s.inclusions %}
+                <div style="font-size:12.5px; color:var(--text-primary); display:flex; align-items:center; gap:6px;">
+                  <span class="material-symbols-outlined" style="font-size:15px; color:#16a34a;">check_circle</span>
+                  <span>{{ inc }}</span>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <div style="padding-top:14px; border-top:1px solid var(--border-light); display:flex; justify-content:flex-end;">
+              <button type="button" @click="deleteService('{{ s.id }}')" class="vd-btn vd-btn-secondary" style="font-size:12px; padding:5px 12px; color:#dc2626; border-color:rgba(220,38,38,0.25);">
+                Delete Listing
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:48px 20px; background:var(--bg-secondary); border-radius:14px;">
+          <span class="material-symbols-outlined" style="font-size:40px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; display:block;">inventory_2</span>
+          <div style="font-weight:700; font-size:15px; margin-bottom:4px;">No service packages created yet</div>
+          <div style="font-size:13px; color:var(--text-muted); max-width:440px; margin:0 auto 16px;">
+            Packages give organizers clear pricing and allow instant booking directly from your profile.
+          </div>
+          <button type="button" @click="showServiceModal = true" class="vd-btn vd-btn-accent">
+            + Create First Package
+          </button>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB 3: INQUIRIES & RFQs -->
+    <div x-show="activeTab === 'inquiries'" x-cloak>
+      <div class="vd-card">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Quote Inquiries (RFQs)</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">Custom quote requests submitted by event organizers.</div>
+          </div>
+        </div>
+
+        {% if inquiries %}
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          {% for inq in inquiries %}
+          {% set r = inq.request %}
+          <div style="border:1.5px solid var(--border-light, #EFEAE3); border-radius:16px; padding:22px; background:#ffffff;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+              <div>
+                <h3 style="font-size:18px; font-weight:800; margin:0 0 4px; color:var(--text-primary);">{{ r.event_name }}</h3>
+                <div style="font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                  <span style="display:inline-flex; align-items:center; gap:4px;">
+                    <span class="material-symbols-outlined" style="font-size:15px; color:var(--text-muted);">calendar_today</span>
+                    <span>Date: <strong>{{ r.event_date.strftime('%B %d, %Y') if r.event_date else 'Date TBD' }}</strong></span>
+                  </span>
+                  <span>•</span>
+                  <span style="display:inline-flex; align-items:center; gap:4px;">
+                    <span class="material-symbols-outlined" style="font-size:15px; color:var(--text-muted);">location_on</span>
+                    <span>Venue: <strong>{{ r.event_location or 'Unspecified' }}</strong></span>
+                  </span>
+                  {% if r.expected_attendance %}
+                  <span>•</span>
+                  <span style="display:inline-flex; align-items:center; gap:4px;">
+                    <span class="material-symbols-outlined" style="font-size:15px; color:var(--text-muted);">group</span>
+                    <span>Guests: <strong>{{ r.expected_attendance }}</strong></span>
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+              <span class="vd-pill {{ inq.status }}">{{ inq.status }}</span>
+            </div>
+
+            <div style="background:var(--bg-secondary); border-radius:12px; padding:16px; margin-bottom:16px; font-size:13.5px; line-height:1.6;">
+              <strong style="color:var(--text-primary); display:block; margin-bottom:4px;">Client Requirements:</strong>
+              <div>{{ r.requirements }}</div>
+              {% if r.budget_max %}
+              <div style="margin-top:8px; font-weight:700; color:var(--cyan-dark,#C84729);">
+                Organizer Budget: {{ r.currency | currency_symbol }}{{ "{:,.0f}".format(r.budget_min or 0) }} to {{ r.currency | currency_symbol }}{{ "{:,.0f}".format(r.budget_max) }}
+              </div>
+              {% endif %}
+            </div>
+
+            {% if inq.status == 'pending' %}
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+              <button type="button" @click='openQuoteModal("{{ inq.id }}", {{ r.event_name | tojson }})' class="vd-btn vd-btn-accent">
+                Submit Itemized Quotation →
+              </button>
+            </div>
+            {% else %}
+            <div style="font-size:13px; color:#16a34a; font-weight:700; text-align:right; display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+              <span class="material-symbols-outlined" style="font-size:16px;">check_circle</span>
+              <span>Proposal Dispatched to Client</span>
+            </div>
+            {% if inq.quotations %}
+            <div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--border-light, #EFEAE3); display:flex; flex-direction:column; gap:6px;">
+              {% for q in inq.quotations %}
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; font-size:13px;">
+                <div style="color:var(--text-secondary);">
+                  <strong style="color:var(--text-primary);">Proposal:</strong> {{ q.title }} &bull; <strong style="color:var(--cyan-dark, #C84729);">{{ q.currency }} {{ "{:,.2f}".format(q.total_amount) }}</strong>
+                </div>
+                {% if q.attachment_url %}
+                <a href="{{ q.attachment_url }}" target="_blank" style="display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:#2563eb; background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:4px 10px; text-decoration:none;">
+                  <span class="material-symbols-outlined" style="font-size:14px;">attach_file</span>
+                  <span>{{ q.attachment_name or 'View Attached Document' }}</span>
+                </a>
+                {% endif %}
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:48px 20px; background:var(--bg-secondary); border-radius:14px;">
+          <span class="material-symbols-outlined" style="font-size:40px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; display:block;">mail</span>
+          <div style="font-weight:700; font-size:15px; margin-bottom:4px;">No inquiries at this time</div>
+          <div style="font-size:13px; color:var(--text-muted); max-width:440px; margin:0 auto;">
+            When organizers request quotes for their events, they will appear here with complete budget and requirement details.
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB 4: BOOKINGS & TRANSACTIONS -->
+    <div x-show="activeTab === 'bookings'" x-cloak>
+      <div class="vd-card">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Bookings &amp; Escrow Ledger</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">All incoming jobs, platform commission deductions, and net payouts.</div>
+          </div>
+        </div>
+
+        {% if bookings %}
+        <div class="vd-table-wrap">
+          <table class="vd-table">
+            <thead>
+              <tr>
+                <th>Booking Ref</th>
+                <th>Event / Date</th>
+                <th>Client</th>
+                <th>Gross</th>
+                <th>Platform Fee (10%)</th>
+                <th>Net Earnings</th>
+                <th>Status</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for b in bookings %}
+              <tr>
+                <td><strong style="font-family:monospace; color:var(--text-primary);">{{ b.booking_reference }}</strong></td>
+                <td>
+                  <div style="font-weight:700; color:var(--text-primary);">{{ b.event_name or 'Event' }}</div>
+                  <div style="font-size:12px; color:var(--text-muted);">{{ b.event_date.strftime('%B %d, %Y') if b.event_date else 'TBD' }}</div>
+                </td>
+                <td>
+                  <div>{{ b.requester.full_name if b.requester else 'Client' }}</div>
+                  <div style="font-size:12px; color:var(--text-muted);">{{ b.requester.email if b.requester else '' }}</div>
+                </td>
+                <td>{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</td>
+                <td style="color:#b91c1c;">-{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.commission_amount) }}</td>
+                <td><strong style="color:#15803d;">{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.vendor_earnings) }}</strong></td>
+                <td>
+                  {% if b.status == 'confirmed' %}
+                  <span class="vd-pill pending" style="background:#fef3c7; color:#92400e; border-color:#fde68a;">Held in Escrow</span>
+                  {% elif b.status == 'delivered' %}
+                  <span class="vd-pill in_progress" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;">Delivered (Review Window)</span>
+                  {% elif b.status == 'completed' %}
+                  <span class="vd-pill confirmed" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0;">Escrow Released</span>
+                  {% elif b.status == 'disputed' %}
+                  <span class="vd-pill disputed" style="background:#fef2f2; color:#b91c1c; border-color:#fecaca;">Disputed (Frozen)</span>
+                  {% else %}
+                  <span class="vd-pill {{ b.status }}">{{ b.status }}</span>
+                  {% endif %}
+                </td>
+                <td style="text-align:right;">
+                  {% if b.status in ('confirmed', 'in_progress') %}
+                  <button type="button" @click="deliverBooking('{{ b.id }}')" class="vd-btn vd-btn-accent" style="font-size:12px; padding:6px 12px;">
+                    Mark Delivered
+                  </button>
+                  {% elif b.status == 'delivered' %}
+                  <span style="font-size:11px; color:#1d4ed8; font-weight:600;">Awaiting client (48h auto-release)</span>
+                  {% elif b.status == 'completed' %}
+                  <span style="font-size:12px; color:#15803d; font-weight:600;">Fulfilled &amp; Released</span>
+                  {% elif b.status == 'disputed' %}
+                  <span style="font-size:12px; color:#b91c1c; font-weight:600;">Under Review</span>
+                  {% else %}
+                  <span style="font-size:12px; color:var(--text-muted); font-weight:600;">{{ b.status | title }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:48px 20px; background:var(--bg-secondary); border-radius:14px;">
+          <span class="material-symbols-outlined" style="font-size:40px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; display:block;">event_available</span>
+          <div style="font-weight:700; font-size:15px; margin-bottom:4px;">No confirmed bookings yet</div>
+          <div style="font-size:13px; color:var(--text-muted);">
+            Bookings made through direct packages or accepted quotations will be tracked here.
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB 5: PAYOUTS & EARNINGS -->
+    <div x-show="activeTab === 'payouts'" x-cloak>
+      <div class="vd-card">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Bank Withdrawals &amp; Payout History</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">Disbursements are processed directly to your designated bank account.</div>
+          </div>
+          <button type="button" @click="showPayoutModal = true" class="vd-btn vd-btn-primary">
+            Request Bank Withdrawal
+          </button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:24px;">
+          <div style="background:var(--bg-secondary); border:1.5px solid var(--border-light); border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+            <div>
+              <div style="font-size:12px; font-weight:700; text-transform:uppercase; color:var(--text-muted);">Available for Withdrawal</div>
+              <div style="font-size:28px; font-weight:800; color:var(--cyan-dark,#C84729); margin-top:2px;">{{ vendor.currency | currency_symbol }}{{ "{:,.2f}".format(vendor.payable_balance) }}</div>
+            </div>
+            <button type="button" @click="showPayoutModal = true" class="vd-btn vd-btn-accent" style="padding:10px 20px;">
+              Withdraw Funds &rarr;
+            </button>
+          </div>
+          <div style="background:#f0fdf4; border:1.5px solid #dcfce7; border-radius:14px; padding:20px;">
+            <div style="font-size:12px; font-weight:700; text-transform:uppercase; color:#166534;">Held in Escrow</div>
+            <div style="font-size:28px; font-weight:800; color:#15803d; margin-top:2px;">{{ vendor.currency | currency_symbol }}{{ "{:,.2f}".format(vendor.escrow_balance or 0.0) }}</div>
+            <div style="font-size:12px; color:#166534; margin-top:4px;">Locked in trust until service fulfillment is confirmed</div>
+          </div>
+        </div>
+
+        {% if payouts %}
+        <div class="vd-table-wrap">
+          <table class="vd-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Destination Bank</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payouts %}
+              <tr>
+                <td>{{ p.created_at.strftime('%B %d, %Y') }}</td>
+                <td><strong>{{ p.currency | currency_symbol }}{{ "{:,.2f}".format(p.amount) }}</strong></td>
+                <td>{{ p.account_details.get('bank_name', 'Bank') }} ({{ p.account_details.get('account_number', '') }})</td>
+                <td><span class="vd-pill {{ p.status }}">{{ p.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:40px 20px; background:var(--bg-secondary); border-radius:14px;">
+          <span class="material-symbols-outlined" style="font-size:36px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; display:block;">payments</span>
+          <div style="font-weight:700; font-size:14px;">No payout requests recorded yet.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB 6: CUSTOMER REVIEWS -->
+    <div x-show="activeTab === 'reviews'" x-cloak>
+      <div class="vd-card">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Verified Customer Reviews ({{ reviews | length }})</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">Feedback left by organizers following completed events. Reply to reviews to build reputation.</div>
+          </div>
+        </div>
+
+        {% if reviews %}
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          {% for rev in reviews %}
+          <div style="border:1px solid var(--border-light); border-radius:14px; padding:22px; background:#ffffff;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:12px;">
+              <div>
+                <strong style="font-size:15px; color:var(--text-primary);">{{ rev.reviewer.full_name if rev.reviewer else 'Verified Client' }}</strong>
+                <span style="font-size:12px; color:var(--text-muted); margin-left:8px;">{{ rev.created_at.strftime('%B %d, %Y') if rev.created_at else '' }}</span>
+              </div>
+              <div style="color:#f59e0b; display:flex; align-items:center;">
+                {% for i in range(rev.rating) %}<span class="material-symbols-outlined" style="color:#f59e0b; font-size:14px; vertical-align:-2px;">star</span>{% endfor %}
+              </div>
+            </div>
+
+            {% if rev.title %}
+            <div style="font-weight:700; font-size:14px; margin-bottom:6px;">{{ rev.title }}</div>
+            {% endif %}
+
+            <div style="font-size:14px; color:var(--text-secondary); line-height:1.6; margin-bottom:14px;">
+              {{ rev.content }}
+            </div>
+
+            {% if rev.response_from_vendor %}
+            <div style="background:var(--bg-secondary); border-left:3px solid var(--cyan); border-radius:8px; padding:12px 16px; font-size:13px;">
+              <strong style="color:var(--text-primary); display:block; margin-bottom:2px;">Your Public Response:</strong>
+              <div style="color:var(--text-secondary);">{{ rev.response_from_vendor }}</div>
+            </div>
+            {% else %}
+            <div x-data="{ replyText: '', openReply: false }">
+              <button type="button" @click="openReply = !openReply" class="vd-btn vd-btn-secondary" style="font-size:12px; padding:5px 12px;">
+                Reply to Review
+              </button>
+              <div x-show="openReply" style="margin-top:12px;">
+                <textarea x-model="replyText" rows="2" class="vd-form-textarea" placeholder="Thank the client or clarify details..."></textarea>
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+                  <button type="button" @click="openReply = false" class="vd-btn vd-btn-secondary" style="font-size:12px;">Cancel</button>
+                  <button type="button" @click="submitReviewReply('{{ rev.id }}', replyText)" class="vd-btn vd-btn-primary" style="font-size:12px;">Post Reply</button>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:48px 20px; background:var(--bg-secondary); border-radius:14px;">
+          <span class="material-symbols-outlined" style="font-size:40px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; display:block;">rate_review</span>
+          <div style="font-weight:700; font-size:15px; margin-bottom:4px;">No reviews yet</div>
+          <div style="font-size:13px; color:var(--text-muted); max-width:440px; margin:0 auto;">
+            Reviews on Heelo are strictly published by genuine organizers following fulfilled, verified bookings.
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- TAB 7: PROFILE & LISTING SETTINGS -->
+    <div x-show="activeTab === 'profile'" x-cloak>
+      <div class="vd-card">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Edit Vendor Profile &amp; Business Details</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">Keep your contact details, services description, cover image, and pricing current.</div>
+          </div>
+        </div>
+
+        <form @submit.prevent="saveProfile()" style="max-width:800px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="vd-form-group">
+              <label class="vd-form-label">Business Name *</label>
+              <input type="text" x-model="profileForm.business_name" required class="vd-form-input">
+            </div>
+            <div class="vd-form-group">
+              <label class="vd-form-label">Category</label>
+              <select x-model="profileForm.category" class="vd-form-select">
+                <option value="catering">Catering</option>
+                <option value="photography">Photography</option>
+                <option value="videography">Videography</option>
+                <option value="event_decoration">Event Decoration</option>
+                <option value="event_planning">Event Planning</option>
+                <option value="sound_and_lighting">Sound &amp; Lighting</option>
+                <option value="dj_entertainment">DJ &amp; Entertainment</option>
+                <option value="equipment_rentals">Equipment Rentals</option>
+                <option value="security">Security</option>
+                <option value="ushers_staffing">Ushers &amp; Staffing</option>
+                <option value="cakes_desserts">Cakes &amp; Desserts</option>
+                <option value="other">Other Event Services</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="vd-form-group">
+            <label class="vd-form-label">Tagline (Short Summary)</label>
+            <input type="text" x-model="profileForm.tagline" placeholder="e.g. Award-winning wedding & corporate documentary photography" class="vd-form-input">
+          </div>
+
+          <div class="vd-form-group">
+            <label class="vd-form-label">About Your Business</label>
+            <textarea x-model="profileForm.description" rows="4" placeholder="Detail your experience, team, style, and equipment..." class="vd-form-textarea"></textarea>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="vd-form-group">
+              <label class="vd-form-label">Contact Phone</label>
+              <input type="tel" x-model="profileForm.contact_phone" placeholder="e.g. +1 555 123 4567 or +44 7911 123456" class="vd-form-input">
+            </div>
+            <div class="vd-form-group">
+              <label class="vd-form-label">Contact Email</label>
+              <input type="email" x-model="profileForm.contact_email" placeholder="hello@company.com" class="vd-form-input">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="vd-form-group">
+              <label class="vd-form-label">City / Location</label>
+              <input type="text" x-model="profileForm.location_city" placeholder="London / New York / Lagos" class="vd-form-input">
+            </div>
+            <div class="vd-form-group">
+              <label class="vd-form-label">Country Code</label>
+              <input type="text" x-model="profileForm.location_country" placeholder="GB / US / NG" maxlength="2" style="text-transform:uppercase;" class="vd-form-input">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="vd-form-group">
+              <label class="vd-form-label">Operating Currency</label>
+              <select x-model="profileForm.currency" class="vd-form-select">
+                <option value="GBP">GBP (£) - British Pound</option>
+                <option value="USD">USD ($) - US Dollar</option>
+                <option value="EUR">EUR (€) - Euro</option>
+                <option value="CAD">CAD ($) - Canadian Dollar</option>
+                <option value="AUD">AUD ($) - Australian Dollar</option>
+                <option value="NGN">NGN (₦) - Nigerian Naira</option>
+                <option value="GHS">GHS (GH₵) - Ghanaian Cedi</option>
+                <option value="KES">KES (KSh) - Kenyan Shilling</option>
+                <option value="ZAR">ZAR (R) - South African Rand</option>
+              </select>
+            </div>
+            <div class="vd-form-group">
+              <label class="vd-form-label">Website URL</label>
+              <input type="url" x-model="profileForm.website_url" placeholder="https://..." class="vd-form-input">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div class="vd-form-group">
+              <label class="vd-form-label">Starting Price (<span x-text="currSymbol(profileForm.currency)">{{ vendor.currency | currency_symbol }}</span>)</label>
+              <input type="number" x-model="profileForm.starting_price" placeholder="100" class="vd-form-input">
+            </div>
+            <div class="vd-form-group">
+              <label class="vd-form-label">Price Range Tier</label>
+              <select x-model="profileForm.price_range" class="vd-form-select">
+                <option value="budget">Budget-Friendly (<span x-text="currSymbol(profileForm.currency)">{{ vendor.currency | currency_symbol }}</span>)</option>
+                <option value="mid">Mid-Range (<span x-text="currSymbol(profileForm.currency) + currSymbol(profileForm.currency)">{{ vendor.currency | currency_symbol }}{{ vendor.currency | currency_symbol }}</span>)</option>
+                <option value="premium">Premium Tier (<span x-text="currSymbol(profileForm.currency).repeat(3)">{{ vendor.currency | currency_symbol }}{{ vendor.currency | currency_symbol }}{{ vendor.currency | currency_symbol }}</span>)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Visual Media & Avatar / Cover Uploader -->
+          <div style="background:var(--bg-secondary); border:1.5px solid var(--border-light); border-radius:16px; padding:22px; margin-bottom:20px;">
+            <h3 style="font-size:15px; font-weight:800; margin:0 0 4px; color:var(--text-primary);">Profile Picture &amp; Cover Banner</h3>
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 18px;">Upload high quality images from your computer or phone to enhance your business listing.</p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
+              <!-- Profile Avatar / Logo Uploader -->
+              <div>
+                <label class="vd-form-label">Profile Avatar / Logo</label>
+                <div style="display:flex; align-items:center; gap:14px; margin-top:8px;">
+                  <div style="width:72px; height:72px; border-radius:18px; background:linear-gradient(135deg, var(--cyan, #E85938), #B33D22); display:flex; align-items:center; justify-content:center; overflow:hidden; border:2px solid #ffffff; box-shadow:0 4px 10px rgba(0,0,0,0.08); flex-shrink:0;">
+                    <template x-if="profileForm.logo_url">
+                      <img :src="profileForm.logo_url" alt="Logo" style="width:100%; height:100%; object-fit:cover;">
+                    </template>
+                    <template x-if="!profileForm.logo_url">
+                      <span style="color:#ffffff; font-size:28px; font-weight:800;" x-text="profileForm.business_name ? profileForm.business_name[0].toUpperCase() : 'V'"></span>
+                    </template>
+                  </div>
+                  <div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <input type="file" x-ref="logoInput" @change="uploadLogoFile($event)" accept="image/jpeg,image/png,image/webp" style="display:none;">
+                      <button type="button" @click="$refs.logoInput.click()" :disabled="uploadingLogo" class="vd-btn vd-btn-secondary" style="font-size:12px; padding:6px 12px;">
+                        <span class="material-symbols-outlined" style="font-size:15px;">photo_camera</span>
+                        <span x-show="!uploadingLogo">Upload Avatar</span>
+                        <span x-show="uploadingLogo">Uploading...</span>
+                      </button>
+                      <template x-if="profileForm.logo_url">
+                        <button type="button" @click="profileForm.logo_url = ''" class="vd-btn vd-btn-secondary" style="font-size:12px; padding:6px 10px; color:#dc2626;" title="Remove Avatar">
+                          <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
+                        </button>
+                      </template>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Square JPG, PNG, WebP</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Cover Image Banner Uploader -->
+              <div>
+                <label class="vd-form-label">Marketplace Cover Banner</label>
+                <div style="margin-top:8px;">
+                  <div style="width:100%; height:72px; border-radius:12px; background:linear-gradient(135deg, #18221c, #0d120f); overflow:hidden; border:1px solid var(--border-light); position:relative; margin-bottom:8px;">
+                    <template x-if="profileForm.cover_image_url">
+                      <img :src="profileForm.cover_image_url" alt="Cover" style="width:100%; height:100%; object-fit:cover;">
+                    </template>
+                    <template x-if="!profileForm.cover_image_url">
+                      <div style="height:100%; display:flex; align-items:center; justify-content:center; color:#ffffff; opacity:0.4; font-size:11.5px;">
+                        No cover banner
+                      </div>
+                    </template>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <input type="file" x-ref="coverInput" @change="uploadCoverFile($event)" accept="image/jpeg,image/png,image/webp" style="display:none;">
+                    <button type="button" @click="$refs.coverInput.click()" :disabled="uploadingCover" class="vd-btn vd-btn-secondary" style="font-size:12px; padding:6px 12px;">
+                      <span class="material-symbols-outlined" style="font-size:15px;">add_photo_alternate</span>
+                      <span x-show="!uploadingCover">Upload Cover</span>
+                      <span x-show="uploadingCover">Uploading...</span>
+                    </button>
+                    <template x-if="profileForm.cover_image_url">
+                      <button type="button" @click="profileForm.cover_image_url = ''" class="vd-btn vd-btn-secondary" style="font-size:12px; padding:6px 10px; color:#dc2626;" title="Remove Cover">
+                        <span class="material-symbols-outlined" style="font-size:15px;">delete</span>
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="vd-form-group">
+            <label class="vd-form-label">Portfolio Link (Instagram / Behance / Website)</label>
+            <input type="url" x-model="profileForm.portfolio_link" placeholder="https://instagram.com/myhandle" class="vd-form-input">
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+            <button type="submit" :disabled="savingProfile" class="vd-btn vd-btn-accent" style="padding:12px 28px; font-size:14.5px;">
+              <span x-show="!savingProfile">Save Profile Changes →</span>
+              <span x-show="savingProfile">Saving...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TAB 8: GROWTH & UPGRADES -->
+    <div x-show="activeTab === 'monetization'" x-cloak>
+      <div class="vd-card">
+        <h2 class="vd-card-title" style="margin-bottom:6px;">Vendor Subscription Plans</h2>
+        <div style="font-size:13.5px; color:var(--text-muted); margin-bottom:24px;">Upgrade your tier to expand package listings, get free lead unlock credits, and gain verified priority badge placement.</div>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:18px;">
+          {% for plan_key, plan in plans.items() %}
+          <div style="border:1.5px solid {% if vendor.subscription_tier == plan_key %}var(--cyan){% else %}var(--border-light){% endif %}; border-radius:18px; padding:24px; position:relative; background:#ffffff;">
+            {% if vendor.subscription_tier == plan_key %}
+            <div style="position:absolute; top:-10px; right:16px; background:var(--cyan); color:#ffffff; font-size:11px; font-weight:800; padding:2px 10px; border-radius:9999px; text-transform:uppercase;">Active Plan</div>
+            {% endif %}
+            <h3 style="font-size:18px; font-weight:800; margin:0 0 6px;">{{ plan.name }}</h3>
+            <div style="font-size:24px; font-weight:800; margin-bottom:14px; color:var(--text-primary);">
+              {{ plan.symbol }}{{ "{:,.0f}".format(plan.price) }} <span style="font-size:13px; font-weight:500; color:var(--text-muted);">/month</span>
+            </div>
+            <ul style="font-size:13px; color:var(--text-secondary); line-height:1.8; padding-left:18px; margin-bottom:20px;">
+              <li>Up to {{ plan.max_services }} service package listings</li>
+              <li>{{ plan.lead_credits }} free lead credits monthly</li>
+              {% if plan.priority_placement %}<li><strong>Priority marketplace placement</strong></li>{% endif %}
+              {% if plan.badge %}<li>Verified {{ plan.badge }} trust badge</li>{% endif %}
+            </ul>
+            {% if vendor.subscription_tier != plan_key and plan.price > 0 %}
+            <button type="button" @click="upgradePlan('{{ plan_key }}')" class="vd-btn vd-btn-primary" style="width:100%; border-radius:10px;">
+              Upgrade to {{ plan.name }}
+            </button>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Featured Spotlight Card -->
+      <div class="vd-card">
+        <h2 class="vd-card-title" style="margin-bottom:6px;">Marketplace Hero Spotlight</h2>
+        <div style="font-size:13.5px; color:var(--text-muted); margin-bottom:20px;">Feature your business prominently at the top of category searches and marketplace recommendations.</div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(232,89,56,0.06); border:1.5px solid rgba(232,89,56,0.25); border-radius:16px; padding:22px; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="font-weight:800; font-size:16px; color:var(--text-primary);">30-Day Top of Marketplace Placement</div>
+            <div style="font-size:13.5px; color:var(--text-secondary); margin-top:3px;">Get highlighted on homepage and pinned at the top of {{ vendor.category | replace('_', ' ') }} category.</div>
+          </div>
+          <button type="button" @click="purchaseFeatured()" class="vd-btn vd-btn-accent">
+            Promote for {{ plans['pro'].symbol if 'pro' in plans else '$' }}{{ "{:,.0f}".format(featured_price or 30000) }} →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 9: BUSINESS VERIFICATION -->
+    <div x-show="activeTab === 'verification'" x-cloak>
+      <div class="vd-card">
+        <h2 class="vd-card-title" style="margin-bottom:6px;">Official Business Verification</h2>
+        <div style="font-size:13.5px; color:var(--text-muted); margin-bottom:24px;">Verified businesses receive a trust checkmark badge, boosting quote conversion by up to 300%.</div>
+
+        {% if vendor.is_verified or vendor.verification_status == 'approved' %}
+        <div style="background:#ecfdf5; border:1.5px solid #a7f3d0; border-radius:16px; padding:28px; text-align:center;">
+          <span class="material-symbols-outlined" style="color:#065f46; font-size:52px; margin-bottom:8px;">verified</span>
+          <h3 style="font-size:20px; font-weight:800; color:#065f46; margin:0 0 6px;">Your Business is Officially Verified!</h3>
+          <p style="font-size:14px; color:#065f46; max-width:480px; margin:0 auto; line-height:1.6;">
+            Your credentials have been audited and verified by the Heelo Trust &amp; Safety team.
+          </p>
+        </div>
+        {% else %}
+        <form @submit.prevent="submitVerification()" style="max-width:580px;">
+          <div class="vd-form-group">
+            <label class="vd-form-label">Business Registration Number (CAC / RC / LLC) *</label>
+            <input type="text" x-model="verifForm.business_registration_number" placeholder="RC-1234567" required class="vd-form-input">
+          </div>
+          <div class="vd-form-group">
+            <label class="vd-form-label">Tax Identification Number (TIN)</label>
+            <input type="text" x-model="verifForm.tax_id" placeholder="TIN-98765432" class="vd-form-input">
+          </div>
+          <div class="vd-form-group">
+            <label class="vd-form-label">CAC Certificate URL / Document Cloud Link *</label>
+            <input type="url" x-model="verifForm.cert_url" placeholder="https://..." required class="vd-form-input">
+          </div>
+          <div class="vd-form-group">
+            <label class="vd-form-label">Director Government ID URL / Link</label>
+            <input type="url" x-model="verifForm.id_url" placeholder="https://..." class="vd-form-input">
+          </div>
+          <button type="submit" class="vd-btn vd-btn-accent" style="padding:12px 28px; font-size:14.5px;">
+            Submit Credentials for Verification →
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+<!-- Add Service Modal -->
+<div class="vd-modal-overlay" x-show="showServiceModal" x-cloak x-transition>
+  <div class="vd-modal" @click.outside="showServiceModal = false">
+    <div class="vd-modal-header">
+      <h3 class="vd-modal-title">Add Service Package</h3>
+      <button type="button" @click="showServiceModal = false" class="vd-modal-close"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+    </div>
+
+    <form @submit.prevent="createService()">
+      <div class="vd-form-group">
+        <label class="vd-form-label">Service Package Title *</label>
+        <input type="text" x-model="serviceForm.title" placeholder="e.g. Full-Day Wedding Photography" required class="vd-form-input">
+      </div>
+      <div class="vd-form-group">
+        <label class="vd-form-label">Category *</label>
+        <input type="text" x-model="serviceForm.category" required class="vd-form-input">
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="vd-form-group">
+          <label class="vd-form-label">Price ({{ vendor.currency | currency_symbol }}) *</label>
+          <input type="number" x-model="serviceForm.price" placeholder="150" required class="vd-form-input">
+        </div>
+        <div class="vd-form-group">
+          <label class="vd-form-label">Duration (Hours)</label>
+          <input type="number" x-model="serviceForm.duration_hours" placeholder="8" class="vd-form-input">
+        </div>
+      </div>
+      <div class="vd-form-group">
+        <label class="vd-form-label">Description &amp; Key Inclusions</label>
+        <textarea x-model="serviceForm.description" rows="3" placeholder="Detail equipment, team members, deliverables..." class="vd-form-textarea"></textarea>
+      </div>
+      <button type="submit" class="vd-btn vd-btn-accent" style="width:100%; padding:14px; font-size:15px;">Save Service Package</button>
+    </form>
+  </div>
+</div>
+
+<!-- Withdraw Payout Modal -->
+<div class="vd-modal-overlay" x-show="showPayoutModal" x-cloak x-transition>
+  <div class="vd-modal" @click.outside="showPayoutModal = false">
+    <div class="vd-modal-header">
+      <h3 class="vd-modal-title">Withdraw Payable Earnings</h3>
+      <button type="button" @click="showPayoutModal = false" class="vd-modal-close"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+    </div>
+
+    <div style="padding:14px 18px; background:var(--bg-secondary); border-radius:12px; margin-bottom:20px; font-size:14px; border:1px solid var(--border-light);">
+      Available Balance: <strong style="color:var(--cyan-dark,#C84729);">{{ vendor.currency | currency_symbol }}{{ "{:,.2f}".format(vendor.payable_balance) }}</strong>
+    </div>
+
+    <form @submit.prevent="submitPayout()">
+      <div class="vd-form-group">
+        <label class="vd-form-label">Amount to Withdraw ({{ vendor.currency | currency_symbol }}) *</label>
+        <input type="number" step="0.01" x-model="payoutForm.amount" max="{{ vendor.payable_balance }}" required class="vd-form-input">
+      </div>
+      <div class="vd-form-group">
+        <label class="vd-form-label">Bank Name *</label>
+        <input type="text" x-model="payoutForm.bank_name" placeholder="e.g. Barclays / Chase / GTBank" required class="vd-form-input">
+      </div>
+      <div class="vd-form-group">
+        <label class="vd-form-label">Account / IBAN Number *</label>
+        <input type="text" x-model="payoutForm.account_number" placeholder="Account Number, IBAN or Routing Number" required class="vd-form-input">
+      </div>
+      <div class="vd-form-group">
+        <label class="vd-form-label">Account Name *</label>
+        <input type="text" x-model="payoutForm.account_name" placeholder="Official Bank Account Name" required class="vd-form-input">
+      </div>
+      <button type="submit" class="vd-btn vd-btn-primary" style="width:100%; padding:14px; font-size:15px;">Submit Payout Request</button>
+    </form>
+  </div>
+</div>
+
+<!-- Quote Respond Modal -->
+<div class="vd-modal-overlay" x-show="showQuoteModal" x-cloak x-transition>
+  <div class="vd-modal" @click.outside="showQuoteModal = false">
+    <div class="vd-modal-header">
+      <h3 class="vd-modal-title">Submit Quotation</h3>
+      <button type="button" @click="showQuoteModal = false" class="vd-modal-close"><span class="material-symbols-outlined" style="font-size:18px;">close</span></button>
+    </div>
+
+    <div style="font-size:14px; color:var(--text-secondary); margin-bottom:18px;">
+      Responding to Inquiry for: <strong x-text="selectedInquiry.event_name" style="color:var(--text-primary);"></strong>
+    </div>
+
+    <form @submit.prevent="submitQuotation()">
+      <div class="vd-form-group">
+        <label class="vd-form-label">Proposal / Quote Title *</label>
+        <input type="text" x-model="quoteForm.title" placeholder="e.g. Comprehensive Coverage & Lighting Package" required class="vd-form-input">
+      </div>
+      <div class="vd-form-group">
+        <label class="vd-form-label">Total Amount ({{ vendor.currency | currency_symbol }}) *</label>
+        <input type="number" x-model="quoteForm.total_amount" required class="vd-form-input">
+      </div>
+      <div class="vd-form-group">
+        <label class="vd-form-label">Scope of Work &amp; Itemized Terms *</label>
+        <textarea x-model="quoteForm.scope_of_work" rows="4" placeholder="Detail deliverables, equipment, milestones..." required class="vd-form-textarea"></textarea>
+      </div>
+
+      <div class="vd-form-group">
+        <label class="vd-form-label">Attach Quotation Document (PDF or Image)</label>
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">
+          Optional: Upload your itemized quotation proposal, rate sheet, or brochure (PDF, PNG, JPG up to 15MB).
+        </div>
+        
+        <div x-show="!quoteForm.attachment_url" style="display:flex; align-items:center; gap:10px;">
+          <label class="vd-btn vd-btn-outline" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:13px; padding:8px 14px;">
+            <span class="material-symbols-outlined" style="font-size:16px;">upload_file</span>
+            <span x-text="uploadingQuoteAttachment ? 'Uploading document...' : 'Upload PDF / Image'"></span>
+            <input type="file" accept=".pdf,image/png,image/jpeg,image/webp" @change="uploadQuoteAttachment($event)" style="display:none;" :disabled="uploadingQuoteAttachment">
+          </label>
+          <span x-show="uploadingQuoteAttachment" style="font-size:12px; color:var(--text-muted);">Uploading file...</span>
+        </div>
+
+        <div x-show="quoteForm.attachment_url" style="display:flex; align-items:center; justify-content:space-between; background:var(--bg-secondary); border:1px solid var(--border-light, #EFEAE3); border-radius:8px; padding:10px 14px; margin-top:6px;">
+          <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
+            <span class="material-symbols-outlined" style="font-size:18px; color:#2563eb;">picture_as_pdf</span>
+            <a :href="quoteForm.attachment_url" target="_blank" style="font-size:13px; font-weight:600; color:var(--text-primary); text-decoration:underline; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" x-text="quoteForm.attachment_name || 'Quotation Document'"></a>
+          </div>
+          <button type="button" @click="quoteForm.attachment_url = ''; quoteForm.attachment_name = '';" class="vd-btn vd-btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#fca5a5;">
+            Remove
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="vd-btn vd-btn-accent" style="width:100%; padding:14px; font-size:15px;" :disabled="uploadingQuoteAttachment">
+        <span x-text="uploadingQuoteAttachment ? 'Please wait, uploading attachment...' : 'Dispatch Quotation'"></span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Platform-styled Alert / Notification Modal -->
+<div class="vd-modal-overlay" x-show="alertModal.open" x-cloak x-transition @click.self="closeAlertModal()">
+  <div class="vd-modal" @click.outside="closeAlertModal()" style="max-width:440px; text-align:center; padding:38px 28px;">
+    <!-- Icon Container -->
+    <div :style="alertModal.type === 'error' ? 'background:rgba(239, 68, 68, 0.1); color:#dc2626; border-color:rgba(239, 68, 68, 0.22);' : 'background:rgba(232, 89, 56, 0.1); color:var(--cyan, #E85938); border-color:rgba(232, 89, 56, 0.25);'"
+         style="width:72px; height:72px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin:0 auto 20px; border:2px solid; box-shadow:0 8px 24px rgba(0,0,0,0.06);">
+      <span class="material-symbols-outlined" style="font-size:38px;" x-text="alertModal.type === 'error' ? 'error' : 'check_circle'"></span>
+    </div>
+
+    <!-- Title -->
+    <h3 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin:0 0 10px; color:var(--text-primary); line-height:1.25;" x-text="alertModal.title"></h3>
+
+    <!-- Message -->
+    <p style="font-size:14.5px; color:var(--text-secondary, #56625C); margin:0 0 26px; line-height:1.6;" x-text="alertModal.message"></p>
+
+    <!-- Action button -->
+    <button type="button" @click="closeAlertModal()" class="vd-btn vd-btn-accent" style="width:100%; padding:13px 24px; font-size:14.5px; font-weight:700; justify-content:center; border-radius:12px; box-shadow:0 4px 14px rgba(232, 89, 56, 0.25);">
+      <span x-text="alertModal.buttonText || 'Continue'"></span>
+    </button>
+  </div>
+</div>
+
+</div>
+
+<script>
+function vendorHub() {
+  return {
+    activeTab: '{{ tab or "overview" }}',
+    showServiceModal: false,
+    showPayoutModal: false,
+    showQuoteModal: false,
+    savingProfile: false,
+    uploadingLogo: false,
+    uploadingCover: false,
+    uploadingQuoteAttachment: false,
+    selectedInquiry: { id: '', event_name: '' },
+    alertModal: {
+      open: false,
+      type: 'success',
+      title: '',
+      message: '',
+      buttonText: 'Continue',
+      onClose: null,
+    },
+
+    showAlert(title, message, type = 'success', buttonText = 'Continue', onClose = null) {
+      this.alertModal = {
+        open: true,
+        type,
+        title,
+        message,
+        buttonText,
+        onClose,
+      };
+    },
+
+    closeAlertModal() {
+      const cb = this.alertModal.onClose;
+      this.alertModal.open = false;
+      if (typeof cb === 'function') {
+        cb();
+      }
+    },
+    serviceForm: { title: '', category: '{{ vendor.category }}', price: '', duration_hours: '', description: '' },
+    payoutForm: { amount: '', bank_name: '', account_number: '', account_name: '' },
+    quoteForm: { title: '', total_amount: '', scope_of_work: '', attachment_url: '', attachment_name: '' },
+    verifForm: { business_registration_number: '', tax_id: '', cert_url: '', id_url: '' },
+    currSymbol(code) {
+      const map = { USD: '$', GBP: '£', EUR: '€', CAD: 'CA$', AUD: 'A$', NGN: '₦', GHS: 'GH₵', KES: 'KSh', ZAR: 'R' };
+      return map[(code || '').toUpperCase()] || '$';
+    },
+    profileForm: {
+      business_name: {{ vendor.business_name | tojson }},
+      category: {{ vendor.category | tojson }},
+      tagline: {{ (vendor.tagline or '') | tojson }},
+      description: {{ (vendor.description or '') | tojson }},
+      contact_phone: {{ (vendor.contact_phone or '') | tojson }},
+      contact_email: {{ (vendor.contact_email or '') | tojson }},
+      location_city: {{ (vendor.location_city or '') | tojson }},
+      location_country: {{ (vendor.location_country or '') | tojson }},
+      currency: {{ (vendor.currency or 'USD') | tojson }},
+      website_url: {{ (vendor.website_url or '') | tojson }},
+      starting_price: {{ (vendor.starting_price or '') | tojson }},
+      price_range: {{ (vendor.price_range or 'mid') | tojson }},
+      cover_image_url: {{ (vendor.cover_image_url or '') | tojson }},
+      logo_url: {{ (vendor.logo_url or '') | tojson }},
+      portfolio_link: {{ (vendor.portfolio_link or '') | tojson }},
+    },
+
+    async uploadLogoFile(evt) {
+      const file = evt.target.files && evt.target.files[0];
+      if (!file) return;
+      this.uploadingLogo = true;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/v1/vendors/upload-image', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to upload logo.');
+        this.profileForm.logo_url = j.data.url;
+      } catch (err) {
+        this.showAlert('Upload Failed', err.message, 'error', 'Close');
+      } finally {
+        this.uploadingLogo = false;
+      }
+    },
+
+    async uploadCoverFile(evt) {
+      const file = evt.target.files && evt.target.files[0];
+      if (!file) return;
+      this.uploadingCover = true;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/v1/vendors/upload-image', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to upload cover banner.');
+        this.profileForm.cover_image_url = j.data.url;
+      } catch (err) {
+        this.showAlert('Upload Failed', err.message, 'error', 'Close');
+      } finally {
+        this.uploadingCover = false;
+      }
+    },
+
+    openQuoteModal(id, eventName) {
+      this.selectedInquiry = { id, event_name: eventName };
+      this.quoteForm = { title: '', total_amount: '', scope_of_work: '', attachment_url: '', attachment_name: '' };
+      this.showQuoteModal = true;
+    },
+
+    async uploadQuoteAttachment(evt) {
+      const file = evt.target.files && evt.target.files[0];
+      if (!file) return;
+      const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|jpe?g|png|webp)$/i)) {
+        this.showAlert('Invalid File', 'Please select a PDF document or image file (JPG, PNG, WebP).', 'error', 'Close');
+        evt.target.value = '';
+        return;
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        this.showAlert('File Too Large', 'Document must be under 15MB.', 'error', 'Close');
+        evt.target.value = '';
+        return;
+      }
+      this.uploadingQuoteAttachment = true;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/v1/vendors/upload-document', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to upload quotation document.');
+        this.quoteForm.attachment_url = j.data.url;
+        this.quoteForm.attachment_name = j.data.filename || file.name;
+      } catch (err) {
+        this.showAlert('Upload Failed', err.message, 'error', 'Close');
+      } finally {
+        this.uploadingQuoteAttachment = false;
+      }
+    },
+
+    async saveProfile() {
+      this.savingProfile = true;
+      try {
+        const payload = {
+          business_name: this.profileForm.business_name,
+          category: this.profileForm.category,
+          tagline: this.profileForm.tagline || null,
+          description: this.profileForm.description || null,
+          contact_phone: this.profileForm.contact_phone || null,
+          contact_email: this.profileForm.contact_email || null,
+          location_city: this.profileForm.location_city || null,
+          location_country: this.profileForm.location_country ? this.profileForm.location_country.toUpperCase() : null,
+          currency: this.profileForm.currency || null,
+          website_url: this.profileForm.website_url || null,
+          starting_price: this.profileForm.starting_price ? parseFloat(this.profileForm.starting_price) : null,
+          price_range: this.profileForm.price_range || null,
+          cover_image_url: this.profileForm.cover_image_url || null,
+          logo_url: this.profileForm.logo_url || null,
+          portfolio_link: this.profileForm.portfolio_link || null,
+        };
+        const res = await fetch('/api/v1/vendors/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to update profile.');
+        this.showAlert(
+          'Vendor Profile Updated Successfully!',
+          'Your profile changes, visuals, and business details have been saved.',
+          'success',
+          'Continue',
+          () => { window.location.reload(); }
+        );
+      } catch (e) {
+        this.showAlert('Update Failed', e.message, 'error', 'Close');
+      } finally {
+        this.savingProfile = false;
+      }
+    },
+
+    async createService() {
+      try {
+        const res = await fetch('/api/v1/vendors/me/services', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: this.serviceForm.title,
+            category: this.serviceForm.category,
+            price: parseFloat(this.serviceForm.price),
+            duration_hours: this.serviceForm.duration_hours ? parseInt(this.serviceForm.duration_hours) : null,
+            currency: this.profileForm.currency || '{{ vendor.currency or "USD" }}',
+            description: this.serviceForm.description,
+          }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to save service.');
+        this.showServiceModal = false;
+        this.showAlert('Service Created Successfully!', 'Your new service package has been published.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Save Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async deleteService(id) {
+      if (!confirm('Are you sure you want to remove this service listing?')) return;
+      try {
+        const res = await fetch(`/api/v1/vendors/me/services/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (!res.ok) throw new Error('Failed to delete service.');
+        window.location.reload();
+      } catch (e) {
+        this.showAlert('Delete Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async submitQuotation() {
+      try {
+        const res = await fetch(`/api/v1/vendors/quotes/inquiries/${this.selectedInquiry.id}/respond`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: this.quoteForm.title,
+            total_amount: parseFloat(this.quoteForm.total_amount),
+            scope_of_work: this.quoteForm.scope_of_work,
+            attachment_url: this.quoteForm.attachment_url || null,
+            attachment_name: this.quoteForm.attachment_name || null,
+          }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to send quotation.');
+        this.showQuoteModal = false;
+        this.showAlert('Quotation Dispatched!', 'Your quotation proposal has been sent to the client.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Dispatch Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async deliverBooking(id) {
+      if (!confirm('Mark this booking as delivered? The client will be notified to review and release escrow, or payment will automatically release after 48 hours.')) return;
+      try {
+        const res = await fetch(`/api/v1/vendors/bookings/${id}/deliver`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ proof_notes: 'Service fulfilled by vendor' }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to mark delivery.');
+        this.showAlert('Delivery Submitted!', 'The client has been notified to confirm and release payment.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Action Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async completeBooking(id) {
+      if (!confirm('Mark this booking as fulfilled and completed? This releases your net payout to your payable balance.')) return;
+      try {
+        const res = await fetch(`/api/v1/vendors/bookings/${id}/complete`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to complete booking.');
+        window.location.reload();
+      } catch (e) {
+        this.showAlert('Action Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async submitReviewReply(reviewId, text) {
+      if (!text || !text.trim()) return this.showAlert('Response Required', 'Please enter a reply before submitting.', 'error', 'Close');
+      try {
+        const res = await fetch(`/api/v1/vendors/reviews/${reviewId}/respond`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ response: text }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to post reply.');
+        this.showAlert('Reply Posted Successfully!', 'Your response to the review is now live.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Post Reply Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async submitPayout() {
+      try {
+        const res = await fetch('/api/v1/vendors/me/payout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            amount: parseFloat(this.payoutForm.amount),
+            method: 'manual',
+            account_details: {
+              bank_name: this.payoutForm.bank_name,
+              account_number: this.payoutForm.account_number,
+              account_name: this.payoutForm.account_name,
+            },
+          }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to request withdrawal.');
+        this.showPayoutModal = false;
+        this.showAlert('Withdrawal Requested Successfully!', j.message || 'Your payout request has been submitted for processing.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Withdrawal Request Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async upgradePlan(tier) {
+      if (!confirm(`Upgrade to the ${tier.toUpperCase()} plan?`)) return;
+      try {
+        const res = await fetch('/api/v1/vendors/me/subscriptions/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ tier }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to upgrade plan.');
+        this.showAlert('Plan Upgraded Successfully!', j.message || 'Your subscription tier has been upgraded.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Upgrade Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async purchaseFeatured() {
+      if (!confirm('Promote your profile for 30 days at the top of the marketplace?')) return;
+      try {
+        const res = await fetch('/api/v1/vendors/me/campaigns/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ placement: 'marketplace_top', duration_days: 30 }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to start campaign.');
+        this.showAlert('Featured Campaign Activated!', j.message || 'Your profile has been promoted to the top of marketplace results.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Campaign Activation Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async submitVerification() {
+      try {
+        const res = await fetch('/api/v1/vendors/me/verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            business_registration_number: this.verifForm.business_registration_number,
+            tax_id: this.verifForm.tax_id || null,
+            document_urls: [this.verifForm.cert_url],
+            government_id_url: this.verifForm.id_url || null,
+          }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to submit verification.');
+        this.showAlert('Documents Submitted Successfully!', j.message || 'Your verification documents have been received for administrative review.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Submission Failed', e.message, 'error', 'Close');
+      }
+    },
+  };
+}
+</script>
+{% endblock %}

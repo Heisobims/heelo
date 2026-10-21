@@ -16,6 +16,7 @@ celery_app = Celery(
         "app.tasks.webhooks",
         "app.tasks.admin_broadcast",
         "app.tasks.ticketing",
+        "app.tasks.billing",
     ],
 )
 
@@ -34,11 +35,15 @@ celery_app.conf.update(
         "app.tasks.webhooks.*": {"queue": "webhooks"},
         "app.tasks.notifications.*": {"queue": "notifications"},
         "app.tasks.admin_broadcast.*": {"queue": "email"},
+        "app.tasks.campaign.*": {"queue": "celery"},
+        "app.tasks.ticketing.*": {"queue": "celery"},
+        "app.tasks.billing.*": {"queue": "celery"},
+        "app.tasks.ai_tasks.*": {"queue": "celery"},
     },
     beat_schedule={
-        "email-reminders-hourly": {
+        "email-reminders-periodic": {
             "task": "app.tasks.email.send_event_reminders",
-            "schedule": 3600.0,
+            "schedule": 900.0,
         },
         "email-interest-nudges-hourly": {
             "task": "app.tasks.email.send_interest_nudges",
@@ -48,9 +53,9 @@ celery_app.conf.update(
             "task": "app.tasks.email.send_feedback_requests",
             "schedule": 3600.0,
         },
-        "whatsapp-reminders-hourly": {
+        "whatsapp-reminders-periodic": {
             "task": "app.tasks.whatsapp.send_event_reminders",
-            "schedule": 3600.0,
+            "schedule": 900.0,
         },
         "scheduled-campaigns-hourly": {
             "task": "app.tasks.campaign.send_scheduled_campaigns",
@@ -67,6 +72,18 @@ celery_app.conf.update(
         "expire-waitlist-offers-every-10-min": {
             "task": "app.tasks.ticketing.expire_waitlist_offers",
             "schedule": 600.0,
+        },
+        "plan-renewals-daily": {
+            "task": "app.tasks.billing.process_plan_renewals",
+            "schedule": 86400.0,
+        },
+        "pending-payouts-weekly-digest": {
+            "task": "app.tasks.billing.send_pending_payouts_digest",
+            "schedule": 604800.0,
+        },
+        "auto-release-vendor-escrow-hourly": {
+            "task": "app.tasks.billing.auto_release_vendor_escrow",
+            "schedule": 3600.0,
         },
     },
 )

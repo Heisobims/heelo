@@ -58,7 +58,7 @@ async def set_poll_status(
 ) -> Poll:
     poll = await get_poll(db, event_id, poll_id)
     if status == "open":
-        # Only one poll open at a time — auto-close any others still open.
+        # Only one poll open at a time - auto-close any others still open.
         await db.execute(
             update(Poll)
             .where(Poll.event_id == event_id, Poll.status == "open")
@@ -84,7 +84,7 @@ async def vote_poll(
     if not any(o.id == option_id for o in poll.options):
         raise HTTPException(404, "Option not found on this poll.")
 
-    # Atomic row-level increment — safe under concurrent votes.
+    # Atomic row-level increment - safe under concurrent votes.
     await db.execute(
         update(PollOption)
         .where(PollOption.id == option_id)

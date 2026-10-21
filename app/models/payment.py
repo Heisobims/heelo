@@ -35,6 +35,8 @@ class PaymentAccount(Base, TimestampMixin):
     account_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     bank_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     account_number: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    bank_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    recipient_code: Mapped[str | None] = mapped_column(String(100), nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     country: Mapped[str | None] = mapped_column(String(2), nullable=True)
@@ -93,3 +95,45 @@ class Payout(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<Payout {self.amount} {self.currency} {self.status}>"
+
+
+class PlanInvoice(Base, TimestampMixin):
+    """A payment for one org-plan billing period - growth/pro subscriptions
+    are billed as a real one-off checkout for 30 days of access (manual
+    renewal, not auto-recurring), so each period gets its own invoice row.
+    """
+
+    __tablename__ = "plan_invoices"
+    __table_args__ = (Index("ix_plan_invoices_org", "org_id"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # growth | pro - tier being paid for
+    plan: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Total actually charged - the plan's list price plus gateway_fee_amount,
+    # so Heelo nets the full list price regardless of what the payment
+    # gateway deducts (mirrors Order.total_amount/gateway_fee_amount).
+    amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    gateway_fee_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    # paystack | flutterwave | stripe
+    provider: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    provider_reference: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
+    # pending | paid | failed
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    period_start: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # What org.plan_expires_at becomes once this invoice is confirmed paid
+    period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    initiated_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+    organization: Mapped[Organization] = relationship("Organization")
+
+    def __repr__(self) -> str:
+        return f"<PlanInvoice {self.plan} org={self.org_id} status={self.status}>"
