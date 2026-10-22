@@ -6,6 +6,66 @@
 {% block og_image %}{{ speaker.photo_url or '/static/icons/og-default.png' }}{% endblock %}
 
 {% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": {{ speaker.name | tojson }},
+  {% if speaker.title %}"jobTitle": {{ speaker.title | tojson }},{% endif %}
+  {% if speaker.company %}"worksFor": { "@type": "Organization", "name": {{ speaker.company | tojson }} },{% endif %}
+  {% if speaker.bio %}"description": {{ speaker.bio | tojson }},{% endif %}
+  {% if speaker.photo_url %}"image": {{ speaker.photo_url | tojson }},{% endif %}
+  "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/speakers/{{ speaker.slug }}"
+  {% set socials = [] %}
+  {% if speaker.social_links %}
+    {% for net, url in speaker.social_links.items() %}
+      {% if url %}{% set _ = socials.append(url) %}{% endif %}
+    {% endfor %}
+  {% endif %}
+  {% if socials %}
+  ,"sameAs": {{ socials | tojson }}
+  {% endif %}
+  {% if events %}
+  ,"performerIn": [
+    {% for entry in events %}
+    {% set ev = entry[0] if entry is iterable else entry %}
+    {
+      "@type": "Event",
+      "name": {{ ev.title | tojson }},
+      "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/e/{{ ev.slug }}",
+      "startDate": {{ ev.start_datetime.isoformat() | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+  {% endif %}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Events",
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/events"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": {{ speaker.name | tojson }},
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/speakers/{{ speaker.slug }}"
+    }
+  ]
+}
+</script>
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
   body { background: var(--bg-secondary); }

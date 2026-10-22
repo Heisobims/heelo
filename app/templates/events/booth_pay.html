@@ -1,5 +1,7 @@
-{% extends "base.html" %} {% block title %}Confirm Booth Space · {{
-app.business_name }} | Heelo{% endblock %} {% block head %}
+{% extends "base.html" %}
+{% block title %}Confirm Booth Space · {{ app.business_name }} | Heelo{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
+{% block head %}
 <style>
   [x-cloak] {
     display: none !important;

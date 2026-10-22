@@ -25,6 +25,32 @@
   "priceRange": {{ ((vendor.currency | currency_symbol) * 3 if vendor.price_range == 'premium' else (vendor.currency | currency_symbol) * 2 if vendor.price_range == 'mid' else (vendor.currency | currency_symbol)) | tojson }}
 }
 </script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Vendors",
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/vendors"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": {{ vendor.business_name | tojson }},
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/vendors/{{ vendor.slug }}"
+    }
+  ]
+}
+</script>
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
   body { 

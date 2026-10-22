@@ -1,7 +1,24 @@
 {% extends "base.html" %}
 {% block title %}{{ profile_user.full_name }} | Heelo{% endblock %}
+{% block meta_description %}{{ profile_user.full_name }}'s profile on Heelo. Discover organized events, community connections, and badges.{% endblock %}
+{% block og_title %}{{ profile_user.full_name }} | Heelo{% endblock %}
+{% block og_description %}{{ self.meta_description() }}{% endblock %}
+{% block og_image %}{{ profile_user.avatar_url or '/static/icons/og-default.png' }}{% endblock %}
 
 {% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  "mainEntity": {
+    "@type": "Person",
+    "name": {{ profile_user.full_name | tojson }},
+    "identifier": {{ profile_user.username | tojson }},
+    {% if profile_user.avatar_url %}"image": {{ profile_user.avatar_url | tojson }},{% endif %}
+    "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/p/{{ profile_user.username }}"
+  }
+}
+</script>
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
   body { background: var(--bg-secondary); }

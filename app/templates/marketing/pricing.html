@@ -3,6 +3,59 @@
 {% block meta_description %}Heelo takes {{ platform_fee_percent }}% on paid tickets, added at checkout: organizers always keep their full ticket price. No paywalled tools, and free events stay free.{% endblock %}
 
 {% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Pricing",
+          "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/pricing"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How much does Heelo cost for free events?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Free events are 100% free on Heelo, always. There are no ticket caps, hidden setup fees, or forced plan upgrades."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I pass ticketing fees to the ticket buyer?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Organizers can choose to pass fees to the ticket buyer at checkout to net 100% of their ticket price, or absorb fees into ticket face value."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What happens if I refund a ticket?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "If you refund an attendee, the platform fee on that ticket is automatically reversed along with it."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 <style>
   .pr-wrap { max-width: 760px; margin: 0 auto; padding: 130px 24px 40px; }
 

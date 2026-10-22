@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Registration Confirmed · {{ event.title }} | Heelo{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
 {% set cyan_text = (org.display_brand_color | contrast_text('#0A0A0A')) if org and org.display_brand_color else '#0A0A0A' %}
 
 {% block head %}

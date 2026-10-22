@@ -3,6 +3,77 @@ here{% endblock %} {% block meta_description %}Discover concerts, workshops,
 conferences, and festivals happening near you, or list your own event in
 minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 {% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#website",
+      "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/",
+      "name": "Heelo",
+      "description": "Global event ticketing, intelligence, and vendor marketplace platform.",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "{{ settings.FRONTEND_URL.rstrip('/') }}/events?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#organization",
+      "name": "Heelo",
+      "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/static/icons/icon-512.svg"
+      },
+      "sameAs": []
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How do verified tickets and QR check-in work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every ticket issued on Heelo is cryptographically signed and tied to a unique dynamic QR code. Organizers use our offline-ready gate scanner to validate admissions in less than 0.5 seconds, eliminating counterfeit passes and duplicate entries."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I transfer or resell my ticket to a friend?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. From your attendee dashboard or confirmation email, you can securely reassign tickets to a friend with one click. A fresh QR code is immediately generated for the new holder."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How quickly do event organizers receive their payouts?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Payouts are automated and deposited directly into your verified bank account via Paystack, Stripe, or Flutterwave according to your payout schedule (next-day or rolling daily)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What payment methods and currencies are supported?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Heelo supports multi-currency payments globally including USD, EUR, GBP, CAD, NGN, GHS, KES, and ZAR via Stripe, Paystack, and Flutterwave with card, bank transfer, and mobile money options."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link
   rel="stylesheet"
   href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"

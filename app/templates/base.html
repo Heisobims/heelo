@@ -14,12 +14,12 @@
     />
     {% block robots_meta %}{% endblock %} {% set _canonical_url =
     request.url.scheme ~ "://" ~ request.url.netloc ~ request.url.path %}
-    <link rel="canonical" href="{% block canonical %}{{ _canonical_url }}{% endblock %}">
+    <link rel="canonical" href="{% block canonical %}{{ custom_canonical or _canonical_url }}{% endblock %}">
 
     <!-- OG / Social -->
     <meta property="og:site_name" content="Heelo" />
     <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
-    <meta property="og:url" content="{% block og_url %}{{ _canonical_url }}{% endblock %}" />
+    <meta property="og:url" content="{% block og_url %}{{ custom_canonical or _canonical_url }}{% endblock %}" />
     <meta property="og:title" content="{% block og_title %}Heelo{% endblock %}" />
     <meta property="og:description" content="{% block og_description %}Every great event starts with heelo.{% endblock %}" />
     <meta property="og:image" content="{% block og_image %}/static/icons/og-default.png{% endblock %}" />

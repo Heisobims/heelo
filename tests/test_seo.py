@@ -16,6 +16,11 @@ def _extract_ld_json(html: str) -> dict:
     return json.loads(match.group(1))
 
 
+def _extract_all_ld_json(html: str) -> list[dict]:
+    matches = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S)
+    return [json.loads(m) for m in matches]
+
+
 async def test_robots_txt(client: AsyncClient):
     resp = await client.get("/robots.txt")
     assert resp.status_code == 200
@@ -104,3 +109,98 @@ async def test_sponsor_invite_claim_page_is_noindex(
     resp = await client.get(f"/sponsor-invite/{token}")
     assert resp.status_code == 200
     assert 'name="robots" content="noindex, nofollow"' in resp.text
+
+
+async def test_robots_txt_disallows_sensitive_paths(client: AsyncClient):
+    resp = await client.get("/robots.txt")
+    assert resp.status_code == 200
+    assert "Disallow: /orders/" in resp.text
+    assert "Disallow: /payments/" in resp.text
+    assert "Disallow: /billing/" in resp.text
+    assert "Disallow: /booths/" in resp.text
+    assert "Disallow: /feedback/" in resp.text
+    assert "Disallow: /messages" in resp.text
+    assert "Allow: /events" in resp.text
+    assert "Allow: /venues" in resp.text
+
+
+async def test_auth_pages_have_noindex_follow(client: AsyncClient):
+    for path in ["/login", "/register", "/forgot-password"]:
+        resp = await client.get(path)
+        assert resp.status_code == 200
+        assert 'name="robots" content="noindex, follow"' in resp.text
+
+
+async def test_landing_page_has_website_and_faq_schema(client: AsyncClient):
+    resp = await client.get("/")
+    assert resp.status_code == 200
+    blocks = _extract_all_ld_json(resp.text)
+    assert len(blocks) >= 1
+    graph = blocks[0].get("@graph", [])
+    types = [item.get("@type") for item in graph]
+    assert "WebSite" in types
+    assert "Organization" in types
+    assert "FAQPage" in types
+
+
+async def test_pricing_page_has_faq_and_breadcrumbs(client: AsyncClient):
+    resp = await client.get("/pricing")
+    assert resp.status_code == 200
+    blocks = _extract_all_ld_json(resp.text)
+    assert len(blocks) >= 1
+    graph = blocks[0].get("@graph", [])
+    types = [item.get("@type") for item in graph]
+    assert "BreadcrumbList" in types
+    assert "FAQPage" in types
+
+
+async def test_event_page_has_rich_schema_and_breadcrumbs(
+    client: AsyncClient, published_event, ticket_type
+):
+    resp = await client.get(f"/e/{published_event.slug}")
+    assert resp.status_code == 200
+    blocks = _extract_all_ld_json(resp.text)
+    assert len(blocks) >= 2
+    types = [b.get("@type") for b in blocks]
+    assert "Event" in types
+    assert "BreadcrumbList" in types
+    event_block = next(b for b in blocks if b.get("@type") == "Event")
+    assert event_block["inLanguage"] == "en"
+    assert "eventStatus" in event_block
+
+
+async def test_speaker_page_has_person_and_breadcrumbs(
+    client: AsyncClient, org, published_event, user_headers
+):
+    resp = await client.post(
+        f"/api/v1/organizations/{org.slug}/speakers",
+        json={"name": "Grace Hopper", "title": "Chief Scientist"},
+        headers=user_headers,
+    )
+    assert resp.status_code == 201
+    speaker_data = resp.json()["data"]
+
+    resp = await client.get(f"/speakers/{speaker_data['slug']}")
+    assert resp.status_code == 200
+    blocks = _extract_all_ld_json(resp.text)
+    types = [b.get("@type") for b in blocks]
+    assert "Person" in types
+    assert "BreadcrumbList" in types
+
+
+async def test_programmatic_category_and_city_routes(client: AsyncClient, published_event):
+    resp_cat = await client.get("/events/category/tech")
+    assert resp_cat.status_code == 200
+    assert "/events/category/tech" in resp_cat.text
+
+    resp_city = await client.get("/events/city/lagos")
+    assert resp_city.status_code == 200
+    assert "/events/city/lagos" in resp_city.text
+
+
+async def test_sitemap_xml_includes_venues_and_categories(client: AsyncClient, published_event):
+    resp = await client.get("/sitemap.xml")
+    assert resp.status_code == 200
+    assert "/venues</loc>" in resp.text
+    assert "/events/category/" in resp.text
+

@@ -127,54 +127,180 @@ async def robots_txt() -> str:
         "Disallow: /api/",
         "Disallow: /my-tickets",
         "Disallow: /my-vendor-profile",
+        "Disallow: /my-vendor-dashboard",
+        "Disallow: /my-bookings",
+        "Disallow: /my-sponsorships",
+        "Disallow: /messages",
         "Disallow: /onboarding",
+        "Disallow: /orders/",
+        "Disallow: /payments/",
+        "Disallow: /billing/",
+        "Disallow: /booths/",
+        "Disallow: /feedback/",
+        "Disallow: /transfer/",
+        "Disallow: /unsubscribe/",
+        "Disallow: /sponsor-invite/",
+        "Disallow: /accept-invite/",
+        "",
+        "# Allow public search and discovery",
+        "Allow: /",
+        "Allow: /events",
+        "Allow: /venues",
+        "Allow: /vendors",
+        "Allow: /pricing",
+        "Allow: /host",
+        "Allow: /discover",
+        "Allow: /e/",
+        "Allow: /speakers/",
+        "Allow: /p/",
+        "Allow: /static/",
         "",
         f"Sitemap: {settings.FRONTEND_URL}/sitemap.xml",
     ]
     return "\n".join(lines)
 
 
-def _sitemap_url(loc: str, *, lastmod: datetime | None = None, priority: str = "0.5") -> str:
+def _sitemap_url(
+    loc: str,
+    *,
+    lastmod: datetime | None = None,
+    priority: str = "0.5",
+    changefreq: str | None = None,
+    image_url: str | None = None,
+    image_title: str | None = None,
+) -> str:
+    import html as _html
+
+    loc_clean = _html.escape(loc)
     lastmod_tag = f"<lastmod>{lastmod.date().isoformat()}</lastmod>" if lastmod else ""
-    return f"<url><loc>{loc}</loc>{lastmod_tag}<priority>{priority}</priority></url>"
+    cf_tag = f"<changefreq>{changefreq}</changefreq>" if changefreq else ""
+    prio_tag = f"<priority>{priority}</priority>" if priority else ""
+    image_tag = ""
+    if image_url:
+        img_loc = _html.escape(image_url)
+        img_title = (
+            f"<image:title>{_html.escape(image_title)}</image:title>" if image_title else ""
+        )
+        image_tag = f"<image:image><image:loc>{img_loc}</image:loc>{img_title}</image:image>"
+    return f"<url><loc>{loc_clean}</loc>{lastmod_tag}{cf_tag}{prio_tag}{image_tag}</url>"
 
 
 @router_pages.get("/sitemap.xml", include_in_schema=False)
 async def sitemap_xml(db: DBSession) -> Response:
+    from sqlalchemy import distinct, select
+
+    from app.models.event import Event
+    from app.models.speaker import EventSpeaker, Speaker
     from app.services import event_service as ev_svc
     from app.services import vendor_service as vsvc
 
     base = settings.FRONTEND_URL.rstrip("/")
     entries = [
-        _sitemap_url(base + "/", priority="1.0"),
-        _sitemap_url(base + "/pricing", priority="0.8"),
-        _sitemap_url(base + "/events", priority="0.8"),
-        _sitemap_url(base + "/vendors", priority="0.7"),
+        _sitemap_url(base + "/", priority="1.0", changefreq="daily"),
+        _sitemap_url(base + "/events", priority="0.9", changefreq="daily"),
+        _sitemap_url(base + "/discover", priority="0.8", changefreq="daily"),
+        _sitemap_url(base + "/venues", priority="0.8", changefreq="weekly"),
+        _sitemap_url(base + "/vendors", priority="0.8", changefreq="weekly"),
+        _sitemap_url(base + "/pricing", priority="0.8", changefreq="monthly"),
+        _sitemap_url(base + "/host", priority="0.8", changefreq="monthly"),
+        _sitemap_url(base + "/terms", priority="0.3", changefreq="yearly"),
+        _sitemap_url(base + "/privacy", priority="0.3", changefreq="yearly"),
     ]
 
+    # Category landing URLs
+    categories = await ev_svc.get_all_categories(db)
+    category_slugs = [c.slug for c in categories] if categories else ["tech", "music", "business", "community", "arts"]
+    for cat_slug in category_slugs:
+        entries.append(
+            _sitemap_url(
+                f"{base}/events/category/{cat_slug}",
+                priority="0.7",
+                changefreq="weekly",
+            )
+        )
+
+    # Top city landing URLs with published events
+    city_rows = await db.scalars(
+        select(distinct(Event.venue_city))
+        .where(
+            Event.venue_city.isnot(None),
+            Event.status.in_(["published", "live"]),
+            Event.deleted_at.is_(None),
+            Event.is_private == False,
+        )
+        .limit(30)
+    )
+    for c in city_rows.all():
+        if c and c.strip():
+            city_slug = c.strip().lower().replace(" ", "-")
+            entries.append(
+                _sitemap_url(
+                    f"{base}/events/city/{city_slug}",
+                    priority="0.7",
+                    changefreq="weekly",
+                )
+            )
+
+    # Public published events (exclude drafts, deleted, and private)
     events, _ = await ev_svc.search_public_events(db, per_page=1000)
     for event in events:
+        if event.is_private:
+            continue
         entries.append(
             _sitemap_url(
                 f"{base}/e/{event.slug}",
                 lastmod=event.updated_at,
-                priority="0.6",
+                priority="0.8" if event.status in ("published", "live") else "0.4",
+                changefreq="weekly",
+                image_url=event.cover_image_url if event.cover_image_url else None,
+                image_title=event.title if event.cover_image_url else None,
             )
         )
 
+    # Public verified vendors and venues
     vendors, _ = await vsvc.list_vendors(db, per_page=500)
     for vendor in vendors:
         entries.append(
             _sitemap_url(
                 f"{base}/vendors/{vendor.slug}",
                 lastmod=vendor.updated_at,
+                priority="0.6",
+                changefreq="weekly",
+                image_url=vendor.cover_image_url if vendor.cover_image_url else None,
+                image_title=vendor.business_name if vendor.cover_image_url else None,
+            )
+        )
+
+    # Public speakers featured in published events
+    speaker_rows = await db.scalars(
+        select(Speaker)
+        .join(EventSpeaker, EventSpeaker.speaker_id == Speaker.id)
+        .join(Event, Event.id == EventSpeaker.event_id)
+        .where(
+            Event.status.in_(["published", "live"]),
+            Event.deleted_at.is_(None),
+            Event.is_private == False,
+            Speaker.slug.isnot(None),
+        )
+        .distinct()
+        .limit(300)
+    )
+    for sp in speaker_rows.all():
+        entries.append(
+            _sitemap_url(
+                f"{base}/speakers/{sp.slug}",
+                lastmod=sp.updated_at,
                 priority="0.5",
+                changefreq="monthly",
+                image_url=sp.photo_url if sp.photo_url else None,
+                image_title=sp.name if sp.photo_url else None,
             )
         )
 
     xml = (
-        '<?xml version="1.0" encoding="UTF-8"?>'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '
+        'xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n'
         + "".join(entries)
         + "</urlset>"
     )
@@ -2651,11 +2777,20 @@ async def public_events_list(
         params["page"] = str(p)
         return "&".join(f"{k}={v}" for k, v in params.items())
 
+    custom_canonical = None
+    base_url = settings.FRONTEND_URL.rstrip("/")
+    if category and not is_view_all and not q and not city:
+        custom_canonical = f"{base_url}/events/category/{category}"
+    elif city and not is_view_all and not q and not category:
+        city_slug = city.strip().lower().replace(" ", "-")
+        custom_canonical = f"{base_url}/events/city/{city_slug}"
+
     return templates.TemplateResponse(
         "home/events.html",
         {
             "request": request,
             "user": user,
+            "custom_canonical": custom_canonical,
             "is_filtered_view": is_filtered_view,
             "is_view_all": is_view_all,
             "sections": sections,
@@ -2677,6 +2812,17 @@ async def public_events_list(
             "query_string_with_page": qs_with_page,
         },
     )
+
+
+@router_pages.get("/events/category/{category_slug}", response_class=HTMLResponse)
+async def public_events_by_category(category_slug: str, request: Request, db: DBSession):
+    return await public_events_list(request, db, category=category_slug)
+
+
+@router_pages.get("/events/city/{city_slug}", response_class=HTMLResponse)
+async def public_events_by_city(city_slug: str, request: Request, db: DBSession):
+    city_name = city_slug.replace("-", " ")
+    return await public_events_list(request, db, city=city_name)
 
 
 @router_pages.get("/discover", response_class=HTMLResponse)

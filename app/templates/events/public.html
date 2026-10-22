@@ -6,6 +6,10 @@
 {% block og_description %}{{ event.description[:200] if event.description else '' }}{% endblock %}
 {% block og_image %}{{ event.og_image_url or '/api/v1/events/' + event.slug + '/og.png' }}{% endblock %}
 
+{% block robots_meta %}
+{% if event.is_private %}<meta name="robots" content="noindex, nofollow">{% endif %}
+{% endblock %}
+
 {% block head %}
 <script type="application/ld+json">
 {
@@ -15,8 +19,9 @@
   {% if event.description %}"description": {{ event.description | tojson }},{% endif %}
   "startDate": {{ event.start_datetime.isoformat() | tojson }},
   {% if event.end_datetime %}"endDate": {{ event.end_datetime.isoformat() | tojson }},{% endif %}
-  "eventAttendanceMode": "https://schema.org/{{ 'OnlineEventAttendanceMode' if event.format == 'virtual' else 'OfflineEventAttendanceMode' }}",
-  "eventStatus": "https://schema.org/EventScheduled",
+  "eventAttendanceMode": "https://schema.org/{{ 'OnlineEventAttendanceMode' if event.format == 'virtual' else ('MixedEventAttendanceMode' if event.format == 'hybrid' else 'OfflineEventAttendanceMode') }}",
+  "eventStatus": "https://schema.org/{{ 'EventCancelled' if event.status == 'cancelled' else ('EventPostponed' if event.status == 'postponed' else ('EventRescheduled' if event.status == 'rescheduled' else 'EventScheduled')) }}",
+  "inLanguage": "en",
   {% if event.format == 'virtual' %}
   "location": { "@type": "VirtualLocation", "url": {{ (settings.FRONTEND_URL ~ '/e/' ~ event.slug) | tojson }} },
   {% else %}
@@ -34,12 +39,32 @@
   },
   {% endif %}
   {% if event.cover_image_url %}"image": [{{ event.cover_image_url | tojson }}],{% endif %}
-  "organizer": { "@type": "Organization", "name": {{ org.name | tojson }} }
+  "organizer": {
+    "@type": "Organization",
+    "name": {{ org.name | tojson }},
+    "url": {{ (settings.FRONTEND_URL ~ '/e/' ~ event.slug) | tojson }}
+    {% if org.logo_url %},"logo": {{ org.logo_url | tojson }}{% endif %}
+  }
+  {% if speakers %}
+  ,"performer": [
+    {% for sp in speakers %}
+    {
+      "@type": "Person",
+      "name": {{ sp.name | tojson }}
+      {% if sp.title %},"jobTitle": {{ sp.title | tojson }}{% endif %}
+      {% if sp.photo_url %},"image": {{ sp.photo_url | tojson }}{% endif %}
+      {% if sp.slug %},"url": {{ (settings.FRONTEND_URL ~ '/speakers/' ~ sp.slug) | tojson }}{% endif %}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+  {% endif %}
   {% if ticket_types %}
+  ,"isAccessibleForFree": {{ 'true' if (ticket_types | selectattr('price', 'equalto', 0) | list | length > 0) else 'false' }}
   ,"offers": [
     {% for tt in ticket_types %}
     {
       "@type": "Offer",
+      "name": {{ tt.name | tojson }},
       "price": {{ tt.price | float | tojson }},
       "priceCurrency": {{ (tt.currency or (org.currency if org else 'USD')) | tojson }},
       "url": {{ (settings.FRONTEND_URL ~ '/e/' ~ event.slug ~ '/register') | tojson }},
@@ -48,6 +73,32 @@
     {% endfor %}
   ]
   {% endif %}
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": {{ (settings.FRONTEND_URL ~ '/') | tojson }}
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Events",
+      "item": {{ (settings.FRONTEND_URL ~ '/events') | tojson }}
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": {{ event.title | tojson }},
+      "item": {{ (settings.FRONTEND_URL ~ '/e/' ~ event.slug) | tojson }}
+    }
+  ]
 }
 </script>
 {% set cyan_text = (org.display_brand_color | contrast_text('#0A0A0A')) if org and org.display_brand_color else '#0A0A0A' %}
@@ -865,7 +916,7 @@ async function heeloToggleInterestBtn(btn) {
     <!-- Cover Image Visual -->
     <div class="ev-media-canvas">
       {% if event.cover_image_url %}
-      <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" class="ev-media-img">
+      <img src="{{ event.cover_image_url }}" alt="{{ event.title }}" class="ev-media-img" fetchpriority="high" decoding="async">
       {% else %}
       <div class="ev-media-placeholder">
         <span>{{ event.title[0] }}</span>

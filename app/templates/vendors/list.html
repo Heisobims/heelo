@@ -1,8 +1,31 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Find a Venue' if venue_mode else 'Vendor Marketplace' }} | Heelo{% endblock %}
-{% block meta_description %}{{ 'Find event halls and venues by location and capacity.' if venue_mode else 'Find photographers, caterers, decorators, and more for your next event.' }}{% endblock %}
+{% block title %}{{ 'Find Event Venues and Spaces | Halls, Auditoriums and Studios' if venue_mode else 'Event Vendor Marketplace | Photographers, Caterers and Decorators' }} | Heelo{% endblock %}
+{% block meta_description %}{{ 'Search and compare event venues, conference halls, and banquet spaces by capacity and location on Heelo.' if venue_mode else 'Connect with verified event professionals, photographers, caterers, decorators, and entertainers on Heelo.' }}{% endblock %}
+
+{% block og_title %}{{ self.title() | trim }}{% endblock %}
+{% block og_description %}{{ self.meta_description() | trim }}{% endblock %}
 
 {% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": {{ ('Venues' if venue_mode else 'Vendors') | tojson }},
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/{{ 'venues' if venue_mode else 'vendors' }}"
+    }
+  ]
+}
+</script>
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
   body { background: var(--bg-secondary); }

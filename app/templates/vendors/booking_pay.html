@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Checkout · {{ booking.event_name or 'Vendor Booking' }} | Heelo{% endblock %}
+{% block robots_meta %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/dashboard.css">

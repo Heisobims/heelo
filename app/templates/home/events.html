@@ -1,6 +1,105 @@
-{% extends "base.html" %} {% block title %}Discover Events | Heelo{% endblock %}
-{% block meta_description %}Find and register for events happening near you and
-across Africa.{% endblock %} {% block head %}
+{% extends "base.html" %}
+
+{% block title %}
+{%- if category_name and city -%}
+{{ category_name }} Events in {{ city }} | Heelo
+{%- elif category_name -%}
+{{ category_name }} Events | Discover Upcoming {{ category_name }} Conferences and Meetups | Heelo
+{%- elif city -%}
+Events in {{ city }} | Discover Top Events, Festivals and Concerts | Heelo
+{%- elif active_section_info -%}
+{{ active_section_info.title }} | Discover Events | Heelo
+{%- elif q -%}
+"{{ q }}" Event Search Results | Heelo
+{%- else -%}
+Discover Events | Find Conferences, Concerts and Meetups Worldwide | Heelo
+{%- endif -%}
+{% endblock %}
+
+{% block meta_description %}
+{%- if category_name and city -%}
+Explore upcoming {{ category_name }} events, conferences, and meetups in {{ city }}. Book verified tickets, view schedules, and reserve your spot on Heelo.
+{%- elif category_name -%}
+Find and register for the best {{ category_name }} events, summits, workshops, and gatherings worldwide. Verified tickets and instant registration on Heelo.
+{%- elif city -%}
+Discover top events, conferences, entertainment, and networking sessions in {{ city }}. Explore verified ticket pricing, schedules, and venues on Heelo.
+{%- elif active_section_info -%}
+Explore {{ active_section_info.title | lower }} on Heelo. {{ active_section_info.subtitle }}.
+{%- elif q -%}
+Search results for "{{ q }}" events on Heelo. Find tickets, locations, dates, and event details.
+{%- else -%}
+Discover conferences, workshops, concerts, and festivals happening near you and worldwide. Verified tickets, multi-currency checkouts, and seamless check-in on Heelo.
+{%- endif -%}
+{% endblock %}
+
+{% block og_title %}{{ self.title() | trim }}{% endblock %}
+{% block og_description %}{{ self.meta_description() | trim }}{% endblock %}
+
+{% block head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Events",
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/events"
+    }
+    {% if category_name and category %}
+    ,{
+      "@type": "ListItem",
+      "position": 3,
+      "name": {{ category_name | tojson }},
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/events/category/{{ category }}"
+    }
+    {% elif city %}
+    ,{
+      "@type": "ListItem",
+      "position": 3,
+      "name": {{ city | tojson }},
+      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/events/city/{{ city | lower | replace(' ', '-') }}"
+    }
+    {% endif %}
+  ]
+}
+</script>
+{% if events %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": {{ self.title() | trim | tojson }},
+  "itemListElement": [
+    {% for ev in events[:20] %}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "item": {
+        "@type": "Event",
+        "name": {{ ev.title | tojson }},
+        "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/e/{{ ev.slug }}",
+        "startDate": {{ ev.start_datetime.isoformat() | tojson }},
+        {% if ev.cover_image_url %}"image": {{ ev.cover_image_url | tojson }},{% endif %}
+        "eventAttendanceMode": "https://schema.org/{{ 'OnlineEventAttendanceMode' if ev.format == 'virtual' else 'OfflineEventAttendanceMode' }}",
+        "location": {
+          "@type": "{{ 'VirtualLocation' if ev.format == 'virtual' else 'Place' }}",
+          "name": {{ (ev.venue_name or ev.venue_city or 'Online') | tojson }}
+        }
+      }
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}
+</script>
+{% endif %}
 <style>
   body {
     background: var(--bg-secondary);
