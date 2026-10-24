@@ -226,6 +226,10 @@ def _register_routers(app: FastAPI) -> None:
 
     app.include_router(router_ai)  # /api/v1/organizations/{slug}/ai/...
 
+    from app.routers.chatbot import router as support_chatbot_api
+
+    app.include_router(support_chatbot_api)  # /api/v1/support/chat
+
     from app.routers.community import router_community
 
     app.include_router(router_community)  # /api/v1/organizations/{slug}/inbox/... + /follow
