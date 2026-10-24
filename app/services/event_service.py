@@ -80,6 +80,11 @@ async def create_event(
         vibe_tags=data.vibe_tags,
         extras=data.extras,
         pass_fees_to_buyer=data.pass_fees_to_buyer,
+        meta_pixel_id=data.meta_pixel_id,
+        google_tag_id=data.google_tag_id,
+        tiktok_pixel_id=data.tiktok_pixel_id,
+        tax_rate=data.tax_rate,
+        tax_id=data.tax_id,
         status="draft",
     )
     event.categories = []

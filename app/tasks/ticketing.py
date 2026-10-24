@@ -151,3 +151,43 @@ def expire_waitlist_offers() -> None:
                     waitlist_id=str(next_wl.id),
                     error=str(err),
                 )
+
+
+@shared_task(name="app.tasks.ticketing.send_abandoned_checkout_nudges")
+def send_abandoned_checkout_nudges() -> None:
+    """Find unpaid orders created between 20 mins and 24 hours ago that haven't
+    received a recovery nudge, and dispatch recovery email/WhatsApp."""
+    from app.models.ticketing import Order
+
+    now = datetime.now(UTC)
+    min_age = now - timedelta(minutes=20)
+    max_age = now - timedelta(hours=24)
+
+    with _db() as db:
+        abandoned_orders = (
+            db.query(Order)
+            .filter(
+                Order.payment_status == "pending",
+                Order.created_at <= min_age,
+                Order.created_at >= max_age,
+                Order.abandoned_recovery_sent_at.is_(None),
+                Order.buyer_email.isnot(None),
+            )
+            .limit(100)
+            .all()
+        )
+
+        for order in abandoned_orders:
+            order.abandoned_recovery_sent_at = now
+            db.commit()
+
+            try:
+                from app.tasks.email import send_abandoned_checkout_recovery as _send_recovery
+
+                _send_recovery.delay(str(order.id))
+            except Exception as err:
+                log.warning(
+                    "ticketing.abandoned_recovery_enqueue_failed",
+                    order_id=str(order.id),
+                    error=str(err),
+                )

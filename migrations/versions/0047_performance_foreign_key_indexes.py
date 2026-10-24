@@ -33,3 +33,4 @@ def downgrade() -> None:
     op.drop_index("ix_campaign_recipients_registration_id", table_name="campaign_recipients", if_exists=True)
     op.drop_index("ix_registrations_ticket_type_id", table_name="registrations", if_exists=True)
     op.drop_index("ix_registrations_order_id", table_name="registrations", if_exists=True)
+

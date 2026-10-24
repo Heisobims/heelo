@@ -1484,6 +1484,84 @@
       </div>
     </div>
 
+    <!-- ── 12. Ad Tracking & Invoicing ───────────────────────────── -->
+    <div class="ev-sec-card">
+      <div class="ev-sec-hd" @click="sections.tracking = !sections.tracking">
+        <div class="ev-sec-icon" :class="{ active: sections.tracking || form.meta_pixel_id || form.google_tag_id || form.tiktok_pixel_id || form.tax_rate }">
+          <span class="material-symbols-outlined">ads_click</span>
+        </div>
+        <div class="ev-sec-label">
+          <div class="ev-sec-title">Tracking & Invoicing</div>
+          <div class="ev-sec-sub" x-show="!sections.tracking">Meta, Google & TikTok pixels, VAT/Tax rate</div>
+        </div>
+        <div class="ev-sec-meta">
+          <span class="material-symbols-outlined">keyboard_arrow_down</span>
+        </div>
+      </div>
+
+      <div x-show="sections.tracking" x-transition style="display:none;">
+        <div class="ev-sec-divider"></div>
+        <div class="ev-sec-body">
+          <div style="display:flex; flex-direction:column; gap:20px;">
+
+            <!-- Meta Pixel ID -->
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">
+                <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">campaign</span>Meta (Facebook) Pixel ID
+              </label>
+              <input type="text" class="form-input" placeholder="e.g. 123456789012345"
+                x-model="form.meta_pixel_id" style="max-width:320px;">
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Tracks PageView, ViewContent, and Purchase events on your event and checkout pages.</p>
+            </div>
+
+            <!-- Google Tag ID -->
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">
+                <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">analytics</span>Google Tag / GTM ID
+              </label>
+              <input type="text" class="form-input" placeholder="e.g. G-XXXXXXXXXX or GTM-XXXXXXX"
+                x-model="form.google_tag_id" style="max-width:320px;">
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Integrates Google Analytics 4 (GA4) or Google Tag Manager for conversion measurement.</p>
+            </div>
+
+            <!-- TikTok Pixel ID -->
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">
+                <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">track_changes</span>TikTok Pixel ID
+              </label>
+              <input type="text" class="form-input" placeholder="e.g. CXXXXXXXXXXXXXX"
+                x-model="form.tiktok_pixel_id" style="max-width:320px;">
+              <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Tracks ad conversions and attendee checkouts from TikTok ad campaigns.</p>
+            </div>
+
+            <div class="ev-sec-divider" style="margin:4px 0;"></div>
+
+            <!-- Tax Rate & Tax ID -->
+            <div style="display:flex; gap:16px; flex-wrap:wrap;">
+              <div class="form-group" style="margin-bottom:0; flex:1; min-width:200px;">
+                <label class="form-label">
+                  <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">receipt_long</span>Tax / VAT Rate (%)
+                </label>
+                <input type="number" step="0.01" min="0" max="100" class="form-input" placeholder="e.g. 7.5 or 20"
+                  x-model="form.tax_rate" style="max-width:200px;">
+                <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Applicable VAT or sales tax percentage included on corporate invoices.</p>
+              </div>
+
+              <div class="form-group" style="margin-bottom:0; flex:1; min-width:200px;">
+                <label class="form-label">
+                  <span class="material-symbols-outlined" style="margin-right:6px; color:var(--text-muted); font-size:12px;">badge</span>Organizer Tax / VAT ID
+                </label>
+                <input type="text" class="form-input" placeholder="e.g. GB123456789 or TIN-10293847"
+                  x-model="form.tax_id" style="max-width:260px;">
+                <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Your registered Tax Identification Number printed on attendee invoices.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Action bar ─────────────────────────────────────────────────── -->
     <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:20px 0 4px;">
       <a href="/org/{{ org.slug }}/events" class="btn btn-secondary">
@@ -1665,11 +1743,16 @@ function eventForm() {
       vibe_tags:        ex.vibe_tags || [],
       email_reminder_hours:    (extras.email_reminder_hours || [24, 1]).join(', '),
       whatsapp_reminder_hours: (extras.whatsapp_reminder_hours || [24, 1]).join(', '),
+      meta_pixel_id:    ex.meta_pixel_id || '',
+      google_tag_id:    ex.google_tag_id || '',
+      tiktok_pixel_id:  ex.tiktok_pixel_id || '',
+      tax_rate:         (ex.tax_rate !== undefined && ex.tax_rate !== null) ? ex.tax_rate : '',
+      tax_id:           ex.tax_id || '',
     },
     vibeDraft: '',
 
     /* ─ Section open/close ─ */
-    sections: { basics:true, datetime:true, location:true, ticketing:false, formFields:false, agenda:false, people:false, partners:false, media:false, layout:false, settings:false },
+    sections: { basics:true, datetime:true, location:true, ticketing:false, formFields:false, agenda:false, people:false, partners:false, media:false, layout:false, settings:false, tracking:false },
 
     /* ─ Page layout (section order/visibility) ─ */
     sectionLabels: { about:'About', agenda:'Agenda', people:'People', partners:'Partners & Sponsors', gallery:'Gallery', discussion:'Discussion' },
@@ -1957,6 +2040,11 @@ function eventForm() {
         virtual_url:      this.form.virtual_url      || null,
         virtual_platform: this.form.virtual_platform || null,
         password:         this.form.password         || null,
+        meta_pixel_id:    this.form.meta_pixel_id    || null,
+        google_tag_id:    this.form.google_tag_id    || null,
+        tiktok_pixel_id:  this.form.tiktok_pixel_id  || null,
+        tax_rate:         (this.form.tax_rate !== '' && this.form.tax_rate !== null && !isNaN(this.form.tax_rate)) ? parseFloat(this.form.tax_rate) : null,
+        tax_id:           this.form.tax_id           || null,
         extras,
         section_order: this.sectionOrder.map(s => ({ key: s.key, visible: s.visible })),
       };

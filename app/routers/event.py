@@ -508,6 +508,63 @@ async def event_og_image(event_slug: str, db: DBSession):
     )
 
 
+@router_public.get("/{event_slug}/share-card/{registration_id}", include_in_schema=False)
+async def event_attendee_share_card(event_slug: str, registration_id: str, db: DBSession):
+    """Serve a 1080x1920 viral story share card for an attendee."""
+    import uuid as _uuid
+    from sqlalchemy import select
+    from sqlalchemy.orm import joinedload
+    from app.models.organization import Organization
+    from app.models.ticketing import Registration
+    from app.utils.share_card import generate_attendee_share_card
+
+    event = await svc.get_event_by_slug(db, event_slug)
+    if not event:
+        raise HTTPException(404, "Event not found.")
+
+    try:
+        rid = _uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await db.scalar(
+        select(Registration)
+        .where(Registration.id == rid, Registration.event_id == event.id)
+        .options(joinedload(Registration.ticket_type))
+    )
+    if not reg or reg.status not in ("confirmed", "checked_in"):
+        raise HTTPException(404, "Registration not found.")
+
+    org = await db.scalar(select(Organization).where(Organization.id == event.org_id))
+    date_str = (
+        event.start_datetime.strftime("%a %d %b %Y, %I:%M %p")
+        if event.start_datetime
+        else None
+    )
+    location_str = event.venue_name or event.venue_city or (
+        "Online Event" if event.format == "virtual" else None
+    )
+
+    png_bytes = generate_attendee_share_card(
+        attendee_name=reg.attendee_name,
+        event_title=event.title,
+        date_str=date_str,
+        location_str=location_str,
+        ticket_type=reg.ticket_type.name if reg.ticket_type else "General",
+        org_name=org.name if org else None,
+        brand_color_hex=org.brand_color if org else None,
+    )
+    return Response(
+        content=png_bytes,
+        media_type="image/png",
+        headers={
+            "Cache-Control": "public, max-age=86400",
+            "Content-Disposition": f'inline; filename="im-going-{event.slug}.png"',
+        },
+    )
+
+
+
 @router_public.get("/{event_slug}")
 async def get_public_event(event_slug: str, db: DBSession):
     event = await svc.get_event_by_slug(db, event_slug)

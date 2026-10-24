@@ -63,6 +63,11 @@ class EventCreateRequest(BaseModel):
     category_ids: list[uuid.UUID] = Field(default_factory=list)
     vibe_tags: list[str] = Field(default_factory=list, max_length=8)
     pass_fees_to_buyer: bool = True
+    meta_pixel_id: str | None = Field(None, max_length=50)
+    google_tag_id: str | None = Field(None, max_length=50)
+    tiktok_pixel_id: str | None = Field(None, max_length=50)
+    tax_rate: Decimal | None = None
+    tax_id: str | None = Field(None, max_length=100)
     extras: dict | None = None
 
     @field_validator("vibe_tags")
@@ -110,6 +115,11 @@ class EventUpdateRequest(BaseModel):
     category_ids: list[uuid.UUID] | None = None
     vibe_tags: list[str] | None = Field(None, max_length=8)
     pass_fees_to_buyer: bool | None = None
+    meta_pixel_id: str | None = Field(None, max_length=50)
+    google_tag_id: str | None = Field(None, max_length=50)
+    tiktok_pixel_id: str | None = Field(None, max_length=50)
+    tax_rate: Decimal | None = None
+    tax_id: str | None = Field(None, max_length=100)
     extras: dict | None = None
     is_template: bool | None = None
     section_order: list[SectionConfig] | None = None
@@ -156,6 +166,11 @@ class EventOut(BaseModel):
     is_featured: bool
     is_template: bool
     pass_fees_to_buyer: bool = True
+    meta_pixel_id: str | None = None
+    google_tag_id: str | None = None
+    tiktok_pixel_id: str | None = None
+    tax_rate: Decimal | None = None
+    tax_id: str | None = None
     created_at: datetime
     categories: list[CategoryOut] = Field(default_factory=list)
     vibe_tags: list[str] = Field(default_factory=list)

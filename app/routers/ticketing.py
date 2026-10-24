@@ -512,6 +512,53 @@ async def registration_calendar_ics(registration_id: str, db: DBSession):
     )
 
 
+@router_registrations.get("/{registration_id}/wallet.pkpass")
+async def registration_apple_wallet_pass(registration_id: str, db: DBSession):
+    """Download Apple Wallet digital pass (.pkpass)."""
+    from sqlalchemy import select
+    from app.models.organization import Organization
+    from app.utils.auth import create_ticket_qr_token
+    from app.utils.wallet_pass import generate_event_pkpass
+
+    try:
+        reg_id = uuid.UUID(registration_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid registration ID.") from err
+
+    reg = await tk_svc.get_registration_by_id(db, reg_id)
+    if not reg:
+        raise HTTPException(404, "Registration not found.")
+    if reg.status not in ("confirmed", "checked_in"):
+        raise HTTPException(403, "Ticket is not confirmed.")
+    if not reg.event:
+        raise HTTPException(404, "Event not found.")
+
+    org = await db.scalar(select(Organization).where(Organization.id == reg.event.org_id))
+    qr_jwt = create_ticket_qr_token(str(reg.id), str(reg.event.id))
+    venue_str = reg.event.venue_name or reg.event.venue_city or (
+        "Online" if reg.event.format == "virtual" else None
+    )
+
+    pkpass_bytes = generate_event_pkpass(
+        serial_number=str(reg.id),
+        event_title=reg.event.title,
+        attendee_name=reg.attendee_name,
+        ticket_type=reg.ticket_type.name if reg.ticket_type else "General Admission",
+        qr_data=qr_jwt,
+        event_date=reg.event.start_datetime,
+        venue_str=venue_str,
+        org_name=org.name if org else None,
+        brand_color_hex=org.brand_color if org else None,
+    )
+
+    return Response(
+        content=pkpass_bytes,
+        media_type="application/vnd.apple.pkpass",
+        headers={"Content-Disposition": f'attachment; filename="pass-{str(reg.id)[:8]}.pkpass"'},
+    )
+
+
+
 @router_registrations.get("/{registration_id}/join")
 async def join_virtual_event(registration_id: str, db: DBSession):
     """

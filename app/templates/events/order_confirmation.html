@@ -75,6 +75,69 @@
     .ticket-stub { break-inside: avoid; }
   }
 </style>
+
+{% if event.meta_pixel_id %}
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '{{ event.meta_pixel_id }}');
+fbq('track', 'PageView');
+fbq('track', 'Purchase', {
+  value: {{ order.total_amount }},
+  currency: '{{ order.currency }}',
+  content_name: {{ event.title | tojson }},
+  content_ids: ['{{ event.id }}'],
+  content_type: 'product',
+  num_items: {{ order.registrations | length }}
+});
+</script>
+{% endif %}
+
+{% if event.google_tag_id %}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ event.google_tag_id }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', '{{ event.google_tag_id }}');
+  gtag('event', 'purchase', {
+    transaction_id: '{{ order.payment_reference or order.id }}',
+    value: {{ order.total_amount }},
+    currency: '{{ order.currency }}',
+    items: [{
+      item_id: '{{ event.id }}',
+      item_name: {{ event.title | tojson }},
+      quantity: {{ order.registrations | length }}
+    }]
+  });
+</script>
+{% endif %}
+
+{% if event.tiktok_pixel_id %}
+<script>
+!function (w, d, t) {
+  w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+  ttq.load('{{ event.tiktok_pixel_id }}');
+  ttq.page();
+  ttq.track('CompletePayment', {
+    content_id: '{{ event.id }}',
+    content_type: 'product',
+    content_name: {{ event.title | tojson }},
+    quantity: {{ order.registrations | length }},
+    price: {{ order.total_amount }},
+    value: {{ order.total_amount }},
+    currency: '{{ order.currency }}'
+  });
+}(window, document, 'ttq');
+</script>
+{% endif %}
 {% endblock %}
 
 {% block body %}
@@ -216,11 +279,35 @@
     {% set confirmed_regs = order.registrations | selectattr('status', 'in', ['confirmed', 'checked_in']) | list %}
     {% if confirmed_regs %}
     <a
-      href="/api/v1/registrations/{{ confirmed_regs[0].id }}/calendar.ics"
+      href="/api/v1/registrations/{{ confirmed_regs[0].id }}/wallet.pkpass"
       class="btn btn-secondary"
-      style="flex:1; min-width:200px; text-align:center;"
-    >Apple / Outlook (.ics)</a>
+      style="flex:1; min-width:180px; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:6px;"
+      download
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.56-.73.96-1.72.84-2.73-.87.04-1.92.59-2.53 1.32-.53.62-.97 1.63-.85 2.61.96.07 1.98-.47 2.54-1.2"/></svg>
+      Apple Wallet (.pkpass)
+    </a>
+
+    <a
+      href="/api/v1/events/{{ event.slug }}/share-card/{{ confirmed_regs[0].id }}"
+      target="_blank"
+      class="btn btn-secondary"
+      style="flex:1; min-width:180px; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:6px;"
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Story Share Card
+    </a>
     {% endif %}
+
+    <a
+      href="/orders/{{ order.id }}/invoice.pdf"
+      target="_blank"
+      class="btn btn-secondary"
+      style="flex:1; min-width:180px; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:6px;"
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Tax Invoice (PDF)
+    </a>
 
     <button
       type="button"

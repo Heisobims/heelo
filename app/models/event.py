@@ -12,6 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     Table,
     Text,
@@ -144,6 +145,15 @@ class Event(Base, SoftDeleteMixin):
     password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # Fee handling: True = pass platform & gateway fees to buyer; False = absorb into ticket price
     pass_fees_to_buyer: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # Conversion tracking pixels & Google Tag Manager
+    meta_pixel_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    google_tag_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    tiktok_pixel_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+    # Corporate tax & VAT invoicing (organizer's registered tax details)
+    tax_rate: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True, default=None)
+    tax_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Automated countdown reminders
     reminder_24h_sent_at: Mapped[datetime | None] = mapped_column(

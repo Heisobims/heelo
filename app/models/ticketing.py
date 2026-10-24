@@ -274,6 +274,18 @@ class Order(Base, TimestampMixin):
     # the org's current setup. False means Heelo is holding net_amount and
     # owes it to the organizer - see app/services/payout_service.py.
     auto_split_applied: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # Corporate invoicing & VAT compliance
+    is_corporate: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    company_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    tax_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    billing_address: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Abandoned checkout recovery
+    recovery_token: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+    abandoned_recovery_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # UTM / referral tracking
     utm_source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     utm_medium: Mapped[str | None] = mapped_column(String(255), nullable=True)

@@ -201,6 +201,11 @@ class RegisterRequest(BaseModel):
     utm_medium: str | None = None
     utm_campaign: str | None = None
     referral_code: str | None = None
+    # Corporate invoicing & VAT compliance
+    is_corporate: bool = False
+    company_name: str | None = Field(None, max_length=255)
+    tax_id: str | None = Field(None, max_length=100)
+    billing_address: str | None = None
 
 
 class RegistrationOut(BaseModel):
@@ -232,8 +237,14 @@ class OrderOut(BaseModel):
     payment_status: str
     payment_provider: str | None
     discount_amount: Decimal
+    is_corporate: bool = False
+    company_name: str | None = None
+    tax_id: str | None = None
+    billing_address: str | None = None
     registrations: list[RegistrationOut] = Field(default_factory=list)
     payment_url: str | None = None
+    invoice_url: str | None = None
+    recovery_token: str | None = None
 
 
 class WaitlistJoinRequest(BaseModel):

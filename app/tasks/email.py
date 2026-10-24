@@ -1319,3 +1319,49 @@ def send_vendor_payout_completed_notification(payout_id: str) -> None:
     log.info("email.vendor_payout_completed.sent", payout_id=payout_id)
 
 
+# ── Abandoned checkout recovery ───────────────────────────────────────────────
+
+
+@shared_task(
+    name="app.tasks.email.send_abandoned_checkout_recovery",
+    max_retries=3,
+    default_retry_delay=60,
+)
+def send_abandoned_checkout_recovery(order_id: str) -> None:
+    """Send abandoned checkout recovery email with 1-click resumption URL."""
+    from app.models.event import Event
+    from app.models.ticketing import Order
+
+    with _db() as db:
+        order = db.query(Order).filter(Order.id == uuid.UUID(order_id)).first()
+        if not order or order.payment_status != "pending" or not order.buyer_email:
+            return
+
+        event = db.query(Event).filter(Event.id == order.event_id).first()
+        if not event or event.status not in ("published", "live"):
+            return
+
+        branding = _org_branding(db, event.org_id)
+        resume_url = (
+            f"{settings.FRONTEND_URL}/orders/resume/{order.recovery_token}"
+            if order.recovery_token
+            else f"{settings.FRONTEND_URL}/orders/{order.id}/confirmation"
+        )
+
+        html = em.render(
+            "abandoned_checkout_recovery.html",
+            order=order,
+            event=event,
+            resume_url=resume_url,
+            **branding,
+        )
+        em.send_sync(
+            to=order.buyer_email,
+            subject=f"Did life get in the way? Your tickets to {event.title} are waiting",
+            html=html,
+        )
+
+    log.info("email.abandoned_checkout_recovery.sent", order_id=order_id)
+
+
+

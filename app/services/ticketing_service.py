@@ -480,6 +480,11 @@ async def register(
         utm_source=data.utm_source,
         utm_medium=data.utm_medium,
         utm_campaign=data.utm_campaign,
+        is_corporate=bool(data.is_corporate),
+        company_name=data.company_name,
+        tax_id=data.tax_id,
+        billing_address=data.billing_address,
+        recovery_token=None if is_free else secrets.token_urlsafe(32),
     )
     db.add(order)
 

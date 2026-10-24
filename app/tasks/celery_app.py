@@ -85,5 +85,9 @@ celery_app.conf.update(
             "task": "app.tasks.billing.auto_release_vendor_escrow",
             "schedule": 3600.0,
         },
+        "abandoned-checkout-recovery-every-15-min": {
+            "task": "app.tasks.ticketing.send_abandoned_checkout_nudges",
+            "schedule": 900.0,
+        },
     },
 )

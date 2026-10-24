@@ -2128,6 +2128,130 @@ async def order_confirmation(order_id: str, request: Request, db: DBSession):
     )
 
 
+@router_pages.get("/orders/resume/{recovery_token}")
+async def resume_abandoned_order(recovery_token: str, request: Request, db: DBSession):
+    """1-click resumption of an abandoned checkout."""
+    from sqlalchemy import select
+    from app.models.event import Event
+    from app.models.organization import Organization
+    from app.models.ticketing import Order
+    from app.services import payment_service as pay_svc
+
+    order = await db.scalar(select(Order).where(Order.recovery_token == recovery_token))
+    if not order:
+        raise HTTPException(404, "Invalid or expired recovery link.")
+
+    if order.payment_status == "paid":
+        return RedirectResponse(url=f"/orders/{order.id}/confirmation", status_code=303)
+
+    event = await db.scalar(select(Event).where(Event.id == order.event_id))
+    if not event or event.status not in ("published", "live"):
+        return RedirectResponse(url=f"/orders/{order.id}/confirmation?cancelled=1", status_code=303)
+
+    org = await db.scalar(select(Organization).where(Organization.id == event.org_id))
+    try:
+        payment_url = await pay_svc.initialize_payment(db, order, event, org)
+        return RedirectResponse(url=payment_url, status_code=303)
+    except Exception:
+        return RedirectResponse(url=f"/orders/{order.id}/confirmation?pending=1", status_code=303)
+
+
+@router_pages.get("/orders/{order_id}/invoice.pdf")
+async def download_order_invoice(order_id: str, request: Request, db: DBSession):
+    """Download VAT/Tax compliant corporate PDF invoice for an order."""
+    import uuid as _uuid
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+    from app.models.event import Event
+    from app.models.organization import Organization
+    from app.models.ticketing import Order, OrderItem
+    from app.utils.invoice_pdf import InvoiceData, InvoiceItem, generate_invoice_pdf
+
+    try:
+        oid = _uuid.UUID(order_id)
+    except ValueError as err:
+        raise HTTPException(422, "Invalid order ID.") from err
+
+    order = await db.scalar(
+        select(Order)
+        .where(Order.id == oid)
+        .options(
+            selectinload(Order.items).selectinload(OrderItem.ticket_type),
+            selectinload(Order.registrations),
+        )
+    )
+    if not order:
+        raise HTTPException(404, "Order not found.")
+
+    event = await db.scalar(select(Event).where(Event.id == order.event_id))
+    org = await db.scalar(select(Organization).where(Organization.id == event.org_id))
+
+    tax_rate = float(event.tax_rate) if event and event.tax_rate else None
+    if tax_rate and tax_rate > 0:
+        subtotal = float(order.total_amount) / (1 + (tax_rate / 100))
+        tax_amount = float(order.total_amount) - subtotal
+    else:
+        subtotal = float(order.total_amount)
+        tax_amount = 0.0
+
+    items = []
+    if order.items:
+        for it in order.items:
+            t_name = it.ticket_type.name if it.ticket_type else "Event Ticket"
+            items.append(
+                InvoiceItem(
+                    description=f"{t_name} - {event.title}",
+                    quantity=it.quantity,
+                    unit_price=float(it.unit_price),
+                    total=float(it.subtotal),
+                )
+            )
+    else:
+        items.append(
+            InvoiceItem(
+                description=f"Registration - {event.title}",
+                quantity=len(order.registrations) or 1,
+                unit_price=float(order.total_amount),
+                total=float(order.total_amount),
+            )
+        )
+
+    inv_number = f"INV-{order.created_at.year}-{order.id.hex[:8].upper()}"
+    inv_data = InvoiceData(
+        invoice_number=inv_number,
+        issue_date=order.created_at,
+        event_title=event.title,
+        org_name=org.name if org else "Event Organizer",
+        org_email=org.contact_email if org else None,
+        org_tax_id=event.tax_id,
+        buyer_name=order.buyer_name or "Valued Customer",
+        buyer_email=order.buyer_email,
+        buyer_company=order.company_name,
+        buyer_tax_id=order.tax_id,
+        buyer_billing_address=order.billing_address,
+        currency=order.currency,
+        items=items,
+        subtotal=subtotal,
+        tax_rate=tax_rate,
+        tax_amount=tax_amount,
+        total_amount=float(order.total_amount),
+        payment_reference=order.payment_reference,
+        payment_provider=order.payment_provider,
+        brand_color=org.brand_color if org else None,
+    )
+
+    pdf_bytes = generate_invoice_pdf(inv_data)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{inv_number}.pdf"',
+        },
+    )
+
+
+
+
 @router_pages.get("/orders/{order_id}/pay")
 async def order_pay(order_id: str, request: Request, db: DBSession):
     import uuid as _uuid
