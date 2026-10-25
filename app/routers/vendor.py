@@ -13,7 +13,7 @@ from app.dependencies import CurrentUser, DBSession, OrgAccess
 from app.models.vendor import VENDOR_CATEGORIES
 from sqlalchemy import select
 from app.services import vendor_service as vsvc
-from app.utils.qr_code import generate_qr_png
+from app.utils.qr_code import fetch_logo_bytes, generate_qr_png
 from app.utils.rate_limit import check_and_record, get_client_ip
 
 logger = structlog.get_logger()
@@ -383,7 +383,12 @@ async def my_vendor_qr_image(
         raise HTTPException(404, "No vendor profile found.")
 
     url = f"{str(request.base_url).rstrip('/')}/vendors/{vendor.slug}"
-    qr_bytes = generate_qr_png(url)
+    logo_bytes = await fetch_logo_bytes(vendor.logo_url) if vendor.logo_url else None
+    qr_bytes = generate_qr_png(
+        url,
+        logo_bytes=logo_bytes,
+        org_name=vendor.business_name,
+    )
     return Response(
         content=qr_bytes,
         media_type="image/png",

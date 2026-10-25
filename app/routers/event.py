@@ -30,7 +30,7 @@ from app.schemas.event import (
     RecurrenceGenerateRequest,
 )
 from app.services import event_service as svc
-from app.utils.qr_code import generate_qr_png
+from app.utils.qr_code import fetch_logo_bytes, generate_qr_png
 
 router_org = APIRouter(prefix="/api/v1/organizations/{slug}/events", tags=["events"])
 router_public = APIRouter(prefix="/api/v1/events", tags=["events-public"])
@@ -156,7 +156,14 @@ async def event_qr_image(
         raise HTTPException(404, "Event not found.")
 
     url = f"{str(request.base_url).rstrip('/')}/e/{event.slug}"
-    qr_bytes = generate_qr_png(url)
+    logo_url = org.logo_url or org.display_logo_url
+    logo_bytes = await fetch_logo_bytes(logo_url) if logo_url else None
+    qr_bytes = generate_qr_png(
+        url,
+        logo_bytes=logo_bytes,
+        org_name=org.name,
+        brand_color=org.display_brand_color or org.brand_color,
+    )
     return Response(
         content=qr_bytes,
         media_type="image/png",

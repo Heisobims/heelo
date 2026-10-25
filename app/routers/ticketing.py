@@ -32,7 +32,7 @@ from app.schemas.ticketing import (
 from app.services import checkin_service as ci_svc
 from app.services import ticketing_service as tk_svc
 from app.utils.calendar_file import build_ics
-from app.utils.qr_code import generate_qr_png
+from app.utils.qr_code import fetch_logo_bytes, generate_qr_png
 
 # ── Organizer API (under org/event scope) ─────────────────────────────────────
 
@@ -481,7 +481,26 @@ async def registration_qr_image(registration_id: str, db: DBSession):
     if reg.status not in ("confirmed", "checked_in"):
         raise HTTPException(403, "Ticket is not confirmed.")
 
-    qr_bytes = generate_qr_png(reg.qr_code)
+    logo_bytes = None
+    org_name = None
+    brand_color = None
+    if reg.event and reg.event.org_id:
+        from app.models.organization import Organization
+
+        org = await db.scalar(select(Organization).where(Organization.id == reg.event.org_id))
+        if org:
+            org_name = org.name
+            brand_color = org.display_brand_color or org.brand_color
+            logo_url = org.logo_url or org.display_logo_url
+            if logo_url:
+                logo_bytes = await fetch_logo_bytes(logo_url)
+
+    qr_bytes = generate_qr_png(
+        reg.qr_code,
+        logo_bytes=logo_bytes,
+        org_name=org_name,
+        brand_color=brand_color,
+    )
     return Response(
         content=qr_bytes,
         media_type="image/png",

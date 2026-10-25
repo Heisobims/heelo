@@ -43,7 +43,12 @@ async def _badge_data_for_registration(
         org_name=org.name,
         brand_color=org.display_brand_color,
         logo_bytes=logo_bytes,
-        qr_bytes=generate_qr_png(reg.qr_code),
+        qr_bytes=generate_qr_png(
+            reg.qr_code,
+            logo_bytes=logo_bytes,
+            org_name=org.name,
+            brand_color=org.display_brand_color or org.brand_color,
+        ),
         show_powered_by=org.show_powered_by,
         attendee_email=reg.attendee_email,
     )
