@@ -34,7 +34,25 @@
   .conf-container {
     max-width: 600px;
     margin: 0 auto;
-    padding: 40px 24px 80px;
+    padding: 96px 20px 80px;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 480px) {
+    .conf-container {
+      padding: 76px 14px 60px;
+    }
+  }
+
+  /* Screen Cards */
+  .conf-billing,
+  .conf-event-card {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
   }
 
   .ticket-stub {
@@ -42,7 +60,9 @@
     border: 1.5px solid var(--border-light);
     border-radius: 16px;
     overflow: hidden;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    box-sizing: border-box;
   }
 
   .ticket-stub-header {
@@ -51,13 +71,25 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
   }
 
   .ticket-stub-body {
-    padding: 20px;
+    padding: 18px 20px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 18px;
+    box-sizing: border-box;
+  }
+
+  @media (max-width: 420px) {
+    .ticket-stub-header {
+      padding: 14px 16px;
+    }
+    .ticket-stub-body {
+      padding: 14px 16px;
+      gap: 14px;
+    }
   }
 
   .qr-wrap {
@@ -66,13 +98,201 @@
     height: 100px;
     border-radius: 10px;
     overflow: hidden;
-    border: 1px solid var(--border-light);
+    border: 1.5px solid var(--border-light);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qr-wrap img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: -webkit-optimize-contrast;
   }
 
+  /* Responsive Actions */
+  .conf-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .conf-actions .btn {
+    flex: 1 1 calc(50% - 5px);
+    min-width: 140px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  @media (max-width: 480px) {
+    .conf-actions .btn {
+      flex: 1 1 100%;
+    }
+  }
+
+  .print-order-header {
+    display: none;
+  }
+
+  /* Optimized Print Stylesheet */
   @media print {
-    .conf-nav { display: none; }
-    .no-print { display: none; }
-    .ticket-stub { break-inside: avoid; }
+    @page {
+      size: auto;
+      margin: 10mm 12mm;
+    }
+
+    /* Take out all irrelevant web UI, banners, fees, and controls */
+    .conf-nav,
+    .site-nav,
+    .conf-hero,
+    .conf-billing,
+    .conf-event-card,
+    .conf-tickets-heading,
+    .conf-actions,
+    .no-print,
+    .heelo-ai-widget-root,
+    .heelo-ai-launcher,
+    .heelo-ai-dialog,
+    #heelo-cookie-consent,
+    .hcc-container {
+      display: none !important;
+      visibility: hidden !important;
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    html,
+    body {
+      background: #fff !important;
+      color: #000 !important;
+      font-size: 11pt !important;
+      line-height: 1.35 !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .conf-container {
+      max-width: 520px !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+    }
+
+    /* Clean print header */
+    .print-order-header {
+      display: block !important;
+      padding-bottom: 12px !important;
+      margin-bottom: 16px !important;
+      border-bottom: 2px solid #222 !important;
+    }
+
+    .print-order-top {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      font-size: 8.5pt !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.08em !important;
+      color: #555 !important;
+      margin-bottom: 4px !important;
+    }
+
+    .print-event-title {
+      font-size: 16pt !important;
+      font-weight: 700 !important;
+      line-height: 1.25 !important;
+      color: #000 !important;
+      margin: 0 0 4px !important;
+    }
+
+    .print-event-meta {
+      font-size: 9.5pt !important;
+      color: #333 !important;
+    }
+
+    /* Printable ticket stub */
+    .ticket-stub {
+      background: #fff !important;
+      border: 1.5px solid #222 !important;
+      border-radius: 10px !important;
+      box-shadow: none !important;
+      margin-bottom: 16px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    /* Ink saver header */
+    .ticket-stub-header {
+      background: #f7f7f7 !important;
+      border-bottom: 1.5px solid #222 !important;
+      color: #000 !important;
+      padding: 10px 16px !important;
+    }
+
+    .ticket-stub-header div {
+      color: #000 !important;
+    }
+
+    .ticket-tier-name {
+      color: #444 !important;
+      font-size: 8pt !important;
+      font-weight: 700 !important;
+    }
+
+    .ticket-attendee-name {
+      color: #000 !important;
+      font-size: 13pt !important;
+      font-weight: 700 !important;
+    }
+
+    .ticket-attendee-email {
+      color: #444 !important;
+      font-size: 8.5pt !important;
+    }
+
+    .ticket-confirmed-badge {
+      background: transparent !important;
+      border: 1px solid #222 !important;
+      color: #000 !important;
+      border-radius: 4px !important;
+      font-size: 7.5pt !important;
+      padding: 2px 8px !important;
+    }
+
+    .ticket-stub-body {
+      padding: 14px 16px !important;
+      gap: 16px !important;
+      background: #fff !important;
+    }
+
+    .qr-wrap {
+      width: 110px !important;
+      height: 110px !important;
+      border: 1px solid #bbb !important;
+      border-radius: 6px !important;
+    }
+
+    .ticket-scan-prompt {
+      font-size: 8.5pt !important;
+      color: #444 !important;
+      margin-bottom: 4px !important;
+    }
+
+    .ticket-datetime-venue {
+      font-size: 9.5pt !important;
+      color: #111 !important;
+    }
+
+    .ticket-stub-footer {
+      padding: 8px 16px !important;
+      font-size: 8pt !important;
+      color: #555 !important;
+    }
   }
 </style>
 
@@ -143,11 +363,28 @@ fbq('track', 'Purchase', {
 {% block body %}
 {% include "partials/site_nav.html" %}
 
-<div class="conf-container" style="padding-top: 96px;">
+<div class="conf-container">
+
+  <!-- Print-Only Order Header -->
+  <div class="print-order-header">
+    <div class="print-order-top">
+      <span>HEELO TICKET PASS</span>
+      <span>ORDER: {{ order.id | string | upper | truncate(12, True, '') }}</span>
+    </div>
+    <h1 class="print-event-title">{{ event.title }}</h1>
+    <div class="print-event-meta">
+      {% if event.start_datetime %}
+      <span>{{ event.start_datetime.strftime('%A, %B %-d, %Y · %-I:%M %p') }}</span>
+      {% endif %}
+      {% if event.venue_name or event.venue_city %}
+      <span> · {{ event.venue_name }}{% if event.venue_name and event.venue_city %}, {% endif %}{{ event.venue_city }}</span>
+      {% endif %}
+    </div>
+  </div>
 
   {% if cancelled %}
   <!-- Payment cancelled state -->
-  <div style="text-align:center; margin-bottom:32px;">
+  <div class="conf-hero" style="text-align:center; margin-bottom:32px;">
     <div style="width:64px; height:64px; background:#fff5f5; border:2px solid #fecaca; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </div>
@@ -159,7 +396,7 @@ fbq('track', 'Purchase', {
   </div>
   {% elif pending %}
   <!-- Payment pending state -->
-  <div style="text-align:center; margin-bottom:32px;">
+  <div class="conf-hero" style="text-align:center; margin-bottom:32px;">
     <div style="width:64px; height:64px; background:var(--bg-secondary); border:2px solid var(--border-light); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     </div>
@@ -174,7 +411,7 @@ fbq('track', 'Purchase', {
   </div>
   {% else %}
   <!-- Success state -->
-  <div style="text-align:center; margin-bottom:32px;">
+  <div class="conf-hero" style="text-align:center; margin-bottom:32px;">
     <div style="width:64px; height:64px; background:var(--cyan); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; box-shadow:0 0 0 8px {{ (org.display_brand_color if org else None) | to_rgba(0.15) }};">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="{{ cyan_text }}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
@@ -185,8 +422,8 @@ fbq('track', 'Purchase', {
   </div>
   {% endif %}
 
-  <!-- Order reference -->
-  <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:16px 20px; margin-bottom:20px;">
+  <!-- Order reference and billing breakdown (Screen only) -->
+  <div class="conf-billing">
     <div style="display:flex; align-items:center; justify-content:space-between;">
       <div>
         <div style="font-size:12px; color:var(--text-muted); margin-bottom:2px;">Order reference</div>
@@ -208,8 +445,8 @@ fbq('track', 'Purchase', {
     {% endif %}
   </div>
 
-  <!-- Event summary -->
-  <div style="background:#fff; border:1px solid var(--border-light); border-radius:14px; padding:16px 20px; margin-bottom:20px;">
+  <!-- Event summary (Screen only) -->
+  <div class="conf-event-card">
     <div style="font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:12px;">Event</div>
     <div style="font-size:15px; font-weight:600; margin-bottom:4px;">{{ event.title }}</div>
     <div style="font-size:13px; color:var(--text-muted);">
@@ -221,41 +458,41 @@ fbq('track', 'Purchase', {
 
   <!-- Tickets / QR codes -->
   {% if not pending and not cancelled %}
-  <div style="font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:12px;">Your tickets</div>
+  <div class="conf-tickets-heading no-print" style="font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:12px;">Your tickets</div>
 
   {% for reg in order.registrations %}
   {% if reg.status == 'confirmed' %}
   <div class="ticket-stub">
     <div class="ticket-stub-header">
       <div>
-        <div style="font-size:11px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">{{ reg.ticket_type.name if reg.ticket_type else 'Ticket' }}</div>
-        <div style="font-size:15px; font-weight:600; color:#fff;">{{ reg.attendee_name }}</div>
-        <div style="font-size:12px; color:rgba(255,255,255,0.6);">{{ reg.attendee_email }}</div>
+        <div class="ticket-tier-name" style="font-size:11px; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px;">{{ reg.ticket_type.name if reg.ticket_type else 'Ticket' }}</div>
+        <div class="ticket-attendee-name" style="font-size:15px; font-weight:600; color:#fff;">{{ reg.attendee_name }}</div>
+        <div class="ticket-attendee-email" style="font-size:12px; color:rgba(255,255,255,0.7);">{{ reg.attendee_email }}</div>
       </div>
-      <span style="font-size:11px; font-weight:600; padding:4px 10px; border-radius:100px; background:{{ (org.display_brand_color if org else None) | to_rgba(0.15) }}; color:var(--cyan);">CONFIRMED</span>
+      <span class="ticket-confirmed-badge" style="font-size:11px; font-weight:600; padding:4px 10px; border-radius:100px; background:{{ (org.display_brand_color if org else None) | to_rgba(0.15) }}; color:var(--cyan);">CONFIRMED</span>
     </div>
     <div class="ticket-stub-body">
       <div class="qr-wrap">
         <img
           src="/api/v1/registrations/{{ reg.id }}/qr.png"
-          alt="QR Code"
-          style="width:100%; height:100%; display:block;"
+          alt="Ticket QR Code"
           loading="lazy"
         >
       </div>
       <div style="flex:1; min-width:0;">
-        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">Scan this code at the venue entrance</div>
-        <div style="font-size:12px; color:var(--text-muted);">
+        <div class="ticket-scan-prompt" style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">Scan this code at the venue entrance</div>
+        <div class="ticket-datetime-venue" style="font-size:12.5px; color:var(--text-muted); line-height:1.4;">
+          <strong>{{ event.title }}</strong><br>
           {{ event.start_datetime.strftime('%d %b %Y, %H:%M') if event.start_datetime else '' }}
-          {% if event.venue_city %}<br>{{ event.venue_city }}{% endif %}
+          {% if event.venue_city %} · {{ event.venue_city }}{% endif %}
         </div>
       </div>
     </div>
     <!-- Perforation line -->
-    <div style="border-top:2px dashed var(--border-light); margin:0 20px;"></div>
-    <div style="padding:12px 20px; display:flex; justify-content:space-between; align-items:center;">
+    <div class="ticket-stub-perf" style="border-top:2px dashed var(--border-light); margin:0 20px;"></div>
+    <div class="ticket-stub-footer" style="padding:10px 20px; display:flex; justify-content:space-between; align-items:center;">
       <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); letter-spacing:0.05em;">
-        {{ reg.id | string | upper | truncate(8, True, '') }}
+        TICKET: {{ reg.id | string | upper | truncate(10, True, '') }}
       </div>
       <div style="font-size:11px; color:var(--text-muted);">heelo.io</div>
     </div>
@@ -265,14 +502,14 @@ fbq('track', 'Purchase', {
   {% endif %}
 
   <!-- Actions -->
-  <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:24px;" class="no-print">
+  <div class="conf-actions no-print">
 
     {% if event.status in ('published', 'live') and event.start_datetime %}
     <a
       href="https://calendar.google.com/calendar/render?action=TEMPLATE&text={{ event.title | urlencode }}&dates={{ event.start_datetime.strftime('%Y%m%dT%H%M%S') }}/{{ (event.end_datetime or event.start_datetime).strftime('%Y%m%dT%H%M%S') }}&details={{ (event.description or '') | truncate(200) | urlencode }}&location={{ ((event.venue_name or '') + (', ' + event.venue_city if event.venue_city else '')) | urlencode }}"
       target="_blank"
       class="btn btn-secondary"
-      style="flex:1; min-width:200px; text-align:center;"
+      style="flex:1 1 100%; min-width:200px; text-align:center;"
     >Add to Google Calendar</a>
     {% endif %}
 
@@ -281,7 +518,7 @@ fbq('track', 'Purchase', {
     <a
       href="/api/v1/registrations/{{ confirmed_regs[0].id }}/wallet.pkpass"
       class="btn btn-secondary"
-      style="flex:1; min-width:180px; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:6px;"
+      style="display:inline-flex; align-items:center; justify-content:center; gap:6px;"
       download
     >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.56-.73.96-1.72.84-2.73-.87.04-1.92.59-2.53 1.32-.53.62-.97 1.63-.85 2.61.96.07 1.98-.47 2.54-1.2"/></svg>
@@ -292,7 +529,7 @@ fbq('track', 'Purchase', {
       href="/api/v1/events/{{ event.slug }}/share-card/{{ confirmed_regs[0].id }}"
       target="_blank"
       class="btn btn-secondary"
-      style="flex:1; min-width:180px; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:6px;"
+      style="display:inline-flex; align-items:center; justify-content:center; gap:6px;"
     >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       Story Share Card
@@ -303,7 +540,7 @@ fbq('track', 'Purchase', {
       href="/orders/{{ order.id }}/invoice.pdf"
       target="_blank"
       class="btn btn-secondary"
-      style="flex:1; min-width:180px; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:6px;"
+      style="display:inline-flex; align-items:center; justify-content:center; gap:6px;"
     >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Tax Invoice (PDF)
@@ -312,14 +549,13 @@ fbq('track', 'Purchase', {
     <button
       type="button"
       class="btn btn-secondary"
-      style="flex:1; min-width:140px;"
       onclick="window.print()"
     >Print tickets</button>
 
-    <a href="/e/{{ event.slug }}" class="btn btn-secondary" style="flex:1; min-width:140px; text-align:center;">View event →</a>
+    <a href="/e/{{ event.slug }}" class="btn btn-secondary" style="text-align:center;">View event →</a>
   </div>
 
-  <!-- Share -->
+  <!-- Share (Screen only) -->
   <div style="margin-top:24px; text-align:center; color:var(--text-muted); font-size:13px;" class="no-print">
     Share the event:
     <a href="https://api.whatsapp.com/send?text={{ ('I just registered for ' + event.title + '! ' + request.url_for('public_event_page', event_slug=event.slug) | string) | urlencode }}" target="_blank" style="color:var(--text-muted); margin-left:8px;">WhatsApp</a>

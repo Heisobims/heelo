@@ -2046,3 +2046,45 @@ html, body {
   background: var(--bg-secondary, #FAF7F2) !important;
   color: var(--text-primary, #131B17) !important;
 }
+
+/* Global Print Optimization */
+@media print {
+  .no-print,
+  .site-nav,
+  .main-nav,
+  .navbar,
+  .footer,
+  .site-footer,
+  .heelo-ai-widget-root,
+  .heelo-ai-launcher,
+  .heelo-ai-dialog,
+  #heelo-cookie-consent,
+  .hcc-container,
+  .cookie-consent-bar {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  @page {
+    margin: 10mm 12mm;
+    size: auto;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-avoid-break,
+  .ticket-stub,
+  .ticket {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}

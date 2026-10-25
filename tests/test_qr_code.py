@@ -156,3 +156,4 @@ async def test_vendor_qr_endpoint(
 
     img = Image.open(BytesIO(resp.content))
     assert img.format == "PNG"
+
