@@ -1,49 +1,145 @@
-{% extends "base.html" %} {% block title %}{{ event.title }} | Your Ticket{%
-endblock %} {% block head %}
+{% extends "base.html" %}
+{% block title %}{{ event.title }} | Your Ticket{% endblock %}
+
+{% block head %}
 <style>
   html,
   body {
     background: var(--bg-secondary, #faf9f7);
   }
 
+  /* ── Responsive Top Navigation Bar ────────────────────────── */
   .tv-nav {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    max-width: 480px;
-    margin: 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(250, 249, 247, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-light, #efeae3);
+    width: 100%;
     box-sizing: border-box;
   }
-  .tv-nav a {
+  .tv-nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 10px 20px;
+    height: 56px;
+    box-sizing: border-box;
+  }
+  .tv-nav-back {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: var(--text-muted);
+    color: var(--text-muted, #71717a);
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
   }
-  .tv-nav a:hover {
-    color: var(--text-primary);
+  .tv-nav-back:hover {
+    color: var(--text-primary, #131b17);
+    background: rgba(19, 27, 23, 0.05);
+  }
+  .tv-nav-brand {
+    font-family: var(--font-serif, Georgia, serif);
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary, #131b17);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+    transition: opacity 0.15s ease;
+  }
+  .tv-nav-brand:hover {
+    opacity: 0.85;
+  }
+  .tv-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tv-nav-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted, #71717a);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+  }
+  .tv-nav-link:hover {
+    color: var(--text-primary, #131b17);
+    background: rgba(19, 27, 23, 0.05);
+  }
+  .tv-nav-print-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    background: #fff;
+    border: 1px solid var(--border-light, #efeae3);
+    color: var(--text-primary, #131b17);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .tv-nav-print-btn:hover {
+    border-color: var(--primary, #e85938);
+    color: var(--primary, #e85938);
+  }
+  @media (max-width: 520px) {
+    .tv-nav-link {
+      display: none;
+    }
+    .tv-nav-inner {
+      padding: 8px 14px;
+      height: 52px;
+    }
+    .tv-nav-brand {
+      font-size: 20px;
+    }
+  }
+  @media (max-width: 380px) {
+    .tv-nav-back span:not(.material-symbols-outlined) {
+      display: none;
+    }
+    .tv-nav-print-btn span:not(.material-symbols-outlined) {
+      display: none;
+    }
+    .tv-nav-print-btn {
+      padding: 6px 8px;
+    }
   }
 
   .tv-wrap {
-    max-width: 480px;
+    max-width: 460px;
     margin: 0 auto;
-    padding: 8px 16px 60px;
+    padding: 16px 20px 60px;
     box-sizing: border-box;
   }
+  @media (max-width: 480px) {
+    .tv-wrap {
+      padding: 12px 14px 48px;
+    }
+  }
 
-  /* Responsive Action Bar */
+  /* ── Action Buttons ────────────────────────────────────────── */
   .tv-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 20px;
   }
   .tv-btn {
-    flex: 1 1 calc(50% - 4px);
+    flex: 1 1 calc(50% - 5px);
     min-width: 130px;
     display: inline-flex;
     align-items: center;
@@ -51,29 +147,24 @@ endblock %} {% block head %}
     gap: 6px;
     padding: 11px 14px;
     border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 13.5px;
+    font-weight: 700;
     text-decoration: none;
     cursor: pointer;
-    border: 1.5px solid var(--border-light, #e2e8f0);
+    border: 1.5px solid var(--border-light);
     background: #fff;
-    color: var(--text-primary, #0f172a);
-    transition: opacity 0.12s, transform 0.1s;
+    color: var(--text-primary);
+    transition: opacity 0.12s;
     box-sizing: border-box;
     text-align: center;
   }
   .tv-btn:hover {
-    opacity: 0.8;
+    opacity: 0.75;
   }
   .tv-btn.primary {
-    flex: 1 1 100%;
     background: var(--primary, #e85938);
     border-color: var(--primary, #e85938);
     color: #fff;
-    font-weight: 700;
-    padding: 13px 18px;
-    font-size: 14px;
-    box-shadow: 0 2px 8px rgba(232, 89, 56, 0.22);
   }
   @media (max-width: 380px) {
     .tv-btn {
@@ -81,16 +172,15 @@ endblock %} {% block head %}
     }
   }
 
-  /* Ticket card */
+  /* ── The ticket itself - light card, terracotta as accent not fill ─────────── */
   .ticket {
     background: #fff;
     color: var(--text-primary);
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
     border: 1px solid var(--border-light);
     position: relative;
-    width: 100%;
     box-sizing: border-box;
   }
   .ticket-cover {
@@ -109,19 +199,19 @@ endblock %} {% block head %}
   }
   .ticket-cover-placeholder span {
     font-family: var(--font-serif, Georgia, serif);
-    font-size: 56px;
+    font-size: 64px;
     font-weight: 700;
-    color: rgba(232, 89, 56, 0.25);
+    color: rgba(232, 89, 56, 0.22);
   }
 
   .ticket-head {
-    padding: 22px 24px 18px;
+    padding: 22px 26px 18px;
     border-bottom: 3px solid var(--primary, #e85938);
     box-sizing: border-box;
   }
   @media (max-width: 480px) {
     .ticket-head {
-      padding: 16px 18px 14px;
+      padding: 18px 20px 16px;
     }
   }
   .ticket-org {
@@ -130,21 +220,21 @@ endblock %} {% block head %}
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--primary, #e85938);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
   .ticket-title {
     font-family: var(--font-serif, Georgia, serif);
-    font-size: clamp(20px, 5vw, 24px);
+    font-size: 24px;
     font-weight: 700;
-    line-height: 1.25;
-    margin-bottom: 12px;
+    line-height: 1.2;
+    margin-bottom: 14px;
     color: var(--text-primary);
     word-break: break-word;
   }
   .ticket-meta-row {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
     font-size: 13.5px;
     color: var(--text-secondary);
     margin-bottom: 6px;
@@ -159,12 +249,12 @@ endblock %} {% block head %}
     margin-top: 1px;
   }
 
-  /* Perforated divider */
+  /* Perforated divider - classic ticket-stub cutout */
   .ticket-perf {
     position: relative;
     height: 0;
     border-top: 2px dashed var(--border-light);
-    margin: 2px 0;
+    margin: 4px 0;
   }
   .ticket-perf::before,
   .ticket-perf::after {
@@ -175,29 +265,28 @@ endblock %} {% block head %}
     height: 24px;
     border-radius: 50%;
     background: var(--bg-secondary, #faf9f7);
-    box-shadow: inset 0 0 0 1px var(--border-light);
   }
   .ticket-perf::before {
-    left: -13px;
+    left: -12px;
   }
   .ticket-perf::after {
-    right: -13px;
+    right: -12px;
   }
 
   .ticket-stub {
-    padding: 22px 24px 24px;
+    padding: 22px 26px 26px;
     text-align: center;
     box-sizing: border-box;
   }
   @media (max-width: 480px) {
     .ticket-stub {
-      padding: 18px 16px 20px;
+      padding: 18px 20px 22px;
     }
   }
   .ticket-attendee {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 700;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
     color: var(--text-primary);
     word-break: break-word;
   }
@@ -208,25 +297,22 @@ endblock %} {% block head %}
     font-size: 12px;
     font-weight: 600;
     color: var(--text-muted);
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
 
   .ticket-qr-frame {
     background: #fff;
     border: 1.5px solid var(--border-light);
     border-radius: 16px;
-    padding: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 12px;
-    max-width: 100%;
+    padding: 16px;
+    display: inline-block;
+    margin-bottom: 14px;
     box-sizing: border-box;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    max-width: 100%;
   }
   .ticket-qr-frame img {
-    width: 180px;
-    height: 180px;
+    width: 190px;
+    height: 190px;
     max-width: 100%;
     aspect-ratio: 1 / 1;
     display: block;
@@ -234,8 +320,8 @@ endblock %} {% block head %}
   }
   @media (max-width: 360px) {
     .ticket-qr-frame img {
-      width: 150px;
-      height: 150px;
+      width: 160px;
+      height: 160px;
     }
   }
 
@@ -246,18 +332,12 @@ endblock %} {% block head %}
     color: var(--text-muted);
     word-break: break-all;
   }
-  .ticket-code-label {
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    font-size: 10px;
-    color: var(--text-muted);
-  }
 
   .ticket-status {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    margin-top: 14px;
+    margin-top: 16px;
     padding: 5px 14px;
     border-radius: 100px;
     font-size: 12px;
@@ -276,223 +356,162 @@ endblock %} {% block head %}
     text-align: center;
     font-size: 12px;
     color: var(--text-muted);
-    margin-top: 18px;
+    margin-top: 20px;
     line-height: 1.6;
   }
 
-  .ticket-print-instruction {
-    display: none;
-  }
-
-  /* Optimized Print Stylesheet */
+  /* ── Single-Page Print Optimization ────────────────────────── */
   @media print {
     @page {
       size: auto;
-      margin: 10mm 12mm;
+      margin: 8mm 10mm;
     }
 
-    /* Take out all irrelevant web and interactive UI */
+    html,
+    body {
+      background: #fff !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      overflow: hidden !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
     .tv-nav,
     .tv-actions,
     .tv-footer-note,
     .tv-referral-card,
-    .ticket-cover-placeholder,
-    .ticket-perf::before,
-    .ticket-perf::after,
     .heelo-ai-widget-root,
     .heelo-ai-launcher,
     .heelo-ai-dialog,
     #heelo-cookie-consent,
     .hcc-container,
     .site-nav,
-    nav,
     header,
+    nav,
     footer,
     .no-print {
       display: none !important;
-      visibility: hidden !important;
-      height: 0 !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
-
-    html,
-    body {
-      background: #fff !important;
-      color: #000 !important;
-      font-size: 11pt !important;
-      line-height: 1.35 !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
     }
 
     .tv-wrap {
       max-width: 440px !important;
       margin: 0 auto !important;
       padding: 0 !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
     }
 
     .ticket {
-      background: #fff !important;
-      color: #000 !important;
-      border: 1.5px solid #222 !important;
-      border-radius: 10px !important;
       box-shadow: none !important;
-      overflow: hidden !important;
-      page-break-inside: avoid !important;
-      break-inside: avoid !important;
+      border: 1px solid #ddd !important;
       max-width: 440px !important;
       margin: 0 auto !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      page-break-after: avoid !important;
+      break-after: avoid !important;
     }
 
+    /* Compact heights in print to guarantee everything strictly fits on one page */
     .ticket-cover {
-      max-height: 95px !important;
-      width: 100% !important;
+      max-height: 105px !important;
       object-fit: cover !important;
-      border-bottom: 1px solid #ddd !important;
     }
-
+    .ticket-cover-placeholder {
+      background: #f2f2f0 !important;
+      height: 75px !important;
+      aspect-ratio: auto !important;
+    }
+    .ticket-cover-placeholder span {
+      color: #ddd !important;
+      font-size: 36px !important;
+    }
     .ticket-head {
-      padding: 14px 18px 12px !important;
-      border-bottom: 2px solid #222 !important;
+      padding: 12px 20px 10px !important;
+      border-bottom: 2.5px solid var(--primary, #e85938) !important;
     }
-
     .ticket-org {
-      font-size: 8.5pt !important;
-      font-weight: 700 !important;
-      letter-spacing: 0.08em !important;
-      text-transform: uppercase !important;
-      color: #444 !important;
       margin-bottom: 4px !important;
     }
-
     .ticket-title {
-      font-size: 15pt !important;
-      font-weight: 700 !important;
-      line-height: 1.25 !important;
-      color: #000 !important;
+      font-size: 19px !important;
       margin-bottom: 8px !important;
     }
-
     .ticket-meta-row {
-      font-size: 9.5pt !important;
-      color: #111 !important;
-      margin-bottom: 4px !important;
-      gap: 6px !important;
+      font-size: 12px !important;
+      margin-bottom: 3px !important;
     }
-
-    .ticket-meta-row .material-symbols-outlined {
-      font-size: 12pt !important;
-      color: #333 !important;
-    }
-
     .ticket-perf {
-      border-top: 1.5px dashed #555 !important;
-      margin: 0 !important;
-      height: 0 !important;
+      margin: 2px 0 !important;
     }
-
-    .ticket-stub {
-      padding: 14px 18px 16px !important;
+    .ticket-perf::before,
+    .ticket-perf::after {
       background: #fff !important;
-      text-align: center !important;
+      box-shadow: inset 0 0 0 1px #ddd !important;
     }
-
+    .ticket-stub {
+      padding: 12px 20px 14px !important;
+    }
     .ticket-attendee {
-      font-size: 13pt !important;
-      font-weight: 700 !important;
-      color: #000 !important;
+      font-size: 16px !important;
       margin-bottom: 2px !important;
     }
-
     .ticket-tier {
-      font-size: 9.5pt !important;
-      font-weight: 600 !important;
-      color: #333 !important;
-      margin-bottom: 10px !important;
+      font-size: 11px !important;
+      margin-bottom: 8px !important;
     }
-
     .ticket-qr-frame {
-      background: #fff !important;
-      border: 1px solid #999 !important;
-      border-radius: 8px !important;
       padding: 8px !important;
       margin-bottom: 8px !important;
-      display: inline-block !important;
-      box-shadow: none !important;
+      border-radius: 12px !important;
     }
-
     .ticket-qr-frame img {
-      width: 160px !important;
-      height: 160px !important;
-      display: block !important;
+      width: 140px !important;
+      height: 140px !important;
     }
-
     .ticket-code {
-      font-family: monospace !important;
-      font-size: 8pt !important;
-      color: #444 !important;
-      letter-spacing: 0.04em !important;
+      font-size: 10px !important;
     }
-
-    .ticket-code-label {
-      color: #333 !important;
-    }
-
     .ticket-status {
-      display: inline-flex !important;
       margin-top: 8px !important;
-      padding: 3px 10px !important;
-      border: 1px solid #222 !important;
-      border-radius: 4px !important;
-      font-size: 8pt !important;
-      font-weight: 700 !important;
-      background: transparent !important;
-      color: #000 !important;
-      text-transform: uppercase !important;
-    }
-
-    .ticket-status.confirmed,
-    .ticket-status.checked_in {
-      background: transparent !important;
-      color: #000 !important;
-    }
-
-    .ticket-print-instruction {
-      display: block !important;
-      font-size: 8pt !important;
-      color: #555 !important;
-      margin-top: 10px !important;
-      padding-top: 8px !important;
-      border-top: 1px dashed #ccc !important;
-      text-align: center !important;
+      padding: 3px 12px !important;
+      font-size: 11px !important;
     }
   }
 </style>
-{% endblock %} {% block body %}
+{% endblock %}
+
+{% block body %}
 <nav class="tv-nav">
-  <a href="/my-tickets">
-    <span class="material-symbols-outlined" style="font-size: 18px"
-      >arrow_back</span
-    >
-    My Tickets
-  </a>
+  <div class="tv-nav-inner">
+    <a href="/my-tickets" class="tv-nav-back" title="Back to My Tickets">
+      <span class="material-symbols-outlined" style="font-size: 18px">arrow_back</span>
+      <span>My Tickets</span>
+    </a>
+    <a href="/" class="tv-nav-brand">heelo</a>
+    <div class="tv-nav-actions">
+      <a href="/events" class="tv-nav-link">Find Events</a>
+      <button type="button" class="tv-nav-print-btn" onclick="window.print()" title="Print ticket">
+        <span class="material-symbols-outlined" style="font-size: 16px">print</span>
+        <span>Print</span>
+      </button>
+    </div>
+  </div>
 </nav>
 
 <div class="tv-wrap">
   <div class="tv-actions">
     <button type="button" class="tv-btn primary" onclick="window.print()">
-      <span class="material-symbols-outlined" style="font-size: 16px"
-        >print</span
-      >
-      Print Ticket
+      <span class="material-symbols-outlined" style="font-size: 16px">print</span>
+      Print
     </button>
     <a class="tv-btn" href="{{ gcal_url }}" target="_blank">
-      <span class="material-symbols-outlined" style="font-size: 16px"
-        >event</span
-      >
+      <span class="material-symbols-outlined" style="font-size: 16px">event</span>
       Google Calendar
     </a>
     <a
@@ -500,19 +519,17 @@ endblock %} {% block head %}
       href="/api/v1/registrations/{{ reg.id }}/calendar.ics"
       download
     >
-      <span class="material-symbols-outlined" style="font-size: 16px"
-        >calendar_add_on</span
-      >
+      <span class="material-symbols-outlined" style="font-size: 16px">calendar_add_on</span>
       Apple / Outlook (.ics)
     </a>
+  </div>
+  <div class="tv-actions">
     <a
       class="tv-btn"
       href="/api/v1/registrations/{{ reg.id }}/badge.pdf"
       target="_blank"
     >
-      <span class="material-symbols-outlined" style="font-size: 16px"
-        >badge</span
-      >
+      <span class="material-symbols-outlined" style="font-size: 16px">badge</span>
       Download badge
     </a>
     {% if event.certificates_generated_at and reg.status == 'checked_in' %}
@@ -521,9 +538,7 @@ endblock %} {% block head %}
       href="/api/v1/registrations/{{ reg.id }}/certificate.pdf"
       target="_blank"
     >
-      <span class="material-symbols-outlined" style="font-size: 16px"
-        >workspace_premium</span
-      >
+      <span class="material-symbols-outlined" style="font-size: 16px">workspace_premium</span>
       Certificate
     </a>
     {% endif %}
@@ -551,26 +566,18 @@ endblock %} {% block head %}
       {% if event.start_datetime %}
       <div class="ticket-meta-row">
         <span class="material-symbols-outlined">calendar_today</span>
-        <span
-          >{{ event.start_datetime.strftime('%A, %B %-d, %Y · %-I:%M %p')
-          }}</span
-        >
+        <span>{{ event.start_datetime.strftime('%A, %B %-d, %Y · %-I:%M %p') }}</span>
       </div>
-      {% endif %} {% if event.format == 'virtual' %}
+      {% endif %}
+      {% if event.format == 'virtual' %}
       <div class="ticket-meta-row">
         <span class="material-symbols-outlined">videocam</span>
-        <span
-          >{{ (event.virtual_platform | title) if event.virtual_platform else
-          'Online' }} event: link shared closer to the date</span
-        >
+        <span>{{ (event.virtual_platform | title) if event.virtual_platform else 'Online' }} event: link shared closer to the date</span>
       </div>
       {% elif event.venue_name or event.venue_city %}
       <div class="ticket-meta-row">
         <span class="material-symbols-outlined">location_on</span>
-        <span
-          >{{ event.venue_name or event.venue_city }}{% if event.venue_name and
-          event.venue_city %}, {{ event.venue_city }}{% endif %}</span
-        >
+        <span>{{ event.venue_name or event.venue_city }}{% if event.venue_name and event.venue_city %}, {{ event.venue_city }}{% endif %}</span>
       </div>
       {% endif %}
     </div>
@@ -580,9 +587,7 @@ endblock %} {% block head %}
     <div class="ticket-stub">
       <div class="ticket-attendee">{{ reg.attendee_name }}</div>
       <div class="ticket-tier">
-        <span class="material-symbols-outlined" style="font-size: 14px"
-          >sell</span
-        >
+        <span class="material-symbols-outlined" style="font-size: 14px">sell</span>
         {{ reg.ticket_type.name if reg.ticket_type else 'General Admission' }}
       </div>
 
@@ -592,29 +597,19 @@ endblock %} {% block head %}
           alt="Ticket QR code"
         />
       </div>
-      <div class="ticket-code">
-        <span class="ticket-code-label">TICKET ID:</span> {{ reg.id }}
-      </div>
+      <div class="ticket-code">{{ reg.id }}</div>
 
       {% if reg.status == 'checked_in' %}
       <div class="ticket-status checked_in">
-        <span class="material-symbols-outlined" style="font-size: 14px"
-          >done_all</span
-        >
+        <span class="material-symbols-outlined" style="font-size: 14px">done_all</span>
         Checked in
       </div>
       {% else %}
       <div class="ticket-status confirmed">
-        <span class="material-symbols-outlined" style="font-size: 14px"
-          >check_circle</span
-        >
+        <span class="material-symbols-outlined" style="font-size: 14px">check_circle</span>
         Confirmed
       </div>
       {% endif %}
-
-      <div class="ticket-print-instruction">
-        Present this QR code on arrival for admission.
-      </div>
     </div>
   </div>
 

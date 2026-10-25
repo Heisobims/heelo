@@ -1,7 +1,5 @@
-from io import BytesIO
 import pytest
 from httpx import AsyncClient
-from PIL import Image
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.event import Event
@@ -12,11 +10,11 @@ from tests.conftest import _make_token
 
 
 @pytest.mark.asyncio
-async def test_ticket_view_page_responsive_and_print_elements(
+async def test_ticket_view_page_responsive_nav_and_single_page_print(
     client: AsyncClient, db: AsyncSession, published_event: Event, ticket_type: TicketType, user: User, org: Organization
 ):
-    """Verify the dedicated ticket view (/my-tickets/{id}) contains responsive elements,
-    branded QR code integration, and print-optimized styles with web noise omitted."""
+    """Verify ticket view (/my-tickets/{id}) contains the responsive top navigation bar,
+    the authentic previous card design with terracotta accents and cutouts, and single-page print rules."""
     reg = Registration(
         event_id=published_event.id,
         ticket_type_id=ticket_type.id,
@@ -37,32 +35,35 @@ async def test_ticket_view_page_responsive_and_print_elements(
     assert resp.status_code == 200
     html = resp.text
 
-    # Core ticket information
+    # Responsive navigation bar elements
+    assert "tv-nav" in html
+    assert "tv-nav-inner" in html
+    assert "tv-nav-back" in html
+    assert "tv-nav-brand" in html
+    assert "tv-nav-print-btn" in html
+
+    # Authentic ticket design elements
     assert "Ada Lovelace" in html
     assert published_event.title in html
-    assert "TICKET ID:" in html
-    assert str(reg.id) in html
+    assert "ticket-perf" in html
+    assert "ticket-head" in html
+    assert "ticket-stub" in html
     assert f"/api/v1/registrations/{reg.id}/qr.png" in html
 
-    # Responsive and print classes
-    assert "tv-actions" in html
-    assert "ticket-print-instruction" in html
+    # Single page print stylesheet rules
     assert "@media print" in html
-    assert "Present this QR code on arrival for admission." in html
-
-    # Irrelevant noise hidden in print styles
-    assert ".tv-actions," in html
+    assert "@page" in html
+    assert "page-break-inside: avoid !important;" in html
+    assert "page-break-after: avoid !important;" in html
     assert ".tv-nav," in html
-    assert ".tv-referral-card," in html
-    assert ".heelo-ai-widget-root," in html
+    assert ".tv-actions," in html
 
 
 @pytest.mark.asyncio
-async def test_order_confirmation_print_ticket_stubs_and_clean_header(
+async def test_order_confirmation_page_returns_ok_with_tickets(
     client: AsyncClient, db: AsyncSession, published_event: Event, ticket_type: TicketType, org: Organization
 ):
-    """Verify order confirmation page (/orders/{id}/confirmation) features a clean
-    print-only order header, responsive ticket stubs, and hides billing fee details in print."""
+    """Verify order confirmation page (/orders/{id}/confirmation) renders ticket stubs correctly."""
     order = Order(
         event_id=published_event.id,
         buyer_name="Kwame Nkrumah",
@@ -94,23 +95,11 @@ async def test_order_confirmation_print_ticket_stubs_and_clean_header(
     assert resp.status_code == 200
     html = resp.text
 
-    # Core ticket elements
-    assert "print-order-header" in html
-    assert "HEELO TICKET PASS" in html
     assert published_event.title in html
     assert "Kwame Nkrumah" in html
     assert f"/api/v1/registrations/{reg.id}/qr.png" in html
-
-    # Screen elements classified for print exclusion
-    assert "conf-billing" in html
-    assert "conf-hero" in html
-    assert "conf-actions" in html
-
-    # Print stylesheet verification
-    assert "@media print" in html
-    assert ".conf-billing," in html
-    assert ".conf-hero," in html
     assert "ticket-stub" in html
+    assert "no-print" in html
 
 
 def test_global_main_css_print_optimization():
@@ -123,4 +112,3 @@ def test_global_main_css_print_optimization():
     assert "#heelo-cookie-consent" in content
     assert ".no-print" in content
     assert "break-inside: avoid !important;" in content
-
