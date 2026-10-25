@@ -731,6 +731,18 @@
 
         try {
           const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+          const path = window.location.pathname || '';
+          const title = document.title || '';
+
+          let eventSlug = null;
+          const eMatch = path.match(/^\/(?:e|events)\/([a-zA-Z0-9_-]+)/);
+          if (eMatch && eMatch[1] && !['create', 'edit', 'apply', 'badges.pdf'].includes(eMatch[1])) {
+            eventSlug = eMatch[1];
+          }
+
+          const userName = window.HEELO_USER_NAME || null;
+          const userEmail = window.HEELO_USER_EMAIL || null;
+
           const res = await fetch('/api/v1/support/chat', {
             method: 'POST',
             headers: {
@@ -742,6 +754,11 @@
               client_context: {
                 timezone: tz,
                 locale: navigator.language || 'en',
+                page_path: path,
+                page_title: title,
+                event_slug: eventSlug,
+                user_name: userName,
+                user_email: userEmail,
               },
             }),
           });

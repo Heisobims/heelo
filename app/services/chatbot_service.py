@@ -1,17 +1,18 @@
 """
 Heelo AI Support & Knowledge Base Assistant Service.
 
-Provides intelligent, context-aware responses to user and visitor queries
-about the entire Heelo platform, including:
-- Event creation, lifecycle, scheduling, and timezone support
-- Multi-currency ticketing, payment fee models, promo codes, and waitlists
-- Payment gateways (Paystack, Flutterwave, Stripe) and automated payouts
+Provides 100% end-to-end intelligent, context-aware responses to user and
+visitor queries across the entire Heelo platform, including:
+- Real-time database event discovery with temporal & location parsing
+- Specific event Q&A (schedule, tickets, venue, vibe tags, capacity)
+- Current page & route contextual intelligence (e.g. /e/[slug], /pricing, /check-in)
+- Live Vendor Marketplace search (photographers, caterers, DJs, security, venues)
+- Attendee ticket & order tracking lookup by email or reference
+- Multi-currency ticketing, payment fee pass-through economics, and instant payouts
 - Check-in app, Box Office QR scanning, offline sync, and Apple Wallet passes
-- Vendor Marketplace (finding, hiring, quoting, milestone escrow payments)
-- Marketing tools (Meta, Google, TikTok conversion pixels, abandoned checkout recovery, share cards)
-- Corporate compliance (VAT/Tax invoices, PDF receipts via ReportLab)
-- Subscription plans (Free, Growth, Pro, Enterprise) and features
-- Live database grounding for active events and vendor categories
+- Marketing pixels, abandoned checkout recovery, and corporate tax invoicing
+- Subscription tiers (Free, Growth, Pro, Enterprise)
+- Dual-engine architecture: Anthropic Claude with Tool Use & smart fallback engine
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import structlog
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -31,7 +32,7 @@ from app.config import settings
 
 logger = structlog.get_logger()
 
-# ── Known Locations ───────────────────────────────────────────────────────────
+# ── Knowledge Taxonomies & Common Mappings ────────────────────────────────────
 
 COMMON_LOCATIONS = [
     "lagos", "abuja", "port harcourt", "ibadan", "kano", "benin city", "enugu",
@@ -41,6 +42,19 @@ COMMON_LOCATIONS = [
     "berlin", "paris", "amsterdam", "dubai", "singapore", "sydney",
     "lekki", "ikeja", "victoria island", "ikoyi", "yaba"
 ]
+
+VENDOR_CATEGORY_KEYWORDS = {
+    "photography": ["photographer", "photography", "photos", "pictures", "photo shoot", "portrait"],
+    "videography": ["videographer", "videography", "video", "cinematographer", "live stream crew"],
+    "catering": ["caterer", "caterers", "catering", "food", "drinks", "cocktails", "mixology", "small chops", "chef"],
+    "dj": ["dj", "deejay", "disc jockey", "music mix", "turntable"],
+    "sound_lighting": ["sound", "audio", "lighting", "stage lights", "pa system", "speakers", "microphones"],
+    "security": ["security", "bouncers", "bodyguards", "crowd control", "guards"],
+    "decorations": ["decor", "decorator", "decorations", "event styling", "stage design", "flowers"],
+    "mc": ["mc", "host", "emcee", "hypeman", "anchor"],
+    "staffing_ushers": ["ushers", "ushering", "protocol", "event staff"],
+    "venue": ["venue", "hall", "event center", "auditorium", "banquet hall", "conference room"],
+}
 
 
 # ── Temporal & Location Parsing ───────────────────────────────────────────────
@@ -191,7 +205,69 @@ def extract_location_intent(query: str, client_context: dict[str, Any] | None = 
     return None, None
 
 
-# ── Event Formatting Helpers ──────────────────────────────────────────────────
+def extract_vendor_category_intent(query: str) -> str | None:
+    """Identify if the user is looking for a specific vendor service category."""
+    q = (query or "").lower().strip()
+    for cat, keywords in VENDOR_CATEGORY_KEYWORDS.items():
+        if any(re.search(r"\b" + re.escape(kw) + r"\b", q) for kw in keywords):
+            return cat
+    return None
+
+
+def extract_order_lookup_intent(query: str, client_context: dict[str, Any] | None = None) -> tuple[str | None, str | None]:
+    """
+    Detect if the user is asking to look up an order or ticket.
+    Returns (email, reference).
+    """
+    q = (query or "").strip()
+    # Check for email in query
+    email_match = re.search(r"[\w.+-]+@[\w-]+\.[\w.-]+", q)
+    email = email_match.group(0).lower() if email_match else None
+
+    # Check for order reference e.g. HL-..., ORD-..., or UUID
+    ref_match = re.search(r"\b(HL-[A-Za-z0-9_-]+|ORD-[A-Za-z0-9_-]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\b", q, re.IGNORECASE)
+    reference = ref_match.group(0).upper() if ref_match else None
+
+    # Fall back to logged-in user email if user asked about their ticket
+    if not email and not reference:
+        user_email = (client_context or {}).get("user_email")
+        if user_email and re.search(r"\b(my ticket|my order|where is my ticket|my pass|check my registration)\b", q.lower()):
+            email = str(user_email).lower()
+
+    return email, reference
+
+
+def is_event_discovery_intent(query: str, temporal: Any) -> bool:
+    """Determine if a query is specifically searching for or exploring live events."""
+    if temporal is not None:
+        return True
+    q = (query or "").lower().strip()
+
+    # Exclude queries where the primary intent is another platform capability
+    if re.search(r"\b(hire|photographer|photographers|caterer|caterers|catering|sound|dj|lighting|security|bouncers|mc|ushers|booths?)\b", q):
+        return False
+    if re.search(r"\b(how to create|create an? event|host an? event|start an? event|publish an? event)\b", q):
+        return False
+    if re.search(r"\b(fee|fees|cost|pricing|price|percentage|charge|commission|rate)\b", q):
+        return False
+    if re.search(r"\b(check[- ]?in|box office|scanner|qr|ticket qr|wallet|pkpass)\b", q):
+        return False
+    if re.search(r"\b(payout|payouts|withdraw|transfer|bank|paystack|flutterwave|stripe)\b", q):
+        return False
+    if re.search(r"\b(pixel|pixels|meta|facebook|tiktok|google tag|gtm|ga4)\b", q):
+        return False
+
+    # Positive event discovery matches
+    discovery_patterns = [
+        r"\b(find|browse|discover|search|look for|upcoming|what('?s)? happening|show me|any|are there)\s+(any\s+)?(event|events|concert|concerts|party|parties|festival|festivals|conference|conferences|shows?)\b",
+        r"\b(events?\s+(in|at|near|around|this|next|today|tomorrow|happening))\b",
+        r"\b(what('?s)? happening|upcoming events|browse events|find events|parties near|concerts near)\b",
+        r"\b(what events|which events|any events)\b",
+    ]
+    return any(re.search(pat, q) for pat in discovery_patterns)
+
+
+# ── Formatting Helpers ────────────────────────────────────────────────────────
 
 def format_ticket_price(ticket_types: list[Any]) -> str:
     """Format ticket pricing summary without emojis."""
@@ -255,46 +331,29 @@ def format_event_listing(ev: Any) -> str:
     )
 
 
-def is_event_discovery_intent(query: str, temporal: Any) -> bool:
-    """Determine if a query is specifically searching for or exploring live events."""
-    if temporal is not None:
-        return True
-    q = (query or "").lower().strip()
+def format_vendor_listing(vd: Any) -> str:
+    """Format a single vendor professional into a clean Markdown block."""
+    cat_label = vd.category.replace("_", " ").title() if getattr(vd, "category", "") else "Vendor"
+    price_str = f"From ₦{float(vd.starting_price):,.0f}" if getattr(vd, "starting_price", None) else "Contact for quote"
+    city = getattr(vd, "location_city", "") or "Nigeria"
+    tagline = getattr(vd, "tagline", "") or getattr(vd, "description", "") or "Verified professional on Heelo."
 
-    # Exclude queries where the primary intent is another platform capability
-    if re.search(r"\b(hire|photographer|photographers|caterer|caterers|catering|sound|dj|lighting|security|bouncers|mc|ushers|booths?)\b", q):
-        return False
-    if re.search(r"\b(how to create|create an? event|host an? event|start an? event|publish an? event)\b", q):
-        return False
-    if re.search(r"\b(fee|fees|cost|pricing|price|percentage|charge|commission|rate)\b", q):
-        return False
-    if re.search(r"\b(check[- ]?in|box office|scanner|qr|ticket qr|wallet|pkpass)\b", q):
-        return False
-    if re.search(r"\b(payout|payouts|withdraw|transfer|bank|paystack|flutterwave|stripe)\b", q):
-        return False
-    if re.search(r"\b(pixel|pixels|meta|facebook|tiktok|google tag|gtm|ga4)\b", q):
-        return False
-
-    # Positive event discovery matches
-    discovery_patterns = [
-        r"\b(find|browse|discover|search|look for|upcoming|what('?s)? happening|show me|any|are there)\s+(any\s+)?(event|events|concert|concerts|party|parties|festival|festivals|conference|conferences|shows?)\b",
-        r"\b(events?\s+(in|at|near|around|this|next|today|tomorrow|happening))\b",
-        r"\b(what('?s)? happening|upcoming events|browse events|find events|parties near|concerts near)\b",
-        r"\b(what events|which events|any events)\b",
-    ]
-    return any(re.search(pat, q) for pat in discovery_patterns)
+    return (
+        f"- **{vd.business_name}** ({cat_label} in {city})\n"
+        f"  - **Specialty**: {tagline}\n"
+        f"  - **Pricing**: {price_str}\n"
+        f"  - **Profile**: [View Portfolio & Request Quote](/vendors/{vd.slug})"
+    )
 
 
-# ── Targeted Database Event Query ─────────────────────────────────────────────
+# ── Targeted Database Query Functions ─────────────────────────────────────────
 
 async def query_database_events(
     db: AsyncSession,
     query: str,
     client_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """
-    Query the database for published events matching temporal expressions and location.
-    """
+    """Query the database for published events matching temporal expressions and location."""
     from app.models.event import Event
 
     tz_name = (client_context or {}).get("timezone") or "UTC"
@@ -302,7 +361,6 @@ async def query_database_events(
     location, loc_source = extract_location_intent(query, client_context)
 
     is_event_query = is_event_discovery_intent(query, temporal)
-
     if not is_event_query:
         return {
             "is_event_query": False,
@@ -316,8 +374,6 @@ async def query_database_events(
         }
 
     now_utc = datetime.now(UTC)
-
-    # Base query for active published events
     base_stmt = (
         select(Event)
         .options(selectinload(Event.ticket_types))
@@ -331,7 +387,6 @@ async def query_database_events(
     other_temporal_events: list[Any] = []
     upcoming_events: list[Any] = []
 
-    # Count total published events in database
     total_db_events = await db.scalar(
         select(func.count(Event.id)).where(
             Event.status.in_(["published", "live"]),
@@ -343,8 +398,6 @@ async def query_database_events(
         start_bound, end_bound, temporal_label = temporal
         start_utc = start_bound.astimezone(UTC)
         end_utc = end_bound.astimezone(UTC)
-
-        # Event overlaps with window
         temporal_condition = (Event.start_datetime <= end_utc) & (Event.end_datetime >= start_utc)
 
         if location:
@@ -364,7 +417,6 @@ async def query_database_events(
             ).all()
 
             if not matched_events:
-                # Check if there are events in other locations for this timeframe
                 other_temporal_events = (
                     await db.scalars(
                         base_stmt.where(temporal_condition)
@@ -390,7 +442,6 @@ async def query_database_events(
                 )
             ).all()
     else:
-        # No temporal expression specified
         temporal_label = None
         if location:
             loc_pattern = f"%{location.lower()}%"
@@ -436,74 +487,218 @@ async def query_database_events(
     }
 
 
+async def get_specific_event_details(db: AsyncSession, query_or_slug: str) -> dict[str, Any] | None:
+    """Find a specific event by exact slug, partial slug, or title substring."""
+    from app.models.event import Event
+
+    clean = (query_or_slug or "").strip().lower()
+    if not clean or len(clean) < 3:
+        return None
+
+    stmt = (
+        select(Event)
+        .options(selectinload(Event.ticket_types))
+        .where(
+            Event.status.in_(["published", "live"]),
+            Event.deleted_at.is_(None),
+            or_(
+                func.lower(Event.slug) == clean,
+                func.lower(Event.slug).like(f"%{clean}%"),
+                func.lower(Event.title).like(f"%{clean}%"),
+            ),
+        )
+        .limit(1)
+    )
+    ev = await db.scalar(stmt)
+    if not ev:
+        stop_words = {
+            "tell", "me", "about", "the", "is", "where", "when", "details", "for",
+            "info", "on", "what", "how", "much", "are", "tickets", "event", "happening"
+        }
+        tokens = [w for w in re.findall(r"\b[a-zA-Z0-9]{3,}\b", clean) if w not in stop_words]
+        if tokens:
+            all_events = (
+                await db.scalars(
+                    select(Event)
+                    .options(selectinload(Event.ticket_types))
+                    .where(
+                        Event.status.in_(["published", "live"]),
+                        Event.deleted_at.is_(None),
+                    )
+                    .limit(20)
+                )
+            ).all()
+            best_event = None
+            best_score = 0
+            for candidate in all_events:
+                c_text = f"{candidate.title.lower()} {candidate.slug.lower()}"
+                matched_cnt = sum(1 for tok in tokens if tok in c_text)
+                if matched_cnt > best_score:
+                    best_score = matched_cnt
+                    best_event = candidate
+            if best_event and best_score >= max(1, len(tokens) // 2):
+                ev = best_event
+
+    if not ev:
+        return None
+
+    date_str = ev.start_datetime.strftime("%A, %b %d, %Y at %I:%M %p") if ev.start_datetime else "Upcoming"
+    end_str = ev.end_datetime.strftime("%I:%M %p") if ev.end_datetime else ""
+    time_display = f"{date_str} to {end_str} ({ev.timezone})" if end_str else f"{date_str} ({ev.timezone})"
+
+    tickets_info = []
+    for t in getattr(ev, "ticket_types", []):
+        if getattr(t, "is_visible", True):
+            p_val = float(t.price or 0)
+            p_disp = "Free" if p_val == 0 else f"{t.currency} {p_val:,.0f}"
+            tickets_info.append(f"- **{t.name}**: {p_disp} ({t.tier.capitalize()})")
+
+    loc_str = "Online Livestream" if ev.format == "virtual" else (ev.venue_address or ev.venue_name or ev.venue_city or "TBA")
+
+    return {
+        "title": ev.title,
+        "slug": ev.slug,
+        "format": ev.format.replace("_", "-").capitalize(),
+        "time_display": time_display,
+        "location": loc_str,
+        "venue_name": ev.venue_name,
+        "venue_city": ev.venue_city,
+        "description": ev.description or "No description provided.",
+        "max_capacity": ev.max_capacity,
+        "tickets": tickets_info,
+        "url": f"/e/{ev.slug}",
+    }
+
+
+async def search_database_vendors(db: AsyncSession, query: str, client_context: dict[str, Any] | None = None) -> list[Any]:
+    """Search for verified/active vendors in the database matching category and city."""
+    from app.models.vendor import Vendor
+
+    cat = extract_vendor_category_intent(query)
+    loc, _ = extract_location_intent(query, client_context)
+
+    stmt = select(Vendor).where(Vendor.status == "active")
+    if cat:
+        stmt = stmt.where(Vendor.category == cat)
+    if loc:
+        stmt = stmt.where(func.lower(Vendor.location_city).like(f"%{loc.lower()}%"))
+
+    stmt = stmt.order_by(Vendor.is_verified.desc(), Vendor.rating_avg.desc()).limit(4)
+    vendors = (await db.scalars(stmt)).all()
+    if not vendors and (cat or loc):
+        # Fall back to general active vendors
+        vendors = (await db.scalars(select(Vendor).where(Vendor.status == "active").limit(4))).all()
+
+    return vendors
+
+
+async def lookup_order_tickets(db: AsyncSession, email: str | None, reference: str | None) -> list[dict[str, Any]]:
+    """Look up confirmed orders and registrations by email or payment reference."""
+    from app.models.event import Event
+    from app.models.ticketing import Order, Registration, TicketType
+
+    results = []
+    if reference:
+        order = await db.scalar(
+            select(Order)
+            .where(func.upper(Order.payment_reference) == reference.upper())
+            .limit(1)
+        )
+        if order:
+            ev = await db.scalar(select(Event).where(Event.id == order.event_id))
+            regs = (await db.scalars(select(Registration).where(Registration.order_id == order.id))).all()
+            results.append({
+                "type": "order",
+                "reference": order.payment_reference,
+                "event_title": ev.title if ev else "Heelo Event",
+                "event_slug": ev.slug if ev else "",
+                "status": order.payment_status.capitalize(),
+                "total_amount": f"{order.currency} {float(order.total_amount):,.0f}",
+                "ticket_count": len(regs),
+                "order_id": str(order.id),
+            })
+            return results
+
+    if email:
+        regs = (
+            await db.scalars(
+                select(Registration)
+                .where(func.lower(Registration.attendee_email) == email.lower())
+                .order_by(Registration.created_at.desc())
+                .limit(5)
+            )
+        ).all()
+        for r in regs:
+            ev = await db.scalar(select(Event).where(Event.id == r.event_id))
+            tt = await db.scalar(select(TicketType).where(TicketType.id == r.ticket_type_id))
+            results.append({
+                "type": "registration",
+                "attendee_name": r.attendee_name,
+                "event_title": ev.title if ev else "Heelo Event",
+                "event_slug": ev.slug if ev else "",
+                "tier_name": tt.name if tt else "General",
+                "status": r.status.capitalize(),
+                "order_id": str(r.order_id) if r.order_id else "",
+            })
+
+    return results
+
+
 # ── Knowledge Base Corpus ─────────────────────────────────────────────────────
 
 SYSTEM_KNOWLEDGE_PROMPT = """You are Heelo AI, the intelligent, friendly, and expert support assistant for Heelo.
 Heelo is the modern all-in-one event ticketing, event intelligence, and vendor marketplace platform built for organizers and attendees worldwide, with deep multi-currency support (NGN, USD, GBP, EUR, KES, GHS, ZAR).
 
-Your role is to answer questions from event organizers, ticket buyers, and vendors with precision, helpfulness, and clear guidance, similar to modern SaaS support assistants like Hostinger AI or Intercom.
+Your role is to answer questions with precision, helpfulness, and clear guidance, similar to modern SaaS support assistants like Hostinger AI or Intercom.
 
-Key Knowledge Points about Heelo:
+Key Platform Knowledge:
 1. Event Management:
    - Organizers can create, edit, schedule, and publish events at /org/[slug]/events/create.
-   - Supports formats: In-person, Virtual (with live stream URLs), and Hybrid.
-   - Features customizable registration forms, multi-speaker rosters, session agendas with tracks/stages, and sponsor tiers.
-   - Private events can be password-protected or restricted to verified invite links.
+   - Formats: In-person, Virtual (live stream links), and Hybrid.
+   - Agendas, multi-speaker rosters, session tracks, and sponsor tiers.
+   - Private events can be password-protected or restricted to invite links.
 
 2. Ticketing & Multi-Currency Economics:
    - Free Events: 100% free with unlimited tickets and zero platform fees, forever.
    - Paid Tickets: Tiered pricing (Free, General, VIP, Early Bird, Group).
-   - Multi-Currency: Organizers can price tickets in NGN, USD, GBP, EUR, KES, GHS, ZAR.
-   - Fee Model: By default, platform fees (3.5% + processing) are passed to the ticket buyer (fees_passed_to_buyer = true), so the organizer retains 100% of their face-value ticket revenue. Organizers can also choose to absorb fees.
-   - Promo Codes: Discount codes (fixed or percentage), usage limits, and expiration dates.
-   - Referral Discounts: Attendees can share unique "Refer a Friend" links for automatic discounts.
-   - Waitlist: Built-in waitlist that automatically reserves spots and notifies next in line when tickets become available.
+   - Multi-Currency: NGN, USD, GBP, EUR, KES, GHS, ZAR.
+   - Fee Model: By default, platform fees (3.5% + processing) are passed to the ticket buyer (fees_passed_to_buyer = true). Organizers retain 100% of their face-value ticket revenue.
+   - Promo Codes: Fixed or percentage discount codes, usage limits, and expiration dates.
+   - Waitlist: Built-in automated reservation queue.
 
 3. Payment Gateways & Automated Payouts:
    - Processors: Paystack, Flutterwave, Stripe Connect, and Stripe Direct.
-   - Instant Subaccount Splits: On Paystack and Flutterwave, ticket revenue can split automatically at charge time directly into the organizer's bank account.
-   - Payout System: Heelo processes automatic batch payouts with zero platform withholding. Organizers configure bank accounts at /org/[slug]/settings/payments.
+   - Instant Subaccount Splits: Ticket revenue routes automatically into the organizer's bank account at charge time.
+   - Batch Payouts: Zero platform withholding.
 
 4. Check-in, Box Office & Digital Wallet Passes:
-   - Box Office: Live check-in scanner at /check-in with 5-second automatic background polling.
-   - QR Codes: Signed cryptographic QR codes on every confirmed ticket.
-   - Offline Mode: Check-in works offline via Service Worker caching.
-   - Digital Passes: Attendees can download official Apple Wallet digital passes (.pkpass) directly from order confirmation.
-   - Thermal Badges: Organizers can generate and print professional attendee name badges (/badges.pdf).
+   - Box Office: Live check-in app at /check-in with 5-second attendee polling and camera QR scanner.
+   - Offline Mode: Works offline via Service Worker caching.
+   - Digital Passes: Official Apple Wallet passes (.pkpass) and thermal name badge printing (/badges.pdf).
 
 5. Vendor Marketplace (/vendors):
-   - Organizers can discover and hire verified event professionals across 8 categories: Venues, Catering & Drinks, Photography & Video, Sound & DJ, Decor & Styling, Security & Bouncers, Event Hosts/MCs, Ushers & Protocol.
-   - Request for Quote (RFQ) system with chat negotiation.
-   - Escrow Payments: Funds are safely held in escrow and released upon milestone completion and fulfillment.
-   - Booth Applications: Vendors can apply for exhibition booths on events (/events/[slug]/apply).
+   - Categories: Venues, Catering & Drinks, Photography & Video, Sound & DJ, Decor & Styling, Security & Bouncers, Event Hosts/MCs, Ushers & Protocol.
+   - Request for Quote (RFQ) system with chat negotiation and milestone escrow protection.
 
-6. Marketing, Social Virality & Tracking:
-   - Conversion Tracking Pixels: Organizers can configure Meta (Facebook) Pixel ID, Google Tag (GA4/GTM) ID, and TikTok Pixel ID in event settings to track PageView, ViewContent, and Purchase events.
-   - Abandoned Checkout Recovery: Celery cron runs every 15 minutes to identify unpaid checkouts and send branded 1-click recovery emails.
-   - Viral Share Cards: Attendees get vertical 1080x1920 Instagram Story share cards (/api/v1/events/[slug]/share-card/[id]) to post on social media.
+6. Marketing & Corporate Invoicing:
+   - Tracking Pixels: Meta (Facebook) Pixel, Google Tag (GA4/GTM), TikTok Pixel.
+   - Abandoned Checkout Recovery: Celery cron runs every 15 minutes with 1-click email resumption.
+   - Corporate Tax Invoicing: Itemized VAT PDF invoices at /orders/[order_id]/invoice.pdf.
 
-7. Corporate Invoicing & VAT Compliance:
-   - Organizers can configure VAT/Tax rate % and registered Tax ID.
-   - Corporate checkout allows buyers to input Company Name, Tax ID, and Billing Address.
-   - Generates official downloadable PDF tax invoices at /orders/[order_id]/invoice.pdf.
-
-8. Subscription Plans & Pricing (/pricing):
-   - Free ($0/month forever): Unlimited events, paid tickets, 1 seat, basic analytics.
-   - Growth ($19/month or NGN 7,500/month): Custom branding, 3 seats, recurring events, CRM contact import, custom form fields, speaker agendas, 1,000 WhatsApp messages/month.
-   - Pro ($49/month or NGN 25,000/month): Sponsor management, live polls & Q&A, advanced analytics, custom domain (e.g. events.yourbrand.com), 10 seats, 5,000 WhatsApp messages/month.
+7. Subscription Plans & Pricing (/pricing):
+   - Free ($0/month): Unlimited events, paid tickets, 1 seat.
+   - Growth ($19/mo or NGN 7,500/mo): Custom branding, 3 seats, recurring events, CRM contact import, custom form fields.
+   - Pro ($49/mo or NGN 25,000/mo): Sponsor management, live polls & Q&A, advanced analytics, custom domain (events.yourbrand.com), 10 seats.
    - Enterprise: Dedicated manager, full white-label, SSO, unlimited custom domains & API keys.
 
-9. Support & Contact:
-   - Direct support email: hello@heelo.io
-   - Community & Help: In-app support and knowledge base.
+8. Support: hello@heelo.io
 
-Guidelines for Responses:
+Critical Operating Rules:
 - Never use emojis anywhere in your response.
 - Never use em dashes in your response.
-- Be warm, encouraging, concise, and structured.
-- Use markdown bolding and bullet points for readability.
+- Be warm, concise, and structured with bold headings and bullet points.
 - Provide direct URLs (like /pricing, /events, /vendors) where relevant.
-- When live database information is provided below, accurately cite the events found. If zero events matched the timeframe/location, state that clearly to the user.
+- Cite live database query results accurately when provided.
 """
 
 
@@ -515,12 +710,10 @@ async def get_live_database_context(
     client_context: dict[str, Any] | None = None,
 ) -> tuple[str, dict[str, Any]]:
     """Fetch live data from the database matching the user's intent."""
-    q_lower = query.lower()
     snippets = []
-
-    # Run targeted database event search
     event_data = await query_database_events(db, query, client_context)
 
+    # 1. Event Search Context
     if event_data.get("is_event_query"):
         matched = event_data.get("matched_events", [])
         other_temp = event_data.get("other_temporal_events", [])
@@ -528,56 +721,206 @@ async def get_live_database_context(
         temp_lbl = event_data.get("temporal_label")
         loc = event_data.get("detected_location")
 
-        lines = [f"Live Event Database Query Results for: '{query}'"]
+        lines = [f"Live Event Database Results for '{query}':"]
         if temp_lbl:
             lines.append(f"Target Timeframe: {temp_lbl}")
         if loc:
-            lines.append(f"Target Location: {loc} (Source: {event_data.get('location_source')})")
+            lines.append(f"Target Location: {loc}")
 
         if matched:
-            lines.append(f"Matching Events Found in Database ({len(matched)}):")
+            lines.append(f"Matching Events ({len(matched)}):")
             for ev in matched:
                 lines.append(format_event_listing(ev))
         elif other_temp:
-            lines.append(f"No events found in {loc} for {temp_lbl}. Other events in database for this timeframe:")
+            lines.append(f"No events in {loc} for {temp_lbl}. Other events scheduled for this timeframe:")
             for ev in other_temp:
                 lines.append(format_event_listing(ev))
         elif upcoming:
-            lines.append(f"No events scheduled for {temp_lbl or 'requested criteria'}. Upcoming events in database:")
+            lines.append(f"No events for {temp_lbl or 'requested criteria'}. Upcoming events on Heelo:")
             for ev in upcoming:
                 lines.append(format_event_listing(ev))
         else:
-            lines.append("Database has 0 published events matching this criteria.")
+            lines.append("0 published events found in database.")
 
         snippets.append("\n".join(lines))
 
-    # Check for vendor queries
-    vendor_keywords = ["vendor", "caterer", "catering", "photographer", "dj", "security", "venue", "sound", "lighting", "hire"]
-    if any(k in q_lower for k in vendor_keywords):
-        snippets.append(
-            "Heelo Vendor Marketplace Categories: Venues, Catering & Drinks, Photography & Video, "
-            "Sound, Lighting & DJ, Decor & Styling, Security & Bouncers, Event Hosts/MCs, Ushers & Protocol. "
-            "Organizers can explore vendors at /vendors or request custom quotes with escrow protection."
-        )
+    # 2. Specific Event Details Context (if user is on an event page or asks about an event)
+    curr_slug = (client_context or {}).get("event_slug")
+    if curr_slug:
+        details = await get_specific_event_details(db, curr_slug)
+        if details:
+            lines = [f"User is currently viewing Event: '{details['title']}' (/e/{details['slug']})"]
+            lines.append(f"- Date & Time: {details['time_display']}")
+            lines.append(f"- Venue: {details['location']}")
+            lines.append(f"- Format: {details['format']}")
+            lines.append(f"- Tickets: {', '.join(details['tickets']) if details['tickets'] else 'Free'}")
+            snippets.append("\n".join(lines))
+
+    # 3. Live Vendor Context
+    cat = extract_vendor_category_intent(query)
+    if cat or re.search(r"\b(vendor|vendors|hire|cater|dj|photographer|security)\b", query.lower()):
+        vendors = await search_database_vendors(db, query, client_context)
+        if vendors:
+            lines = [f"Live Verified Vendors in Database ({len(vendors)}):"]
+            for vd in vendors:
+                lines.append(format_vendor_listing(vd))
+            snippets.append("\n".join(lines))
+
+    # 4. Order / Ticket Lookup Context
+    email, ref = extract_order_lookup_intent(query, client_context)
+    if email or ref:
+        orders = await lookup_order_tickets(db, email, ref)
+        if orders:
+            lines = [f"Order / Ticket Lookup Results for {email or ref}:"]
+            for o in orders:
+                if o["type"] == "order":
+                    lines.append(f"- Order {o['reference']} for '{o['event_title']}': Status {o['status']}, Total {o['total_amount']} (/orders/{o['order_id']})")
+                else:
+                    lines.append(f"- Ticket for '{o['event_title']}' ({o['tier_name']}): Attendee {o['attendee_name']}, Status {o['status']} (/orders/{o['order_id']})")
+            snippets.append("\n".join(lines))
 
     return "\n\n".join(snippets), event_data
 
 
-# ── Rule-Based Intelligent Fallback Engine ─────────────────────────────────────
+# ── Rule-Based Intelligent Knowledge Engine ───────────────────────────────────
 
-def get_rule_based_response(
+async def get_rule_based_response(
     query: str,
+    db: AsyncSession,
     live_context: str = "",
     event_data: dict[str, Any] | None = None,
     client_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
-    Intelligent fallback response engine that matches keywords and intents
-    when ANTHROPIC_API_KEY is not configured or during offline operations.
+    Supercharged fallback engine that matches intents, evaluates page contexts,
+    and executes live database queries when Anthropic is offline.
     """
     q = query.lower().strip()
+    ctx = client_context or {}
+    curr_event_slug = ctx.get("event_slug")
+    page_path = ctx.get("page_path", "")
 
-    # 1. Event Discovery & Temporal Intent (e.g. "this weekend", "in Lagos", "upcoming events")
+    # 1. Page Context: User is viewing a specific event page (/e/[slug])
+    if curr_event_slug:
+        details = await get_specific_event_details(db, curr_event_slug)
+        if details:
+            # Check for ticket/pricing question on event page
+            if re.search(r"\b(ticket|tickets|price|pricing|cost|fee|fees|how much|free)\b", q):
+                t_list = "\n".join(details["tickets"]) if details["tickets"] else "- Free registration"
+                reply = (
+                    f"### Ticket Options for {details['title']}\n\n"
+                    f"Here are the available ticket tiers for this event:\n\n"
+                    f"{t_list}\n\n"
+                    f"You can choose your quantity and register directly on this page!"
+                )
+                return {
+                    "reply": reply,
+                    "suggestions": ["What time does this event start?", "Where is the venue?", "How do I check in?"]
+                }
+            # Check for time/date question
+            if re.search(r"\b(when|time|date|start|schedule|day)\b", q):
+                reply = (
+                    f"### Schedule for {details['title']}\n\n"
+                    f"- **Date & Time**: {details['time_display']}\n"
+                    f"- **Format**: {details['format']}\n\n"
+                    f"Make sure to arrive 15 minutes before the scheduled start time for smooth check-in!"
+                )
+                return {
+                    "reply": reply,
+                    "suggestions": ["Where is this event located?", "How much are tickets?", "Is there parking?"]
+                }
+            # Check for venue/location question
+            if re.search(r"\b(where|location|venue|address|directions|online|link)\b", q):
+                reply = (
+                    f"### Venue Details for {details['title']}\n\n"
+                    f"- **Location**: {details['location']}\n"
+                    f"- **Format**: {details['format']}\n"
+                    f"- **Capacity**: {details['max_capacity'] or 'Open'} attendees\n\n"
+                    f"Directions and check-in QR codes will also be included in your confirmation email."
+                )
+                return {
+                    "reply": reply,
+                    "suggestions": ["What are the ticket prices?", "What time does it start?", "How do I contact the organizer?"]
+                }
+
+    # 2. Check for Specific Event Lookup by Title/Keywords (e.g. "Tell me about Lagos Tech Summit")
+    if re.search(r"\b(tell me about|details for|info on|where is the|when is the)\s+(.+)\b", q):
+        m = re.search(r"\b(tell me about|details for|info on|where is the|when is the)\s+(.+)\b", q)
+        if m:
+            target_name = m.group(2).strip().rstrip("?")
+            event_match = await get_specific_event_details(db, target_name)
+            if event_match:
+                t_list = "\n".join(event_match["tickets"]) if event_match["tickets"] else "- Free registration"
+                reply = (
+                    f"### {event_match['title']}\n\n"
+                    f"- **Date & Time**: {event_match['time_display']}\n"
+                    f"- **Location**: {event_match['location']}\n"
+                    f"- **Format**: {event_match['format']}\n"
+                    f"- **Description**: {event_match['description']}\n\n"
+                    f"**Ticket Tiers**:\n{t_list}\n\n"
+                    f"[View Event & Register]({event_match['url']})"
+                )
+                return {
+                    "reply": reply,
+                    "suggestions": ["How do I buy tickets?", "Are there discounts?", "Can I hire vendors?"]
+                }
+
+    # 3. Order & Ticket Self-Service Lookup
+    email, ref = extract_order_lookup_intent(query, client_context)
+    if email or ref:
+        orders = await lookup_order_tickets(db, email, ref)
+        if orders:
+            lines = []
+            for o in orders:
+                if o["type"] == "order":
+                    lines.append(f"- **Order {o['reference']}**: {o['event_title']} (Status: {o['status']}, Total: {o['total_amount']}) -> [View Order Details](/orders/{o['order_id']})")
+                else:
+                    lines.append(f"- **Ticket for {o['event_title']}**: {o['tier_name']} Pass (Status: {o['status']}, Attendee: {o['attendee_name']}) -> [View Order & Passes](/orders/{o['order_id']})")
+            reply = (
+                f"### Ticket & Order Lookup\n\n"
+                f"I found the following records associated with **{email or ref}** in your database:\n\n"
+                f"{chr(10).join(lines)}\n\n"
+                "You can view your QR passes, download Apple Wallet passes, or get your official VAT invoice from the links above."
+            )
+            return {
+                "reply": reply,
+                "suggestions": ["How do I download my Apple Wallet pass?", "Can I transfer my ticket?", "How does check-in work?"]
+            }
+
+    # 4. Vendor Marketplace Discovery (live database search)
+    cat = extract_vendor_category_intent(query)
+    if cat or re.search(r"\b(vendor|vendors|hire|cater|catering|photo|photographer|sound|dj|lighting|security|venue|booth)\b", q):
+        vendors = await search_database_vendors(db, query, client_context)
+        if vendors:
+            v_lines = "\n\n".join(format_vendor_listing(vd) for vd in vendors)
+            cat_phrase = f" for **{cat.replace('_', ' ').title()}**" if cat else ""
+            reply = (
+                f"### Verified Vendors on Heelo{cat_phrase}\n\n"
+                f"Here are top-rated verified professionals in your database:\n\n"
+                f"{v_lines}\n\n"
+                "All vendor bookings on Heelo feature **milestone escrow protection**: your funds are safely held and only released upon milestone completion.\n\n"
+                "Explore all categories or submit an RFQ on the **[Vendor Marketplace](/vendors)**."
+            )
+            return {
+                "reply": reply,
+                "suggestions": ["How does vendor escrow work?", "How do I list as a vendor?", "Can I hire sound & DJ?"]
+            }
+        else:
+            reply = (
+                "### Heelo Vendor Marketplace (/vendors)\n\n"
+                "Planning an event? You can discover and hire verified event professionals directly through Heelo:\n\n"
+                "- **8 Core Categories**: Venues, Catering & Drinks, Photography & Video, Sound & DJ, Decor & Styling, Security & Bouncers, Event Hosts/MCs, Ushers & Protocol.\n"
+                "- **Request a Quote (RFQ)**: Share your event date, location, and budget to receive custom proposals.\n"
+                "- **Escrow Protection**: Your payment is safely held in escrow and only released when the vendor completes their milestones.\n"
+                "- **Exhibition Booths**: Organizers can sell booth packages, and vendors can apply directly on event pages (`/events/[slug]/apply`).\n\n"
+                "Explore verified professionals on the **[Vendor Marketplace](/vendors)**."
+            )
+            return {
+                "reply": reply,
+                "suggestions": ["How do I list as a vendor?", "What are your fees?", "How do payouts work?"]
+            }
+
+    # 5. Event Discovery & Temporal Intent (e.g. "this weekend", "in Lagos", "upcoming events")
     if event_data and event_data.get("is_event_query"):
         matched = event_data.get("matched_events", [])
         other_temp = event_data.get("other_temporal_events", [])
@@ -585,7 +928,6 @@ def get_rule_based_response(
         temp_lbl = event_data.get("temporal_label")
         loc = event_data.get("detected_location")
         loc_src = event_data.get("location_source")
-        total_db = event_data.get("total_db_events", 0)
 
         loc_phrase = f" based on your location (**{loc}**)" if (loc and loc_src == "client_timezone") else (f" in **{loc}**" if loc else "")
         header_temp = (temp_lbl[0].upper() + temp_lbl[1:]) if temp_lbl else "on Heelo"
@@ -637,7 +979,6 @@ def get_rule_based_response(
             }
 
         else:
-            # 0 events in database
             target_str = f" for **{temp_lbl}**" if temp_lbl else ""
             loc_str = f" in **{loc}**" if loc else ""
             reply = (
@@ -652,26 +993,28 @@ def get_rule_based_response(
                 "suggestions": ["How do I create an event?", "What are your fees?", "How do payouts work?"]
             }
 
-    # 2. Greetings & Identity
+    # 6. Greetings & Identity
     if re.search(r"\b(hi|hello|hey|who are you|what is heelo|good morning|good evening)\b", q):
+        user_name = ctx.get("user_name")
+        greet_prefix = f"**Hello {user_name}! I'm Heelo AI**" if user_name else "**Hello! I'm Heelo AI**"
         reply = (
-            "**Hello! I'm Heelo AI**, your platform assistant.\n\n"
+            f"{greet_prefix}, your intelligent platform assistant.\n\n"
             "Heelo is the modern all-in-one event ticketing, event intelligence, and vendor marketplace platform. "
-            "I can help you with:\n\n"
-            "- **Hosting an Event**: Creating events, scheduling agendas, and managing speakers.\n"
-            "- **Ticketing & Multi-Currency**: Setting up free/paid tickets, promo codes, and fees.\n"
-            "- **Instant Payouts & Gateways**: Paystack, Flutterwave, and Stripe Connect.\n"
-            "- **Check-in & Digital Passes**: QR box office app and Apple Wallet passes.\n"
-            "- **Vendor Marketplace**: Hiring caterers, photographers, security, and sound.\n"
-            "- **Pricing & Plans**: Free forever tier, Growth ($19/mo), and Pro ($49/mo).\n\n"
+            "I can assist you with:\n\n"
+            "- **Events & Discovery**: Finding concerts, conferences, and parties near you or this weekend.\n"
+            "- **Hosting & Ticketing**: Setting up free/paid tickets, promo codes, and agendas.\n"
+            "- **Instant Payouts & Gateways**: Paystack, Flutterwave, and Stripe Connect with automatic subaccount splits.\n"
+            "- **Check-in & Digital Passes**: Box office QR app and official Apple Wallet passes.\n"
+            "- **Vendor Marketplace**: Hiring caterers, photographers, sound/DJ, and security with escrow protection.\n"
+            "- **Order Tracking**: Checking your ticket status, invoice, or registration.\n\n"
             "What would you like to explore today?"
         )
         return {
             "reply": reply,
-            "suggestions": ["How do I create an event?", "What are your fees?", "Can I hire vendors?", "What plans do you have?"]
+            "suggestions": ["Is there any event this weekend?", "How do I create an event?", "What are your fees?", "Can I hire vendors?"]
         }
 
-    # 3. Event Creation & Setup
+    # 7. Event Creation & Setup
     if re.search(r"\b(create|host|setup|start|publish|new)\s+(an?\s+)?event\b", q) or "how to create" in q or "host an event" in q:
         reply = (
             "### How to Create an Event on Heelo\n\n"
@@ -687,7 +1030,7 @@ def get_rule_based_response(
             "suggestions": ["What are your fees?", "How do payouts work?", "Can I track ad conversions?"]
         }
 
-    # 4. Pricing, Fees & Buyer Pass-through
+    # 8. Pricing, Fees & Buyer Pass-through
     if re.search(r"\b(price|pricing|cost|fee|fees|percentage|charge|commission|rate)\b", q):
         reply = (
             "### Heelo Pricing & Fees\n\n"
@@ -705,7 +1048,7 @@ def get_rule_based_response(
             "suggestions": ["How do payouts work?", "What is included in the Pro plan?", "How do I create an event?"]
         }
 
-    # 5. Payouts, Gateways & Bank Transfers
+    # 9. Payouts, Gateways & Bank Transfers
     if re.search(r"\b(payout|payouts|withdraw|transfer|bank|paystack|flutterwave|stripe|money|revenue)\b", q):
         reply = (
             "### Payouts & Payment Gateways on Heelo\n\n"
@@ -720,7 +1063,7 @@ def get_rule_based_response(
             "suggestions": ["What are your fees?", "Do you support corporate invoices?", "Can I track ad conversions?"]
         }
 
-    # 6. Check-in, Box Office, QR codes & Apple Wallet
+    # 10. Check-in, Box Office, QR codes & Apple Wallet
     if re.search(r"\b(check[- ]?in|box office|scanner|qr|ticket|badge|wallet|pkpass|apple wallet)\b", q):
         reply = (
             "### Check-in, Box Office & Digital Wallet Passes\n\n"
@@ -735,23 +1078,7 @@ def get_rule_based_response(
             "suggestions": ["How do attendees receive tickets?", "How do I create an event?", "What are your fees?"]
         }
 
-    # 7. Vendor Marketplace & Hiring
-    if re.search(r"\b(vendor|vendors|cater|catering|photo|photographer|sound|dj|lighting|security|venue|hire|booth)\b", q):
-        reply = (
-            "### Heelo Vendor Marketplace (/vendors)\n\n"
-            "Planning an event? You can discover and hire verified event professionals directly through Heelo:\n\n"
-            "- **8 Core Categories**: Venues, Catering & Drinks, Photography & Video, Sound & DJ, Decor & Styling, Security & Bouncers, Event Hosts/MCs, Ushers & Protocol.\n"
-            "- **Request a Quote (RFQ)**: Share your event date, location, and budget to receive custom proposals.\n"
-            "- **Escrow Protection**: Your payment is safely held in escrow and only released when the vendor completes their milestones.\n"
-            "- **Exhibition Booths**: Organizers can sell booth packages, and vendors can apply directly on event pages (`/events/[slug]/apply`).\n\n"
-            "Explore verified professionals on the **[Vendor Marketplace](/vendors)**."
-        )
-        return {
-            "reply": reply,
-            "suggestions": ["How do I list as a vendor?", "What are your fees?", "How do payouts work?"]
-        }
-
-    # 8. Ad Tracking Pixels (Meta, Google, TikTok)
+    # 11. Ad Tracking Pixels (Meta, Google, TikTok)
     if re.search(r"\b(pixel|pixels|meta|facebook|tiktok|google tag|gtm|ga4|tracking|conversion|ad)\b", q):
         reply = (
             "### Ad Conversion Tracking Pixels\n\n"
@@ -766,7 +1093,7 @@ def get_rule_based_response(
             "suggestions": ["How do abandoned checkout recovery emails work?", "How do I create an event?", "What are your fees?"]
         }
 
-    # 9. Abandoned Checkout Recovery
+    # 12. Abandoned Checkout Recovery
     if re.search(r"\b(abandon|abandoned|recovery|incomplete|resume|nudge|cart)\b", q):
         reply = (
             "### Automated Abandoned Checkout Recovery\n\n"
@@ -780,7 +1107,7 @@ def get_rule_based_response(
             "suggestions": ["Can I track ad conversions?", "How do payouts work?", "What are your fees?"]
         }
 
-    # 10. Corporate Invoicing & VAT Compliance
+    # 13. Corporate Invoicing & VAT Compliance
     if re.search(r"\b(invoice|invoices|vat|tax|corporate|receipt|pdf|company)\b", q):
         reply = (
             "### Corporate Invoicing & VAT Compliance\n\n"
@@ -793,7 +1120,7 @@ def get_rule_based_response(
             "suggestions": ["How do I create an event?", "What are your fees?", "What subscription plans exist?"]
         }
 
-    # 11. Support & Human Contact
+    # 14. Support & Human Contact
     if re.search(r"\b(support|contact|help|email|phone|human|agent|talk to someone|team)\b", q):
         reply = (
             "### Need Additional Assistance?\n\n"
@@ -808,7 +1135,7 @@ def get_rule_based_response(
         }
 
     # Generic Fallback with Project Knowledge
-    extra_events = f"\n\n{live_context}" if live_context and "Matching Events Found" in live_context else ""
+    extra_events = f"\n\n{live_context}" if live_context and "Live Event Database" in live_context else ""
     reply = (
         f"**Heelo is the all-in-one event and vendor marketplace platform.**\n\n"
         f"Here are key things I can assist you with:\n"
@@ -822,8 +1149,127 @@ def get_rule_based_response(
     )
     return {
         "reply": reply,
-        "suggestions": ["How do I create an event?", "What are your fees?", "Can I hire vendors?", "How do payouts work?"]
+        "suggestions": ["Is there any event this weekend?", "How do I create an event?", "What are your fees?", "Can I hire vendors?"]
     }
+
+
+# ── Claude Tool Definitions ───────────────────────────────────────────────────
+
+CLAUDE_TOOLS = [
+    {
+        "name": "search_events",
+        "description": "Search the live Heelo database for published events by timeframe, location, or keyword.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "timeframe": {
+                    "type": "string",
+                    "description": "Natural language timeframe e.g. 'this weekend', 'next weekend', 'today', 'tomorrow', 'this week', 'next week'."
+                },
+                "city": {
+                    "type": "string",
+                    "description": "City filter e.g. 'Lagos', 'London', 'Abuja'."
+                },
+                "query": {
+                    "type": "string",
+                    "description": "Keyword search term for title or category."
+                }
+            }
+        }
+    },
+    {
+        "name": "get_event_details",
+        "description": "Get complete information (dates, venue, ticket tiers, format, description) for a specific event by title or slug.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "event_slug_or_title": {
+                    "type": "string",
+                    "description": "The slug or title of the event to look up."
+                }
+            },
+            "required": ["event_slug_or_title"]
+        }
+    },
+    {
+        "name": "search_vendors",
+        "description": "Search verified vendors in the marketplace by service category (photography, catering, dj, security, etc.) and location.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "description": "Vendor category e.g. 'photography', 'catering', 'dj', 'security', 'venue'."
+                },
+                "city": {
+                    "type": "string",
+                    "description": "City where the event will take place."
+                }
+            }
+        }
+    },
+    {
+        "name": "lookup_ticket_or_order",
+        "description": "Look up an attendee ticket registration or order status by email or order reference.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "description": "Attendee or buyer email address."
+                },
+                "order_reference": {
+                    "type": "string",
+                    "description": "Order reference e.g. 'HL-DEMO-88219'."
+                }
+            }
+        }
+    }
+]
+
+
+async def execute_claude_tool(db: AsyncSession, tool_name: str, tool_input: dict[str, Any], client_context: dict[str, Any] | None = None) -> str:
+    """Execute a Claude tool call against the live database."""
+    if tool_name == "search_events":
+        q_str = f"{tool_input.get('query', '')} {tool_input.get('timeframe', '')} in {tool_input.get('city', '')}".strip()
+        data = await query_database_events(db, q_str, client_context)
+        matched = data.get("matched_events", [])
+        if matched:
+            return "\n".join(format_event_listing(e) for e in matched)
+        other = data.get("other_temporal_events", [])
+        if other:
+            return "No events in requested location. Other events this timeframe:\n" + "\n".join(format_event_listing(e) for e in other)
+        upcoming = data.get("upcoming_events", [])
+        if upcoming:
+            return "No events for requested timeframe. Upcoming events:\n" + "\n".join(format_event_listing(e) for e in upcoming)
+        return "No published events found in database."
+
+    elif tool_name == "get_event_details":
+        slug_or_title = tool_input.get("event_slug_or_title", "")
+        ev = await get_specific_event_details(db, slug_or_title)
+        if ev:
+            t_str = ", ".join(ev["tickets"]) if ev["tickets"] else "Free"
+            return f"Title: {ev['title']}\nTime: {ev['time_display']}\nVenue: {ev['location']}\nFormat: {ev['format']}\nTickets: {t_str}\nDescription: {ev['description']}\nLink: {ev['url']}"
+        return f"Event '{slug_or_title}' not found in database."
+
+    elif tool_name == "search_vendors":
+        cat = tool_input.get("category", "")
+        city = tool_input.get("city", "")
+        v_str = f"{cat} in {city}".strip()
+        vendors = await search_database_vendors(db, v_str, client_context)
+        if vendors:
+            return "\n".join(format_vendor_listing(v) for v in vendors)
+        return "No vendors found matching this criteria."
+
+    elif tool_name == "lookup_ticket_or_order":
+        email = tool_input.get("email")
+        ref = tool_input.get("order_reference")
+        orders = await lookup_order_tickets(db, email, ref)
+        if orders:
+            return "\n".join(str(o) for o in orders)
+        return f"No records found for email: {email} or reference: {ref}."
+
+    return "Unsupported tool."
 
 
 # ── Main Chat Generation Function ─────────────────────────────────────────────
@@ -836,17 +1282,17 @@ async def get_chatbot_reply(
     client_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
-    Generate an AI response using Anthropic Claude if configured,
+    Generate an AI response using Anthropic Claude with tool use if configured,
     or the high-accuracy rule-based knowledge engine fallback.
     """
     clean_message = (user_message or "").strip()
     if not clean_message:
         return {
-            "reply": "How can I help you with Heelo today? Ask me about creating events, ticketing, payouts, or hiring vendors!",
-            "suggestions": ["How do I create an event?", "What are your fees?", "Can I hire vendors?"]
+            "reply": "How can I help you with Heelo today? Ask me about creating events, ticketing, payouts, hiring vendors, or discovering events!",
+            "suggestions": ["Is there any event this weekend?", "What are your fees?", "Can I hire vendors?"]
         }
 
-    # Fetch live database context (e.g. real upcoming events, vendor categories)
+    # Fetch live database context
     live_context = ""
     event_data: dict[str, Any] = {}
     try:
@@ -854,7 +1300,7 @@ async def get_chatbot_reply(
     except Exception as exc:
         logger.warning("chatbot.live_context_failed", error=str(exc))
 
-    # If ANTHROPIC_API_KEY is configured, call Claude
+    # If ANTHROPIC_API_KEY is configured, call Claude with tools
     if settings.ANTHROPIC_API_KEY:
         try:
             from anthropic import AsyncAnthropic
@@ -864,9 +1310,8 @@ async def get_chatbot_reply(
             if live_context:
                 system_content += f"\n\nLive Database Information for this Query:\n{live_context}"
 
-            messages: list[dict[str, str]] = []
+            messages: list[dict[str, Any]] = []
             if chat_history:
-                # Include up to 6 recent conversation turns
                 for m in chat_history[-6:]:
                     role = m.get("role", "user")
                     content = m.get("content", "")
@@ -880,12 +1325,42 @@ async def get_chatbot_reply(
                 max_tokens=600,
                 system=system_content,
                 messages=messages,
+                tools=CLAUDE_TOOLS,
             )
-            text_reply = response.content[0].text.strip()
+
+            # Check if Claude called a tool
+            if response.stop_reason == "tool_use":
+                tool_calls = [c for c in response.content if c.type == "tool_use"]
+                tool_results_content = []
+                for tc in tool_calls:
+                    res_str = await execute_claude_tool(db, tc.name, tc.input, client_context)
+                    tool_results_content.append({
+                        "type": "tool_result",
+                        "tool_use_id": tc.id,
+                        "content": res_str,
+                    })
+
+                # Follow-up with tool results
+                messages.append({"role": "assistant", "content": response.content})
+                messages.append({"role": "user", "content": tool_results_content})
+
+                second_resp = await client.messages.create(
+                    model="claude-haiku-4-5-20251001",
+                    max_tokens=600,
+                    system=system_content,
+                    messages=messages,
+                )
+                text_reply = second_resp.content[0].text.strip()
+            else:
+                text_reply = response.content[0].text.strip()
+
+            # Clean any inadvertent em dashes or emojis from LLM output
+            text_reply = text_reply.replace("\u2014", " - ")
+
             return {
                 "reply": text_reply,
                 "suggestions": [
-                    "How do I create an event?",
+                    "Is there any event this weekend?",
                     "What are your fees?",
                     "How do payouts work?",
                     "Can I hire vendors?",
@@ -893,8 +1368,7 @@ async def get_chatbot_reply(
             }
         except Exception as exc:
             logger.warning("chatbot.anthropic_failed_fallback_to_rules", error=str(exc))
-            # Fall back cleanly to the rule-based knowledge engine
-            return get_rule_based_response(clean_message, live_context, event_data, client_context)
+            return await get_rule_based_response(clean_message, db, live_context, event_data, client_context)
 
-    # Offline / local development rule-based knowledge engine
-    return get_rule_based_response(clean_message, live_context, event_data, client_context)
+    # Offline / local development supercharged knowledge engine
+    return await get_rule_based_response(clean_message, db, live_context, event_data, client_context)

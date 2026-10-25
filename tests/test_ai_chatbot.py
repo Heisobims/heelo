@@ -234,3 +234,115 @@ async def test_support_chat_no_emojis_and_no_em_dashes(client: AsyncClient):
                 assert ord(ch) < 0x1F000, f"Emoji character {ch} found in reply for '{q}'"
 
 
+async def test_support_chat_event_page_context(
+    client: AsyncClient, db: AsyncSession, published_event: Event, ticket_type
+):
+    """Verify chatbot grounds ticket queries in current page context when browsing an event."""
+    published_event.title = "Lagos Design Conference 2026"
+    published_event.slug = "lagos-design-conf-2026"
+    await db.flush()
+
+    resp = await client.post(
+        "/api/v1/support/chat",
+        json={
+            "message": "how much are tickets for this event?",
+            "client_context": {
+                "page_path": "/e/lagos-design-conf-2026",
+                "event_slug": "lagos-design-conf-2026",
+            },
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    reply = data["data"]["reply"]
+    assert "Lagos Design Conference 2026" in reply
+    assert "General Admission" in reply or "5,000" in reply
+    assert "\u2014" not in reply
+
+
+async def test_support_chat_specific_event_briefing(
+    client: AsyncClient, db: AsyncSession, published_event: Event
+):
+    """Verify chatbot answers questions about a specific event by title lookup."""
+    published_event.title = "Nairobi AI Founders Summit"
+    published_event.slug = "nairobi-ai-founders-summit"
+    published_event.venue_name = "KICC Nairobi"
+    published_event.venue_city = "Nairobi"
+    await db.flush()
+
+    resp = await client.post(
+        "/api/v1/support/chat",
+        json={"message": "tell me about Nairobi AI Founders Summit"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    reply = data["data"]["reply"]
+    assert "Nairobi AI Founders Summit" in reply
+    assert "/e/nairobi-ai-founders-summit" in reply
+    assert "\u2014" not in reply
+
+
+async def test_support_chat_live_vendor_search(
+    client: AsyncClient, db: AsyncSession, user
+):
+    """Verify chatbot searches and recommends verified vendors from the database."""
+    from app.models.vendor import Vendor
+
+    v = Vendor(
+        user_id=user.id,
+        business_name="Lumina Pro Photography",
+        slug="lumina-pro-photography",
+        category="photography",
+        tagline="Elite concert and documentary photography in Lagos.",
+        location_city="Lagos",
+        location_country="NG",
+        starting_price=150000,
+        currency="NGN",
+        price_range="mid",
+        status="active",
+        is_verified=True,
+    )
+    db.add(v)
+    await db.flush()
+
+    resp = await client.post(
+        "/api/v1/support/chat",
+        json={"message": "can you recommend a photographer in Lagos?"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    reply = data["data"]["reply"]
+    assert "Lumina Pro Photography" in reply
+    assert "/vendors/lumina-pro-photography" in reply
+    assert "\u2014" not in reply
+
+
+async def test_support_chat_ticket_lookup(
+    client: AsyncClient, db: AsyncSession, published_event: Event, ticket_type
+):
+    """Verify chatbot can look up tickets and order status by email."""
+    from app.models.ticketing import Registration
+
+    reg = Registration(
+        event_id=published_event.id,
+        ticket_type_id=ticket_type.id,
+        attendee_name="Chioma Adeleke",
+        attendee_email="chioma@example.com",
+        qr_code="QR-CHIOMA-9921",
+        status="confirmed",
+    )
+    db.add(reg)
+    await db.flush()
+
+    resp = await client.post(
+        "/api/v1/support/chat",
+        json={"message": "where is my ticket for chioma@example.com?"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    reply = data["data"]["reply"]
+    assert "Chioma Adeleke" in reply
+    assert published_event.title in reply
+    assert "\u2014" not in reply
+
+
