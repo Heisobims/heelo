@@ -6,7 +6,7 @@ grounded in the Heelo platform and database.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
@@ -28,6 +28,7 @@ class ChatHistoryItem(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=1000)
     history: list[ChatHistoryItem] = Field(default_factory=list)
+    client_context: dict[str, Any] = Field(default_factory=dict)
 
 
 class ChatResponseData(BaseModel):
@@ -67,6 +68,7 @@ async def support_chat(
         db=db,
         user_message=body.message,
         chat_history=history_dicts,
+        client_context=body.client_context,
     )
 
     return ChatResponse(

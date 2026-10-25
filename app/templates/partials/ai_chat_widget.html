@@ -730,6 +730,7 @@
         this.$nextTick(() => this.scrollToBottom());
 
         try {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
           const res = await fetch('/api/v1/support/chat', {
             method: 'POST',
             headers: {
@@ -738,6 +739,10 @@
             body: JSON.stringify({
               message: text,
               history: this.messages.slice(-8),
+              client_context: {
+                timezone: tz,
+                locale: navigator.language || 'en',
+              },
             }),
           });
 

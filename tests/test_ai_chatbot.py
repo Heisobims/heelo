@@ -150,3 +150,87 @@ async def test_ai_chat_widget_rendered_in_templates(client: AsyncClient):
     assert resp_pricing.status_code == 200
     assert "heelo-ai-widget-root" in resp_pricing.text
 
+
+async def test_support_chat_events_this_weekend_with_location_context(
+    client: AsyncClient, db: AsyncSession, published_event: Event, ticket_type
+):
+    """Verify chatbot answers 'is there any event this weekend' grounded in the DB by location."""
+    from zoneinfo import ZoneInfo
+    from app.services.chatbot_service import parse_temporal_intent
+
+    bounds = parse_temporal_intent("this weekend", "Africa/Lagos")
+    assert bounds is not None
+    start_bound, end_bound, _ = bounds
+
+    published_event.title = "Lagos Creator Weekend Fest"
+    published_event.slug = "lagos-creator-weekend-fest"
+    published_event.venue_city = "Lagos"
+    published_event.venue_name = "Landmark Centre"
+    published_event.start_datetime = start_bound + timedelta(hours=14)
+    published_event.end_datetime = start_bound + timedelta(hours=20)
+    await db.flush()
+
+    resp = await client.post(
+        "/api/v1/support/chat",
+        json={
+            "message": "is there any event this weekend",
+            "client_context": {"timezone": "Africa/Lagos"},
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    reply = data["data"]["reply"]
+    assert "Lagos Creator Weekend Fest" in reply
+    assert "/e/lagos-creator-weekend-fest" in reply
+    assert "weekend" in reply.lower()
+    assert "Lagos" in reply
+    assert "\u2014" not in reply
+
+
+async def test_support_chat_events_location_filter_mismatch(
+    client: AsyncClient, db: AsyncSession, published_event: Event
+):
+    """Verify chatbot handles query for location with no events for that timeframe gracefully."""
+    from app.services.chatbot_service import parse_temporal_intent
+
+    bounds = parse_temporal_intent("this weekend", "UTC")
+    assert bounds is not None
+    start_bound, end_bound, _ = bounds
+
+    published_event.title = "Lagos Tech Gathering"
+    published_event.slug = "lagos-tech-gathering"
+    published_event.venue_city = "Lagos"
+    published_event.start_datetime = start_bound + timedelta(hours=12)
+    published_event.end_datetime = start_bound + timedelta(hours=16)
+    await db.flush()
+
+    resp = await client.post(
+        "/api/v1/support/chat",
+        json={"message": "are there any events in London this weekend?"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    reply = data["data"]["reply"]
+    assert "London" in reply
+    assert "\u2014" not in reply
+
+
+async def test_support_chat_no_emojis_and_no_em_dashes(client: AsyncClient):
+    """Verify chatbot responses never contain emojis or em dashes."""
+    test_queries = [
+        "is there any event this weekend",
+        "What are your fees?",
+        "How do payouts work?",
+        "Can I hire vendors?",
+        "How do I check in attendees?",
+    ]
+    for q in test_queries:
+        resp = await client.post("/api/v1/support/chat", json={"message": q})
+        assert resp.status_code == 200
+        reply = resp.json()["data"]["reply"]
+        assert "\u2014" not in reply, f"Em dash found in reply for '{q}'"
+        for ch in reply:
+            if ord(ch) > 127 and ch not in "₦£€":
+                assert ord(ch) < 0x1F000, f"Emoji character {ch} found in reply for '{q}'"
+
+
