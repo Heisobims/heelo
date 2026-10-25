@@ -149,3 +149,4 @@ async def test_ai_chat_widget_rendered_in_templates(client: AsyncClient):
     resp_pricing = await client.get("/pricing")
     assert resp_pricing.status_code == 200
     assert "heelo-ai-widget-root" in resp_pricing.text
+

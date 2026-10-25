@@ -406,3 +406,4 @@ async def get_chatbot_reply(
 
     # Offline / local development rule-based knowledge engine
     return get_rule_based_response(clean_message, live_context)
+

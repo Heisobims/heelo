@@ -15,13 +15,12 @@
     :title="isOpen ? 'Close Heelo Assistant' : 'Chat with Heelo AI Assistant'"
     aria-label="Toggle Heelo AI Chatbot"
   >
-    <!-- Closed Icon: Chat + Sparkle -->
+    <!-- Closed Icon: Chat -->
     <template x-if="!isOpen">
       <div class="heelo-ai-icon-wrap">
         <svg class="heelo-ai-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" stroke="none" />
         </svg>
-        <span class="heelo-ai-badge">AI</span>
       </div>
     </template>
     <!-- Open Icon: Close X -->
@@ -95,28 +94,28 @@
       <!-- Welcome Intro (shown when messages is empty) -->
       <template x-if="messages.length === 0">
         <div class="heelo-ai-welcome-card">
-          <div class="heelo-ai-welcome-badge">⚡ Hostinger-Grade AI Support</div>
+          <div class="heelo-ai-welcome-badge">Platform Support</div>
           <div class="heelo-ai-welcome-text">
             Hi! I am Heelo AI, trained on the entire Heelo platform. Ask me anything about:
           </div>
           <div class="heelo-ai-suggestions">
             <button type="button" class="heelo-ai-pill" @click="quickAsk('How do I create and publish an event?')">
-              🎟️ How do I create an event?
+              How do I create an event?
             </button>
             <button type="button" class="heelo-ai-pill" @click="quickAsk('What are your ticketing fees and pricing plans?')">
-              💳 How do fees & pricing work?
+              How do fees & pricing work?
             </button>
             <button type="button" class="heelo-ai-pill" @click="quickAsk('How do automated payouts and bank splits work?')">
-              💰 How do payouts work?
+              How do payouts work?
             </button>
             <button type="button" class="heelo-ai-pill" @click="quickAsk('How do I hire caterers, sound, or photographers on Heelo?')">
-              🤝 Can I hire event vendors?
+              Can I hire event vendors?
             </button>
             <button type="button" class="heelo-ai-pill" @click="quickAsk('What are Apple Wallet passes and Box Office check-in?')">
-              📲 What are Apple Wallet passes?
+              What are Apple Wallet passes?
             </button>
             <button type="button" class="heelo-ai-pill" @click="quickAsk('How do Meta, Google, and TikTok ad pixels work on Heelo?')">
-              📊 How do ad tracking pixels work?
+              How do ad tracking pixels work?
             </button>
           </div>
         </div>
@@ -189,7 +188,7 @@
         </button>
       </div>
       <div class="heelo-ai-footnote">
-        <span>⚡ Heelo AI Platform Assistant</span>
+        <span>Heelo AI Platform Assistant</span>
         <a href="mailto:hello@heelo.io" class="heelo-ai-foot-link">Need human support?</a>
       </div>
     </form>
@@ -251,20 +250,6 @@
     width: 26px;
     height: 26px;
     fill: currentColor;
-  }
-
-  .heelo-ai-badge {
-    position: absolute;
-    top: -6px;
-    right: -8px;
-    background: #111827;
-    color: #FFD166;
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    padding: 2px 5px;
-    border-radius: 10px;
-    border: 1.5px solid #ffffff;
   }
 
   .heelo-ai-svg-close {
@@ -840,3 +825,4 @@
     };
   }
 </script>
+

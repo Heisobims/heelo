@@ -76,3 +76,4 @@ async def support_chat(
             suggestions=result.get("suggestions", []),
         ),
     )
+
