@@ -330,36 +330,17 @@ main_content %}
 
   <!-- ── Tab navigation ────────────────────────────────────────────────────── -->
   <div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || (window.location.hash ? window.location.hash.substring(1) : 'overview') }">
-    <div
-      style="
-        display: flex;
-        gap: 0;
-        border-bottom: 1px solid var(--border-light);
-        margin-bottom: 20px;
-        overflow-x: auto;
-      "
-    >
+    <div class="event-tabs-bar">
       {% for tab_id, tab_label in [('overview', 'Overview'), ('tickets',
       'Tickets'), ('registrations', 'Registrations'), ('waitlist', 'Waitlist'),
       ('calls', 'Open Calls'), ('sponsors', 'Sponsors'), ('booths', 'Booths &
       Vendors'), ('affiliates', 'Affiliates'), ('analytics', 'Analytics'),
       ('feedback', 'Feedback')] %}
       <button
-        @click="tab = '{{ tab_id }}'; history.replaceState(null, '', '?tab={{ tab_id }}'); $dispatch('heelo:tab', { tab: '{{ tab_id }}' })"
-        style="
-          padding: 10px 18px;
-          font-size: 14px;
-          font-weight: 500;
-          border: none;
-          background: transparent;
-          cursor: pointer;
-          border-bottom: 2px solid transparent;
-          color: var(--text-muted);
-          transition: all 0.12s;
-          white-space: nowrap;
-        "
-        :style="tab === '{{ tab_id }}' ? 'border-bottom-color:var(--cyan);color:var(--text-primary);font-weight:600;' : ''"
         type="button"
+        class="event-tab-btn"
+        :class="{ 'active': tab === '{{ tab_id }}' }"
+        @click="tab = '{{ tab_id }}'; history.replaceState(null, '', '?tab={{ tab_id }}'); $dispatch('heelo:tab', { tab: '{{ tab_id }}' })"
       >
         {{ tab_label }}
       </button>
@@ -5139,6 +5120,50 @@ main_content %}
 </script>
 
 <style>
+  /* ── Event Console Tab Bar System ── */
+  .event-tabs-bar {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--border-light, #EFEAE3);
+    margin-bottom: 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .event-tabs-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .event-tab-btn {
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    color: var(--text-muted, #71717A);
+    transition: color 0.14s ease, border-color 0.14s ease, background 0.14s ease;
+    white-space: nowrap;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 6px 6px 0 0;
+    outline: none;
+    user-select: none;
+    text-decoration: none;
+  }
+  .event-tab-btn:hover {
+    color: var(--text-primary, #131B17);
+    background: rgba(19, 27, 23, 0.04);
+  }
+  .event-tab-btn.active {
+    border-bottom-color: var(--cyan, #E85938);
+    color: var(--text-primary, #131B17);
+    font-weight: 700;
+    background: transparent;
+  }
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
