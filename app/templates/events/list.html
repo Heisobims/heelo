@@ -223,6 +223,7 @@
             style="display:none;"
           >
             <a href="/org/{{ org.slug }}/events/{{ ev.id }}" class="user-menu-item">View dashboard</a>
+            <a href="/org/{{ org.slug }}/events/{{ ev.id }}?tab=calls" class="user-menu-item">Open Calls</a>
             <a href="/org/{{ org.slug }}/events/{{ ev.id }}/edit" class="user-menu-item">Edit</a>
             {% if ev.status in ('published', 'live', 'ended') %}
             <a href="/e/{{ ev.slug }}" target="_blank" class="user-menu-item">Public page <span class="material-symbols-outlined" style="font-size:13px; vertical-align:-2px;">open_in_new</span></a>
