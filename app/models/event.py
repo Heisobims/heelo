@@ -26,6 +26,7 @@ from app.database import Base, SoftDeleteMixin, TimestampMixin
 if TYPE_CHECKING:
     from app.models.affiliate import EventAffiliate
     from app.models.campaign import Campaign
+    from app.models.open_call import OpenCall
     from app.models.organization import Organization
     from app.models.speaker import EventSpeaker, Sponsor
     from app.models.ticketing import PromoCode, Registration, TicketType, Waitlist
@@ -227,6 +228,9 @@ class Event(Base, SoftDeleteMixin):
     )
     affiliates: Mapped[list[EventAffiliate]] = relationship(
         "EventAffiliate", back_populates="event", cascade="all, delete-orphan"
+    )
+    open_calls: Mapped[list[OpenCall]] = relationship(
+        "OpenCall", back_populates="event", cascade="all, delete-orphan"
     )
 
     @property

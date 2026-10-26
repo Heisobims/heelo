@@ -935,6 +935,12 @@ async function heeloToggleInterestBtn(btn) {
           <i class="fa-solid fa-store"></i> Exhibit / Booths
         </a>
         {% endif %}
+
+        {% if has_open_calls %}
+        <a href="#open-calls-section" class="ev-action-btn">
+          <i class="fa-solid fa-bullhorn"></i> Open Calls ({{ open_calls | length }})
+        </a>
+        {% endif %}
       </div>
     </div>
 
@@ -1332,6 +1338,48 @@ async function heeloToggleInterestBtn(btn) {
       {% endif %}
       {% endfor %}
 
+      <!-- ── Open Calls (Speakers, Sponsors, Volunteers) ── -->
+      {% if has_open_calls %}
+      <div class="ev-card" id="open-calls-section" style="margin-bottom:24px;">
+        <div class="ev-card-header">
+          <h2 class="ev-card-title"><i class="fa-solid fa-bullhorn" style="color:var(--ev-accent);"></i> Open Calls &amp; Opportunities</h2>
+        </div>
+        <p style="font-size:13.5px; color:var(--ev-muted); margin:0 0 16px; line-height:1.5;">
+          This event is actively accepting proposals and applications. Submit your proposal before deadlines close.
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:14px;">
+          {% for call in open_calls %}
+          <div style="border:1px solid var(--ev-border); border-radius:12px; padding:16px; background:var(--ev-bg); display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="display:inline-block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:3px 8px; border-radius:6px; background:rgba(2, 132, 199, 0.1); color:#0284c7; margin-bottom:8px;">
+                {% if call.call_type == 'speaker' or call.call_type == 'papers' %}
+                Call for Papers
+                {% elif call.call_type == 'sponsor' %}
+                Call for Sponsors
+                {% elif call.call_type == 'volunteer' %}
+                Call for Volunteers
+                {% else %}
+                Open Call
+                {% endif %}
+              </div>
+              <h3 style="font-size:15px; font-weight:700; margin:0 0 6px; color:var(--text-primary);">
+                {{ call.title }}
+              </h3>
+              {% if call.end_date %}
+              <div style="font-size:12px; color:var(--ev-muted); margin-bottom:12px;">
+                <i class="fa-regular fa-clock"></i> Deadline: {{ call.end_date.strftime('%b %d, %Y') }}
+              </div>
+              {% endif %}
+            </div>
+            <a href="/events/{{ event.slug }}/calls/{{ call.slug or call.id }}" class="ev-action-btn" style="width:100%; justify-content:center; box-sizing:border-box; font-size:13px; font-weight:600; text-decoration:none;">
+              Submit Proposal <i class="fa-solid fa-arrow-right" style="font-size:11px; margin-left:4px;"></i>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
       <!-- ── People Going / Mutual Connections ── -->
       {% if user and (connectable_attendees or mutuals_going_count > 0) %}
       <div class="ev-card">
@@ -1505,6 +1553,23 @@ async function heeloToggleInterestBtn(btn) {
           <a href="/e/{{ event.slug }}/apply-vendor" class="ev-action-btn" style="width:100%; justify-content:center; box-sizing:border-box; font-size:12px;">
             Apply for a Booth <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
           </a>
+        </div>
+        {% endif %}
+
+        {% if has_open_calls %}
+        <div style="margin-top:16px; padding:14px; background:var(--ev-bg); border-radius:12px; border:1px solid var(--ev-border);">
+          <div style="font-size:13px; font-weight:700; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-bullhorn" style="color:var(--ev-accent);"></i> Open Calls ({{ open_calls | length }})
+          </div>
+          <p style="font-size:12px; color:var(--ev-muted); margin:0 0 10px; line-height:1.4;">
+            Now accepting proposals for speakers, sponsors &amp; volunteers.
+          </p>
+          {% for call in open_calls %}
+          <a href="/events/{{ event.slug }}/calls/{{ call.slug or call.id }}" class="ev-action-btn" style="width:100%; justify-content:space-between; box-sizing:border-box; font-size:12px; margin-bottom:6px; text-decoration:none;">
+            <span>{{ call.title }}</span>
+            <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+          </a>
+          {% endfor %}
         </div>
         {% endif %}
 

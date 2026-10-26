@@ -45,6 +45,7 @@ class Permission(str, Enum):
     SPEAKERS_MANAGE = "speakers.manage"
     SPONSORS_MANAGE = "sponsors.manage"
     AGENDA_MANAGE = "agenda.manage"
+    OPEN_CALLS_MANAGE = "open_calls.manage"
     LIVE_ENGAGEMENT_MANAGE = "live_engagement.manage"  # polls + Q&A moderation
 
     # ── Finance (admin + organizer + finance) ───────────────────────────────
@@ -68,6 +69,7 @@ ROLE_PERMISSIONS: dict[str, set[Permission]] = {
         Permission.SPEAKERS_MANAGE,
         Permission.SPONSORS_MANAGE,
         Permission.AGENDA_MANAGE,
+        Permission.OPEN_CALLS_MANAGE,
         Permission.LIVE_ENGAGEMENT_MANAGE,
         Permission.FINANCE_VIEW,
         Permission.CHECKIN_SCAN,

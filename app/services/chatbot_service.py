@@ -758,6 +758,22 @@ async def get_specific_event_details(db: AsyncSession, query_or_slug: str) -> di
 
     loc_str = "Online Livestream" if ev.format == "virtual" else (ev.venue_address or ev.venue_name or ev.venue_city or "TBA")
 
+    from app.models.open_call import OpenCall
+    open_calls_data = []
+    calls = (
+        await db.scalars(
+            select(OpenCall).where(OpenCall.event_id == ev.id, OpenCall.status == "open")
+        )
+    ).all()
+    for c in calls:
+        open_calls_data.append({
+            "id": str(c.id),
+            "title": c.title,
+            "call_type": c.call_type,
+            "deadline": c.end_date.strftime("%b %d, %Y") if c.end_date else None,
+            "url": f"/events/{ev.slug}/calls/{c.slug or c.id}",
+        })
+
     return {
         "id": str(ev.id),
         "org_id": str(ev.org_id) if ev.org_id else None,
@@ -771,6 +787,7 @@ async def get_specific_event_details(db: AsyncSession, query_or_slug: str) -> di
         "description": ev.description or "No description provided.",
         "max_capacity": ev.max_capacity,
         "tickets": tickets_info,
+        "open_calls": open_calls_data,
         "min_price": min(prices) if prices else 0.0,
         "url": f"/e/{ev.slug}",
     }
@@ -1406,6 +1423,76 @@ async def get_rule_based_response(
                     "reply": clean_output_constraints(reply),
                     "suggestions": ["What are the ticket prices?", "What time does it start?", "How do I contact the organizer?"]
                 }
+            if re.search(r"\b(call|calls|cfp|paper|papers|speak|speaker|speakers|sponsor|sponsors|sponsorship|volunteer|volunteers|propose|proposal)\b", q):
+                if details.get("open_calls"):
+                    lines = []
+                    for oc in details["open_calls"]:
+                        d_str = f" (Deadline: {oc['deadline']})" if oc['deadline'] else ""
+                        lines.append(f"- **[{oc['title']}]({oc['url']})**{d_str}\n  - Type: {oc['call_type'].capitalize()}\n  - [Submit Proposal / Apply Now]({oc['url']})")
+                    reply = (
+                        f"### Open Calls & Opportunities for {details['title']}\n\n"
+                        f"Yes! This event is actively accepting proposals and applications:\n\n"
+                        f"{chr(10).join(lines)}\n\n"
+                        f"Click any link above to review the submission guidelines and submit your application!"
+                    )
+                    return {
+                        "reply": clean_output_constraints(reply),
+                        "suggestions": ["What are the ticket prices?", "What time does it start?", "Who is speaking?"]
+                    }
+                else:
+                    reply = (
+                        f"### Opportunities for {details['title']}\n\n"
+                        f"There are currently no active public open calls (Call for Papers, Sponsors, or Volunteers) for **{details['title']}**.\n\n"
+                        f"If you are interested in speaking, sponsoring, or volunteering, you can reach out directly to the organizer or check back as the event date approaches!"
+                    )
+                    return {
+                        "reply": clean_output_constraints(reply),
+                        "suggestions": ["Tell me about this event", "How much are tickets?", "Where is the venue?"]
+                    }
+
+    # 7b. Global Open Calls Intent ("call for papers", "volunteer opportunities", "call for sponsors")
+    if re.search(r"\b(call for papers|call for speakers|open call|open calls|cfp|volunteer opportunities|looking for speakers|looking for sponsors)\b", q):
+        from app.models.open_call import OpenCall
+        active_calls = (
+            await db.scalars(
+                select(OpenCall)
+                .options(selectinload(OpenCall.event))
+                .where(OpenCall.status == "open")
+                .limit(5)
+            )
+        ).all()
+        if active_calls:
+            lines = []
+            for ac in active_calls:
+                ev = ac.event
+                ev_title = ev.title if ev else "Event"
+                ev_slug = ev.slug if ev else ""
+                url = f"/events/{ev_slug}/calls/{ac.slug or ac.id}"
+                deadline = f" (Closes: {ac.end_date.strftime('%b %d, %Y')})" if ac.end_date else ""
+                lines.append(f"- **[{ac.title}]({url})** for **{ev_title}**{deadline}\n  - Type: {ac.call_type.capitalize()}\n  - [Submit Proposal]({url})")
+            reply = (
+                "### Active Open Calls on Heelo\n\n"
+                "Here are current events accepting proposals for speakers, sponsors, and volunteers:\n\n"
+                f"{chr(10).join(lines)}\n\n"
+                "Click on any call to view guidelines, perks, and submit your proposal!"
+            )
+            return {
+                "reply": clean_output_constraints(reply),
+                "suggestions": ["How do I create an open call?", "Find events this weekend", "Browse vendor marketplace"]
+            }
+        else:
+            reply = (
+                "### Open Calls on Heelo\n\n"
+                "Organizers on Heelo can create Open Calls for their events, including:\n"
+                "- **Call for Papers & Speakers**: Collect talk and workshop proposals with custom questions.\n"
+                "- **Call for Sponsors**: Accept partnership and sponsor inquiries.\n"
+                "- **Call for Volunteers**: Recruit helpers for registration, logistics, and stage coordination.\n\n"
+                "Organizers can manage calls from the **Open Calls** tab in their event dashboard, review submissions, and promote accepted candidates into event speakers or sponsors in one click."
+            )
+            return {
+                "reply": clean_output_constraints(reply),
+                "suggestions": ["How do I create an event?", "Find tech events", "How does ticketing work?"]
+            }
 
     # 8. Check for Specific Event Lookup by Title/Keywords (e.g. "Tell me about Lagos Tech Summit")
     if re.search(r"\b(tell me about|details for|info on|where is the|when is the)\s+(.+)\b", q):

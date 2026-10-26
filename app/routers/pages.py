@@ -979,6 +979,7 @@ async def org_event_edit(slug: str, event_id: str, request: Request, db: DBSessi
 # ── Public event page ─────────────────────────────────────────────────────────
 
 
+@router_pages.get("/events/{event_slug}", response_class=HTMLResponse)
 @router_pages.get("/e/{event_slug}", response_class=HTMLResponse)
 async def public_event_page(event_slug: str, request: Request, db: DBSession):
     from app.services import event_service as ev_svc
@@ -1077,9 +1078,11 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
                 )
             )
 
+    from app.services import open_call_service as call_svc
     from app.services import vendor_service as vend_svc
 
     booth_packages = await vend_svc.list_booth_packages(db, event.id, active_only=True)
+    open_calls = await call_svc.list_open_calls_for_event(db, event.id, public_only=True)
 
     return templates.TemplateResponse(
         "events/public.html",
@@ -1092,6 +1095,8 @@ async def public_event_page(event_slug: str, request: Request, db: DBSession):
             "speakers": speakers,
             "sponsors": sponsors,
             "sessions": sessions,
+            "open_calls": open_calls,
+            "has_open_calls": len(open_calls) > 0,
             "booth_packages": booth_packages,
             "has_booth_packages": len(booth_packages) > 0,
             "follower_count": follower_count,
@@ -3722,4 +3727,49 @@ async def booth_payment_page(app_id: uuid.UUID, request: Request, db: DBSession)
             "event": app.event,
         },
     )
+
+
+# ── Public Open Call Detail & Application Page ────────────────────────────────
+
+
+@router_pages.get("/events/{event_slug}/calls/{call_id_or_slug}", response_class=HTMLResponse)
+@router_pages.get("/e/{event_slug}/calls/{call_id_or_slug}", response_class=HTMLResponse)
+async def event_open_call_page(
+    event_slug: str,
+    call_id_or_slug: str,
+    request: Request,
+    db: DBSession,
+):
+    from sqlalchemy import select
+
+    from app.models.organization import Organization
+    from app.services import event_service as ev_svc
+    from app.services import open_call_service as call_svc
+
+    event = await ev_svc.get_event_by_slug(db, event_slug)
+    if not event or event.deleted_at is not None:
+        raise HTTPException(404, "Event not found.")
+
+    org = await db.scalar(select(Organization).where(Organization.id == event.org_id))
+    try:
+        call = await call_svc.get_open_call_by_slug(db, event.id, call_id_or_slug)
+    except HTTPException:
+        raise HTTPException(404, "Open call not found.")
+
+    other_calls = [
+        c for c in await call_svc.list_open_calls_for_event(db, event.id, public_only=True)
+        if c.id != call.id
+    ]
+
+    return templates.TemplateResponse(
+        "events/open_call_detail.html",
+        {
+            "request": request,
+            "event": event,
+            "org": org,
+            "call": call,
+            "other_calls": other_calls,
+        },
+    )
+
 

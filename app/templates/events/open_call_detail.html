@@ -1,0 +1,584 @@
+{% extends "base.html" %}
+
+{% block title %}{{ call.title }} | {{ event.title }} | Heelo{% endblock %}
+
+{% block head %}
+<style>
+  :root {
+    --call-accent: #0284c7;
+    --call-accent-bg: rgba(2, 132, 199, 0.08);
+  }
+  .oc-wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+    box-sizing: border-box;
+  }
+  .oc-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 12px;
+  }
+  .oc-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted, #64748b);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: color 0.15s ease;
+  }
+  .oc-back-link:hover {
+    color: var(--text-primary, #0f172a);
+  }
+  .oc-hero {
+    background: #fff;
+    border: 1px solid var(--border-light, #e2e8f0);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  }
+  .oc-badges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .oc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  .oc-badge-type {
+    background: var(--call-accent-bg);
+    color: var(--call-accent);
+  }
+  .oc-badge-open {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+  }
+  .oc-badge-closed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+  }
+  .oc-title {
+    font-family: var(--font-serif, Georgia, serif);
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text-primary, #0f172a);
+    margin: 0 0 10px;
+  }
+  .oc-event-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    color: var(--text-muted, #64748b);
+    font-size: 13.5px;
+  }
+  .oc-event-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .oc-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .oc-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  .oc-card {
+    background: #fff;
+    border: 1px solid var(--border-light, #e2e8f0);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+  }
+  .oc-card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary, #0f172a);
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .oc-prose {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text-secondary, #334155);
+    white-space: pre-line;
+    margin-bottom: 20px;
+  }
+  .oc-field-group {
+    margin-bottom: 16px;
+  }
+  .oc-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #0f172a);
+    margin-bottom: 6px;
+  }
+  .oc-label .req {
+    color: #e11d48;
+    margin-left: 2px;
+  }
+  .oc-input, .oc-textarea, .oc-select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border-light, #e2e8f0);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    color: var(--text-primary, #0f172a);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .oc-input:focus, .oc-textarea:focus, .oc-select:focus {
+    outline: none;
+    border-color: var(--call-accent);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+  }
+  .oc-textarea {
+    resize: vertical;
+    min-height: 90px;
+  }
+  .oc-hint {
+    font-size: 12px;
+    color: var(--text-muted, #64748b);
+    margin-top: 4px;
+  }
+  .oc-submit-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: var(--call-accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+  }
+  .oc-submit-btn:hover:not(:disabled) {
+    background: #0369a1;
+  }
+  .oc-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .oc-success-box {
+    text-align: center;
+    padding: 36px 20px;
+  }
+  .oc-success-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+  .oc-error-banner {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    color: #b91c1c;
+    font-size: 13.5px;
+    margin-bottom: 16px;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="oc-wrap" x-data="openCallApp()">
+  <!-- Top Navigation -->
+  <div class="oc-top-bar">
+    <a href="/events/{{ event.slug }}" class="oc-back-link">
+      <span class="material-symbols-outlined" style="font-size: 18px;">arrow_back</span>
+      Back to {{ event.title }}
+    </a>
+    <div style="font-size: 13px; color: var(--text-muted);">
+      Organized by <strong>{{ org.name }}</strong>
+    </div>
+  </div>
+
+  <!-- Hero Banner -->
+  <div class="oc-hero">
+    <div class="oc-badges">
+      <span class="oc-badge oc-badge-type">
+        <span class="material-symbols-outlined" style="font-size: 14px;">campaign</span>
+        {% if call.call_type == 'speaker' or call.call_type == 'papers' %}
+        Call for Papers &amp; Speakers
+        {% elif call.call_type == 'sponsor' %}
+        Call for Sponsors &amp; Partners
+        {% elif call.call_type == 'volunteer' %}
+        Call for Volunteers
+        {% else %}
+        Open Call ({{ call.call_type | title }})
+        {% endif %}
+      </span>
+
+      {% if call.status == 'open' %}
+      <span class="oc-badge oc-badge-open">
+        <span class="material-symbols-outlined" style="font-size: 14px;">check_circle</span>
+        Accepting Applications
+      </span>
+      {% else %}
+      <span class="oc-badge oc-badge-closed">
+        <span class="material-symbols-outlined" style="font-size: 14px;">block</span>
+        Submissions Closed
+      </span>
+      {% endif %}
+
+      {% if call.end_date %}
+      <span class="oc-badge" style="background: rgba(100, 116, 139, 0.08); color: var(--text-muted);">
+        <span class="material-symbols-outlined" style="font-size: 14px;">event</span>
+        Deadline: {{ call.end_date.strftime('%b %d, %Y') }}
+      </span>
+      {% endif %}
+    </div>
+
+    <h1 class="oc-title">{{ call.title }}</h1>
+
+    <div class="oc-event-meta">
+      <span class="oc-event-meta-item">
+        <span class="material-symbols-outlined" style="font-size: 16px;">calendar_today</span>
+        {{ event.start_datetime.strftime('%A, %B %d, %Y') if event.start_datetime else 'Date TBA' }}
+      </span>
+      {% if event.venue_name or event.city %}
+      <span class="oc-event-meta-item">
+        <span class="material-symbols-outlined" style="font-size: 16px;">location_on</span>
+        {{ event.venue_name }}{% if event.city %}, {{ event.city }}{% endif %}
+      </span>
+      {% endif %}
+      <span class="oc-event-meta-item">
+        <span class="material-symbols-outlined" style="font-size: 16px;">badge</span>
+        {{ call.submission_count }} submission{% if call.submission_count != 1 %}s{% endif %} received
+      </span>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div class="oc-grid">
+    <!-- Left Column: Details, Guidelines, Perks -->
+    <div>
+      {% if call.description %}
+      <div class="oc-card" style="margin-bottom: 20px;">
+        <h3 class="oc-card-title">
+          <span class="material-symbols-outlined" style="font-size: 18px; color: var(--call-accent);">info</span>
+          About this Call
+        </h3>
+        <div class="oc-prose">{{ call.description }}</div>
+      </div>
+      {% endif %}
+
+      {% if call.guidelines %}
+      <div class="oc-card" style="margin-bottom: 20px;">
+        <h3 class="oc-card-title">
+          <span class="material-symbols-outlined" style="font-size: 18px; color: #e11d48;">rule</span>
+          Submission Guidelines
+        </h3>
+        <div class="oc-prose">{{ call.guidelines }}</div>
+      </div>
+      {% endif %}
+
+      {% if call.perks %}
+      <div class="oc-card" style="margin-bottom: 20px;">
+        <h3 class="oc-card-title">
+          <span class="material-symbols-outlined" style="font-size: 18px; color: #10b981;">stars</span>
+          Perks &amp; Benefits
+        </h3>
+        <div class="oc-prose">{{ call.perks }}</div>
+      </div>
+      {% endif %}
+
+      {% if other_calls %}
+      <div class="oc-card">
+        <h4 style="font-size: 13.5px; font-weight: 700; margin: 0 0 10px; color: var(--text-muted);">
+          Other Open Opportunities for this Event
+        </h4>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          {% for oc in other_calls %}
+          <a href="/events/{{ event.slug }}/calls/{{ oc.slug or oc.id }}" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 8px; border: 1px solid var(--border-light); text-decoration: none; color: var(--text-primary); font-size: 13px; font-weight: 500;">
+            <span>{{ oc.title }}</span>
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-muted);">chevron_right</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right Column: Submission Form -->
+    <div>
+      <div class="oc-card">
+        <!-- Success State -->
+        <template x-if="submitted">
+          <div class="oc-success-box">
+            <div class="oc-success-icon">
+              <span class="material-symbols-outlined" style="font-size: 32px;">check</span>
+            </div>
+            <h2 style="font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px;">
+              Proposal Submitted!
+            </h2>
+            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 20px;" x-text="successMessage"></p>
+
+            <div style="background: var(--bg-secondary, #f8fafc); border: 1px solid var(--border-light); border-radius: 10px; padding: 14px; font-size: 13px; color: var(--text-muted); margin-bottom: 24px; text-align: left;">
+              <div><strong>Applicant:</strong> <span x-text="form.name"></span> (<span x-text="form.email"></span>)</div>
+              <div style="margin-top: 4px;"><strong>Proposal:</strong> <span x-text="form.title"></span></div>
+              <div style="margin-top: 4px;"><strong>Submission ID:</strong> <code x-text="submissionResult ? submissionResult.id : ''"></code></div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: center;">
+              <a href="/events/{{ event.slug }}" class="oc-submit-btn" style="text-decoration: none; width: auto; padding: 10px 20px;">
+                Return to Event Page
+              </a>
+            </div>
+          </div>
+        </template>
+
+        <!-- Form State -->
+        <template x-if="!submitted">
+          <div>
+            {% if call.status != 'open' %}
+            <div style="text-align: center; padding: 32px 10px;">
+              <span class="material-symbols-outlined" style="font-size: 40px; color: var(--text-muted); margin-bottom: 8px;">lock</span>
+              <h3 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px;">Submissions are Closed</h3>
+              <p style="font-size: 13.5px; color: var(--text-muted); margin: 0;">This call is not currently accepting new submissions.</p>
+            </div>
+            {% else %}
+            <h3 class="oc-card-title">
+              <span class="material-symbols-outlined" style="font-size: 18px; color: var(--call-accent);">edit_note</span>
+              Submit Your Proposal
+            </h3>
+
+            <!-- Error Banner -->
+            <div x-show="errorMessage" class="oc-error-banner" x-text="errorMessage"></div>
+
+            <form @submit.prevent="submitProposal()">
+              <!-- Applicant Information -->
+              <div style="margin-bottom: 20px;">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px;">
+                  1. Your Information
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div class="oc-field-group">
+                    <label class="oc-label">Full Name <span class="req">*</span></label>
+                    <input type="text" class="oc-input" x-model="form.name" required placeholder="Ada Lovelace">
+                  </div>
+                  <div class="oc-field-group">
+                    <label class="oc-label">Email Address <span class="req">*</span></label>
+                    <input type="email" class="oc-input" x-model="form.email" required placeholder="ada@example.com">
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div class="oc-field-group">
+                    <label class="oc-label">Organization / Company</label>
+                    <input type="text" class="oc-input" x-model="form.organization_name" placeholder="Acme Labs">
+                  </div>
+                  <div class="oc-field-group">
+                    <label class="oc-label">Role / Job Title</label>
+                    <input type="text" class="oc-input" x-model="form.job_title" placeholder="Lead Architect">
+                  </div>
+                </div>
+
+                <div class="oc-field-group">
+                  <label class="oc-label">Phone / WhatsApp</label>
+                  <input type="tel" class="oc-input" x-model="form.phone" placeholder="+234 ...">
+                </div>
+
+                <div class="oc-field-group">
+                  <label class="oc-label">Short Bio</label>
+                  <textarea class="oc-textarea" style="min-height: 65px;" x-model="form.bio" placeholder="Brief background about you or your organization..."></textarea>
+                </div>
+
+                <div class="oc-field-group">
+                  <label class="oc-label">Social / Portfolio Link</label>
+                  <input type="url" class="oc-input" x-model="form.social_links.website" placeholder="https://linkedin.com/in/... or website">
+                </div>
+              </div>
+
+              <!-- Proposal Information -->
+              <div style="margin-bottom: 20px;">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px;">
+                  2. Proposal Details
+                </div>
+
+                <div class="oc-field-group">
+                  <label class="oc-label">
+                    {% if call.call_type == 'sponsor' %}
+                    Sponsorship Title / Expression of Interest
+                    {% elif call.call_type == 'volunteer' %}
+                    Preferred Role / Volunteer Subject
+                    {% else %}
+                    Talk / Paper Title
+                    {% endif %}
+                    <span class="req">*</span>
+                  </label>
+                  <input type="text" class="oc-input" x-model="form.title" required placeholder="e.g. Scaling Distributed Systems or Stage Management Support">
+                </div>
+
+                <div class="oc-field-group">
+                  <label class="oc-label">Category / Track</label>
+                  <input type="text" class="oc-input" x-model="form.category_or_track" placeholder="e.g. Engineering, Design, Logistics, Gold Tier">
+                </div>
+
+                <div class="oc-field-group">
+                  <label class="oc-label">
+                    Summary / Abstract <span class="req">*</span>
+                  </label>
+                  <textarea class="oc-textarea" x-model="form.proposal_summary" required placeholder="Summarize your talk, proposal, or interest in 2-4 paragraphs..."></textarea>
+                  <div class="oc-hint">Give the reviewing team a clear sense of what attendees or organizers will gain.</div>
+                </div>
+
+                <div class="oc-field-group">
+                  <label class="oc-label">Detailed Outline or Notes</label>
+                  <textarea class="oc-textarea" x-model="form.details" placeholder="Full outline, previous experience, target audience level, or schedule preferences..."></textarea>
+                </div>
+
+                <div class="oc-field-group">
+                  <label class="oc-label">Slides, Pitch Deck, or Resume Link</label>
+                  <input type="url" class="oc-input" x-model="form.attachment_url" placeholder="https://docs.google.com/presentation/... or portfolio">
+                </div>
+              </div>
+
+              <!-- Dynamic Custom Fields if Defined by Organizer -->
+              {% if call.custom_fields %}
+              <div style="margin-bottom: 20px;">
+                <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px;">
+                  3. Additional Questions
+                </div>
+
+                {% for f in call.custom_fields %}
+                {% set fid = f.id or f.label %}
+                <div class="oc-field-group">
+                  <label class="oc-label">
+                    {{ f.label }}
+                    {% if f.required %}<span class="req">*</span>{% endif %}
+                  </label>
+
+                  {% if f.field_type == 'textarea' %}
+                  <textarea class="oc-textarea" x-model="form.custom_answers['{{ fid }}']" {% if f.required %}required{% endif %} placeholder="{{ f.placeholder or '' }}"></textarea>
+                  {% elif f.field_type == 'select' %}
+                  <select class="oc-select" x-model="form.custom_answers['{{ fid }}']" {% if f.required %}required{% endif %}>
+                    <option value="">Select an option...</option>
+                    {% for opt in f.options or [] %}
+                    <option value="{{ opt }}">{{ opt }}</option>
+                    {% endfor %}
+                  </select>
+                  {% elif f.field_type == 'checkbox' %}
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer;">
+                    <input type="checkbox" x-model="form.custom_answers['{{ fid }}']" {% if f.required %}required{% endif %}>
+                    <span>{{ f.description or 'Yes, I agree / confirm' }}</span>
+                  </label>
+                  {% else %}
+                  <input type="text" class="oc-input" x-model="form.custom_answers['{{ fid }}']" {% if f.required %}required{% endif %} placeholder="{{ f.placeholder or '' }}">
+                  {% endif %}
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <button type="submit" class="oc-submit-btn" :disabled="loading">
+                <span x-show="!loading">Submit Proposal</span>
+                <span x-show="loading" style="display: none;">Submitting...</span>
+                <span class="material-symbols-outlined" style="font-size: 18px;" x-show="!loading">send</span>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openCallApp() {
+  return {
+    eventId: "{{ event.id }}",
+    callId: "{{ call.id }}",
+    callSlug: "{{ call.slug }}",
+    loading: false,
+    submitted: false,
+    errorMessage: "",
+    successMessage: "",
+    submissionResult: null,
+    form: {
+      name: "",
+      email: "",
+      phone: "",
+      organization_name: "",
+      job_title: "",
+      bio: "",
+      photo_url: "",
+      social_links: { website: "" },
+      title: "",
+      proposal_summary: "",
+      details: "",
+      category_or_track: "",
+      attachment_url: "",
+      custom_answers: {}
+    },
+    async submitProposal() {
+      this.loading = true;
+      this.errorMessage = "";
+
+      try {
+        const res = await fetch(`/api/v1/events/${this.eventId}/calls/${this.callId}/apply`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(this.form)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || data.message || "Failed to submit proposal. Please review your entries.");
+        }
+
+        this.submissionResult = data.data;
+        this.successMessage = data.message || "Your submission was received successfully!";
+        this.submitted = true;
+        window.scrollTo({ top: 120, behavior: 'smooth' });
+      } catch (err) {
+        this.errorMessage = err.message || "An unexpected error occurred.";
+      } finally {
+        this.loading = false;
+      }
+    }
+  };
+}
+</script>
+{% endblock %}

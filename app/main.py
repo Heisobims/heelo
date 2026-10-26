@@ -192,6 +192,16 @@ def _register_routers(app: FastAPI) -> None:
     app.include_router(agenda_event_api)  # /api/v1/organizations/{slug}/events/{id}/sessions/...
     app.include_router(agenda_public_api)  # /api/v1/events/{slug}/sessions
 
+    from app.routers.open_call import (
+        router_applicant as open_call_applicant_api,
+        router_org as open_call_org_api,
+        router_public as open_call_public_api,
+    )
+
+    app.include_router(open_call_org_api)  # /api/v1/organizations/{slug}/events/{id}/calls/...
+    app.include_router(open_call_public_api)  # /api/v1/events/{slug}/calls/...
+    app.include_router(open_call_applicant_api)  # /api/v1/open-calls/...
+
     from app.routers.feedback import router_feedback_org, router_feedback_public
 
     app.include_router(router_feedback_public)  # /api/v1/registrations/{id}/feedback
