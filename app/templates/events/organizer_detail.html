@@ -1811,52 +1811,98 @@ main_content %}
       x-data="callsTab()"
       @heelo:tab.window="if ($event.detail.tab === 'calls' && !loaded) load()"
     >
+      <!-- Floating Toast Notification -->
+      <div
+        x-show="toastMsg"
+        x-transition
+        style="
+          display: none;
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          background: #131B17;
+          color: #ffffff;
+          padding: 12px 20px;
+          border-radius: 9999px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+          font-size: 13.5px;
+          font-weight: 600;
+          z-index: 999999;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        "
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6EE6D7" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span x-text="toastMsg"></span>
+      </div>
+
       <!-- Header actions bar -->
       <div
         style="
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: flex-start;
           margin-bottom: 20px;
           flex-wrap: wrap;
           gap: 12px;
         "
       >
         <div>
-          <h2
-            style="
-              font-size: 18px;
-              font-weight: 700;
-              margin: 0 0 4px;
-              color: var(--text-primary);
-            "
-          >
-            Open Calls &amp; Submissions
-          </h2>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <h2
+              style="
+                font-size: 18px;
+                font-weight: 700;
+                margin: 0;
+                color: var(--text-primary);
+              "
+            >
+              Open Calls &amp; Opportunities
+            </h2>
+            <span
+              x-show="calls.length > 0"
+              class="status-badge live"
+              x-text="calls.filter(c => c.status === 'open').length + ' Active'"
+            ></span>
+          </div>
           <p style="font-size: 13px; color: var(--text-muted); margin: 0">
-            Set up calls for papers, speakers, sponsors, volunteers, or custom
-            opportunities.
+            Publish calls for papers, sponsors, and volunteers, review applicant proposals, and promote approved candidates in 1 click.
           </p>
         </div>
         <div style="display: flex; gap: 8px">
           <button
             type="button"
             @click="openCreateModal()"
-            class="btn-primary"
-            style="
-              display: inline-flex;
-              align-items: center;
-              gap: 6px;
-              font-size: 13px;
-              padding: 8px 14px;
-              border-radius: 8px;
-            "
+            class="btn btn-primary btn-sm"
           >
-            <span class="material-symbols-outlined" style="font-size: 16px"
-              >add</span
-            >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 5px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Create Open Call
           </button>
+        </div>
+      </div>
+
+      <!-- Metrics Row (shown when calls exist and no call is selected) -->
+      <div x-show="!loading && !selectedCall && calls.length > 0" class="metrics-grid" style="margin-bottom: 24px">
+        <div class="metric-card">
+          <div class="metric-label">Active Calls</div>
+          <div class="metric-value" x-text="calls.filter(c => c.status === 'open').length"></div>
+          <div class="metric-change" x-text="calls.length + ' total configured'"></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Submissions</div>
+          <div class="metric-value" x-text="calls.reduce((s, c) => s + (c.submission_count || 0), 0)"></div>
+          <div class="metric-change">total proposals received</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Categories</div>
+          <div class="metric-value" x-text="new Set(calls.map(c => c.call_type)).size"></div>
+          <div class="metric-change">speakers, sponsors, volunteers</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Public Status</div>
+          <div class="metric-value" style="font-size: 20px; font-weight: 700; color: #047857;" x-text="calls.some(c => c.status === 'open') ? 'Live on Event' : 'Closed'"></div>
+          <div class="metric-change">visible on event page</div>
         </div>
       </div>
 
@@ -1868,56 +1914,116 @@ main_content %}
           align-items: center;
           gap: 10px;
           color: var(--text-muted);
-          padding: 24px 0;
+          padding: 32px 0;
+          font-size: 14px;
         "
       >
         <div
           style="
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             border: 2px solid var(--border-light);
             border-top-color: var(--cyan);
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
           "
         ></div>
-        Loading open calls...
+        Loading open calls and proposals...
       </div>
 
       <!-- Main Calls List View (when no single call selected) -->
       <div x-show="!loading && !selectedCall">
-        <div
-          x-show="calls.length === 0"
-          class="empty-state-card"
-          style="max-width: 440px; margin: 20px auto"
-        >
-          <div class="empty-state-icon">
-            <span
-              class="material-symbols-outlined"
-              style="font-size: 26px; color: var(--text-muted)"
-              >campaign</span
+        
+        <!-- Empty State with 1-Click Preset Starters -->
+        <div x-show="calls.length === 0" style="margin-top: 10px;">
+          <div class="empty-state-card" style="margin-bottom: 24px;">
+            <div class="empty-state-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cyan, #E85938)" stroke-width="2">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </div>
+            <h2 class="empty-state-title">No open calls yet</h2>
+            <p class="empty-state-body">
+              Gather talk proposals from speakers, partnership inquiries from sponsors, or coordinator applications from volunteers directly from your audience.
+            </p>
+            <button
+              type="button"
+              @click="openCreateModal()"
+              class="btn btn-primary"
             >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create First Open Call
+            </button>
           </div>
-          <h2 class="empty-state-title">No open calls yet</h2>
-          <p class="empty-state-body">
-            Open a Call for Papers, Call for Sponsors, or Volunteer Call to
-            gather proposals from the community.
-          </p>
-          <button
-            type="button"
-            @click="openCreateModal()"
-            class="btn-primary"
-            style="margin-top: 14px; font-size: 13px"
-          >
-            Create Your First Call
-          </button>
+
+          <!-- Fast-Start Starter Presets Shelf -->
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px;">
+              Or Launch with a 1-Click Starter Template
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+              
+              <!-- CFP Starter Card -->
+              <div class="section-card" style="padding: 18px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: rgba(232, 89, 56, 0.08); color: #C84729; border: 1px solid rgba(232, 89, 56, 0.2); margin-bottom: 10px;">
+                    Speakers &amp; CFP
+                  </div>
+                  <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 6px; color: var(--text-primary);">Call for Papers &amp; Talks</h3>
+                  <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 16px;">
+                    Pre-configured with proposal abstracts, track preferences, speaking experience, and slide deck upload links.
+                  </p>
+                </div>
+                <button type="button" @click="openCreateModal('speaker')" class="btn btn-secondary btn-sm" style="width: 100%;">
+                  Use CFP Template →
+                </button>
+              </div>
+
+              <!-- Sponsor Starter Card -->
+              <div class="section-card" style="padding: 18px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: #FEF3C7; color: #B45309; border: 1px solid rgba(180, 83, 9, 0.2); margin-bottom: 10px;">
+                    Sponsors &amp; Brands
+                  </div>
+                  <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 6px; color: var(--text-primary);">Call for Sponsors &amp; Partners</h3>
+                  <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 16px;">
+                    Accept brand applications, budget ranges, target tiers, and partnership goals with automatic response messaging.
+                  </p>
+                </div>
+                <button type="button" @click="openCreateModal('sponsor')" class="btn btn-secondary btn-sm" style="width: 100%;">
+                  Use Sponsor Template →
+                </button>
+              </div>
+
+              <!-- Volunteer Starter Card -->
+              <div class="section-card" style="padding: 18px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                  <div style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: #DCFCE7; color: #15803D; border: 1px solid rgba(21, 128, 61, 0.2); margin-bottom: 10px;">
+                    Volunteers &amp; Crew
+                  </div>
+                  <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 6px; color: var(--text-primary);">Call for Volunteers &amp; Crew</h3>
+                  <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 16px;">
+                    Coordinate event helpers for attendee registration, stage management, guest welcoming, and logistics support.
+                  </p>
+                </div>
+                <button type="button" @click="openCreateModal('volunteer')" class="btn btn-secondary btn-sm" style="width: 100%;">
+                  Use Volunteer Template →
+                </button>
+              </div>
+
+            </div>
+          </div>
         </div>
 
+        <!-- Open Calls Cards Grid -->
         <div
           x-show="calls.length > 0"
           style="
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
             gap: 16px;
           "
         >
@@ -1925,67 +2031,76 @@ main_content %}
             <div
               class="section-card"
               style="
-                padding: 18px;
+                padding: 20px;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                border-radius: 12px;
+                border-radius: 14px;
+                border: 1px solid var(--border-light);
+                transition: transform 0.15s ease, box-shadow 0.15s ease;
               "
             >
               <div>
+                <!-- Top Badge Cluster -->
                 <div
                   style="
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin-bottom: 10px;
+                    margin-bottom: 12px;
                   "
                 >
                   <span
                     style="
                       display: inline-flex;
                       align-items: center;
-                      gap: 4px;
+                      gap: 5px;
                       font-size: 11px;
                       font-weight: 700;
                       text-transform: uppercase;
                       letter-spacing: 0.5px;
-                      padding: 3px 8px;
+                      padding: 3px 9px;
                       border-radius: 6px;
-                      background: rgba(2, 132, 199, 0.1);
-                      color: #0284c7;
+                    "
+                    :style="
+                      call.call_type === 'speaker' || call.call_type === 'papers'
+                        ? 'background: rgba(232, 89, 56, 0.08); color: #C84729; border: 1px solid rgba(232, 89, 56, 0.2);'
+                        : (call.call_type === 'sponsor'
+                          ? 'background: #FEF3C7; color: #B45309; border: 1px solid rgba(180, 83, 9, 0.2);'
+                          : (call.call_type === 'volunteer'
+                            ? 'background: #DCFCE7; color: #15803D; border: 1px solid rgba(21, 128, 61, 0.2);'
+                            : 'background: #F1F5F9; color: #475569; border: 1px solid rgba(71, 85, 105, 0.2);'))
                     "
                     x-text="formatCallType(call.call_type)"
                   ></span>
+
                   <span
-                    :class="call.status === 'open' ? 'badge-confirmed' : 'badge-cancelled'"
-                    style="
-                      font-size: 11px;
-                      padding: 2px 8px;
-                      border-radius: 999px;
-                      text-transform: capitalize;
-                    "
-                    x-text="call.status"
+                    class="status-badge"
+                    :class="call.status === 'open' ? 'live' : 'draft'"
+                    x-text="call.status === 'open' ? 'Accepting Submissions' : (call.status === 'closed' ? 'Closed' : 'Draft')"
                   ></span>
                 </div>
 
+                <!-- Call Title -->
                 <h3
                   style="
-                    font-size: 16px;
+                    font-size: 16.5px;
                     font-weight: 700;
-                    margin: 0 0 6px;
+                    margin: 0 0 8px;
                     color: var(--text-primary);
+                    line-height: 1.35;
                   "
                   x-text="call.title"
                 ></h3>
 
+                <!-- Call Description -->
                 <p
                   x-show="call.description"
                   style="
                     font-size: 13px;
-                    color: var(--text-muted);
-                    margin: 0 0 12px;
-                    line-height: 1.4;
+                    color: var(--text-secondary);
+                    margin: 0 0 14px;
+                    line-height: 1.5;
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
                     -webkit-box-orient: vertical;
@@ -1994,127 +2109,90 @@ main_content %}
                   x-text="call.description"
                 ></p>
 
+                <!-- Call Metadata Chips -->
                 <div
                   style="
                     display: flex;
+                    flex-wrap: wrap;
                     align-items: center;
                     gap: 12px;
-                    font-size: 12px;
+                    font-size: 12.5px;
                     color: var(--text-muted);
-                    margin-bottom: 14px;
+                    margin-bottom: 16px;
                   "
                 >
-                  <span
-                    style="display: inline-flex; align-items: center; gap: 4px"
-                  >
-                    <span
-                      class="material-symbols-outlined"
-                      style="font-size: 14px"
-                      >mark_email_read</span
-                    >
-                    <strong x-text="call.submission_count"></strong> submissions
+                  <span style="display: inline-flex; align-items: center; gap: 5px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <strong style="color: var(--text-primary);" x-text="call.submission_count"></strong> proposals
                   </span>
                   <span
                     x-show="call.end_date"
-                    style="display: inline-flex; align-items: center; gap: 4px"
+                    style="display: inline-flex; align-items: center; gap: 5px;"
                   >
-                    <span
-                      class="material-symbols-outlined"
-                      style="font-size: 14px"
-                      >event</span
-                    >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     Closes: <span x-text="formatDate(call.end_date)"></span>
+                  </span>
+                  <span
+                    x-show="!call.end_date"
+                    style="display: inline-flex; align-items: center; gap: 5px;"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                    Rolling Deadline
                   </span>
                 </div>
               </div>
 
+              <!-- Action Buttons Row -->
               <div
                 style="
                   border-top: 1px solid var(--border-light);
-                  padding-top: 12px;
+                  padding-top: 14px;
                   display: flex;
-                  gap: 6px;
-                  flex-wrap: wrap;
+                  gap: 8px;
+                  align-items: center;
                 "
               >
                 <button
                   type="button"
                   @click="viewSubmissions(call)"
-                  class="btn-primary"
-                  style="
-                    flex: 1;
-                    font-size: 12.5px;
-                    padding: 6px 10px;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 4px;
-                  "
+                  class="btn btn-primary btn-sm"
+                  style="flex: 1;"
                 >
-                  <span
-                    class="material-symbols-outlined"
-                    style="font-size: 15px"
-                    >visibility</span
-                  >
-                  Submissions (<span x-text="call.submission_count"></span>)
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Proposals (<span x-text="call.submission_count"></span>)
                 </button>
                 <button
                   type="button"
                   @click="copyCallLink(call)"
-                  class="btn-secondary"
-                  style="font-size: 12px; padding: 6px 9px"
+                  class="btn btn-secondary btn-sm"
                   title="Copy public submission link"
                 >
-                  <span
-                    class="material-symbols-outlined"
-                    style="font-size: 15px"
-                    >link</span
-                  >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 </button>
                 <a
                   :href="`/events/${_eventSlug}/calls/${call.slug || call.id}`"
                   target="_blank"
-                  class="btn-secondary"
-                  style="
-                    font-size: 12px;
-                    padding: 6px 9px;
-                    text-decoration: none;
-                    display: inline-flex;
-                    align-items: center;
-                  "
+                  class="btn btn-secondary btn-sm"
                   title="Open public submission page"
                 >
-                  <span
-                    class="material-symbols-outlined"
-                    style="font-size: 15px"
-                    >open_in_new</span
-                  >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 </a>
                 <button
                   type="button"
                   @click="editCall(call)"
-                  class="btn-secondary"
-                  style="font-size: 12px; padding: 6px 9px"
-                  title="Edit call"
+                  class="btn btn-secondary btn-sm"
+                  title="Edit call settings"
                 >
-                  <span
-                    class="material-symbols-outlined"
-                    style="font-size: 15px"
-                    >edit</span
-                  >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
                 <button
                   type="button"
                   @click="toggleCallStatus(call)"
-                  class="btn-secondary"
-                  style="font-size: 12px; padding: 6px 9px"
-                  :title="call.status === 'open' ? 'Close call' : 'Open call'"
+                  class="btn btn-secondary btn-sm"
+                  :title="call.status === 'open' ? 'Close call to new submissions' : 'Reopen call to accept submissions'"
                 >
-                  <span
-                    class="material-symbols-outlined"
-                    style="font-size: 15px"
-                    x-text="call.status === 'open' ? 'lock' : 'lock_open'"
-                  ></span>
+                  <svg x-show="call.status === 'open'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <svg x-show="call.status !== 'open'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
                 </button>
               </div>
             </div>
@@ -2124,6 +2202,8 @@ main_content %}
 
       <!-- Submissions Detail View (when selectedCall is active) -->
       <div x-show="!loading && selectedCall">
+        
+        <!-- Back and Action Bar -->
         <div
           style="
             display: flex;
@@ -2137,97 +2217,79 @@ main_content %}
           <button
             type="button"
             @click="selectedCall = null"
-            class="btn-secondary"
-            style="
-              display: inline-flex;
-              align-items: center;
-              gap: 6px;
-              font-size: 13px;
-              padding: 6px 12px;
-            "
+            class="btn btn-secondary btn-sm"
           >
-            <span class="material-symbols-outlined" style="font-size: 16px"
-              >arrow_back</span
-            >
-            Back to All Calls
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><polyline points="15 18 9 12 15 6"/></svg>
+            All Open Calls
           </button>
           <div style="display: flex; gap: 8px">
-            <a
-              :href="`/events/${_eventSlug}/calls/${selectedCall ? (selectedCall.slug || selectedCall.id) : ''}`"
-              target="_blank"
-              class="btn-secondary"
-              style="
-                font-size: 12.5px;
-                padding: 6px 10px;
-                text-decoration: none;
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
-              "
-            >
-              <span class="material-symbols-outlined" style="font-size: 15px"
-                >open_in_new</span
-              >
-              View Public Page
-            </a>
             <button
               type="button"
               @click="copyCallLink(selectedCall)"
-              class="btn-secondary"
-              style="
-                font-size: 12.5px;
-                padding: 6px 10px;
-                display: inline-flex;
-                align-items: center;
-                gap: 4px;
-              "
+              class="btn btn-secondary btn-sm"
             >
-              <span class="material-symbols-outlined" style="font-size: 15px"
-                >content_copy</span
-              >
-              Copy Link
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy Public Form Link
             </button>
+            <a
+              :href="`/events/${_eventSlug}/calls/${selectedCall ? (selectedCall.slug || selectedCall.id) : ''}`"
+              target="_blank"
+              class="btn btn-secondary btn-sm"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              View Public Page
+            </a>
           </div>
         </div>
 
+        <!-- Call Summary Header Banner -->
         <div
           class="section-card"
           style="
-            padding: 16px;
-            margin-bottom: 16px;
-            border-radius: 10px;
-            background: #fff;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
           "
         >
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-            "
-          >
-            <div>
-              <div
-                style="
-                  font-size: 11px;
-                  font-weight: 700;
-                  text-transform: uppercase;
-                  color: #0284c7;
-                "
-                x-text="formatCallType(selectedCall ? selectedCall.call_type : '')"
-              ></div>
-              <h3
-                style="font-size: 18px; font-weight: 700; margin: 2px 0 0"
-                x-text="selectedCall ? selectedCall.title : ''"
-              ></h3>
+          <div>
+            <div
+              style="
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: var(--cyan);
+                margin-bottom: 4px;
+              "
+              x-text="formatCallType(selectedCall ? selectedCall.call_type : '')"
+            ></div>
+            <h3
+              style="font-size: 20px; font-weight: 800; margin: 0 0 4px; color: var(--text-primary);"
+              x-text="selectedCall ? selectedCall.title : ''"
+            ></h3>
+            <div style="font-size: 13px; color: var(--text-muted);">
+              Status: <span style="font-weight: 600; text-transform: capitalize;" x-text="selectedCall ? selectedCall.status : ''"></span> ·
+              <span x-text="selectedCall && selectedCall.end_date ? 'Closes on ' + formatDate(selectedCall.end_date) : 'Open Deadline'"></span>
             </div>
-            <div style="font-size: 13px; color: var(--text-muted)">
-              Total Submissions: <strong x-text="submissions.length"></strong>
+          </div>
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="text-align: right;">
+              <div style="font-size: 24px; font-weight: 800; color: var(--text-primary);" x-text="submissions.length"></div>
+              <div style="font-size: 12px; color: var(--text-muted);">total proposals</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 24px; font-weight: 800; color: #047857;" x-text="submissions.filter(s => s.status === 'accepted').length"></div>
+              <div style="font-size: 12px; color: var(--text-muted);">accepted</div>
             </div>
           </div>
         </div>
 
-        <!-- Filters bar -->
+        <!-- Filter Pills & Search Bar -->
         <div
           style="
             display: flex;
@@ -2235,89 +2297,80 @@ main_content %}
             align-items: center;
             margin-bottom: 16px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
           "
         >
-          <div style="display: flex; gap: 6px; overflow-x: auto">
+          <!-- Status Filter Tabs -->
+          <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;">
             <template
-              x-for="st in ['all', 'submitted', 'under_review', 'shortlisted', 'accepted', 'rejected']"
+              x-for="st in ['all', 'pending', 'under_review', 'accepted', 'rejected', 'waitlisted']"
               :key="st"
             >
               <button
                 type="button"
                 @click="subStatusFilter = st; filterSubmissions()"
-                :style="subStatusFilter === st ? 'background:var(--cyan); color:#fff; font-weight:600;' : 'background:var(--bg-secondary); color:var(--text-muted);'"
-                style="
-                  padding: 5px 12px;
-                  border-radius: 6px;
-                  font-size: 12px;
-                  border: 1px solid var(--border-light);
-                  cursor: pointer;
-                  text-transform: capitalize;
-                "
+                :class="subStatusFilter === st ? 'btn-primary' : 'btn-secondary'"
+                class="btn btn-sm"
+                style="text-transform: capitalize; font-size: 12px; height: 32px; padding: 0 12px;"
                 x-text="st.replace('_', ' ')"
               ></button>
             </template>
           </div>
-          <div>
+
+          <!-- Search Input -->
+          <div style="position: relative; min-width: 240px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="position: absolute; left: 12px; top: 11px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input
               type="text"
               x-model="subSearchQuery"
               @input="filterSubmissions()"
-              placeholder="Search applicants, proposals..."
+              placeholder="Search by name, email, title..."
               class="form-input"
-              style="
-                font-size: 12.5px;
-                padding: 6px 10px;
-                width: 220px;
-                border-radius: 6px;
-              "
+              style="padding-left: 34px; height: 36px; font-size: 13px; border-radius: 9999px; width: 100%; box-sizing: border-box;"
             />
           </div>
         </div>
 
-        <!-- Submissions Table/List -->
+        <!-- Submissions Loading State -->
         <div
           x-show="loadingSubmissions"
           style="
-            padding: 20px;
+            padding: 32px;
             text-align: center;
             color: var(--text-muted);
-            font-size: 13px;
+            font-size: 13.5px;
           "
         >
           Loading submissions...
         </div>
 
+        <!-- Empty Submissions State -->
         <div
           x-show="!loadingSubmissions && filteredSubmissions.length === 0"
           class="empty-state-card"
-          style="padding: 32px 20px; max-width: 360px; margin: 20px auto"
+          style="padding: 40px 24px; max-width: 420px; margin: 20px auto;"
         >
-          <span
-            class="material-symbols-outlined"
-            style="font-size: 28px; color: var(--text-muted)"
-            >inbox</span
-          >
-          <div style="font-size: 14px; font-weight: 600; margin-top: 8px">
-            No submissions found
+          <div class="empty-state-icon" style="margin-bottom: 14px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
           </div>
-          <div style="font-size: 12.5px; color: var(--text-muted)">
-            No proposals match the current filter.
-          </div>
+          <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 6px;">No submissions found</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin: 0;">
+            No applicants have submitted proposals matching this filter yet.
+          </p>
         </div>
 
+        <!-- Submissions Table -->
         <div
           x-show="!loadingSubmissions && filteredSubmissions.length > 0"
           class="section-card"
-          style="padding: 0; overflow: hidden; border-radius: 10px"
+          style="padding: 0; overflow: hidden; border-radius: 14px; border: 1px solid var(--border-light);"
         >
           <div style="overflow-x: auto">
             <table
               style="
                 width: 100%;
                 border-collapse: collapse;
-                font-size: 13px;
+                font-size: 13.5px;
                 text-align: left;
               "
             >
@@ -2328,37 +2381,43 @@ main_content %}
                     border-bottom: 1px solid var(--border-light);
                     color: var(--text-muted);
                     font-size: 11.5px;
+                    font-weight: 700;
                     text-transform: uppercase;
+                    letter-spacing: 0.5px;
                   "
                 >
-                  <th style="padding: 10px 14px">Applicant</th>
-                  <th style="padding: 10px 14px">Proposal Title</th>
-                  <th style="padding: 10px 14px">Track</th>
-                  <th style="padding: 10px 14px">Status</th>
-                  <th style="padding: 10px 14px">Rating</th>
-                  <th style="padding: 10px 14px">Submitted</th>
-                  <th style="padding: 10px 14px; text-align: right">Actions</th>
+                  <th style="padding: 12px 18px">Applicant</th>
+                  <th style="padding: 12px 18px">Proposal Title</th>
+                  <th style="padding: 12px 18px">Track</th>
+                  <th style="padding: 12px 18px">Status</th>
+                  <th style="padding: 12px 18px">Rating</th>
+                  <th style="padding: 12px 18px">Submitted</th>
+                  <th style="padding: 12px 18px; text-align: right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <template x-for="sub in filteredSubmissions" :key="sub.id">
-                  <tr style="border-bottom: 1px solid var(--border-light)">
-                    <td style="padding: 10px 14px">
+                  <tr
+                    style="border-bottom: 1px solid var(--border-light); transition: background 0.12s ease;"
+                    onmouseover="this.style.background='var(--bg-secondary)'"
+                    onmouseout="this.style.background='transparent'"
+                  >
+                    <td style="padding: 12px 18px">
                       <div
-                        style="font-weight: 600; color: var(--text-primary)"
+                        style="font-weight: 700; color: var(--text-primary)"
                         x-text="sub.name"
                       ></div>
                       <div
-                        style="font-size: 12px; color: var(--text-muted)"
+                        style="font-size: 12px; color: var(--text-muted); margin-top: 2px;"
                         x-text="sub.email"
                       ></div>
                       <div
                         x-show="sub.organization_name"
-                        style="font-size: 11px; color: var(--text-muted)"
+                        style="font-size: 11.5px; color: var(--text-secondary); margin-top: 1px;"
                         x-text="sub.organization_name"
                       ></div>
                     </td>
-                    <td style="padding: 10px 14px; max-width: 260px">
+                    <td style="padding: 12px 18px; max-width: 260px">
                       <div
                         style="
                           font-weight: 600;
@@ -2376,83 +2435,91 @@ main_content %}
                           text-overflow: ellipsis;
                           overflow: hidden;
                           white-space: nowrap;
+                          margin-top: 2px;
                         "
                         x-text="sub.proposal_summary"
                       ></div>
                     </td>
-                    <td style="padding: 10px 14px">
+                    <td style="padding: 12px 18px">
                       <span
                         style="
                           font-size: 11px;
-                          padding: 2px 6px;
+                          font-weight: 600;
+                          padding: 3px 8px;
                           background: var(--bg-secondary);
-                          border-radius: 4px;
+                          border-radius: 6px;
                           border: 1px solid var(--border-light);
+                          color: var(--text-secondary);
                         "
                         x-text="sub.category_or_track || 'General'"
                       ></span>
                     </td>
-                    <td style="padding: 10px 14px">
+                    <td style="padding: 12px 18px">
                       <span
-                        :style="getStatusBadgeStyle(sub.status)"
-                        style="
-                          font-size: 11px;
-                          font-weight: 600;
-                          padding: 2px 8px;
-                          border-radius: 999px;
-                          text-transform: capitalize;
+                        class="status-badge"
+                        :class="
+                          sub.status === 'accepted' ? 'approved' :
+                          (sub.status === 'rejected' ? 'rejected' :
+                          (sub.status === 'under_review' ? 'in_review' : 'pending'))
                         "
                         x-text="sub.status.replace('_', ' ')"
                       ></span>
                       <div
                         x-show="sub.promoted_to_speaker_id"
                         style="
-                          font-size: 10px;
-                          color: #059669;
-                          font-weight: 600;
-                          margin-top: 2px;
+                          display: inline-flex;
+                          align-items: center;
+                          gap: 3px;
+                          font-size: 10.5px;
+                          color: #047857;
+                          font-weight: 700;
+                          margin-top: 4px;
                         "
                       >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                         Promoted Speaker
                       </div>
                       <div
                         x-show="sub.promoted_to_sponsor_id"
                         style="
-                          font-size: 10px;
-                          color: #059669;
-                          font-weight: 600;
-                          margin-top: 2px;
+                          display: inline-flex;
+                          align-items: center;
+                          gap: 3px;
+                          font-size: 10.5px;
+                          color: #047857;
+                          font-weight: 700;
+                          margin-top: 4px;
                         "
                       >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                         Promoted Sponsor
                       </div>
                     </td>
-                    <td style="padding: 10px 14px">
+                    <td style="padding: 12px 18px">
                       <span
                         x-show="sub.rating"
-                        style="color: #f59e0b; font-weight: 600"
-                        x-text="'★ ' + sub.rating"
+                        style="color: #D9822B; font-weight: 700; font-size: 13px;"
+                        x-text="'★ ' + sub.rating + '/5'"
                       ></span>
                       <span
                         x-show="!sub.rating"
-                        style="color: var(--text-muted)"
-                        >-</span
-                      >
+                        style="color: var(--text-muted); font-size: 13px;"
+                      >-</span>
                     </td>
                     <td
                       style="
-                        padding: 10px 14px;
-                        font-size: 12px;
+                        padding: 12px 18px;
+                        font-size: 12.5px;
                         color: var(--text-muted);
+                        white-space: nowrap;
                       "
                       x-text="formatDate(sub.created_at)"
                     ></td>
-                    <td style="padding: 10px 14px; text-align: right">
+                    <td style="padding: 12px 18px; text-align: right">
                       <button
                         type="button"
                         @click="openReviewModal(sub)"
-                        class="btn-secondary"
-                        style="font-size: 12px; padding: 4px 9px"
+                        class="btn btn-secondary btn-sm"
                       >
                         Review
                       </button>
@@ -2476,7 +2543,7 @@ main_content %}
         <div
           class="vd-modal"
           @click.outside="showReviewModal = false"
-          style="max-width: 640px"
+          style="max-width: 620px"
         >
           <div class="vd-modal-header">
             <h3 class="vd-modal-title">Review Proposal</h3>
@@ -2484,57 +2551,56 @@ main_content %}
               type="button"
               @click="showReviewModal = false"
               class="vd-modal-close"
-            >
-              <span class="material-symbols-outlined" style="font-size: 18px"
-                >close</span
-              >
-            </button>
+              aria-label="Close modal"
+            >&times;</button>
           </div>
+
           <template x-if="activeSub">
-            <div style="padding: 18px; max-height: 80vh; overflow-y: auto">
-              <!-- Applicant overview -->
+            <div>
+              <!-- Applicant Profile Box -->
               <div
                 style="
                   background: var(--bg-secondary);
-                  border-radius: 8px;
-                  padding: 12px;
-                  margin-bottom: 16px;
+                  border: 1px solid var(--border-light);
+                  border-radius: 12px;
+                  padding: 16px;
+                  margin-bottom: 20px;
                 "
               >
                 <div
                   style="
                     display: flex;
                     justify-content: space-between;
-                    align-items: start;
+                    align-items: flex-start;
+                    gap: 12px;
                   "
                 >
                   <div>
                     <h4
-                      style="font-size: 15px; font-weight: 700; margin: 0"
+                      style="font-size: 16px; font-weight: 800; margin: 0 0 2px; color: var(--text-primary);"
                       x-text="activeSub.name"
                     ></h4>
                     <div
-                      style="font-size: 12.5px; color: var(--text-muted)"
-                      x-text="activeSub.email + (activeSub.phone ? ' • ' + activeSub.phone : '')"
+                      style="font-size: 13px; color: var(--text-muted);"
+                      x-text="activeSub.email + (activeSub.phone ? ' · ' + activeSub.phone : '')"
                     ></div>
                     <div
                       x-show="activeSub.job_title || activeSub.organization_name"
                       style="
                         font-size: 12.5px;
-                        color: var(--text-muted);
-                        margin-top: 2px;
+                        color: var(--text-secondary);
+                        margin-top: 4px;
+                        font-weight: 500;
                       "
                       x-text="(activeSub.job_title ? activeSub.job_title + ', ' : '') + (activeSub.organization_name || '')"
                     ></div>
                   </div>
                   <span
-                    :style="getStatusBadgeStyle(activeSub.status)"
-                    style="
-                      font-size: 11px;
-                      font-weight: 600;
-                      padding: 2px 8px;
-                      border-radius: 999px;
-                      text-transform: capitalize;
+                    class="status-badge"
+                    :class="
+                      activeSub.status === 'accepted' ? 'approved' :
+                      (activeSub.status === 'rejected' ? 'rejected' :
+                      (activeSub.status === 'under_review' ? 'in_review' : 'pending'))
                     "
                     x-text="activeSub.status.replace('_', ' ')"
                   ></span>
@@ -2542,228 +2608,108 @@ main_content %}
                 <div
                   x-show="activeSub.bio"
                   style="
-                    font-size: 12.5px;
+                    font-size: 13px;
                     color: var(--text-secondary);
-                    margin-top: 8px;
-                    line-height: 1.4;
+                    margin-top: 10px;
+                    line-height: 1.5;
                   "
                   x-text="activeSub.bio"
                 ></div>
                 <div
                   x-show="activeSub.social_links && activeSub.social_links.website"
-                  style="margin-top: 6px; font-size: 12px"
+                  style="margin-top: 8px; font-size: 12px;"
                 >
                   <a
                     :href="activeSub.social_links.website"
                     target="_blank"
-                    style="color: var(--cyan); text-decoration: none"
+                    style="color: var(--cyan); text-decoration: none; font-weight: 600;"
                     x-text="activeSub.social_links.website"
                   ></a>
                 </div>
               </div>
 
-              <!-- Proposal details -->
-              <div style="margin-bottom: 16px">
-                <div
-                  style="
-                    font-size: 11px;
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    color: var(--text-muted);
-                    margin-bottom: 6px;
-                  "
-                >
+              <!-- Proposal Information -->
+              <div style="margin-bottom: 20px;">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px;">
                   Proposal Title
                 </div>
                 <h4
-                  style="
-                    font-size: 16px;
-                    font-weight: 700;
-                    margin: 0 0 10px;
-                    color: var(--text-primary);
-                  "
+                  style="font-size: 17px; font-weight: 700; margin: 0 0 12px; color: var(--text-primary);"
                   x-text="activeSub.title"
                 ></h4>
 
-                <div
-                  style="
-                    font-size: 11px;
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    color: var(--text-muted);
-                    margin-bottom: 4px;
-                  "
-                >
-                  Abstract / Summary
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+                  Summary / Abstract
                 </div>
                 <div
-                  style="
-                    font-size: 13.5px;
-                    line-height: 1.55;
-                    color: var(--text-secondary);
-                    margin-bottom: 12px;
-                    white-space: pre-line;
-                  "
+                  style="font-size: 13.5px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 14px; white-space: pre-line;"
                   x-text="activeSub.proposal_summary"
                 ></div>
 
-                <div x-show="activeSub.details">
-                  <div
-                    style="
-                      font-size: 11px;
-                      font-weight: 700;
-                      text-transform: uppercase;
-                      color: var(--text-muted);
-                      margin-bottom: 4px;
-                    "
-                  >
-                    Detailed Outline / Notes
+                <div x-show="activeSub.details" style="margin-bottom: 14px;">
+                  <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+                    Detailed Outline &amp; Notes
                   </div>
                   <div
-                    style="
-                      font-size: 13px;
-                      line-height: 1.55;
-                      color: var(--text-secondary);
-                      margin-bottom: 12px;
-                      white-space: pre-line;
-                    "
+                    style="font-size: 13px; line-height: 1.55; color: var(--text-secondary); white-space: pre-line;"
                     x-text="activeSub.details"
                   ></div>
                 </div>
 
                 <div x-show="activeSub.attachment_url">
-                  <div
-                    style="
-                      font-size: 11px;
-                      font-weight: 700;
-                      text-transform: uppercase;
-                      color: var(--text-muted);
-                      margin-bottom: 4px;
-                    "
-                  >
-                    Slides / Attachment
+                  <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px;">
+                    Slides / Deck Attachment
                   </div>
                   <a
                     :href="activeSub.attachment_url"
                     target="_blank"
-                    style="
-                      font-size: 13px;
-                      color: var(--cyan);
-                      text-decoration: none;
-                      display: inline-flex;
-                      align-items: center;
-                      gap: 4px;
-                    "
+                    class="btn btn-secondary btn-sm"
+                    style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;"
                   >
-                    <span
-                      class="material-symbols-outlined"
-                      style="font-size: 15px"
-                      >link</span
-                    >
-                    View Attachment / Deck
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    Open Deck / Attached Link
                   </a>
                 </div>
               </div>
 
-              <!-- Custom answers if any -->
-              <template
-                x-if="activeSub.custom_answers && Object.keys(activeSub.custom_answers).length > 0"
-              >
-                <div
-                  style="
-                    border-top: 1px solid var(--border-light);
-                    padding-top: 12px;
-                    margin-bottom: 16px;
-                  "
-                >
-                  <div
-                    style="
-                      font-size: 11px;
-                      font-weight: 700;
-                      text-transform: uppercase;
-                      color: var(--text-muted);
-                      margin-bottom: 8px;
-                    "
-                  >
-                    Custom Answers
+              <!-- Custom Question Answers -->
+              <template x-if="activeSub.custom_answers && Object.keys(activeSub.custom_answers).length > 0">
+                <div style="border-top: 1px solid var(--border-light); padding-top: 16px; margin-bottom: 20px;">
+                  <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;">
+                    Additional Question Responses
                   </div>
-                  <template
-                    x-for="(val, key) in activeSub.custom_answers"
-                    :key="key"
-                  >
-                    <div style="margin-bottom: 6px; font-size: 12.5px">
-                      <strong x-text="key + ':'"></strong>
-                      <span x-text="val"></span>
-                    </div>
-                  </template>
+                  <div style="background: var(--bg-secondary); border-radius: 10px; padding: 12px 16px;">
+                    <template x-for="(val, key) in activeSub.custom_answers" :key="key">
+                      <div style="margin-bottom: 8px; font-size: 13px;">
+                        <span style="font-weight: 700; color: var(--text-primary);" x-text="key + ': '"></span>
+                        <span style="color: var(--text-secondary);" x-text="val"></span>
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </template>
 
-              <!-- Review controls form -->
-              <div
-                style="
-                  border-top: 1px solid var(--border-light);
-                  padding-top: 14px;
-                  margin-bottom: 16px;
-                "
-              >
-                <div
-                  style="
-                    font-size: 11px;
-                    font-weight: 700;
-                    text-transform: uppercase;
-                    color: var(--text-muted);
-                    margin-bottom: 10px;
-                  "
-                >
-                  Review Decision
+              <!-- Review Controls Form -->
+              <div style="border-top: 1px solid var(--border-light); padding-top: 18px; margin-bottom: 20px;">
+                <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-primary); margin-bottom: 12px;">
+                  Review Decision &amp; Scoring
                 </div>
-                <div
-                  style="
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 12px;
-                    margin-bottom: 12px;
-                  "
-                >
-                  <div>
-                    <label
-                      style="
-                        font-size: 12px;
-                        font-weight: 600;
-                        display: block;
-                        margin-bottom: 4px;
-                      "
-                      >Status</label
-                    >
-                    <select
-                      class="form-input"
-                      x-model="reviewForm.status"
-                      style="width: 100%; font-size: 13px; padding: 6px 10px"
-                    >
-                      <option value="submitted">Submitted</option>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                  <div class="vd-form-group">
+                    <label class="vd-form-label">Review Status</label>
+                    <select class="vd-form-select" x-model="reviewForm.status">
+                      <option value="pending">Pending</option>
                       <option value="under_review">Under Review</option>
-                      <option value="shortlisted">Shortlisted</option>
                       <option value="accepted">Accepted</option>
+                      <option value="waitlisted">Waitlisted</option>
                       <option value="rejected">Rejected</option>
                     </select>
                   </div>
-                  <div>
-                    <label
-                      style="
-                        font-size: 12px;
-                        font-weight: 600;
-                        display: block;
-                        margin-bottom: 4px;
-                      "
-                      >Rating (1 - 5 Stars)</label
-                    >
-                    <select
-                      class="form-input"
-                      x-model="reviewForm.rating"
-                      style="width: 100%; font-size: 13px; padding: 6px 10px"
-                    >
-                      <option value="">No rating</option>
+                  <div class="vd-form-group">
+                    <label class="vd-form-label">Rating (1 to 5 Stars)</label>
+                    <select class="vd-form-select" x-model="reviewForm.rating">
+                      <option value="">No Rating</option>
                       <option value="5">★★★★★ (5 - Exceptional)</option>
                       <option value="4">★★★★☆ (4 - Strong)</option>
                       <option value="3">★★★☆☆ (3 - Good)</option>
@@ -2773,197 +2719,107 @@ main_content %}
                   </div>
                 </div>
 
-                <div style="margin-bottom: 12px">
-                  <label
-                    style="
-                      font-size: 12px;
-                      font-weight: 600;
-                      display: block;
-                      margin-bottom: 4px;
-                    "
-                    >Internal Organizer Notes</label
-                  >
+                <div class="vd-form-group" style="margin-bottom: 14px;">
+                  <label class="vd-form-label">Internal Organizer Notes (Private)</label>
                   <textarea
-                    class="form-input"
+                    class="vd-form-textarea"
                     x-model="reviewForm.organizer_notes"
-                    style="width: 100%; font-size: 12.5px; height: 60px"
-                    placeholder="Private notes for the organizing team..."
+                    style="height: 64px;"
+                    placeholder="Private notes visible only to the organizing team..."
                   ></textarea>
                 </div>
 
-                <div style="margin-bottom: 14px">
-                  <label
-                    style="
-                      font-size: 12px;
-                      font-weight: 600;
-                      display: block;
-                      margin-bottom: 4px;
-                    "
-                    >Feedback / Note to Applicant</label
-                  >
+                <div class="vd-form-group" style="margin-bottom: 16px;">
+                  <label class="vd-form-label">Feedback / Response to Applicant</label>
                   <textarea
-                    class="form-input"
+                    class="vd-form-textarea"
                     x-model="reviewForm.feedback_to_applicant"
-                    style="width: 100%; font-size: 12.5px; height: 60px"
-                    placeholder="Optional note visible to applicant..."
+                    style="height: 64px;"
+                    placeholder="Optional feedback communicated to the applicant..."
                   ></textarea>
                 </div>
 
-                <button
-                  type="button"
-                  @click="saveReview()"
-                  :disabled="savingReview"
-                  class="btn-primary"
-                  style="font-size: 13px; padding: 7px 14px"
-                >
-                  <span x-show="!savingReview">Save Review</span>
-                  <span x-show="savingReview" style="display: none"
-                    >Saving...</span
+                <div style="display: flex; justify-content: flex-end;">
+                  <button
+                    type="button"
+                    @click="saveReview()"
+                    :disabled="savingReview"
+                    class="btn btn-primary btn-sm"
                   >
-                </button>
+                    <span x-show="!savingReview">Save Review Decision</span>
+                    <span x-show="savingReview" style="display: none">Saving...</span>
+                  </button>
+                </div>
               </div>
 
-              <!-- One-click Promotion Section -->
+              <!-- One-Click Platform Promotion Section -->
               <div
                 x-show="reviewForm.status === 'accepted' || activeSub.status === 'accepted'"
                 style="
-                  border-top: 1px solid var(--border-light);
-                  padding-top: 14px;
-                  background: rgba(2, 132, 199, 0.04);
-                  padding: 14px;
-                  border-radius: 8px;
+                  background: rgba(232, 89, 56, 0.05);
+                  border: 1.5px solid rgba(232, 89, 56, 0.25);
+                  border-radius: 12px;
+                  padding: 16px;
                 "
               >
-                <div
-                  style="
-                    font-size: 13px;
-                    font-weight: 700;
-                    color: var(--text-primary);
-                    margin-bottom: 4px;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                  "
-                >
-                  <span
-                    class="material-symbols-outlined"
-                    style="font-size: 18px; color: #0284c7"
-                    >upgrade</span
-                  >
-                  One-Click Platform Promotion
+                <div style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                  1-Click Platform Promotion
                 </div>
 
-                <template
-                  x-if="selectedCall && (selectedCall.call_type === 'speaker' || selectedCall.call_type === 'papers' || selectedCall.call_type === 'custom')"
-                >
+                <template x-if="selectedCall && (selectedCall.call_type === 'speaker' || selectedCall.call_type === 'papers' || selectedCall.call_type === 'custom')">
                   <div>
-                    <p
-                      style="
-                        font-size: 12px;
-                        color: var(--text-muted);
-                        margin: 0 0 10px;
-                      "
-                    >
-                      Promote this accepted proposal into an official event
-                      Speaker profile and add them to the Speakers directory
-                      automatically.
+                    <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; line-height: 1.5;">
+                      Convert this approved proposal into an official <strong>Event Speaker</strong> profile in the Speakers directory and agenda.
                     </p>
                     <div x-show="!activeSub.promoted_to_speaker_id">
                       <button
                         type="button"
                         @click="promoteToSpeaker()"
                         :disabled="promoting"
-                        class="btn-primary"
-                        style="
-                          font-size: 12.5px;
-                          padding: 6px 12px;
-                          background: #0284c7;
-                        "
+                        class="btn btn-accent btn-sm"
                       >
-                        <span x-show="!promoting"
-                          >Promote to Event Speaker</span
-                        >
-                        <span x-show="promoting" style="display: none"
-                          >Promoting...</span
-                        >
+                        <span x-show="!promoting">Promote to Event Speaker</span>
+                        <span x-show="promoting" style="display: none">Promoting...</span>
                       </button>
                     </div>
                     <div
                       x-show="activeSub.promoted_to_speaker_id"
-                      style="
-                        font-size: 12.5px;
-                        color: #059669;
-                        font-weight: 600;
-                        display: flex;
-                        align-items: center;
-                        gap: 5px;
-                      "
+                      style="font-size: 13px; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 6px;"
                     >
-                      <span
-                        class="material-symbols-outlined"
-                        style="font-size: 16px"
-                        >check_circle</span
-                      >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                       Promoted to Event Speaker!
                     </div>
                   </div>
                 </template>
 
-                <template
-                  x-if="selectedCall && selectedCall.call_type === 'sponsor'"
-                >
+                <template x-if="selectedCall && selectedCall.call_type === 'sponsor'">
                   <div>
-                    <p
-                      style="
-                        font-size: 12px;
-                        color: var(--text-muted);
-                        margin: 0 0 10px;
-                      "
-                    >
-                      Promote this accepted sponsor application into an official
-                      Sponsor entry on the event page.
+                    <p style="font-size: 13px; color: var(--text-secondary); margin: 0 0 12px; line-height: 1.5;">
+                      Add this approved applicant directly into the official <strong>Event Sponsors</strong> listing.
                     </p>
                     <div x-show="!activeSub.promoted_to_sponsor_id">
                       <button
                         type="button"
                         @click="promoteToSponsor()"
                         :disabled="promoting"
-                        class="btn-primary"
-                        style="
-                          font-size: 12.5px;
-                          padding: 6px 12px;
-                          background: #0284c7;
-                        "
+                        class="btn btn-accent btn-sm"
                       >
-                        <span x-show="!promoting"
-                          >Promote to Event Sponsor</span
-                        >
-                        <span x-show="promoting" style="display: none"
-                          >Promoting...</span
-                        >
+                        <span x-show="!promoting">Promote to Event Sponsor</span>
+                        <span x-show="promoting" style="display: none">Promoting...</span>
                       </button>
                     </div>
                     <div
                       x-show="activeSub.promoted_to_sponsor_id"
-                      style="
-                        font-size: 12.5px;
-                        color: #059669;
-                        font-weight: 600;
-                        display: flex;
-                        align-items: center;
-                        gap: 5px;
-                      "
+                      style="font-size: 13px; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 6px;"
                     >
-                      <span
-                        class="material-symbols-outlined"
-                        style="font-size: 16px"
-                        >check_circle</span
-                      >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                       Promoted to Event Sponsor!
                     </div>
                   </div>
                 </template>
               </div>
+
             </div>
           </template>
         </div>
@@ -2980,256 +2836,251 @@ main_content %}
         <div
           class="vd-modal"
           @click.outside="showCreateModal = false"
-          style="max-width: 580px"
+          style="max-width: 620px"
         >
           <div class="vd-modal-header">
             <h3
               class="vd-modal-title"
-              x-text="editingCallId ? 'Edit Open Call' : 'Create Open Call'"
+              x-text="editingCallId ? 'Edit Open Call' : 'Configure New Open Call'"
             ></h3>
             <button
               type="button"
               @click="showCreateModal = false"
               class="vd-modal-close"
-            >
-              <span class="material-symbols-outlined" style="font-size: 18px"
-                >close</span
-              >
-            </button>
+              aria-label="Close modal"
+            >&times;</button>
           </div>
-          <div style="padding: 18px; max-height: 80vh; overflow-y: auto">
-            <div
-              x-show="modalError"
-              style="
-                background: #fef2f2;
-                border: 1px solid #fee2e2;
-                color: #b91c1c;
-                padding: 8px 12px;
-                border-radius: 6px;
-                font-size: 12.5px;
-                margin-bottom: 12px;
-              "
-              x-text="modalError"
-            ></div>
 
-            <form @submit.prevent="saveCall()">
-              <div style="margin-bottom: 14px">
-                <label
-                  style="
-                    font-size: 12px;
-                    font-weight: 600;
-                    display: block;
-                    margin-bottom: 4px;
-                  "
-                  >Call Title <span style="color: #e11d48">*</span></label
-                >
+          <div
+            x-show="modalError"
+            style="
+              background: #fef2f2;
+              border: 1px solid #fee2e2;
+              color: #b91c1c;
+              padding: 10px 14px;
+              border-radius: 8px;
+              font-size: 13px;
+              margin-bottom: 16px;
+            "
+            x-text="modalError"
+          ></div>
+
+          <!-- Quick Template Selector inside Modal (when creating new) -->
+          <div x-show="!editingCallId" style="margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--border-light);">
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+              Quick Start Presets
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button
+                type="button"
+                @click="applyPreset('speaker')"
+                class="btn btn-secondary btn-sm"
+                style="font-size: 12px; height: 32px;"
+              >
+                + Speakers (CFP)
+              </button>
+              <button
+                type="button"
+                @click="applyPreset('sponsor')"
+                class="btn btn-secondary btn-sm"
+                style="font-size: 12px; height: 32px;"
+              >
+                + Sponsors
+              </button>
+              <button
+                type="button"
+                @click="applyPreset('volunteer')"
+                class="btn btn-secondary btn-sm"
+                style="font-size: 12px; height: 32px;"
+              >
+                + Volunteers
+              </button>
+            </div>
+          </div>
+
+          <form @submit.prevent="saveCall()">
+            <div class="vd-form-group">
+              <label class="vd-form-label">Call Title <span style="color: #e11d48">*</span></label>
+              <input
+                type="text"
+                class="vd-form-input"
+                x-model="callForm.title"
+                required
+                placeholder="e.g. Call for Papers &amp; Lightning Talks"
+              />
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;">
+              <div class="vd-form-group" style="margin-bottom: 0;">
+                <label class="vd-form-label">Opportunity Type <span style="color: #e11d48">*</span></label>
+                <select class="vd-form-select" x-model="callForm.call_type">
+                  <option value="speaker">Call for Papers / Speakers</option>
+                  <option value="sponsor">Call for Sponsors / Partners</option>
+                  <option value="volunteer">Call for Volunteers &amp; Crew</option>
+                  <option value="custom">Custom Open Call</option>
+                </select>
+              </div>
+              <div class="vd-form-group" style="margin-bottom: 0;">
+                <label class="vd-form-label">Visibility Status</label>
+                <select class="vd-form-select" x-model="callForm.status">
+                  <option value="open">Open (Publicly Accepting Proposals)</option>
+                  <option value="closed">Closed (Submissions Suspended)</option>
+                  <option value="draft">Draft (Hidden)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px;">
+              <div class="vd-form-group" style="margin-bottom: 0;">
+                <label class="vd-form-label">Submission Deadline (optional)</label>
                 <input
-                  type="text"
-                  class="form-input"
-                  x-model="callForm.title"
-                  required
-                  placeholder="e.g. Call for Papers & Lightning Talks"
-                  style="width: 100%; font-size: 13px; padding: 7px 10px"
+                  type="datetime-local"
+                  class="vd-form-input"
+                  x-model="callForm.end_date"
                 />
               </div>
-
-              <div
-                style="
-                  display: grid;
-                  grid-template-columns: 1fr 1fr;
-                  gap: 12px;
-                  margin-bottom: 14px;
-                "
-              >
-                <div>
-                  <label
-                    style="
-                      font-size: 12px;
-                      font-weight: 600;
-                      display: block;
-                      margin-bottom: 4px;
-                    "
-                    >Call Type <span style="color: #e11d48">*</span></label
-                  >
-                  <select
-                    class="form-input"
-                    x-model="callForm.call_type"
-                    style="width: 100%; font-size: 13px; padding: 7px 10px"
-                  >
-                    <option value="speaker">Call for Papers / Speakers</option>
-                    <option value="sponsor">
-                      Call for Sponsors / Partners
-                    </option>
-                    <option value="volunteer">Call for Volunteers</option>
-                    <option value="custom">Custom Open Call</option>
-                  </select>
-                </div>
-                <div>
-                  <label
-                    style="
-                      font-size: 12px;
-                      font-weight: 600;
-                      display: block;
-                      margin-bottom: 4px;
-                    "
-                    >Status</label
-                  >
-                  <select
-                    class="form-input"
-                    x-model="callForm.status"
-                    style="width: 100%; font-size: 13px; padding: 7px 10px"
-                  >
-                    <option value="open">Open (Accepting Submissions)</option>
-                    <option value="draft">Draft (Hidden)</option>
-                    <option value="closed">Closed</option>
-                  </select>
-                </div>
-              </div>
-
-              <div
-                style="
-                  display: grid;
-                  grid-template-columns: 1fr 1fr;
-                  gap: 12px;
-                  margin-bottom: 14px;
-                "
-              >
-                <div>
-                  <label
-                    style="
-                      font-size: 12px;
-                      font-weight: 600;
-                      display: block;
-                      margin-bottom: 4px;
-                    "
-                    >Submission Deadline</label
-                  >
-                  <input
-                    type="datetime-local"
-                    class="form-input"
-                    x-model="callForm.end_date"
-                    style="width: 100%; font-size: 12.5px; padding: 7px 10px"
-                  />
-                </div>
-                <div>
-                  <label
-                    style="
-                      font-size: 12px;
-                      font-weight: 600;
-                      display: block;
-                      margin-bottom: 4px;
-                    "
-                    >Max Submissions (optional)</label
-                  >
-                  <input
-                    type="number"
-                    class="form-input"
-                    x-model="callForm.max_submissions"
-                    placeholder="e.g. 50"
-                    style="width: 100%; font-size: 13px; padding: 7px 10px"
-                  />
-                </div>
-              </div>
-
-              <div style="margin-bottom: 14px">
-                <label
-                  style="
-                    font-size: 12px;
-                    font-weight: 600;
-                    display: block;
-                    margin-bottom: 4px;
-                  "
-                  >Overview Description</label
-                >
-                <textarea
-                  class="form-input"
-                  x-model="callForm.description"
-                  style="width: 100%; font-size: 12.5px; height: 70px"
-                  placeholder="What topics or opportunities is this event seeking?"
-                ></textarea>
-              </div>
-
-              <div style="margin-bottom: 14px">
-                <label
-                  style="
-                    font-size: 12px;
-                    font-weight: 600;
-                    display: block;
-                    margin-bottom: 4px;
-                  "
-                  >Submission Guidelines</label
-                >
-                <textarea
-                  class="form-input"
-                  x-model="callForm.guidelines"
-                  style="width: 100%; font-size: 12.5px; height: 60px"
-                  placeholder="Evaluation criteria, eligibility, presentation duration, etc."
-                ></textarea>
-              </div>
-
-              <div style="margin-bottom: 14px">
-                <label
-                  style="
-                    font-size: 12px;
-                    font-weight: 600;
-                    display: block;
-                    margin-bottom: 4px;
-                  "
-                  >Perks &amp; Benefits for Selected Applicants</label
-                >
-                <textarea
-                  class="form-input"
-                  x-model="callForm.perks"
-                  style="width: 100%; font-size: 12.5px; height: 60px"
-                  placeholder="e.g. Free full-access badge, speaker dinner, certificate, swag bag."
-                ></textarea>
-              </div>
-
-              <div style="margin-bottom: 16px">
-                <label
-                  style="
-                    font-size: 12px;
-                    font-weight: 600;
-                    display: block;
-                    margin-bottom: 4px;
-                  "
-                  >Thank You / Auto-Response Message</label
-                >
+              <div class="vd-form-group" style="margin-bottom: 0;">
+                <label class="vd-form-label">Max Submissions Cap (optional)</label>
                 <input
-                  type="text"
-                  class="form-input"
-                  x-model="callForm.auto_response_message"
-                  placeholder="Thank you! Our committee will review your proposal by..."
-                  style="width: 100%; font-size: 13px; padding: 7px 10px"
+                  type="number"
+                  class="vd-form-input"
+                  x-model="callForm.max_submissions"
+                  placeholder="e.g. 50 (leave empty for unlimited)"
+                  min="1"
                 />
               </div>
+            </div>
 
-              <div style="display: flex; justify-content: flex-end; gap: 8px">
+            <div class="vd-form-group">
+              <label class="vd-form-label">Overview &amp; Purpose</label>
+              <textarea
+                class="vd-form-textarea"
+                x-model="callForm.description"
+                style="height: 68px;"
+                placeholder="What topics, sessions, or contributions are you seeking?"
+              ></textarea>
+            </div>
+
+            <div class="vd-form-group">
+              <label class="vd-form-label">Submission Guidelines &amp; Criteria</label>
+              <textarea
+                class="vd-form-textarea"
+                x-model="callForm.guidelines"
+                style="height: 64px;"
+                placeholder="Evaluation criteria, target audience level, presentation duration..."
+              ></textarea>
+            </div>
+
+            <div class="vd-form-group">
+              <label class="vd-form-label">Perks &amp; Benefits for Selected Applicants</label>
+              <textarea
+                class="vd-form-textarea"
+                x-model="callForm.perks"
+                style="height: 64px;"
+                placeholder="e.g. Free full-access pass, VIP dinner invitation, speaker gift, video recording..."
+              ></textarea>
+            </div>
+
+            <!-- Dynamic Custom Questions Builder -->
+            <div style="border-top: 1px solid var(--border-light); padding-top: 16px; margin-bottom: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div>
+                  <div class="vd-form-label" style="margin: 0;">Custom Form Questions</div>
+                  <div style="font-size: 12px; color: var(--text-muted);">Ask applicants specific questions tailored to your call.</div>
+                </div>
                 <button
                   type="button"
-                  @click="showCreateModal = false"
-                  class="btn-secondary"
-                  style="font-size: 13px; padding: 7px 14px"
+                  @click="addCustomField()"
+                  class="btn btn-secondary btn-sm"
+                  style="font-size: 12px;"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  :disabled="savingCall"
-                  class="btn-primary"
-                  style="font-size: 13px; padding: 7px 14px"
-                >
-                  <span
-                    x-show="!savingCall"
-                    x-text="editingCallId ? 'Update Call' : 'Create Call'"
-                  ></span>
-                  <span x-show="savingCall" style="display: none"
-                    >Saving...</span
-                  >
+                  + Add Question
                 </button>
               </div>
-            </form>
-          </div>
+
+              <template x-for="(field, fIdx) in callForm.custom_fields" :key="field.id || fIdx">
+                <div
+                  style="
+                    background: var(--bg-secondary);
+                    border: 1px solid var(--border-light);
+                    border-radius: 10px;
+                    padding: 12px;
+                    margin-bottom: 8px;
+                    display: grid;
+                    grid-template-columns: 2fr 1.2fr auto auto;
+                    gap: 10px;
+                    align-items: center;
+                  "
+                >
+                  <input
+                    type="text"
+                    x-model="field.label"
+                    placeholder="Question prompt (e.g. Speaking history)"
+                    class="vd-form-input"
+                    style="height: 38px; padding: 6px 10px; font-size: 13px;"
+                  />
+                  <select
+                    x-model="field.field_type"
+                    class="vd-form-select"
+                    style="height: 38px; font-size: 12.5px;"
+                  >
+                    <option value="text">Short Text</option>
+                    <option value="textarea">Long Answer</option>
+                    <option value="yes_no">Yes / No</option>
+                  </select>
+                  <label style="font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                    <input type="checkbox" x-model="field.required" />
+                    Required
+                  </label>
+                  <button
+                    type="button"
+                    @click="removeCustomField(fIdx)"
+                    class="btn btn-secondary btn-sm"
+                    style="color: #b91c1c; padding: 0 10px; height: 36px;"
+                    title="Remove question"
+                  >&times;</button>
+                </div>
+              </template>
+            </div>
+
+            <div class="vd-form-group">
+              <label class="vd-form-label">Auto-Response / Confirmation Message</label>
+              <input
+                type="text"
+                class="vd-form-input"
+                x-model="callForm.auto_response_message"
+                placeholder="Thank you! Our committee will review your submission and notify you by..."
+              />
+            </div>
+
+            <!-- Modal Action Buttons Footer -->
+            <div
+              style="
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+                padding-top: 18px;
+                border-top: 1px solid var(--border-light);
+                margin-top: 24px;
+              "
+            >
+              <button
+                type="button"
+                @click="showCreateModal = false"
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="savingCall"
+                class="btn btn-primary"
+              >
+                <span x-show="!savingCall" x-text="editingCallId ? 'Save Changes' : 'Create Open Call'"></span>
+                <span x-show="savingCall" style="display: none">Saving...</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -4417,6 +4268,7 @@ main_content %}
       loadingSubmissions: false,
       subStatusFilter: 'all',
       subSearchQuery: '',
+      toastMsg: '',
 
       showCreateModal: false,
       editingCallId: null,
@@ -4431,7 +4283,8 @@ main_content %}
         description: '',
         guidelines: '',
         perks: '',
-        auto_response_message: ''
+        auto_response_message: '',
+        custom_fields: []
       },
 
       showReviewModal: false,
@@ -4450,6 +4303,11 @@ main_content %}
         if (initialTab === 'calls') {
           this.load();
         }
+      },
+
+      showToast(msg) {
+        this.toastMsg = msg;
+        setTimeout(() => { this.toastMsg = ''; }, 3000);
       },
 
       async load() {
@@ -4483,15 +4341,7 @@ main_content %}
         return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       },
 
-      getStatusBadgeStyle(st) {
-        if (st === 'accepted') return 'background:rgba(16, 185, 129, 0.12); color:#059669;';
-        if (st === 'shortlisted') return 'background:rgba(2, 132, 199, 0.12); color:#0284c7;';
-        if (st === 'under_review') return 'background:rgba(245, 158, 11, 0.12); color:#d97706;';
-        if (st === 'rejected') return 'background:rgba(239, 68, 68, 0.12); color:#dc2626;';
-        return 'background:var(--bg-secondary); color:var(--text-muted);';
-      },
-
-      openCreateModal() {
+      openCreateModal(preset = null) {
         this.editingCallId = null;
         this.modalError = '';
         this.callForm = {
@@ -4503,9 +4353,64 @@ main_content %}
           description: '',
           guidelines: '',
           perks: '',
-          auto_response_message: ''
+          auto_response_message: '',
+          custom_fields: []
         };
+        if (preset) {
+          this.applyPreset(preset);
+        }
         this.showCreateModal = true;
+      },
+
+      applyPreset(preset) {
+        if (preset === 'speaker' || preset === 'papers') {
+          this.callForm.call_type = 'speaker';
+          this.callForm.title = 'Call for Papers & Speakers';
+          this.callForm.description = 'We invite passionate speakers, engineers, and creators to submit proposals for talks, workshops, and panel sessions.';
+          this.callForm.guidelines = 'Submissions must include an abstract, target audience level (Beginner/Intermediate/Advanced), and session duration (25 min or 45 min).';
+          this.callForm.perks = 'Free speaker pass, exclusive VIP dinner invitation, speaker kit, and video recording published on our channels.';
+          this.callForm.auto_response_message = 'Thank you for your proposal! Our review committee will evaluate all submissions and communicate decisions via email.';
+          this.callForm.custom_fields = [
+            { id: 'exp', label: 'Previous speaking experience or video links', field_type: 'textarea', required: false },
+            { id: 'track', label: 'Preferred track or topic area', field_type: 'text', required: true }
+          ];
+        } else if (preset === 'sponsor') {
+          this.callForm.call_type = 'sponsor';
+          this.callForm.title = 'Call for Sponsors & Partners';
+          this.callForm.description = 'Connect your brand with attendees, industry leaders, and decision-makers in our community.';
+          this.callForm.guidelines = 'Please specify your company goals, budget range, and which sponsorship tiers or bespoke experiences interest you.';
+          this.callForm.perks = 'High-visibility booth spaces, stage mentions, logo on badge lanyards, and access to attendee talent networking.';
+          this.callForm.auto_response_message = 'Thank you for your partnership interest! Our sponsorship team will send you the prospectus and reach out within 24 hours.';
+          this.callForm.custom_fields = [
+            { id: 'tier', label: 'Target Sponsorship Tier (Headline / Gold / Silver / In-Kind)', field_type: 'text', required: true },
+            { id: 'goals', label: 'Primary objective (Brand Awareness / Hiring / Lead Gen)', field_type: 'textarea', required: false }
+          ];
+        } else if (preset === 'volunteer') {
+          this.callForm.call_type = 'volunteer';
+          this.callForm.title = 'Call for Volunteers & Event Crew';
+          this.callForm.description = 'Help us deliver an unforgettable attendee experience while gaining behind-the-scenes event production experience.';
+          this.callForm.guidelines = 'Volunteers should be available for the full duration of the event plus a 2-hour orientation session.';
+          this.callForm.perks = 'Official crew t-shirt, meals during shift, free admission during off-shift hours, and letter of recommendation.';
+          this.callForm.auto_response_message = 'Welcome to the team! Our volunteer coordinator will reach out with team assignments and orientation details.';
+          this.callForm.custom_fields = [
+            { id: 'roles', label: 'Preferred area (Registration / Stage Ops / Attendee Support / Tech)', field_type: 'text', required: true },
+            { id: 'availability', label: 'Availability dates and times', field_type: 'text', required: true }
+          ];
+        }
+      },
+
+      addCustomField() {
+        if (!this.callForm.custom_fields) this.callForm.custom_fields = [];
+        this.callForm.custom_fields.push({
+          id: 'q_' + Math.random().toString(36).substring(2, 8),
+          label: '',
+          field_type: 'text',
+          required: false
+        });
+      },
+
+      removeCustomField(idx) {
+        this.callForm.custom_fields.splice(idx, 1);
       },
 
       editCall(call) {
@@ -4520,7 +4425,8 @@ main_content %}
           description: call.description || '',
           guidelines: call.guidelines || '',
           perks: call.perks || '',
-          auto_response_message: call.auto_response_message || ''
+          auto_response_message: call.auto_response_message || '',
+          custom_fields: Array.isArray(call.custom_fields) ? JSON.parse(JSON.stringify(call.custom_fields)) : []
         };
         this.showCreateModal = true;
       },
@@ -4538,7 +4444,8 @@ main_content %}
           perks: this.callForm.perks || null,
           auto_response_message: this.callForm.auto_response_message || null,
           end_date: this.callForm.end_date ? new Date(this.callForm.end_date).toISOString() : null,
-          max_submissions: this.callForm.max_submissions ? parseInt(this.callForm.max_submissions, 10) : null
+          max_submissions: this.callForm.max_submissions ? parseInt(this.callForm.max_submissions, 10) : null,
+          custom_fields: this.callForm.custom_fields && this.callForm.custom_fields.length > 0 ? this.callForm.custom_fields : null
         };
 
         try {
@@ -4561,6 +4468,7 @@ main_content %}
 
           this.showCreateModal = false;
           await this.load();
+          this.showToast('Open call saved successfully!');
         } catch (err) {
           this.modalError = err.message || 'An error occurred.';
         } finally {
@@ -4579,17 +4487,22 @@ main_content %}
           });
           if (res.ok) {
             call.status = nextStatus;
+            this.showToast(nextStatus === 'open' ? 'Open call reopened!' : 'Open call closed.');
           }
         } catch (err) {
-          alert('Failed to update status.');
+          this.showToast('Failed to update status.');
         }
       },
 
       copyCallLink(call) {
         const slug = call.slug || call.id;
         const url = `${window.location.origin}/events/${_eventSlug}/calls/${slug}`;
-        navigator.clipboard.writeText(url);
-        alert('Public submission link copied to clipboard!');
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(url);
+          this.showToast('Public submission link copied to clipboard!');
+        } else {
+          prompt('Public submission link:', url);
+        }
       },
 
       async viewSubmissions(call) {
@@ -4673,6 +4586,7 @@ main_content %}
           }
           this.filterSubmissions();
           this.showReviewModal = false;
+          this.showToast('Proposal review updated successfully!');
         } catch (err) {
           alert(err.message || 'Failed to save review.');
         } finally {
@@ -4698,7 +4612,7 @@ main_content %}
           }
 
           Object.assign(this.activeSub, data.data);
-          alert('Speaker promoted and added to Event Speakers directory successfully!');
+          this.showToast('Speaker promoted and added to Event Speakers directory!');
         } catch (err) {
           alert(err.message || 'Promotion failed.');
         } finally {
@@ -4724,7 +4638,7 @@ main_content %}
           }
 
           Object.assign(this.activeSub, data.data);
-          alert('Sponsor application promoted and added to Event Sponsors list successfully!');
+          this.showToast('Sponsor promoted and added to Event Sponsors list!');
         } catch (err) {
           alert(err.message || 'Promotion failed.');
         } finally {
