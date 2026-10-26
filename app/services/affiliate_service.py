@@ -75,7 +75,9 @@ async def create_affiliate(
         promoter_email=promoter_email.strip().lower(),
         promoter_phone=promoter_phone.strip() if promoter_phone else None,
         affiliate_code=code,
-        commission_type=commission_type if commission_type in ("percentage", "fixed") else "percentage",
+        commission_type=(
+            commission_type if commission_type in ("percentage", "fixed") else "percentage"
+        ),
         commission_rate=commission_rate,
         payout_bank_code=payout_bank_code,
         payout_account_number=payout_account_number,
@@ -97,8 +99,8 @@ async def create_affiliate(
 
 async def list_org_affiliates(
     db: AsyncSession,
-    *,
     org_id: uuid.UUID,
+    *,
     event_id: uuid.UUID | None = None,
 ) -> list[EventAffiliate]:
     stmt = (
@@ -182,7 +184,9 @@ async def disburse_affiliate_payout(
     if amount <= 0:
         raise HTTPException(400, "Payout amount must be greater than zero.")
     if amount > owed + 0.01:
-        raise HTTPException(400, f"Payout amount ({amount}) cannot exceed commission owed ({owed:.2f}).")
+        raise HTTPException(
+            400, f"Payout amount ({amount}) cannot exceed commission owed ({owed:.2f})."
+        )
 
     transfer_reference = f"aff_payout_{uuid.uuid4().hex}"
     transfer_code = None

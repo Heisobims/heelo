@@ -836,7 +836,7 @@ async def org_event_detail(slug: str, event_id: str, request: Request, db: DBSes
     booth_applications, _ = await vend_svc.list_booth_applications(
         db, event_id=event.id, per_page=100
     )
-    event_affiliates = await aff_svc.list_org_affiliates(db, org.id, event_id=event.id)
+    event_affiliates = await aff_svc.list_org_affiliates(db, org_id=org.id, event_id=event.id)
 
     return templates.TemplateResponse(
         "events/organizer_detail.html",
@@ -3754,7 +3754,7 @@ async def event_open_call_page(
     try:
         call = await call_svc.get_open_call_by_slug(db, event.id, call_id_or_slug)
     except HTTPException:
-        raise HTTPException(404, "Open call not found.")
+        raise HTTPException(404, "Open call not found.") from None
 
     other_calls = [
         c for c in await call_svc.list_open_calls_for_event(db, event.id, public_only=True)
