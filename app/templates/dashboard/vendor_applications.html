@@ -311,7 +311,7 @@ function vendorApplicationsManager(orgSlug) {
     orgSlug: orgSlug,
     loading: true,
     applications: [],
-    selectedEventId: '',
+    selectedEventId: new URLSearchParams(window.location.search).get('event_id') || '',
     filterStatus: 'all',
     metrics: { total: 0, pending: 0, approved: 0, paid: 0, revenue_display: 'NGN 0' },
 

@@ -290,23 +290,38 @@ main_content %}
 
   <!-- ── Stats ─────────────────────────────────────────────────────────────── -->
   <div class="metrics-grid" style="margin-bottom: 24px">
-    <div class="metric-card">
-      <div class="metric-label">Registrations</div>
+    <a
+      href="/org/{{ org.slug }}/registrations?event_id={{ event.id }}"
+      class="metric-card"
+      style="text-decoration: none; color: inherit; display: block; transition: transform 160ms ease, box-shadow 160ms ease; cursor: pointer;"
+      title="View registrations in CRM"
+    >
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="metric-label">Registrations</div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </div>
       <div class="metric-value">{{ stats.registration_count }}</div>
       <div class="metric-change">
-        {% if event.max_capacity %}of {{ event.max_capacity }} capacity{% else
-        %}no capacity limit{% endif %}
+        {% if event.max_capacity %}of {{ event.max_capacity }} capacity{% else %}no capacity limit{% endif %} · View in CRM ›
       </div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">Check-ins</div>
+    </a>
+    <a
+      href="/org/{{ org.slug }}/checkin"
+      class="metric-card"
+      style="text-decoration: none; color: inherit; display: block; transition: transform 160ms ease, box-shadow 160ms ease; cursor: pointer;"
+      title="Open Check-in Hub"
+    >
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="metric-label">Check-ins</div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </div>
       <div class="metric-value">{{ stats.checkin_count }}</div>
       <div class="metric-change">
         {% if stats.registration_count > 0 %} {{ ((stats.checkin_count /
         stats.registration_count) * 100) | int }}% attendance rate {% else %}no
-        registrations yet{% endif %}
+        registrations yet{% endif %} · Open Hub ›
       </div>
-    </div>
+    </a>
     <div class="metric-card">
       <div class="metric-label">Revenue</div>
       <div class="metric-value">
@@ -329,13 +344,23 @@ main_content %}
   </div>
 
   <!-- ── Tab navigation ────────────────────────────────────────────────────── -->
-  <div x-data="{ tab: new URLSearchParams(window.location.search).get('tab') || (window.location.hash ? window.location.hash.substring(1) : 'overview') }">
+  <div x-data="{ 
+    tab: (function() {
+      const p = new URLSearchParams(window.location.search).get('tab') || (window.location.hash ? window.location.hash.substring(1) : 'overview');
+      if (['overview', 'tickets', 'waitlist', 'calls', 'sponsors', 'analytics', 'feedback'].includes(p)) return p;
+      return 'overview';
+    })() 
+  }">
     <div class="event-tabs-bar">
-      {% for tab_id, tab_label in [('overview', 'Overview'), ('tickets',
-      'Tickets'), ('registrations', 'Registrations'), ('waitlist', 'Waitlist'),
-      ('calls', 'Open Calls'), ('sponsors', 'Sponsors'), ('booths', 'Booths &
-      Vendors'), ('affiliates', 'Affiliates'), ('analytics', 'Analytics'),
-      ('feedback', 'Feedback')] %}
+      {% for tab_id, tab_label in [
+        ('overview', 'Overview'),
+        ('tickets', 'Tickets'),
+        ('waitlist', 'Waitlist'),
+        ('calls', 'Open Calls'),
+        ('sponsors', 'Sponsors'),
+        ('analytics', 'Analytics'),
+        ('feedback', 'Feedback')
+      ] %}
       <button
         type="button"
         class="event-tab-btn"
@@ -826,6 +851,73 @@ main_content %}
         {% endif %}
       </div>
       {% endif %}
+
+      <!-- ── Event Operations Hub ─────────────────────────────────────────────── -->
+      <div class="section-card" style="padding: 20px; margin-top: 16px;">
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 4px; color: var(--text-primary);">
+          Event Operations Hub
+        </div>
+        <div style="font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px;">
+          Direct shortcuts to dedicated organization hubs, pre-filtered for this event.
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+          <!-- Registrations -->
+          <a
+            href="/org/{{ org.slug }}/registrations?event_id={{ event.id }}"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border-light); background: var(--bg-surface); text-decoration: none; color: inherit; transition: all 160ms ease;"
+            onmouseover="this.style.borderColor='var(--cyan)'; this.style.transform='translateY(-1px)';"
+            onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='none';"
+          >
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">Registrations CRM</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ stats.registration_count }} attendee{{ 's' if stats.registration_count != 1 else '' }}</div>
+            </div>
+            <span class="material-symbols-outlined" style="font-size: 18px; color: var(--text-muted);">arrow_forward</span>
+          </a>
+
+          <!-- Vendors & Booths -->
+          <a
+            href="/org/{{ org.slug }}/vendors?event_id={{ event.id }}"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border-light); background: var(--bg-surface); text-decoration: none; color: inherit; transition: all 160ms ease;"
+            onmouseover="this.style.borderColor='var(--cyan)'; this.style.transform='translateY(-1px)';"
+            onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='none';"
+          >
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">Vendors &amp; Booths</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ booth_applications|length if booth_applications is defined else 0 }} application{{ 's' if (booth_applications|length if booth_applications is defined else 0) != 1 else '' }}</div>
+            </div>
+            <span class="material-symbols-outlined" style="font-size: 18px; color: var(--text-muted);">arrow_forward</span>
+          </a>
+
+          <!-- Affiliates & Promoters -->
+          <a
+            href="/org/{{ org.slug }}/affiliates?event_id={{ event.id }}"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border-light); background: var(--bg-surface); text-decoration: none; color: inherit; transition: all 160ms ease;"
+            onmouseover="this.style.borderColor='var(--cyan)'; this.style.transform='translateY(-1px)';"
+            onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='none';"
+          >
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">Affiliates &amp; Promoters</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ affiliates|length if affiliates is defined else 0 }} promoter{{ 's' if (affiliates|length if affiliates is defined else 0) != 1 else '' }}</div>
+            </div>
+            <span class="material-symbols-outlined" style="font-size: 18px; color: var(--text-muted);">arrow_forward</span>
+          </a>
+
+          <!-- Check-in Kiosk -->
+          <a
+            href="/org/{{ org.slug }}/checkin"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--border-light); background: var(--bg-surface); text-decoration: none; color: inherit; transition: all 160ms ease;"
+            onmouseover="this.style.borderColor='var(--cyan)'; this.style.transform='translateY(-1px)';"
+            onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='none';"
+          >
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">Check-in Kiosk</div>
+              <div style="font-size: 11.5px; color: var(--text-muted);">{{ stats.checkin_count }} checked in</div>
+            </div>
+            <span class="material-symbols-outlined" style="font-size: 18px; color: var(--text-muted);">arrow_forward</span>
+          </a>
+        </div>
+      </div>
     </div>
 
     <!-- ── Tickets tab ──────────────────────────────────────────────────────── -->
@@ -1392,246 +1484,6 @@ main_content %}
           No promo codes yet.
         </div>
         {% endif %}
-      </div>
-    </div>
-
-    <!-- ── Registrations tab ─────────────────────────────────────────────────── -->
-    <div
-      x-show="tab === 'registrations'"
-      style="display: none"
-      x-data="registrationsTab()"
-      @heelo:tab.window="if ($event.detail.tab === 'registrations' && !loaded) loadRegistrations()"
-    >
-      <div
-        style="
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 20px;
-          flex-wrap: wrap;
-          gap: 10px;
-        "
-      >
-        <h2 style="font-size: 16px; font-weight: 600; margin: 0">
-          Registrations
-          <span
-            x-text="total > 0 ? '(' + total + ')' : ''"
-            style="font-weight: 400; color: var(--text-muted)"
-          ></span>
-        </h2>
-        <div style="display: flex; gap: 6px">
-          <select
-            class="form-select"
-            style="
-              height: 34px;
-              font-size: 13px;
-              padding: 0 30px 0 10px;
-              background-position: right 8px center;
-            "
-            x-model="statusFilter"
-            @change="loadRegistrations()"
-          >
-            <option value="">All statuses</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="pending">Pending payment</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Loading -->
-      <div
-        x-show="loading"
-        style="
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          color: var(--text-muted);
-          padding: 24px 0;
-        "
-      >
-        <div
-          style="
-            width: 16px;
-            height: 16px;
-            border: 2px solid var(--border-light);
-            border-top-color: var(--cyan);
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-          "
-        ></div>
-        Loading registrations...
-      </div>
-
-      <!-- Empty -->
-      <div
-        x-show="!loading && registrations.length === 0"
-        class="empty-state-card"
-        style="max-width: 400px; margin: 0 auto"
-      >
-        <div class="empty-state-icon">
-          <svg
-            width="26"
-            height="26"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--text-muted)"
-            stroke-width="1.5"
-          >
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-        </div>
-        <h2 class="empty-state-title">No registrations yet</h2>
-        <p class="empty-state-body">
-          When attendees register for your event, they'll appear here.
-        </p>
-      </div>
-
-      <!-- Table -->
-      <div x-show="!loading && registrations.length > 0" style="display: none">
-        <div class="section-card">
-          <div style="overflow-x: auto">
-            <table
-              style="width: 100%; border-collapse: collapse; font-size: 13px"
-            >
-              <thead>
-                <tr style="border-bottom: 1px solid var(--border-light)">
-                  <th
-                    style="
-                      text-align: left;
-                      padding: 10px 20px;
-                      font-size: 12px;
-                      color: var(--text-muted);
-                      font-weight: 500;
-                    "
-                  >
-                    Attendee
-                  </th>
-                  <th
-                    style="
-                      text-align: left;
-                      padding: 10px 12px;
-                      font-size: 12px;
-                      color: var(--text-muted);
-                      font-weight: 500;
-                    "
-                  >
-                    Ticket
-                  </th>
-                  <th
-                    style="
-                      text-align: left;
-                      padding: 10px 12px;
-                      font-size: 12px;
-                      color: var(--text-muted);
-                      font-weight: 500;
-                    "
-                  >
-                    Status
-                  </th>
-                  <th
-                    style="
-                      text-align: left;
-                      padding: 10px 12px;
-                      font-size: 12px;
-                      color: var(--text-muted);
-                      font-weight: 500;
-                    "
-                  >
-                    Registered
-                  </th>
-                  <th
-                    style="
-                      text-align: left;
-                      padding: 10px 20px 10px 12px;
-                      font-size: 12px;
-                      color: var(--text-muted);
-                      font-weight: 500;
-                    "
-                  >
-                    Check-in
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <template x-for="reg in registrations" :key="reg.id">
-                  <tr style="border-bottom: 1px solid var(--border-light)">
-                    <td style="padding: 12px 20px">
-                      <div
-                        style="font-weight: 500"
-                        x-text="reg.attendee_name"
-                      ></div>
-                      <div
-                        style="font-size: 12px; color: var(--text-muted)"
-                        x-text="reg.attendee_email"
-                      ></div>
-                    </td>
-                    <td
-                      style="padding: 12px"
-                      x-text="reg.ticket_type || ''"
-                    ></td>
-                    <td style="padding: 12px">
-                      <span
-                        style="
-                          font-size: 12px;
-                          font-weight: 500;
-                          padding: 2px 8px;
-                          border-radius: 100px;
-                        "
-                        :style="reg.status === 'confirmed' ? 'background:#d1fae5;color:#065f46;' : reg.status === 'checked_in' ? 'background:#dbeafe;color:#1e40af;' : reg.status === 'pending' ? 'background:#fef3c7;color:#92400e;' : 'background:var(--bg-secondary);color:var(--text-muted);'"
-                        x-text="reg.status.charAt(0).toUpperCase() + reg.status.slice(1).replace('_', ' ')"
-                      ></span>
-                    </td>
-                    <td
-                      style="padding: 12px; color: var(--text-muted)"
-                      x-text="reg.created_at ? new Date(reg.created_at).toLocaleDateString() : ''"
-                    ></td>
-                    <td
-                      style="
-                        padding: 12px 20px 12px 12px;
-                        color: var(--text-muted);
-                      "
-                      x-text="reg.checked_in_at ? new Date(reg.checked_in_at).toLocaleString() : ''"
-                    ></td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Pagination -->
-        <div
-          x-show="total > 50"
-          style="
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 16px;
-          "
-        >
-          <button
-            class="btn btn-secondary btn-sm"
-            @click="page--; loadRegistrations()"
-            :disabled="page <= 1"
-          >
-            ← Previous
-          </button>
-          <span
-            style="line-height: 34px; font-size: 13px; color: var(--text-muted)"
-            x-text="'Page ' + page + ' of ' + Math.ceil(total / 50)"
-          ></span>
-          <button
-            class="btn btn-secondary btn-sm"
-            @click="page++; loadRegistrations()"
-            :disabled="page * 50 >= total"
-          >
-            Next →
-          </button>
-        </div>
       </div>
     </div>
 
@@ -3200,786 +3052,6 @@ main_content %}
       </div>
     </div>
 
-    <!-- ── Booths & Vendors Tab ──────────────────────────────────────────────── -->
-    <div
-      x-show="tab === 'booths'"
-      style="display: none"
-      x-data="eventBoothsTab()"
-    >
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 12px;
-          margin-bottom: 20px;
-        "
-      >
-        <div>
-          <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 4px">
-            Vendor Booth Packages &amp; Applications
-          </h3>
-          <p style="font-size: 13px; color: var(--text-muted); margin: 0">
-            Manage exhibitor spaces, set pricing packages, and approve vendor
-            applications.
-          </p>
-        </div>
-        <div style="display: flex; gap: 8px">
-          <button
-            type="button"
-            @click="copyApplyLink()"
-            class="btn btn-secondary btn-sm"
-            style="display: inline-flex; align-items: center; gap: 6px"
-          >
-            <span class="material-symbols-outlined" style="font-size: 14px"
-              >link</span
-            >
-            <span
-              x-text="copiedLink ? 'Copied Link!' : 'Public Application Link'"
-            ></span>
-          </button>
-          <button
-            type="button"
-            @click.stop="showPkgModal = true"
-            class="btn btn-primary btn-sm"
-            style="display: inline-flex; align-items: center; gap: 6px"
-          >
-            <span class="material-symbols-outlined" style="font-size: 14px"
-              >add</span
-            >
-            Add Booth Package
-          </button>
-        </div>
-      </div>
-
-      <!-- Packages summary cards -->
-      <div style="margin-bottom: 24px">
-        <div
-          style="
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 10px;
-          "
-        >
-          Configured Booth Packages ({{ booth_packages | length }})
-        </div>
-        {% if booth_packages %}
-        <div
-          style="
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 12px;
-          "
-        >
-          {% for pkg in booth_packages %}
-          <div
-            class="section-card"
-            style="
-              padding: 16px;
-              border: 1px solid var(--border-light);
-              border-radius: 12px;
-            "
-          >
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 6px;
-              "
-            >
-              <span
-                style="
-                  font-size: 14px;
-                  font-weight: 700;
-                  color: var(--text-primary);
-                "
-                >{{ pkg.name }}</span
-              >
-              <span
-                style="
-                  font-size: 11px;
-                  font-weight: 700;
-                  padding: 2px 8px;
-                  border-radius: 100px;
-                  background: rgba(232, 89, 56, 0.1);
-                  color: var(--cyan-dark, #c84729);
-                "
-              >
-                {{ pkg.booths_remaining }} / {{ pkg.total_booths }} left
-              </span>
-            </div>
-            <div
-              style="
-                font-size: 16px;
-                font-weight: 800;
-                color: var(--text-primary);
-                margin-bottom: 6px;
-              "
-            >
-              {{ pkg.currency }} {{ "{:,.0f}".format(pkg.price) }}
-            </div>
-            {% if pkg.dimensions %}
-            <div
-              style="
-                font-size: 12px;
-                color: var(--text-muted);
-                margin-bottom: 4px;
-              "
-            >
-              Dimensions: {{ pkg.dimensions }}
-            </div>
-            {% endif %} {% if pkg.description %}
-            <div
-              style="
-                font-size: 12px;
-                color: var(--text-secondary);
-                line-height: 1.4;
-              "
-            >
-              {{ pkg.description }}
-            </div>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div
-          class="section-card"
-          style="
-            padding: 20px;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 13px;
-          "
-        >
-          No booth packages configured yet. Click
-          <strong>Add Booth Package</strong> to allow exhibitors to apply and
-          purchase space.
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- Applications Table -->
-      <div class="section-card" style="padding: 20px">
-        <div
-          style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-          "
-        >
-          <div style="font-size: 14px; font-weight: 700">
-            Vendor Applications ({{ booth_applications | length }})
-          </div>
-        </div>
-
-        {% if booth_applications %}
-        <div style="overflow-x: auto">
-          <table
-            style="width: 100%; border-collapse: collapse; font-size: 13px"
-          >
-            <thead>
-              <tr
-                style="
-                  border-bottom: 1.5px solid var(--border-light);
-                  text-align: left;
-                  color: var(--text-muted);
-                  font-size: 11px;
-                  text-transform: uppercase;
-                "
-              >
-                <th style="padding: 10px 8px">Business / Contact</th>
-                <th style="padding: 10px 8px">Package</th>
-                <th style="padding: 10px 8px">Requirements</th>
-                <th style="padding: 10px 8px">Booth #</th>
-                <th style="padding: 10px 8px">Status</th>
-                <th style="padding: 10px 8px; text-align: right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for app in booth_applications %}
-              <tr
-                style="border-bottom: 1px solid var(--border-light)"
-                id="booth-app-row-{{ app.id }}"
-              >
-                <td style="padding: 12px 8px">
-                  <div style="font-weight: 700; color: var(--text-primary)">
-                    {{ app.business_name }}
-                  </div>
-                  <div style="font-size: 12px; color: var(--text-muted)">
-                    {{ app.contact_name }} · {{ app.contact_email }}
-                  </div>
-                  <div style="font-size: 11px; color: var(--text-muted)">
-                    {{ app.contact_phone }} ·
-                    <span style="text-transform: capitalize"
-                      >{{ app.category.replace('_',' ') }}</span
-                    >
-                  </div>
-                </td>
-                <td style="padding: 12px 8px">
-                  <div style="font-weight: 600">
-                    {{ app.package.name if app.package else 'Custom / None' }}
-                  </div>
-                  <div style="font-size: 12px; color: var(--text-muted)">
-                    {{ app.currency }} {{ "{:,.0f}".format(app.price) }}
-                  </div>
-                </td>
-                <td
-                  style="
-                    padding: 12px 8px;
-                    max-width: 200px;
-                    font-size: 12px;
-                    color: var(--text-secondary);
-                  "
-                >
-                  {{ app.booth_requirements or app.description or '' }}
-                </td>
-                <td style="padding: 12px 8px">
-                  <span style="font-weight: 700"
-                    >{{ app.assigned_booth_number or '' }}</span
-                  >
-                </td>
-                <td style="padding: 12px 8px">
-                  {% if app.status == 'pending' %}
-                  <span
-                    style="
-                      font-size: 11px;
-                      font-weight: 700;
-                      padding: 2px 8px;
-                      border-radius: 100px;
-                      background: rgba(245, 158, 11, 0.12);
-                      color: #b45309;
-                    "
-                    >Pending Review</span
-                  >
-                  {% elif app.status == 'approved' %}
-                  <span
-                    style="
-                      font-size: 11px;
-                      font-weight: 700;
-                      padding: 2px 8px;
-                      border-radius: 100px;
-                      background: rgba(59, 130, 246, 0.12);
-                      color: #1d4ed8;
-                    "
-                    >Approved / Invoiced</span
-                  >
-                  {% elif app.status == 'paid' %}
-                  <span
-                    style="
-                      font-size: 11px;
-                      font-weight: 700;
-                      padding: 2px 8px;
-                      border-radius: 100px;
-                      background: rgba(34, 197, 94, 0.12);
-                      color: #15803d;
-                    "
-                    >Paid &amp; Confirmed</span
-                  >
-                  {% elif app.status == 'rejected' %}
-                  <span
-                    style="
-                      font-size: 11px;
-                      font-weight: 700;
-                      padding: 2px 8px;
-                      border-radius: 100px;
-                      background: rgba(239, 68, 68, 0.12);
-                      color: #b91c1c;
-                    "
-                    >Rejected</span
-                  >
-                  {% endif %}
-                </td>
-                <td style="padding: 12px 8px; text-align: right">
-                  {% if app.status == 'pending' %}
-                  <div style="display: inline-flex; gap: 6px">
-                    <button
-                      type="button"
-                      @click="approveApp('{{ app.id }}')"
-                      class="btn btn-primary btn-sm"
-                      style="font-size: 11px; padding: 4px 10px"
-                    >
-                      Approve &amp; Invoice
-                    </button>
-                    <button
-                      type="button"
-                      @click="rejectApp('{{ app.id }}')"
-                      class="btn btn-secondary btn-sm"
-                      style="font-size: 11px; padding: 4px 8px; color: #b91c1c"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                  {% elif app.status == 'approved' %}
-                  <a
-                    href="/booths/{{ app.id }}/pay"
-                    target="_blank"
-                    style="
-                      font-size: 11px;
-                      font-weight: 600;
-                      color: var(--cyan);
-                      text-decoration: none;
-                    "
-                  >
-                    View Invoice
-                    <span
-                      class="material-symbols-outlined"
-                      style="font-size: 14px; vertical-align: -2px"
-                      >open_in_new</span
-                    >
-                  </a>
-                  {% else %}
-                  <span style="font-size: 11px; color: var(--text-muted)"
-                    >Completed</span
-                  >
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <div
-          style="
-            text-align: center;
-            padding: 32px 16px;
-            color: var(--text-muted);
-            font-size: 13px;
-          "
-        >
-          No applications received yet. Share the application link with
-          potential exhibitors.
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- Add Booth Package Modal -->
-      <div
-        class="vd-modal-overlay"
-        x-show="showPkgModal"
-        x-cloak
-        x-transition
-        @click.self="showPkgModal = false"
-      >
-        <div class="vd-modal" @click.outside="showPkgModal = false">
-          <div class="vd-modal-header">
-            <h3 class="vd-modal-title">Create Booth Package</h3>
-            <button
-              type="button"
-              @click="showPkgModal=false"
-              class="vd-modal-close"
-            >
-              <span class="material-symbols-outlined" style="font-size: 18px"
-                >close</span
-              >
-            </button>
-          </div>
-          <div
-            style="
-              font-size: 13.5px;
-              color: var(--text-muted);
-              margin: -10px 0 20px;
-            "
-          >
-            Configure an exhibitor booth tier with dimensions and amenities.
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 16px">
-            <div class="vd-form-group" style="margin-bottom: 0">
-              <label class="vd-form-label">Package Name *</label>
-              <input
-                type="text"
-                x-model="pkgDraft.name"
-                placeholder="e.g. Standard 3x3m Booth"
-                class="vd-form-input"
-              />
-            </div>
-
-            <div
-              style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px"
-            >
-              <div class="vd-form-group" style="margin-bottom: 0">
-                <label class="vd-form-label"
-                  >Price ({{ org.currency }}) *</label
-                >
-                <input
-                  type="number"
-                  x-model="pkgDraft.price"
-                  min="0"
-                  placeholder="50000"
-                  class="vd-form-input"
-                />
-              </div>
-              <div class="vd-form-group" style="margin-bottom: 0">
-                <label class="vd-form-label">Total Booths Available *</label>
-                <input
-                  type="number"
-                  x-model="pkgDraft.total_booths"
-                  min="1"
-                  placeholder="10"
-                  class="vd-form-input"
-                />
-              </div>
-            </div>
-
-            <div class="vd-form-group" style="margin-bottom: 0">
-              <label class="vd-form-label">Dimensions (optional)</label>
-              <input
-                type="text"
-                x-model="pkgDraft.dimensions"
-                placeholder="e.g. 3m x 3m (9 sqm)"
-                class="vd-form-input"
-              />
-            </div>
-
-            <div class="vd-form-group" style="margin-bottom: 0">
-              <label class="vd-form-label"
-                >Description / Amenities (optional)</label
-              >
-              <textarea
-                x-model="pkgDraft.description"
-                rows="3"
-                placeholder="Includes 1 table, 2 chairs, power outlet, wifi access..."
-                class="vd-form-textarea"
-              ></textarea>
-            </div>
-
-            <div
-              x-show="pkgErr"
-              x-text="pkgErr"
-              style="font-size: 12px; color: #dc2626; font-weight: 600"
-            ></div>
-
-            <div
-              style="
-                display: flex;
-                justify-content: flex-end;
-                gap: 12px;
-                margin-top: 8px;
-              "
-            >
-              <button
-                type="button"
-                @click="showPkgModal=false"
-                class="vd-btn vd-btn-outline"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                @click="savePkg()"
-                :disabled="savingPkg"
-                class="vd-btn vd-btn-accent"
-              >
-                <span
-                  x-text="savingPkg ? 'Creating…' : 'Create Package'"
-                ></span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ── Affiliates & Promoters Tab ─────────────────────────────────────────── -->
-    <div
-      x-show="tab === 'affiliates'"
-      style="display: none"
-      x-data="eventAffiliatesTab()"
-    >
-      <div
-        style="
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 12px;
-          margin-bottom: 20px;
-        "
-      >
-        <div>
-          <h3 style="font-size: 16px; font-weight: 700; margin: 0 0 4px">
-            Ambassadors &amp; Affiliate Promoters
-          </h3>
-          <p style="font-size: 13px; color: var(--text-muted); margin: 0">
-            Generate unique tracked links for influencers and partners, monitor
-            ticket sales, and disburse commissions.
-          </p>
-        </div>
-        <div style="display: flex; gap: 8px">
-          <a
-            href="/org/{{ org.slug }}/affiliates"
-            class="btn btn-secondary btn-sm"
-            style="display: inline-flex; align-items: center; gap: 6px"
-          >
-            <span class="material-symbols-outlined" style="font-size: 14px"
-              >open_in_new</span
-            >
-            All Org Promoters
-          </a>
-          <button
-            type="button"
-            @click.stop="showAddModal = true"
-            class="btn btn-primary btn-sm"
-            style="display: inline-flex; align-items: center; gap: 6px"
-          >
-            <span class="material-symbols-outlined" style="font-size: 14px"
-              >add</span
-            >
-            Add Promoter Link
-          </button>
-        </div>
-      </div>
-
-      <!-- Promoters Table -->
-      <div class="section-card" style="padding: 20px">
-        {% if affiliates %}
-        <div style="overflow-x: auto">
-          <table
-            style="width: 100%; border-collapse: collapse; font-size: 13px"
-          >
-            <thead>
-              <tr
-                style="
-                  border-bottom: 1.5px solid var(--border-light);
-                  text-align: left;
-                  color: var(--text-muted);
-                  font-size: 11px;
-                  text-transform: uppercase;
-                "
-              >
-                <th style="padding: 10px 8px">Promoter</th>
-                <th style="padding: 10px 8px">Code / Link</th>
-                <th style="padding: 10px 8px">Commission</th>
-                <th style="padding: 10px 8px">Clicks</th>
-                <th style="padding: 10px 8px">Sales Attributed</th>
-                <th style="padding: 10px 8px">Owed</th>
-                <th style="padding: 10px 8px; text-align: right">
-                  Disbursement
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for aff in affiliates %}
-              <tr style="border-bottom: 1px solid var(--border-light)">
-                <td style="padding: 12px 8px">
-                  <div style="font-weight: 700; color: var(--text-primary)">
-                    {{ aff.promoter_name }}
-                  </div>
-                  <div style="font-size: 12px; color: var(--text-muted)">
-                    {{ aff.promoter_email }}
-                  </div>
-                </td>
-                <td style="padding: 12px 8px">
-                  <code
-                    style="
-                      font-size: 12px;
-                      padding: 2px 6px;
-                      background: var(--bg-secondary);
-                      border-radius: 4px;
-                      font-weight: 700;
-                    "
-                    >{{ aff.affiliate_code }}</code
-                  >
-                  <div style="margin-top: 4px">
-                    <button
-                      type="button"
-                      @click="copyPromoterLink('{{ aff.affiliate_code }}')"
-                      style="
-                        border: none;
-                        background: none;
-                        padding: 0;
-                        color: var(--cyan);
-                        font-size: 11px;
-                        cursor: pointer;
-                        font-weight: 600;
-                      "
-                    >
-                      Copy link
-                    </button>
-                  </div>
-                </td>
-                <td style="padding: 12px 8px">
-                  <span style="font-weight: 600"
-                    >{{ aff.commission_rate }}%</span
-                  >
-                </td>
-                <td style="padding: 12px 8px">{{ aff.clicks_count }}</td>
-                <td style="padding: 12px 8px">
-                  <div style="font-weight: 700">
-                    {{ aff.tickets_sold }} ticket{{ 's' if aff.tickets_sold != 1
-                    }}
-                  </div>
-                  <div style="font-size: 11px; color: var(--text-muted)">
-                    {{ org.currency }} {{ "{:,.0f}".format(aff.gross_sales) }}
-                  </div>
-                </td>
-                <td style="padding: 12px 8px">
-                  <span
-                    style="font-weight:700; color:{{ '#15803d' if aff.commission_owed > 0 else 'var(--text-muted)' }};"
-                  >
-                    {{ org.currency }} {{ "{:,.0f}".format(aff.commission_owed)
-                    }}
-                  </span>
-                </td>
-                <td style="padding: 12px 8px; text-align: right">
-                  {% if aff.commission_owed > 0 %}
-                  <button
-                    type="button"
-                    @click="disburse('{{ aff.id }}', {{ aff.commission_owed }})"
-                    class="btn btn-primary btn-sm"
-                    style="font-size: 11px; padding: 4px 10px"
-                  >
-                    Disburse Payout
-                  </button>
-                  {% else %}
-                  <span style="font-size: 11px; color: var(--text-muted)"
-                    >Settled</span
-                  >
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <div
-          style="
-            text-align: center;
-            padding: 32px 16px;
-            color: var(--text-muted);
-            font-size: 13px;
-          "
-        >
-          No promoter links created for this event yet. Click
-          <strong>Add Promoter Link</strong> to create one.
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- Add Promoter Modal -->
-      <div
-        class="vd-modal-overlay"
-        x-show="showAddModal"
-        x-cloak
-        x-transition
-        @click.self="showAddModal = false"
-      >
-        <div
-          class="vd-modal"
-          @click.outside="showAddModal = false"
-          style="max-width: 500px"
-        >
-          <div class="vd-modal-header">
-            <h3 class="vd-modal-title">Add Promoter Link</h3>
-            <button
-              type="button"
-              @click="showAddModal = false"
-              class="vd-modal-close"
-            >
-              <span class="material-symbols-outlined" style="font-size: 18px"
-                >close</span
-              >
-            </button>
-          </div>
-          <div
-            style="
-              font-size: 13.5px;
-              color: var(--text-muted);
-              margin: -10px 0 20px;
-            "
-          >
-            Configure an ambassador referral link and commission rate.
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 16px">
-            <div class="vd-form-group" style="margin-bottom: 0">
-              <label class="vd-form-label">Promoter / Ambassador Name *</label>
-              <input
-                type="text"
-                x-model="affDraft.promoter_name"
-                placeholder="e.g. Alex Morgan"
-                class="vd-form-input"
-              />
-            </div>
-
-            <div class="vd-form-group" style="margin-bottom: 0">
-              <label class="vd-form-label">Email Address *</label>
-              <input
-                type="email"
-                x-model="affDraft.promoter_email"
-                placeholder="alex@example.com"
-                class="vd-form-input"
-              />
-            </div>
-
-            <div
-              style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px"
-            >
-              <div class="vd-form-group" style="margin-bottom: 0">
-                <label class="vd-form-label">Referral Code *</label>
-                <input
-                  type="text"
-                  x-model="affDraft.affiliate_code"
-                  placeholder="ALEX10"
-                  class="vd-form-input"
-                  style="text-transform: uppercase"
-                />
-              </div>
-              <div class="vd-form-group" style="margin-bottom: 0">
-                <label class="vd-form-label">Commission % *</label>
-                <input
-                  type="number"
-                  x-model="affDraft.commission_rate"
-                  min="1"
-                  max="100"
-                  placeholder="10"
-                  class="vd-form-input"
-                />
-              </div>
-            </div>
-
-            <div
-              x-show="affErr"
-              x-text="affErr"
-              style="font-size: 12px; color: #dc2626; font-weight: 600"
-            ></div>
-
-            <div
-              style="
-                display: flex;
-                justify-content: flex-end;
-                gap: 12px;
-                margin-top: 8px;
-              "
-            >
-              <button
-                type="button"
-                @click="showAddModal=false"
-                class="vd-btn vd-btn-outline"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                @click="saveAffiliate()"
-                :disabled="savingAff"
-                class="vd-btn vd-btn-accent"
-              >
-                <span x-text="savingAff ? 'Saving…' : 'Create Link'"></span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Analytics tab -->
     <div
       x-show="tab === 'analytics'"
@@ -4783,39 +3855,7 @@ main_content %}
     };
   }
 
-  function registrationsTab() {
-    return {
-      registrations: [],
-      total: 0,
-      page: 1,
-      loading: false,
-      loaded: false,
-      statusFilter: '',
 
-      init() {
-        this.$watch('$el.closest("[x-data]")', () => {});
-      },
-
-      async loadRegistrations() {
-        this.loading = true;
-        try {
-          const params = new URLSearchParams({ page: this.page });
-          if (this.statusFilter) params.set('status', this.statusFilter);
-          const res = await fetch(
-            `/api/v1/organizations/${_orgSlug}/events/${_eventId}/registrations?${params}`,
-            { credentials: 'include' }
-          );
-          const data = await res.json();
-          if (data.success) {
-            this.registrations = data.data.items;
-            this.total = data.data.total;
-            this.loaded = true;
-          }
-        } catch {}
-        finally { this.loading = false; }
-      },
-    };
-  }
 
   function feedbackTab() {
     return {
@@ -4944,179 +3984,17 @@ main_content %}
     if (!res.ok) throw new Error('failed');
   }
 
-  function eventBoothsTab() {
-    return {
-      showPkgModal: false,
-      savingPkg: false,
-      pkgErr: '',
-      copiedLink: false,
-      pkgDraft: { name: '', price: '', total_booths: 10, dimensions: '', description: '' },
-
-      copyApplyLink() {
-        const url = `${window.location.origin}/e/{{ event.slug }}/apply-vendor`;
-        navigator.clipboard.writeText(url);
-        this.copiedLink = true;
-        setTimeout(() => { this.copiedLink = false; }, 2000);
-      },
-
-      async savePkg() {
-        if (!this.pkgDraft.name.trim() || !this.pkgDraft.price) {
-          this.pkgErr = 'Name and price are required.';
-          return;
-        }
-        this.savingPkg = true;
-        this.pkgErr = '';
-        try {
-          const res = await fetch(`/api/v1/organizations/${_orgSlug}/events/${_eventId}/booth-packages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              name: this.pkgDraft.name.trim(),
-              price: parseFloat(this.pkgDraft.price),
-              currency: '{{ org.currency or "NGN" }}'.toUpperCase(),
-              total_booths: parseInt(this.pkgDraft.total_booths) || 10,
-              dimensions: this.pkgDraft.dimensions.trim() || null,
-              description: this.pkgDraft.description.trim() || null,
-            }),
-          });
-          const d = await res.json().catch(() => ({}));
-          if (res.ok && d.success) {
-            window.location.reload();
-          } else {
-            let msg = 'Failed to create package.';
-            if (d.error && d.error.message) msg = d.error.message;
-            else if (typeof d.detail === 'string') msg = d.detail;
-            else if (Array.isArray(d.detail)) msg = d.detail.map(x => x.msg || JSON.stringify(x)).join(', ');
-            this.pkgErr = msg;
-          }
-        } catch (e) {
-          this.pkgErr = 'Network error.';
-        } finally {
-          this.savingPkg = false;
-        }
-      },
-
-      async approveApp(appId) {
-        const boothNum = prompt('Assign a booth/table number (optional, e.g. A-12):', '') || '';
-        try {
-          const res = await fetch(`/api/v1/organizations/${_orgSlug}/booth-applications/${appId}/approve`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ assigned_booth_number: boothNum.trim() || null }),
-          });
-          const d = await res.json();
-          if (res.ok && d.success) {
-            alert('Application approved! An automated payment invoice email has been sent to the vendor.');
-            window.location.reload();
-          } else {
-            alert(d.error?.message || d.detail || 'Failed to approve application.');
-          }
-        } catch {
-          alert('Network error.');
-        }
-      },
-
-      async rejectApp(appId) {
-        const reason = prompt('Reason for rejection (optional):', '') || '';
-        try {
-          const res = await fetch(`/api/v1/organizations/${_orgSlug}/booth-applications/${appId}/reject`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ reason: reason.trim() || null }),
-          });
-          const d = await res.json();
-          if (res.ok && d.success) {
-            window.location.reload();
-          } else {
-            alert(d.error?.message || d.detail || 'Failed to reject application.');
-          }
-        } catch {
-          alert('Network error.');
-        }
-      }
-    };
-  }
-
-  function eventAffiliatesTab() {
-    return {
-      showAddModal: false,
-      savingAff: false,
-      affErr: '',
-      affDraft: { promoter_name: '', promoter_email: '', affiliate_code: '', commission_rate: 10 },
-
-      copyPromoterLink(code) {
-        const url = `${window.location.origin}/e/{{ event.slug }}?ref=${encodeURIComponent(code)}`;
-        navigator.clipboard.writeText(url);
-        alert(`Copied link to clipboard:\n${url}`);
-      },
-
-      async saveAffiliate() {
-        if (!this.affDraft.promoter_name.trim() || !this.affDraft.promoter_email.trim() || !this.affDraft.affiliate_code.trim()) {
-          this.affErr = 'All fields are required.';
-          return;
-        }
-        this.savingAff = true;
-        this.affErr = '';
-        try {
-          const res = await fetch(`/api/v1/organizations/${_orgSlug}/events/${_eventId}/affiliates`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              promoter_name: this.affDraft.promoter_name.trim(),
-              promoter_email: this.affDraft.promoter_email.trim(),
-              affiliate_code: this.affDraft.affiliate_code.trim().toUpperCase(),
-              commission_type: 'percentage',
-              commission_rate: parseFloat(this.affDraft.commission_rate) || 10,
-            }),
-          });
-          const d = await res.json().catch(() => ({}));
-          if (res.ok && d.success) {
-            window.location.reload();
-          } else {
-            let msg = 'Failed to create affiliate link.';
-            if (d.error && d.error.message) msg = d.error.message;
-            else if (typeof d.detail === 'string') msg = d.detail;
-            else if (Array.isArray(d.detail)) msg = d.detail.map(x => x.msg || JSON.stringify(x)).join(', ');
-            this.affErr = msg;
-          }
-        } catch {
-          this.affErr = 'Network error.';
-        } finally {
-          this.savingAff = false;
-        }
-      },
-
-      async disburse(affId, amount) {
-        if (!confirm(`Confirm disbursement of ${amount} to promoter?`)) return;
-        try {
-          const res = await fetch(`/api/v1/organizations/${_orgSlug}/affiliates/${affId}/payout`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ amount: parseFloat(amount), method: 'manual', notes: 'Event dashboard disbursement' }),
-          });
-          const d = await res.json();
-          if (res.ok && d.success) {
-            alert('Payout recorded and marked disbursed!');
-            window.location.reload();
-          } else {
-            alert(d.error?.message || d.detail || 'Failed to disburse payout.');
-          }
-        } catch {
-          alert('Network error.');
-        }
-      }
-    };
-  }
-
-  // Auto-load registrations when tab switches
-  document.addEventListener('alpine:init', () => {
-    Alpine.effect(() => {});
-  });
+  // Handle redirects for tabs moved to dedicated sidebar hubs
+  (function() {
+    const _initialTab = new URLSearchParams(window.location.search).get('tab') || (window.location.hash ? window.location.hash.substring(1) : '');
+    if (_initialTab === 'registrations') {
+      window.location.replace('/org/' + _orgSlug + '/registrations?event_id=' + _eventId);
+    } else if (_initialTab === 'booths') {
+      window.location.replace('/org/' + _orgSlug + '/vendors?event_id=' + _eventId);
+    } else if (_initialTab === 'affiliates') {
+      window.location.replace('/org/' + _orgSlug + '/affiliates?event_id=' + _eventId);
+    }
+  })();
 </script>
 
 <style>

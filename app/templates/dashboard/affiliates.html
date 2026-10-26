@@ -1274,7 +1274,7 @@ block main_content %}
       orgSlug: orgSlug,
       loading: true,
       affiliates: [],
-      selectedEventId: "",
+      selectedEventId: new URLSearchParams(window.location.search).get("event_id") || "",
       searchQuery: "",
       filterStatus: "all",
       metrics: {
