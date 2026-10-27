@@ -289,13 +289,13 @@ body, .dash-root, .dash-main, .dash-content {
     {% if mode == 'create' %}New event{% else %}Edit event{% endif %}
   </div>
   <div class="dash-greeting" style="margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-    <div style="display:flex; align-items:center;">
+    <h1 style="display:flex; align-items:center; margin:0; font-size:24px; font-weight:500; font-family:var(--font-serif);">
     {% if mode == 'create' %}
-      <span class="material-symbols-outlined" style="font-size:20px; margin-right:10px; color:var(--cyan);">event</span>Create an event
+      <span class="material-symbols-outlined" style="font-size:20px; margin-right:10px; color:var(--cyan); font-family:'Material Symbols Outlined';">event</span>Create an event
     {% else %}
-      <span class="material-symbols-outlined" style="font-size:20px; margin-right:10px; color:var(--cyan);">edit</span>Edit event
+      <span class="material-symbols-outlined" style="font-size:20px; margin-right:10px; color:var(--cyan); font-family:'Material Symbols Outlined';">edit</span>Edit event
     {% endif %}
-    </div>
+    </h1>
     {% if mode == 'edit' and event %}
     <span class="status-badge {{ event.status }}">{{ event.status | capitalize }}</span>
     {% endif %}

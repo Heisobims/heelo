@@ -88,7 +88,7 @@
 
     <!-- Header -->
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;">
-      <div class="dash-greeting" style="margin:0;">Team</div>
+      <h1 class="dash-greeting" style="margin:0; font-size:24px; font-weight:500; font-family:var(--font-serif);">Team</h1>
       {% if user_role == 'admin' or is_owner %}
       <button type="button" class="btn btn-primary btn-sm" @click="inviteOpen = true">
         <span class="material-symbols-outlined" style="margin-right:6px;">add</span> Invite member

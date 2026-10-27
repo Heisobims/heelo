@@ -616,12 +616,21 @@
 
 .dash-page-header h1,
 .dash-content h1,
-.dash-greeting {
+.dash-greeting,
+.dash-greeting > div,
+.dash-greeting > h1,
+#dash-greeting,
+[class*="dash-greeting"] {
   font-size: 24px;
   font-weight: 500;
   font-family: var(--font-serif, Georgia, serif);
   color: var(--text-primary);
   margin-bottom: 4px;
+}
+
+.dash-greeting .material-symbols-outlined {
+  font-family: "Material Symbols Outlined" !important;
+  font-weight: normal !important;
 }
 
 .dash-subheading {
