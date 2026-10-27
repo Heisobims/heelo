@@ -213,45 +213,54 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     font-weight: 400;
   }
 
-  .mpl-hero-trust {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
-
-  .mpl-trust-stars {
+  .mpl-hero-social-proof {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 14px;
+    margin-top: 4px;
   }
 
-  .mpl-trust-badge-icon {
+  .mpl-avatar-group {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 5px;
-    background: #e85938;
-    color: #ffffff;
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 1;
   }
 
-  .mpl-stars-row {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    color: #e85938;
-    font-size: 15px;
-    line-height: 1;
+  .mpl-avatar-circle {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2.5px solid #ffffff;
+    margin-left: -11px;
+    box-shadow: 0 2px 8px rgba(19, 27, 23, 0.12);
+    flex-shrink: 0;
+    background: #e2ece6;
+    transition:
+      transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+      z-index 0.18s ease;
+    position: relative;
   }
 
-  .mpl-trust-rating {
-    font-size: 12.5px;
-    color: #71717a;
+  .mpl-avatar-circle:first-child {
+    margin-left: 0;
+  }
+
+  .mpl-avatar-circle:hover {
+    transform: translateY(-2px) scale(1.12);
+    z-index: 5;
+  }
+
+  .mpl-proof-text {
+    font-family: var(--mpl-font-sans);
+    font-size: 13.5px;
+    line-height: 1.45;
+    color: #56625c;
     font-weight: 500;
+  }
+
+  .mpl-proof-text strong {
+    color: #131b17;
+    font-weight: 700;
   }
 
   /* -- Hero Banner with Rounded Corners & Toast Stack -- */
@@ -1778,7 +1787,12 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     <div class="mpl-hero-header">
       <div class="mpl-hero-headline-col">
         <h1 class="mpl-hero-title">
-          Made for <span class="mpl-typed-wrap"><span class="mpl-typed-persona" id="heroTypedPersona">attendees</span><span class="mpl-typed-cursor" aria-hidden="true">|</span></span>,<br />
+          Made for
+          <span class="mpl-typed-wrap"
+            ><span class="mpl-typed-persona" id="heroTypedPersona"
+              >attendees</span
+            ><span class="mpl-typed-cursor" aria-hidden="true">|</span></span
+          >,<br />
           &amp; organizers ready to<br />
           sell out tickets quickly.
         </h1>
@@ -1786,21 +1800,22 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 
       <div class="mpl-hero-aside-col">
         <p class="mpl-hero-subtitle">
-          The all-in-one platform to discover verified events, book trusted vendor booths, and launch ticket sales with instant payouts and seamless check-in.
+          The all-in-one platform to discover verified events, book trusted
+          vendor booths, and launch ticket sales with instant payouts and
+          seamless check-in.
         </p>
 
-        <div class="mpl-hero-trust">
-          <div class="mpl-trust-stars">
-            <span class="mpl-trust-badge-icon">G<sub>2</sub></span>
-            <div class="mpl-stars-row" aria-label="5 stars rating">
-              <span class="mpl-star">&#9733;</span>
-              <span class="mpl-star">&#9733;</span>
-              <span class="mpl-star">&#9733;</span>
-              <span class="mpl-star">&#9733;</span>
-              <span class="mpl-star">&#9733;</span>
-            </div>
+        <div class="mpl-hero-social-proof">
+          <div class="mpl-avatar-group" aria-hidden="true">
+            <img src="/static/images/landing/avatars/avatar-1.jpg" alt="" class="mpl-avatar-circle" />
+            <img src="/static/images/landing/avatars/avatar-2.jpg" alt="" class="mpl-avatar-circle" />
+            <img src="/static/images/landing/avatars/avatar-3.jpg" alt="" class="mpl-avatar-circle" />
+            <img src="/static/images/landing/avatars/avatar-4.jpg" alt="" class="mpl-avatar-circle" />
+            <img src="/static/images/landing/avatars/avatar-5.jpg" alt="" class="mpl-avatar-circle" />
           </div>
-          <div class="mpl-trust-rating">4.7 (23 reviews)</div>
+          <div class="mpl-proof-text">
+            Over <strong>5,000</strong> organizers and vendors use tixdoo
+          </div>
         </div>
       </div>
     </div>
@@ -2620,14 +2635,11 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     });
 
     // -- Hero Typewriter Loop -------------------------------------
-    var typewriterEl = document.getElementById("heroTypedPersona") || document.getElementById("heroTypedWord");
+    var typewriterEl =
+      document.getElementById("heroTypedPersona") ||
+      document.getElementById("heroTypedWord");
     if (typewriterEl) {
-      var words = [
-        "attendees",
-        "Organizers",
-        "Venue Owners",
-        "Vendors",
-      ];
+      var words = ["attendees", "Organizers", "Spaces", "Vendors"];
       var wordIndex = 0;
       var charIndex = words[0].length;
       var isDeleting = true; // Starts with initial "attendees" text, pauses, then clears
