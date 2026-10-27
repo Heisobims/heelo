@@ -275,7 +275,10 @@
 
   .ticket-stub {
     padding: 22px 26px 26px;
-    text-align: center;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     box-sizing: border-box;
   }
   @media (max-width: 480px) {
@@ -286,26 +289,17 @@
   .ticket-attendee {
     font-size: 17px;
     font-weight: 700;
-    margin-bottom: 2px;
+    margin-bottom: 12px;
     color: var(--text-primary);
     word-break: break-word;
+    text-align: left;
   }
-  .ticket-tier {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 20px;
-  }
-
   .ticket-qr-frame {
     background: #fff;
     border: 1.5px solid var(--border-light);
     border-radius: 16px;
     padding: 16px;
-    display: inline-block;
+    display: block;
     margin-bottom: 14px;
     box-sizing: border-box;
     max-width: 100%;
@@ -324,24 +318,35 @@
       height: 160px;
     }
   }
-
+  .ticket-tier {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-align: left;
+  }
   .ticket-code {
     font-family: var(--font-mono, monospace);
     font-size: 11px;
     letter-spacing: 0.05em;
     color: var(--text-muted);
     word-break: break-all;
+    text-align: left;
   }
 
   .ticket-status {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    margin-top: 16px;
+    margin-top: 14px;
     padding: 5px 14px;
     border-radius: 100px;
     font-size: 12px;
     font-weight: 700;
+    align-self: flex-start;
   }
   .ticket-status.confirmed {
     background: rgba(232, 89, 56, 0.12);
@@ -456,14 +461,13 @@
     }
     .ticket-stub {
       padding: 12px 20px 14px !important;
+      text-align: left !important;
+      align-items: flex-start !important;
     }
     .ticket-attendee {
       font-size: 16px !important;
-      margin-bottom: 2px !important;
-    }
-    .ticket-tier {
-      font-size: 11px !important;
       margin-bottom: 8px !important;
+      text-align: left !important;
     }
     .ticket-qr-frame {
       padding: 8px !important;
@@ -474,13 +478,20 @@
       width: 140px !important;
       height: 140px !important;
     }
+    .ticket-tier {
+      font-size: 11px !important;
+      margin-bottom: 4px !important;
+      text-align: left !important;
+    }
     .ticket-code {
       font-size: 10px !important;
+      text-align: left !important;
     }
     .ticket-status {
       margin-top: 8px !important;
       padding: 3px 12px !important;
       font-size: 11px !important;
+      align-self: flex-start !important;
     }
   }
 </style>
@@ -586,16 +597,17 @@
 
     <div class="ticket-stub">
       <div class="ticket-attendee">{{ reg.attendee_name }}</div>
-      <div class="ticket-tier">
-        <span class="material-symbols-outlined" style="font-size: 14px">sell</span>
-        {{ reg.ticket_type.name if reg.ticket_type else 'General Admission' }}
-      </div>
 
       <div class="ticket-qr-frame">
         <img
           src="/api/v1/registrations/{{ reg.id }}/qr.png"
           alt="Ticket QR code"
         />
+      </div>
+
+      <div class="ticket-tier">
+        <span class="material-symbols-outlined" style="font-size: 14px">sell</span>
+        {{ reg.ticket_type.name if reg.ticket_type else 'General Admission' }}
       </div>
       <div class="ticket-code">{{ reg.id }}</div>
 
