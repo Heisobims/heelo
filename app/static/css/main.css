@@ -150,7 +150,7 @@ ul, ol { list-style: none; }
 .display {
   font-family: var(--font-serif);
   font-size: clamp(42px, 6vw, 68px);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.05;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -159,7 +159,7 @@ ul, ol { list-style: none; }
 h1, .h1 {
   font-family: var(--font-serif);
   font-size: 40px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.015em;
   color: var(--text-primary);
@@ -168,7 +168,7 @@ h1, .h1 {
 h2, .h2 {
   font-family: var(--font-serif);
   font-size: 28px;
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--text-primary);
@@ -702,7 +702,7 @@ select option,
 .topnav-logo {
   font-family: var(--font-serif);
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
@@ -898,7 +898,7 @@ select option,
 .empty-state h3 {
   font-family: var(--font-serif);
   font-size: 22px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-primary);
   margin-top: 4px;
 }
@@ -1020,7 +1020,7 @@ select option,
   font-family: var(--font-serif);
   font-style: italic;
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--primary-dark);
   letter-spacing: -0.6px;
   text-decoration: none;
@@ -1114,7 +1114,7 @@ select option,
 .auth-title {
   font-family: var(--font-serif);
   font-size: clamp(26px, 3.2vw, 32px);
-  font-weight: 700;
+  font-weight: 500;
   color: var(--primary-dark);
   letter-spacing: -0.6px;
   margin: 0 0 8px;
@@ -1326,7 +1326,7 @@ select option,
   font-family: var(--font-serif);
   font-style: italic;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--primary-dark);
   text-decoration: none;
   display: inline-block;
@@ -1404,7 +1404,7 @@ select option,
 .role-card h3 {
   font-family: var(--font-serif);
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--primary-dark);
   margin: 0;
 }
@@ -1622,7 +1622,7 @@ select option,
 .site-nav-logo {
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: 24px; font-weight: 700;
+  font-size: 24px; font-weight: 500;
   color: #FAF9F7; letter-spacing: -0.6px;
   text-decoration: none; flex-shrink: 0; margin-right: 18px;
 }

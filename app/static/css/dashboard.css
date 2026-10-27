@@ -34,7 +34,7 @@
   font-family: var(--font-serif);
   font-style: italic;
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 500;
   color: #131B17;
   letter-spacing: -0.6px;
   text-decoration: none;
@@ -616,7 +616,7 @@
 
 .dash-greeting {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 500;
   font-family: var(--font-serif);
   color: var(--text-primary);
   margin-bottom: 4px;
@@ -681,7 +681,7 @@
 .metric-value {
   font-family: var(--font-serif, Georgia, serif);
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-primary, #131B17);
   line-height: 1.1;
   letter-spacing: -0.5px;
@@ -878,7 +878,7 @@
 
 .empty-state-title {
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 500;
   font-family: var(--font-serif);
   margin-bottom: 10px;
 }
@@ -1429,7 +1429,7 @@
   .mobile-sidebar-title {
     font-family: var(--font-serif);
     font-size: 20px;
-    font-weight: 700;
+    font-weight: 500;
     font-style: italic;
     color: #131B17;
     letter-spacing: -0.5px;
@@ -1937,7 +1937,7 @@ select option,
 .prog-title {
   font-family: var(--font-serif, Georgia, serif);
   font-size: clamp(26px, 4vw, 38px);
-  font-weight: 400;
+  font-weight: 500;
   color: #131B17;
   line-height: 1.2;
   margin: 0 0 10px;

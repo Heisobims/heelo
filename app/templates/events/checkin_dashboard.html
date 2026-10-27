@@ -7,7 +7,7 @@
 <style>
   .ci-layout { max-width: 1100px; margin: 0; padding: 0; }
   .ci-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
-  .ci-title { font-family: var(--font-serif); font-size: 24px; font-weight: 700; color: var(--text-primary); margin: 0 0 0.25rem; }
+  .ci-title { font-family: var(--font-serif); font-size: 24px; font-weight: 500; color: var(--text-primary); margin: 0 0 0.25rem; }
   .ci-sub { font-size: 0.875rem; color: var(--text-secondary); }
   .ci-actions { display: flex; gap: 0.75rem; align-items: center; flex-shrink: 0; }
 
@@ -98,7 +98,7 @@
 
       <div style="flex:1; min-width:0;">
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px;">
-          <h1 style="font-family:var(--font-serif); font-size:22px; font-weight:700; margin:0; color:var(--text-primary);">{{ event.title }}</h1>
+          <h1 style="font-family:var(--font-serif); font-size:22px; font-weight:500; margin:0; color:var(--text-primary);">{{ event.title }}</h1>
           <span class="badge {% if event.status == 'live' %}badge-in{% elif event.status == 'published' %}badge-conf{% else %}badge-pend{% endif %}" style="text-transform:capitalize;">{{ event.status }}</span>
         </div>
         <div style="font-size:13px; color:var(--text-muted);">
