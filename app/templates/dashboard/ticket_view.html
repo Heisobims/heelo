@@ -275,15 +275,18 @@
 
   .ticket-stub {
     padding: 22px 26px 26px;
-    text-align: left;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    text-align: left !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
     box-sizing: border-box;
   }
   @media (max-width: 480px) {
     .ticket-stub {
       padding: 18px 20px 22px;
+      text-align: left !important;
+      align-items: flex-start !important;
     }
   }
   .ticket-attendee {
@@ -292,17 +295,19 @@
     margin-bottom: 12px;
     color: var(--text-primary);
     word-break: break-word;
-    text-align: left;
+    text-align: left !important;
+    align-self: flex-start !important;
   }
   .ticket-qr-frame {
     background: #fff;
     border: 1.5px solid var(--border-light);
     border-radius: 16px;
     padding: 16px;
-    display: block;
-    margin-bottom: 14px;
+    display: inline-block !important;
+    margin: 0 0 14px 0 !important;
     box-sizing: border-box;
     max-width: 100%;
+    align-self: flex-start !important;
   }
   .ticket-qr-frame img {
     width: 190px;
@@ -319,14 +324,15 @@
     }
   }
   .ticket-tier {
-    display: inline-flex;
+    display: inline-flex !important;
     align-items: center;
     gap: 5px;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-muted);
     margin-bottom: 6px;
-    text-align: left;
+    text-align: left !important;
+    align-self: flex-start !important;
   }
   .ticket-code {
     font-family: var(--font-mono, monospace);
@@ -334,11 +340,12 @@
     letter-spacing: 0.05em;
     color: var(--text-muted);
     word-break: break-all;
-    text-align: left;
+    text-align: left !important;
+    align-self: flex-start !important;
   }
 
   .ticket-status {
-    display: inline-flex;
+    display: inline-flex !important;
     align-items: center;
     gap: 5px;
     margin-top: 14px;
@@ -346,7 +353,7 @@
     border-radius: 100px;
     font-size: 12px;
     font-weight: 700;
-    align-self: flex-start;
+    align-self: flex-start !important;
   }
   .ticket-status.confirmed {
     background: rgba(232, 89, 56, 0.12);

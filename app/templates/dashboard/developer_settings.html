@@ -1136,17 +1136,25 @@ function verifyHeeloWebhook(rawBodyBuffer, signatureHeader) {
 {% endblock %}
 
 {% block scripts %}
+<script id="dev-portal-data" type="application/json">
+{
+  "allWebhookEvents": {{ webhook_events | tojson }},
+  "apiKeys": {{ api_keys_json | safe }},
+  "webhooks": {{ webhooks_json | safe }}
+}
+</script>
 <script>
+const _devData = JSON.parse(document.getElementById('dev-portal-data')?.textContent || '{}');
 const _orgSlug = "{{ org.slug }}";
-const _allWebhookEvents = {{ webhook_events | tojson }};
+const _allWebhookEvents = _devData.allWebhookEvents || [];
 
 function devPortal() {
   return {
     currentTab: 'keys',
     codeLang: 'curl',
 
-    apiKeys: {{ api_keys_json | safe }},
-    webhooks: {{ webhooks_json | safe }}.map(w => ({
+    apiKeys: _devData.apiKeys || [],
+    webhooks: (_devData.webhooks || []).map(w => ({
       ...w,
       showDeliveries: false,
       deliveries: null,

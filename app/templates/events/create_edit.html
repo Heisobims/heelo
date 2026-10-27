@@ -1702,6 +1702,18 @@ body, .dash-root, .dash-main, .dash-content {
   </div><!-- /x-data -->
 </div>
 
+<script id="event-editor-data" type="application/json">
+{
+  "existing": {{ event_dict | tojson if event_dict is defined and event_dict else 'null' }},
+  "existingTickets": {{ existing_tickets | tojson if existing_tickets is defined and existing_tickets else '[]' }},
+  "existingSpeakers": {{ existing_speakers | tojson if existing_speakers is defined and existing_speakers else '[]' }},
+  "existingSponsors": {{ existing_sponsors | tojson if existing_sponsors is defined and existing_sponsors else '[]' }},
+  "existingSessions": {{ existing_sessions | tojson if existing_sessions is defined and existing_sessions else '[]' }},
+  "existingFormFields": {{ existing_form_fields | tojson if existing_form_fields is defined and existing_form_fields else '[]' }},
+  "existingSectionOrder": {{ existing_section_order | tojson if existing_section_order is defined and existing_section_order else '[]' }}
+}
+</script>
+
 <script>
 function templatePicker() {
   return {
@@ -1734,13 +1746,14 @@ function templatePicker() {
 }
 
 function eventForm() {
-  const existing = {{ event_dict | tojson if event_dict is defined and event_dict else 'null' }};
-  const existingTickets = {{ existing_tickets | tojson if existing_tickets is defined and existing_tickets else '[]' }};
-  const existingSpeakers = {{ existing_speakers | tojson if existing_speakers is defined and existing_speakers else '[]' }};
-  const existingSponsors = {{ existing_sponsors | tojson if existing_sponsors is defined and existing_sponsors else '[]' }};
-  const existingSessions = {{ existing_sessions | tojson if existing_sessions is defined and existing_sessions else '[]' }};
-  const existingFormFields = {{ existing_form_fields | tojson if existing_form_fields is defined and existing_form_fields else '[]' }};
-  const existingSectionOrder = {{ existing_section_order | tojson if existing_section_order is defined and existing_section_order else '[]' }};
+  const _editorData = JSON.parse(document.getElementById('event-editor-data')?.textContent || '{}');
+  const existing = _editorData.existing;
+  const existingTickets = _editorData.existingTickets || [];
+  const existingSpeakers = _editorData.existingSpeakers || [];
+  const existingSponsors = _editorData.existingSponsors || [];
+  const existingSessions = _editorData.existingSessions || [];
+  const existingFormFields = _editorData.existingFormFields || [];
+  const existingSectionOrder = _editorData.existingSectionOrder || [];
   const orgSlug = '{{ org.slug }}';
   const existingId = existing ? existing.id : null;
 
