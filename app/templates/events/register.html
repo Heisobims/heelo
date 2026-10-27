@@ -1210,12 +1210,26 @@
 </div>
 {% endif %}
 
+<script id="register-data" type="application/json">
+{
+  "ticketTypes": {{ ticket_types_json | safe }},
+  "formFields": {{ form_fields_json | safe }},
+  "eventSlug": {{ event.slug | tojson }},
+  "feeConfig": {{ fee_config_json | safe }},
+  "platformFeePercent": {{ platform_fee_percent | default(0) }},
+  "currency": {{ (ticket_types[0].currency if ticket_types else (org.currency if org else 'USD')) | tojson }},
+  "currencySymbol": {{ ((ticket_types[0].currency if ticket_types else (org.currency if org else 'USD')) | currency_symbol) | tojson }},
+  "userName": {{ (user.full_name if user else '') | tojson }},
+  "userEmail": {{ (user.email if user else '') | tojson }}
+}
+</script>
 <script>
-const _ticketTypes = {{ ticket_types_json | safe }};
-const _formFields = {{ form_fields_json | safe }};
-const _eventSlug = {{ event.slug | tojson }};
-const _feeConfig = {{ fee_config_json | safe }};
-const _platformFeePercent = {{ platform_fee_percent }};
+const _regData = JSON.parse(document.getElementById('register-data')?.textContent || '{}');
+const _ticketTypes = _regData.ticketTypes || [];
+const _formFields = _regData.formFields || [];
+const _eventSlug = _regData.eventSlug || '';
+const _feeConfig = _regData.feeConfig || null;
+const _platformFeePercent = _regData.platformFeePercent || 0;
 const _passFeesToBuyer = "{{ 'true' if event.pass_fees_to_buyer else 'false' }}" === "true";
 
 function grossUpForBuyerFees(subtotal) {
@@ -1229,8 +1243,8 @@ function grossUpForBuyerFees(subtotal) {
   const gatewayFee = total - subtotal - platformFee;
   return { total, platformFee, gatewayFee };
 }
-const _currency = {{ (ticket_types[0].currency if ticket_types else (org.currency if org else 'USD')) | tojson }};
-const _currencySymbol = {{ ((ticket_types[0].currency if ticket_types else (org.currency if org else 'USD')) | currency_symbol) | tojson }};
+const _currency = _regData.currency || 'USD';
+const _currencySymbol = _regData.currencySymbol || '$';
 
 // Pre-selected quantities from event page (URL params: t_<uuid>=<qty>)
 const _preSelected = (() => {
@@ -1272,8 +1286,8 @@ function registerForm() {
     step: 1,
     quantities: { ..._preSelected },
     buyer: {
-      name: {{ (user.full_name if user else '') | tojson }},
-      email: {{ (user.email if user else '') | tojson }},
+      name: _regData.userName || '',
+      email: _regData.userEmail || '',
       phone: '',
       whatsappConsent: false,
     },

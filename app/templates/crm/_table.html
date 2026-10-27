@@ -50,7 +50,7 @@
             <a href="/org/{{ org.slug }}/registrations/attendee/{{ r.attendee_email }}" class="act-link">Profile →</a>
             {% if r.status in ('confirmed', 'checked_in') %}
             <a href="#" class="act-link" style="color:#dc2626;margin-left:10px;"
-               onclick="event.preventDefault(); cancelRegistration('{{ r.id }}', '{{ org.slug }}', '{{ r.event_id }}', {{ 'true' if r.price > 0 else 'false' }})">Cancel</a>
+               onclick="event.preventDefault(); cancelRegistration('{{ r.id }}', '{{ org.slug }}', '{{ r.event_id }}', '{{ 'true' if r.price > 0 else 'false' }}' === 'true')">Cancel</a>
             {% endif %}
           </td>
         </tr>

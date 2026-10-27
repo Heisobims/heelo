@@ -665,7 +665,7 @@ select option,
     </div>
 
     <div class="onboarding-progress-bar">
-      <div class="onboarding-progress-fill" style="width: {{ (onboarding.completed_count / onboarding.total * 100) | int }}%"></div>
+      <div class="onboarding-progress-fill" :style="'width: {{ (onboarding.completed_count / onboarding.total * 100) | int }}%'"></div>
     </div>
 
     <div class="onboarding-widget-body">

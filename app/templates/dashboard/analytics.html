@@ -234,7 +234,8 @@
             </div>
             <div class="tt-bar-wrap">
               <div class="tt-bar {% if tt.tier == 'vip' %}vip{% elif tt.is_free %}free{% elif tt.tier == 'early_bird' %}early-bird{% endif %}"
-                   style="width: {{ tt.sold_pct if tt.sold_pct is not none else (0 if tt.quantity_sold == 0 else 100) }}%;"></div>
+                   data-pct="{{ tt.sold_pct if tt.sold_pct is not none else (0 if tt.quantity_sold == 0 else 100) }}"
+                   style="width: 0%;"></div>
             </div>
             <div class="tt-stats">
               <span>{{ tt.quantity_sold }} sold</span>
@@ -336,12 +337,27 @@
 {% endblock %}
 
 {% block scripts %}
+<script id="analytics-data" type="application/json">
+{
+  "slug": {{ org.slug | tojson }},
+  "eventId": {{ event.id | string | tojson }},
+  "currency": {{ currency | tojson }},
+  "salesRaw": {{ sales_json | safe }},
+  "regRaw": {{ reg_over_time_json | safe }}
+}
+</script>
 <script>
 (function () {
+  // Apply progress bar widths
+  document.querySelectorAll('.tt-bar[data-pct]').forEach(function(el) {
+    el.style.width = el.dataset.pct + '%';
+  });
+
   // ── Config ──────────────────────────────────────────────────────────────────
-  const SLUG      = {{ org.slug | tojson }};
-  const EVENT_ID  = {{ event.id | string | tojson }};
-  const CURRENCY  = {{ currency | tojson }};
+  const _anData   = JSON.parse(document.getElementById('analytics-data')?.textContent || '{}');
+  const SLUG      = _anData.slug || '';
+  const EVENT_ID  = _anData.eventId || '';
+  const CURRENCY  = _anData.currency || 'USD';
   const STREAM_URL = `/api/v1/organizations/${SLUG}/events/${EVENT_ID}/analytics/stream`;
 
   // ── Number helpers ──────────────────────────────────────────────────────────
@@ -401,8 +417,8 @@
   connectSSE();
 
   // ── Chart.js - Sales over time ──────────────────────────────────────────────
-  const salesRaw = {{ sales_json | safe }};
-  const regRaw   = {{ reg_over_time_json | safe }};
+  const salesRaw = _anData.salesRaw || [];
+  const regRaw   = _anData.regRaw || [];
 
   // Merge all dates from both datasets
   const allDates = [...new Set([
