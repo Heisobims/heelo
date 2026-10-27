@@ -111,158 +111,255 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     overflow-x: hidden;
   }
 
-  /* ── Hero Section (Screenshot 1) ───────────────────────────── */
+  /* -- Hero Section (Intuitive Ticketing Style) ----------------- */
   .mpl-hero-section {
     position: relative;
-    min-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: var(--mpl-dark);
-    background-image:
-      linear-gradient(
-        180deg,
-        rgba(19, 27, 23, 0.4) 0%,
-        rgba(19, 27, 23, 0.64) 100%
-      ),
-      url("/static/images/landing/hero-bg.jpg");
-    background-position: center center;
-    background-size: cover;
-    background-repeat: no-repeat;
-    color: #faf9f7;
-    padding: 130px 24px 100px;
-    text-align: center;
+    background-color: #ffffff;
+    padding: 120px 24px 64px;
     overflow: hidden;
   }
 
-  .mpl-hero-section::before {
-    content: "";
-    position: absolute;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 620px;
-    height: 380px;
-    background: radial-gradient(
-      circle,
-      rgba(110, 230, 215, 0.22) 0%,
-      rgba(232, 89, 56, 0.15) 50%,
-      transparent 72%
-    );
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 1;
-    filter: blur(55px);
-    animation: mplGlowFloat 9s ease-in-out infinite;
-  }
-
-  @keyframes mplGlowFloat {
-    0%,
-    100% {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 0.2;
-    }
-    50% {
-      transform: translate(-46%, -53%) scale(1.12);
-      opacity: 0.35;
-    }
-  }
-
-  @keyframes mplHeroFadeUp {
-    0% {
-      opacity: 0;
-      transform: translateY(26px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .mpl-hero-content {
-    position: relative;
-    z-index: 2;
-    max-width: 880px;
+  .mpl-hero-container {
+    max-width: 1180px;
     margin: 0 auto;
+    width: 100%;
+  }
+
+  .mpl-hero-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 48px;
+    margin-bottom: 44px;
+  }
+
+  .mpl-hero-headline-col {
+    flex: 1;
+    min-width: 0;
   }
 
   .mpl-hero-title {
-    font-family: var(--mpl-font-serif);
-    font-size: clamp(40px, 5.8vw, 76px);
-    font-weight: 500;
-    line-height: 1.1;
-    letter-spacing: -1.5px;
-    color: #faf9f7;
-    margin: 0 0 20px;
-    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.35);
-    animation: mplHeroFadeUp 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+    font-family: var(--mpl-font-sans);
+    font-size: clamp(38px, 5.2vw, 68px);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    color: #131b17;
+    margin: 0;
   }
 
-  .mpl-typed-wrap {
-    display: inline-flex;
-    align-items: baseline;
-    white-space: nowrap;
-    color: var(--mpl-mint);
+  .mpl-hero-highlight {
+    color: #e85938;
+    font-weight: 700;
   }
 
-  .mpl-typed-word {
-    color: var(--mpl-mint);
-    display: inline-block;
-    position: relative;
-    border-bottom: 3px solid rgba(110, 230, 215, 0.45);
-    padding-bottom: 2px;
+  .mpl-hero-dot {
+    color: #e85938;
   }
 
-  .mpl-typed-cursor {
-    display: inline-block;
-    color: var(--mpl-mint);
-    font-weight: 300;
-    margin-left: 3px;
-    animation: mplCursorBlink 1s infinite;
-    user-select: none;
-  }
-
-  @keyframes mplCursorBlink {
-    0%,
-    49% {
-      opacity: 1;
-    }
-    50%,
-    100% {
-      opacity: 0;
-    }
+  .mpl-hero-aside-col {
+    width: 380px;
+    flex-shrink: 0;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
   .mpl-hero-subtitle {
     font-family: var(--mpl-font-sans);
-    font-size: clamp(17px, 1.6vw, 21px);
-    line-height: 1.6;
-    color: #e2ece6;
-    max-width: 740px;
-    margin: 0 auto 36px;
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: #56625c;
+    margin: 0;
     font-weight: 400;
-    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
-    animation: mplHeroFadeUp 0.85s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .mpl-hero-cta-wrap {
+  .mpl-hero-trust {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .mpl-trust-stars {
+    display: flex;
     align-items: center;
-    animation: mplHeroFadeUp 0.85s 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+    gap: 8px;
+  }
+
+  .mpl-trust-badge-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: #e85938;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .mpl-stars-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    color: #e85938;
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .mpl-trust-rating {
+    font-size: 12.5px;
+    color: #71717a;
+    font-weight: 500;
+  }
+
+  /* -- Hero Banner with Rounded Corners & Toast Stack -- */
+  .mpl-hero-banner {
+    position: relative;
+    width: 100%;
+    border-radius: 28px;
+    overflow: hidden;
+    background: #faf7f2;
+    box-shadow:
+      0 20px 48px -12px rgba(19, 27, 23, 0.12),
+      0 4px 16px rgba(19, 27, 23, 0.04);
+  }
+
+  .mpl-hero-banner-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    aspect-ratio: 16 / 9;
+    max-height: 560px;
+  }
+
+  /* Floating Toast Stack */
+  .mpl-toast-stack {
+    position: absolute;
+    left: 4.8%;
+    top: 45%;
+    display: block;
+    text-decoration: none;
+    z-index: 5;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mpl-toast-stack:hover {
+    transform: translateY(-3px);
+  }
+
+  .mpl-toast-layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 100%;
+    border-radius: 16px;
+    background: #ffffff;
+    pointer-events: none;
+  }
+
+  .mpl-toast-l1 {
+    top: 6px;
+    transform: scale(0.96);
+    opacity: 0.85;
+    box-shadow: 0 10px 24px rgba(19, 27, 23, 0.1);
+  }
+
+  .mpl-toast-l2 {
+    top: 12px;
+    transform: scale(0.92);
+    opacity: 0.6;
+    box-shadow: 0 14px 28px rgba(19, 27, 23, 0.08);
+  }
+
+  .mpl-toast-card {
+    position: relative;
+    z-index: 3;
+    background: #ffffff;
+    border: 1px solid rgba(19, 27, 23, 0.08);
+    border-radius: 16px;
+    padding: 11px 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 320px;
+    box-shadow:
+      0 16px 36px rgba(19, 27, 23, 0.18),
+      0 2px 8px rgba(19, 27, 23, 0.06);
+  }
+
+  .mpl-toast-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #131b17;
+    color: #faf9f7;
+    font-family: var(--font-serif, "Lora", Georgia, serif);
+    font-style: italic;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(19, 27, 23, 0.2);
+  }
+
+  .mpl-toast-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mpl-toast-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 2px;
+  }
+
+  .mpl-toast-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #131b17;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mpl-toast-time {
+    font-size: 10.5px;
+    color: #8a948e;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .mpl-toast-body {
+    font-size: 11.5px;
+    line-height: 1.35;
+    color: #56625c;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .mpl-hero-cta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--mpl-mint);
-    color: var(--mpl-dark);
+    background: #131b17;
+    color: #ffffff;
     font-family: var(--mpl-font-sans);
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
-    padding: 15px 38px;
+    padding: 14px 34px;
     border-radius: 9999px;
     text-decoration: none;
     cursor: pointer;
@@ -270,44 +367,90 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
       transform 180ms ease,
       box-shadow 180ms ease,
       background-color 180ms ease;
-    box-shadow: 0 8px 24px rgba(110, 230, 215, 0.3);
+    box-shadow: 0 4px 14px rgba(19, 27, 23, 0.2);
   }
 
   .mpl-hero-cta:hover {
-    background: #58d8c8;
+    background: #2a3630;
     transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(110, 230, 215, 0.45);
-    color: var(--mpl-dark);
+    box-shadow: 0 8px 22px rgba(19, 27, 23, 0.28);
+    color: #ffffff;
   }
 
   .mpl-hero-cta:active {
     transform: scale(0.97);
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 860px) {
     .mpl-hero-section {
-      min-height: auto;
-      padding: 110px 18px 72px;
+      padding: 104px 18px 48px;
     }
-    .mpl-hero-section::before {
-      width: 320px;
-      height: 240px;
-    }
-    .mpl-hero-title {
-      font-size: clamp(30px, 8vw, 44px);
-      letter-spacing: -0.8px;
-      margin-bottom: 16px;
-    }
-    .mpl-hero-subtitle {
-      font-size: 15px;
-      line-height: 1.55;
+    .mpl-hero-header {
+      flex-direction: column;
+      gap: 18px;
       margin-bottom: 28px;
     }
-    .mpl-hero-cta {
+    .mpl-hero-aside-col {
       width: 100%;
-      max-width: 290px;
-      padding: 14px 28px;
-      font-size: 16px;
+      padding-top: 0;
+      gap: 14px;
+    }
+    .mpl-hero-title {
+      font-size: clamp(32px, 8vw, 48px);
+      letter-spacing: -0.025em;
+    }
+    .mpl-hero-subtitle {
+      font-size: 14.5px;
+    }
+    .mpl-hero-banner {
+      border-radius: 20px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .mpl-hero-section {
+      padding: 88px 14px 36px;
+    }
+    .mpl-hero-header {
+      margin-bottom: 22px;
+    }
+    .mpl-hero-title {
+      font-size: clamp(28px, 8.5vw, 36px);
+      line-height: 1.12;
+    }
+    .mpl-hero-banner {
+      border-radius: 16px;
+    }
+    .mpl-toast-stack {
+      left: 10px;
+      top: auto;
+      bottom: 12px;
+      right: 10px;
+      max-width: none;
+    }
+    .mpl-toast-card {
+      max-width: 100%;
+      padding: 8px 12px;
+      gap: 10px;
+    }
+    .mpl-toast-badge {
+      width: 32px;
+      height: 32px;
+      font-size: 9.5px;
+      border-radius: 8px;
+    }
+    .mpl-toast-title {
+      font-size: 11.5px;
+    }
+    .mpl-toast-body {
+      font-size: 10.5px;
+      -webkit-line-clamp: 1;
+    }
+    .mpl-toast-l1 {
+      top: 4px;
+    }
+    .mpl-toast-l2 {
+      display: none;
     }
   }
 
@@ -1587,26 +1730,71 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     }
   }
 </style>
-{% endblock %} {% block body %} {% include "partials/site_nav.html" %}
+{% endblock %} {% block body %} {% set nav_theme = 'light' %} {% include "partials/site_nav.html" %}
 
-<!-- ── Hero Section (Screenshot 1: "Health Yeah!" -> "Events Yeah!") ── -->
+<!-- -- Hero Section (Intuitive Ticketing Style) -- -->
 <section class="mpl-hero-section">
-  <div class="mpl-hero-content">
-    <h1 class="mpl-hero-title">
-      Create
-      <span class="mpl-typed-wrap"
-        ><span class="mpl-typed-word" id="heroTypedWord">memories</span
-        ><span class="mpl-typed-cursor" aria-hidden="true">|</span></span
-      >
-      that last a lifetime.
-    </h1>
-    <p class="mpl-hero-subtitle">
-      If you need same-day tickets, a VIP pass, or help hosting your own event,
-      our verified platform connects you to extraordinary experiences anytime.
-    </p>
-    <div class="mpl-hero-cta-wrap">
-      <a href="/events" class="mpl-hero-cta">Get started now</a>
+  <div class="mpl-hero-container">
+    
+    <!-- Top Split Header Row -->
+    <div class="mpl-hero-header">
+      <div class="mpl-hero-headline-col">
+        <h1 class="mpl-hero-title">
+          Intuitive ticketing<br>
+          presented in the<br>
+          <span class="mpl-hero-highlight">simplest</span> way<span class="mpl-hero-dot">.</span>
+        </h1>
+      </div>
+      
+      <div class="mpl-hero-aside-col">
+        <p class="mpl-hero-subtitle">
+          Everything you need to sell event tickets, engage your customers and manage your ticketing operations.
+        </p>
+        
+        <div class="mpl-hero-trust">
+          <div class="mpl-trust-stars">
+            <span class="mpl-trust-badge-icon">G<sub>2</sub></span>
+            <div class="mpl-stars-row" aria-label="5 stars rating">
+              <span class="mpl-star">&#9733;</span>
+              <span class="mpl-star">&#9733;</span>
+              <span class="mpl-star">&#9733;</span>
+              <span class="mpl-star">&#9733;</span>
+              <span class="mpl-star">&#9733;</span>
+            </div>
+          </div>
+          <div class="mpl-trust-rating">4.7 (23 reviews)</div>
+        </div>
+      </div>
     </div>
+
+    <!-- Hero Visual Banner with Floating Notification Stack -->
+    <div class="mpl-hero-banner">
+      <img
+        src="/static/images/landing/hero-intuitive.jpg"
+        alt="Attendees using Tixdoo for event ticketing and checkout"
+        class="mpl-hero-banner-img"
+        loading="eager"
+      >
+
+      <!-- Floating Stacked Notification Toast -->
+      <a href="/events" class="mpl-toast-stack" aria-label="Special ticket offer notification">
+        <div class="mpl-toast-layer mpl-toast-l2"></div>
+        <div class="mpl-toast-layer mpl-toast-l1"></div>
+        <div class="mpl-toast-card">
+          <div class="mpl-toast-badge">tixdoo</div>
+          <div class="mpl-toast-content">
+            <div class="mpl-toast-top">
+              <span class="mpl-toast-title">Special offer for you</span>
+              <span class="mpl-toast-time">34m ago</span>
+            </div>
+            <div class="mpl-toast-body">
+              Get 2 for 1 tickets to &lsquo;Song Without Song&rsquo; this weekend.
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+
   </div>
 </section>
 
