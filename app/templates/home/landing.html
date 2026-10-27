@@ -141,7 +141,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
   .mpl-hero-title {
     font-family: var(--mpl-font-serif);
     font-size: clamp(38px, 5.2vw, 68px);
-    font-weight: 600;
+    font-weight: 400;
     line-height: 1.1;
     letter-spacing: -0.02em;
     color: #131b17;
@@ -1731,27 +1731,27 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     }
   }
 </style>
-{% endblock %} {% block body %} {% set nav_theme = 'light' %} {% include "partials/site_nav.html" %}
+{% endblock %} {% block body %} {% set nav_theme = 'light' %} {% include
+"partials/site_nav.html" %}
 
 <!-- -- Hero Section (Intuitive Ticketing Style) -- -->
 <section class="mpl-hero-section">
   <div class="mpl-hero-container">
-    
     <!-- Top Split Header Row -->
     <div class="mpl-hero-header">
       <div class="mpl-hero-headline-col">
         <h1 class="mpl-hero-title">
-          Every great event,<br>
-          ticketed and hosted in the<br>
-          <span class="mpl-hero-highlight">simplest</span> way<span class="mpl-hero-dot">.</span>
+          Made for attendees, vendors,<br />
+          and organizers ready to<br />
+          sell out tickets <span class="mpl-hero-highlight">quickly</span><span class="mpl-hero-dot">.</span>
         </h1>
       </div>
-      
+
       <div class="mpl-hero-aside-col">
         <p class="mpl-hero-subtitle">
-          From verified ticket sales and instant payouts to WhatsApp campaigns and seamless check-in: everything you need to host, discover, and sell out events.
+          The all-in-one platform to discover verified events, book trusted vendor booths, and launch ticket sales with instant payouts and seamless check-in.
         </p>
-        
+
         <div class="mpl-hero-trust">
           <div class="mpl-trust-stars">
             <span class="mpl-trust-badge-icon">G<sub>2</sub></span>
@@ -1775,10 +1775,14 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
         alt="Attendees using Tixdoo for event ticketing and checkout"
         class="mpl-hero-banner-img"
         loading="eager"
-      >
+      />
 
       <!-- Floating Stacked Notification Toast -->
-      <a href="/events" class="mpl-toast-stack" aria-label="Special ticket offer notification">
+      <a
+        href="/events"
+        class="mpl-toast-stack"
+        aria-label="Special ticket offer notification"
+      >
         <div class="mpl-toast-layer mpl-toast-l2"></div>
         <div class="mpl-toast-layer mpl-toast-l1"></div>
         <div class="mpl-toast-card">
@@ -1789,13 +1793,13 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
               <span class="mpl-toast-time">34m ago</span>
             </div>
             <div class="mpl-toast-body">
-              Get 2 for 1 tickets to &lsquo;Song Without Song&rsquo; this weekend.
+              Get 2 for 1 tickets to &lsquo;Song Without Song&rsquo; this
+              weekend.
             </div>
           </div>
         </div>
       </a>
     </div>
-
   </div>
 </section>
 
