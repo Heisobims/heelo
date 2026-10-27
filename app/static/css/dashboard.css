@@ -810,7 +810,7 @@
 }
 
 .search-pill-input-wrap:focus-within {
-  border-color: #2563EB;
+  border-color: var(--cyan, #E85938);
 }
 
 .search-pill-input-wrap input {
@@ -2003,8 +2003,8 @@ select option,
 .prog-input:focus,
 .prog-select:focus,
 .prog-textarea:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: var(--cyan, #E85938);
+  box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.15);
 }
 
 .prog-hint {
@@ -2024,7 +2024,7 @@ select option,
 .prog-btn-primary {
   width: 100%;
   height: 48px;
-  background: #2563EB;
+  background: var(--cyan, #E85938);
   color: #FFFFFF;
   font-size: 15px;
   font-weight: 600;
@@ -2041,7 +2041,7 @@ select option,
 }
 
 .prog-btn-primary:hover {
-  background: #1D4ED8;
+  background: var(--cyan-hover, #D44727);
 }
 
 .prog-btn-primary:active {
@@ -2095,8 +2095,8 @@ select option,
 }
 
 .prog-option-card.selected {
-  border-color: #2563EB;
-  background: rgba(37, 99, 235, 0.03);
+  border-color: var(--cyan, #E85938);
+  background: rgba(232, 89, 56, 0.04);
 }
 
 .prog-option-icon {
