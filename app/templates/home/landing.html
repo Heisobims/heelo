@@ -142,10 +142,47 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     font-family: var(--mpl-font-serif);
     font-size: clamp(38px, 5.2vw, 68px);
     font-weight: 400;
-    line-height: 1.1;
+    line-height: 1.15;
     letter-spacing: -0.02em;
     color: #131b17;
     margin: 0;
+  }
+
+  .mpl-typed-wrap {
+    display: inline-flex;
+    align-items: baseline;
+    white-space: nowrap;
+  }
+
+  .mpl-typed-persona {
+    color: #e85938;
+    font-family: var(--mpl-font-serif);
+    font-style: italic;
+    font-weight: 700;
+    display: inline-block;
+    position: relative;
+    border-bottom: 3px solid rgba(232, 89, 56, 0.4);
+    padding-bottom: 2px;
+  }
+
+  .mpl-typed-cursor {
+    display: inline-block;
+    color: #e85938;
+    font-weight: 300;
+    margin-left: 2px;
+    animation: mplCursorBlink 1s infinite;
+    user-select: none;
+  }
+
+  @keyframes mplCursorBlink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
   }
 
   .mpl-hero-highlight {
@@ -155,7 +192,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
   }
 
   .mpl-hero-dot {
-    color: #e85938;
+    color: #131b17;
   }
 
   .mpl-hero-aside-col {
@@ -1741,9 +1778,9 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     <div class="mpl-hero-header">
       <div class="mpl-hero-headline-col">
         <h1 class="mpl-hero-title">
-          Made for attendees, vendors,<br />
-          and organizers ready to<br />
-          sell out tickets <span class="mpl-hero-highlight">quickly</span><span class="mpl-hero-dot">.</span>
+          Made for <span class="mpl-typed-wrap"><span class="mpl-typed-persona" id="heroTypedPersona">attendees</span><span class="mpl-typed-cursor" aria-hidden="true">|</span></span>,<br />
+          &amp; organizers ready to<br />
+          sell out tickets quickly.
         </h1>
       </div>
 
@@ -2582,23 +2619,22 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
       }
     });
 
-    // ── Hero Typewriter Loop ─────────────────────────────────────
-    var typewriterEl = document.getElementById("heroTypedWord");
+    // -- Hero Typewriter Loop -------------------------------------
+    var typewriterEl = document.getElementById("heroTypedPersona") || document.getElementById("heroTypedWord");
     if (typewriterEl) {
       var words = [
-        "memories",
-        "moments",
-        "experiences",
-        "impressions",
-        "milestones",
+        "attendees",
+        "Organizers",
+        "Venue Owners",
+        "Vendors",
       ];
       var wordIndex = 0;
       var charIndex = words[0].length;
-      var isDeleting = true; // Starts with initial "memories" text, pauses, then clears
-      var typingSpeed = 150;
-      var deletingSpeed = 75;
-      var pauseAfterWord = 3500;
-      var pauseAfterClear = 500;
+      var isDeleting = true; // Starts with initial "attendees" text, pauses, then clears
+      var typingSpeed = 120;
+      var deletingSpeed = 65;
+      var pauseAfterWord = 2600;
+      var pauseAfterClear = 400;
 
       function typeLoop() {
         var currentWord = words[wordIndex];
@@ -2625,7 +2661,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
         }
       }
 
-      // Initial pause on the initial "memories" text before deleting begins
+      // Initial pause on the initial "attendees" text before deleting begins
       setTimeout(typeLoop, pauseAfterWord);
     }
   })();
