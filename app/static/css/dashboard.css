@@ -34,7 +34,7 @@
   font-family: var(--font-serif);
   font-style: italic;
   font-size: 24px;
-  font-weight: 500;
+  font-weight: 700;
   color: #131B17;
   letter-spacing: -0.6px;
   text-decoration: none;
@@ -1440,7 +1440,7 @@
   .mobile-sidebar-title {
     font-family: var(--font-serif);
     font-size: 20px;
-    font-weight: 500;
+    font-weight: 700;
     font-style: italic;
     color: #131B17;
     letter-spacing: -0.5px;

@@ -4,7 +4,7 @@
    ============================================================ */
 
 /* ── Fonts ────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 /* Geist - secondary (body/UI) font, self-hosted (not on Google Fonts). */
 @font-face {
@@ -702,7 +702,7 @@ select option,
 .topnav-logo {
   font-family: var(--font-serif);
   font-size: 24px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
@@ -1020,7 +1020,7 @@ select option,
   font-family: var(--font-serif);
   font-style: italic;
   font-size: 26px;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--primary-dark);
   letter-spacing: -0.6px;
   text-decoration: none;
@@ -1622,7 +1622,7 @@ select option,
 .site-nav-logo {
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: 24px; font-weight: 500;
+  font-size: 24px; font-weight: 700;
   color: #FAF9F7; letter-spacing: -0.6px;
   text-decoration: none; flex-shrink: 0; margin-right: 18px;
 }
