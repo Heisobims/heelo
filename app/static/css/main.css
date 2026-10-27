@@ -987,19 +987,19 @@ select option,
   .otp-input { width: 44px; height: 52px; font-size: 20px; }
   .otp-group { gap: 6px; }
 }
-/* ── Dedicated Auth Layout (Maple Style) ────────────────────────── */
+/* Dedicated Auth Layout */
 .auth-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--surface-warm);
+  background-color: #FFFFFF;
   padding-top: 64px;
 }
 
 .auth-header {
   height: 72px;
-  background: var(--surface-warm);
-  border-bottom: 1px solid rgba(229, 224, 216, 0.75);
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E7EB;
   display: flex;
   align-items: center;
   position: relative;

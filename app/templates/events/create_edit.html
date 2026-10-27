@@ -5,29 +5,35 @@
 {% block head %}
 {{ super() }}
 <style>
-/* ── Card shell ───────────────────────────────────────────────── */
+body, .dash-root, .dash-main, .dash-content {
+  background: #FFFFFF !important;
+}
+
+/* ── Progressive modern open surfaces (WordPress.com Inspired) ── */
 .ev-card {
-  background: #fff;
-  border: 1px solid var(--border-light);
-  border-radius: 14px;
-  margin-bottom: 10px;
-  overflow: hidden;
-  transition: box-shadow 0.18s, border-color 0.18s;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin-bottom: 24px;
+  overflow: visible;
+  box-shadow: none;
 }
 .ev-card:focus-within {
-  border-color: rgba(232,89,56,0.35);
-  box-shadow: 0 0 0 3px rgba(232,89,56,0.08);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 /* ── Section header ───────────────────────────────────────────── */
 .ev-sec-hd {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 16px 22px;
+  gap: 12px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--border-light, #EFEAE3);
+  margin-bottom: 18px;
   cursor: pointer;
   user-select: none;
-  min-height: 64px;
+  min-height: auto;
 }
 .ev-sec-hd:hover .ev-sec-icon {
   background: rgba(232,89,56,0.1);
@@ -71,16 +77,16 @@
 .ev-chevron.open { transform: rotate(180deg); }
 
 /* ── Section body ─────────────────────────────────────────────── */
-.ev-sec-divider { height: 1px; background: var(--border-light); margin: 0 22px; }
-.ev-sec-body { padding: 20px 22px 22px; }
+.ev-sec-divider { display: none; }
+.ev-sec-body { padding: 4px 0 16px; }
 
 /* ── Inline add forms ─────────────────────────────────────────── */
 .inline-form {
-  border: 1.5px dashed var(--border-light);
+  border: 1px solid var(--border-light, #EFEAE3);
   border-radius: 12px;
-  padding: 18px 16px 16px;
-  margin-top: 10px;
-  background: var(--bg-secondary);
+  padding: 20px;
+  margin-top: 14px;
+  background: #FFFFFF;
 }
 .add-btn {
   display: flex; align-items: center; justify-content: center; gap: 7px;
@@ -323,9 +329,38 @@
     <div x-show="globalError" x-text="globalError" class="alert alert-danger"
       style="margin-bottom:16px; display:none; animation: fadeInUp 0.2s ease;"></div>
 
+    <!-- Progressive Step Indicator (WordPress.com style) -->
+    <div class="prog-steps" style="margin-bottom: 36px;">
+      <button type="button" @click="currentStep = 1" class="prog-step clickable" :class="{ 'active': currentStep === 1, 'completed': currentStep > 1 }">
+        <div class="prog-step-num">1</div>
+        <span>Basics</span>
+      </button>
+      <div class="prog-step-divider"></div>
+      <button type="button" @click="currentStep = 2" class="prog-step clickable" :class="{ 'active': currentStep === 2, 'completed': currentStep > 2 }">
+        <div class="prog-step-num">2</div>
+        <span>Date &amp; Location</span>
+      </button>
+      <div class="prog-step-divider"></div>
+      <button type="button" @click="currentStep = 3" class="prog-step clickable" :class="{ 'active': currentStep === 3, 'completed': currentStep > 3 }">
+        <div class="prog-step-num">3</div>
+        <span>Tickets &amp; Registration</span>
+      </button>
+      <div class="prog-step-divider"></div>
+      <button type="button" @click="currentStep = 4" class="prog-step clickable" :class="{ 'active': currentStep === 4 }">
+        <div class="prog-step-num">4</div>
+        <span>Media &amp; Publish</span>
+      </button>
+    </div>
+
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <!-- 1 · ABOUT -->
+    <!-- STEP 1 · BASICS & ABOUT                                          -->
     <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="currentStep === 1" x-transition>
+      <div class="prog-header" style="text-align: left; margin-bottom: 24px;">
+        <h1 class="prog-title">{% if mode == 'create' %}Tell us about your event{% else %}Edit event basics{% endif %}</h1>
+        <p class="prog-subtitle" style="margin: 0;">Choose a clear title, category, format, and description for your attendees.</p>
+      </div>
+
     <div class="ev-card">
       <div class="ev-sec-hd" @click="sections.basics = !sections.basics">
         <div class="ev-sec-icon" :class="{ active: sections.basics }">
@@ -392,9 +427,24 @@
       </div>
     </div>
 
+      <div class="prog-actions" style="margin-top: 32px;">
+        <button type="button" @click="validateStep1() && (currentStep = 2)" class="prog-btn-primary">
+          <span>Continue to Date &amp; Location</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div><!-- /STEP 1 -->
+
     <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- STEP 2 · DATE & LOCATION                                         -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="currentStep === 2" x-transition style="display: none;">
+      <div class="prog-header" style="text-align: left; margin-bottom: 24px;">
+        <h1 class="prog-title">When and where is it happening?</h1>
+        <p class="prog-subtitle" style="margin: 0;">Specify start &amp; end dates, timezone, and venue location or live stream link.</p>
+      </div>
+
     <!-- 2 · DATE & TIME -->
-    <!-- ══════════════════════════════════════════════════════════════════ -->
     <div class="ev-card">
       <div class="ev-sec-hd" @click="sections.datetime = !sections.datetime">
         <div class="ev-sec-icon" :class="{ active: sections.datetime }">
@@ -559,9 +609,27 @@
       </div>
     </div>
 
+      <div class="prog-actions" style="margin-top: 32px;">
+        <button type="button" @click="validateStep2() && (currentStep = 3)" class="prog-btn-primary">
+          <span>Continue to Tickets &amp; Registration</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button type="button" @click="currentStep = 1" class="prog-btn-back">
+          ‹ Back to Basics
+        </button>
+      </div>
+    </div><!-- /STEP 2 -->
+
     <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- STEP 3 · TICKETS & REGISTRATION                                  -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="currentStep === 3" x-transition style="display: none;">
+      <div class="prog-header" style="text-align: left; margin-bottom: 24px;">
+        <h1 class="prog-title">Tickets and registration</h1>
+        <p class="prog-subtitle" style="margin: 0;">Configure admission tiers, pricing, capacity limits, and custom registration questions.</p>
+      </div>
+
     <!-- 4 · TICKETING -->
-    <!-- ══════════════════════════════════════════════════════════════════ -->
     <div class="ev-card">
       <div class="ev-sec-hd" @click="sections.ticketing = !sections.ticketing">
         <div class="ev-sec-icon" :class="{ active: sections.ticketing || tickets.length > 0 }">
@@ -857,9 +925,27 @@
       </div>
     </div>
 
+      <div class="prog-actions" style="margin-top: 32px;">
+        <button type="button" @click="currentStep = 4" class="prog-btn-primary">
+          <span>Continue to Media &amp; Publish</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button type="button" @click="currentStep = 2" class="prog-btn-back">
+          ‹ Back to Date &amp; Location
+        </button>
+      </div>
+    </div><!-- /STEP 3 -->
+
     <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- STEP 4 · MEDIA, AGENDA & PUBLISH                                 -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div x-show="currentStep === 4" x-transition style="display: none;">
+      <div class="prog-header" style="text-align: left; margin-bottom: 24px;">
+        <h1 class="prog-title">Media, schedule &amp; publish</h1>
+        <p class="prog-subtitle" style="margin: 0;">Upload cover photo, add schedule &amp; speakers, and publish your event.</p>
+      </div>
+
     <!-- 5 · AGENDA -->
-    <!-- ══════════════════════════════════════════════════════════════════ -->
     <div class="ev-card">
       <div class="ev-sec-hd" @click="sections.agenda = !sections.agenda">
         <div class="ev-sec-icon" :class="{ active: sections.agenda || agenda.length > 0 }">
@@ -1606,6 +1692,13 @@
       </div>
     </div>
 
+      <div style="text-align: center; margin-top: 20px;">
+        <button type="button" @click="currentStep = 3" class="prog-btn-back">
+          ‹ Back to Tickets &amp; Registration
+        </button>
+      </div>
+    </div><!-- /STEP 4 -->
+
   </div><!-- /x-data -->
 </div>
 
@@ -1721,6 +1814,54 @@ function eventForm() {
   }));
 
   return {
+    /* ─ Progressive Step Flow (WordPress.com style) ─ */
+    currentStep: 1,
+
+    validateStep1() {
+      this.fe = {};
+      if (!this.form.title || !this.form.title.trim()) {
+        this.fe.title = 'Event title is required.';
+        this.$nextTick(() => {
+          const el = document.querySelector('.field-err, .field-err-msg.show');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        return false;
+      }
+      return true;
+    },
+
+    validateStep2() {
+      this.fe = {};
+      let valid = true;
+      if (!this.form.start_datetime) {
+        this.fe.start_datetime = 'Start date & time is required.';
+        valid = false;
+      }
+      if (!this.form.end_datetime) {
+        this.fe.end_datetime = 'End date & time is required.';
+        valid = false;
+      }
+      if (this.form.start_datetime && this.form.end_datetime && new Date(this.form.end_datetime) <= new Date(this.form.start_datetime)) {
+        this.fe.end_datetime = 'End time must be after start time.';
+        valid = false;
+      }
+      if (this.form.format === 'in_person' && (!this.form.venue_city || !this.form.venue_city.trim())) {
+        this.fe.venue_city = 'City is required for in-person events.';
+        valid = false;
+      }
+      if ((this.form.format === 'virtual' || this.form.format === 'hybrid') && (!this.form.virtual_url || !this.form.virtual_url.trim())) {
+        this.fe.virtual_url = 'Stream URL is required.';
+        valid = false;
+      }
+      if (!valid) {
+        this.$nextTick(() => {
+          const el = document.querySelector('.field-err, .field-err-msg.show');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
+      return valid;
+    },
+
     /* ─ Core form ─ */
     form: {
       title:            ex.title || '',
@@ -1751,8 +1892,8 @@ function eventForm() {
     },
     vibeDraft: '',
 
-    /* ─ Section open/close ─ */
-    sections: { basics:true, datetime:true, location:true, ticketing:false, formFields:false, agenda:false, people:false, partners:false, media:false, layout:false, settings:false, tracking:false },
+    /* ─ Section open/close (all steps open cleanly) ─ */
+    sections: { basics:true, datetime:true, location:true, ticketing:true, formFields:true, agenda:true, people:true, partners:true, media:true, layout:true, settings:true, tracking:true },
 
     /* ─ Page layout (section order/visibility) ─ */
     sectionLabels: { about:'About', agenda:'Agenda', people:'People', partners:'Partners & Sponsors', gallery:'Gallery', discussion:'Discussion' },
@@ -2011,8 +2152,11 @@ function eventForm() {
       const errs=this.validate();
       if (Object.keys(errs).length>0) {
         this.fe=errs;
-        if (errs.title||errs.start_datetime||errs.end_datetime) this.sections.basics=true;
-        if (errs.venue_city||errs.virtual_url) this.sections.location=true;
+        if (errs.title) {
+          this.currentStep = 1;
+        } else if (errs.start_datetime || errs.end_datetime || errs.venue_city || errs.virtual_url) {
+          this.currentStep = 2;
+        }
         this.$nextTick(()=>{ const el=document.querySelector('.field-err,.field-err-msg.show'); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); });
         return;
       }

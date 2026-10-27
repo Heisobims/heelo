@@ -3,8 +3,13 @@
 {% block robots_meta %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/css/dashboard.css?v=7">
+<link rel="stylesheet" href="/static/css/dashboard.css?v=8">
 <style>
+/* Modern white canvas background for authenticated dashboards */
+body, .dash-root, .dash-main, .dash-content {
+  background: #FFFFFF !important;
+}
+
 /* ── Centered Modal Design System (Vendor Hub Style) ── */
 .vd-modal-overlay { 
   position: fixed; 

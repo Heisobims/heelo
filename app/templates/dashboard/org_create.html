@@ -1,12 +1,21 @@
-{% extends "base.html" %} {% block title %}Create your organization | Heelo{%
-endblock %} {% block head %}
-<link rel="stylesheet" href="/static/css/dashboard.css?v=4" />
-{% endblock %} {% block body %}
-<!-- Minimal nav for this step -->
-<header class="dash-topnav">
+{% extends "base.html" %}
+{% block title %}Create your organization | Heelo{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css?v=5" />
+<style>
+  body {
+    background: #FFFFFF !important;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- Minimal modern nav for creation flow -->
+<header class="dash-topnav" style="background:#FFFFFF; border-bottom: 1px solid var(--border-light, #EFEAE3);">
   <a href="/" class="dash-topnav-logo">heelo</a>
   <div class="dash-topnav-divider"></div>
-  <span class="small text-muted">New organization</span>
+  <span style="font-size:13px; color:var(--text-muted); font-weight:500;">New organization</span>
   <div style="margin-left: auto">
     <div
       class="user-avatar-btn"
@@ -20,35 +29,45 @@ endblock %} {% block head %}
   </div>
 </header>
 
-<div class="org-create-wrap">
-  <div class="org-create-card" x-data="orgCreateForm()">
-    <div class="org-create-step">Step 1 of 1</div>
-    <h1 class="h1" style="margin-bottom: 8px">Name your organization</h1>
-    <p class="text-secondary small" style="margin-bottom: 32px">
-      This is how attendees and team members will see you. You can always change
-      it later.
-    </p>
+<div class="prog-wizard" x-data="orgCreateForm()">
+  
+  <!-- Progressive Step Indicator (WordPress.com style) -->
+  <div class="prog-steps">
+    <div class="prog-step" :class="{ 'active': currentStep === 1, 'completed': currentStep > 1 }">
+      <div class="prog-step-num">1</div>
+      <span>Organization Name</span>
+    </div>
+    <div class="prog-step-divider"></div>
+    <div class="prog-step" :class="{ 'active': currentStep === 2 }">
+      <div class="prog-step-num">2</div>
+      <span>Region & Currency</span>
+    </div>
+  </div>
 
-    <div
-      x-show="error"
-      class="alert alert-danger mb-4"
-      x-text="error"
-      style="display: none"
-    ></div>
+  <div
+    x-show="error"
+    class="alert alert-danger mb-4"
+    x-text="error"
+    style="display: none; max-width: 500px; margin: 0 auto 24px;"
+  ></div>
 
-    <form
-      @submit.prevent="submit"
-      novalidate
-      style="display: flex; flex-direction: column; gap: 20px"
-    >
-      <!-- Org name -->
-      <div class="form-group">
-        <label class="form-label" for="org-name">Organization name</label>
+  <!-- Step 1: Organization Name -->
+  <div x-show="currentStep === 1" x-transition>
+    <div class="prog-header">
+      <h1 class="prog-title">Name your organization</h1>
+      <p class="prog-subtitle">
+        This is how attendees and team members will see you. You can always change it later.
+      </p>
+    </div>
+
+    <form @submit.prevent="goToStep2" novalidate class="prog-body">
+      <div class="prog-field">
+        <label class="prog-label" for="org-name">Organization name</label>
         <input
           id="org-name"
           type="text"
-          class="form-input"
-          placeholder="e.g. Acme Experiences, Silicon Valley Founders, or London Design Guild"
+          class="prog-input"
+          placeholder="e.g. Acme Experiences, Silicon Valley Founders, or Design Guild"
           x-model="name"
           @input="updateSlug"
           autocomplete="organization"
@@ -56,18 +75,45 @@ endblock %} {% block head %}
           required
           autofocus
         />
-        <div class="org-slug-preview" x-show="slug">
-          heelo.io/<span x-text="slug"></span>
+        <div style="margin-top: 8px; font-size: 13px; color: var(--text-muted);" x-show="slug">
+          Web address: <span style="color: #2563EB; font-weight: 500;">heelo.io/<span x-text="slug"></span></span>
         </div>
       </div>
 
-      <!-- Country -->
-      <div class="form-group">
-        <label class="form-label" for="org-country"
-          >Country <span class="text-muted">(optional)</span></label
+      <div class="prog-actions">
+        <button
+          type="submit"
+          class="prog-btn-primary"
+          :disabled="!name.trim()"
         >
-        <select id="org-country" class="form-select" x-model="country" @change="onCountryChange">
-          <option value="">Select country…</option>
+          <span>Continue</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+
+        <a href="/dashboard" class="prog-btn-back">
+          ‹ Cancel and return to dashboard
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Step 2: Country & Currency -->
+  <div x-show="currentStep === 2" x-transition style="display: none;">
+    <div class="prog-header">
+      <h1 class="prog-title">Choose region & currency</h1>
+      <p class="prog-subtitle">
+        Configure your default ticketing currency and operating country for payouts.
+      </p>
+    </div>
+
+    <form @submit.prevent="submit" novalidate class="prog-body">
+      <!-- Country -->
+      <div class="prog-field">
+        <label class="prog-label" for="org-country">
+          Country <span class="prog-optional">(optional)</span>
+        </label>
+        <select id="org-country" class="prog-select" x-model="country" @change="onCountryChange">
+          <option value="">Select country...</option>
           <optgroup label="North America">
             <option value="US">United States</option>
             <option value="CA">Canada</option>
@@ -114,9 +160,9 @@ endblock %} {% block head %}
       </div>
 
       <!-- Currency -->
-      <div class="form-group">
-        <label class="form-label" for="org-currency">Default currency</label>
-        <select id="org-currency" class="form-select" x-model="currency">
+      <div class="prog-field">
+        <label class="prog-label" for="org-currency">Default ticketing currency</label>
+        <select id="org-currency" class="prog-select" x-model="currency">
           <option value="USD">USD · US Dollar ($)</option>
           <option value="EUR">EUR · Euro (€)</option>
           <option value="GBP">GBP · British Pound (£)</option>
@@ -132,40 +178,44 @@ endblock %} {% block head %}
         </select>
       </div>
 
-      <button
-        type="submit"
-        class="btn btn-primary"
-        :class="{ 'btn-loading': loading }"
-        :disabled="loading || !name.trim()"
-      >
-        <span class="btn-label">Create organization</span>
-      </button>
-    </form>
+      <div class="prog-actions">
+        <button
+          type="submit"
+          class="prog-btn-primary"
+          :disabled="loading"
+        >
+          <span x-text="loading ? 'Creating organization...' : 'Create organization'"></span>
+        </button>
 
-    <p class="small text-muted text-center" style="margin-top: 20px">
-      Already have an organization?
-      <a
-        href="/dashboard"
-        style="
-          color: var(--text-secondary);
-          text-decoration: underline;
-          text-underline-offset: 2px;
-        "
-        >Go to dashboard</a
-      >
-    </p>
+        <button
+          type="button"
+          @click="currentStep = 1"
+          class="prog-btn-back"
+        >
+          ‹ Back to name
+        </button>
+      </div>
+    </form>
   </div>
+
 </div>
 
 <script>
   function orgCreateForm() {
     return {
+      currentStep: 1,
       name: "",
       slug: "",
       country: "",
       currency: "USD",
       loading: false,
       error: null,
+
+      goToStep2() {
+        if (!this.name.trim()) return;
+        this.error = null;
+        this.currentStep = 2;
+      },
 
       onCountryChange() {
         const countryToCurr = {

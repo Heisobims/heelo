@@ -4,69 +4,124 @@
 {% block head %}
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
-  body { background: var(--bg-secondary); }
-
-  .vs-wrap { max-width: 680px; margin: 0 auto; padding: 110px 24px 80px; }
-  .vs-header { margin-bottom: 36px; }
-  .vs-tag { display: inline-block; padding: 4px 12px; background: rgba(232, 89, 56, 0.08); border: 1px solid rgba(232, 89, 56, 0.25); border-radius: 100px; font-size: 11px; font-weight: 700; color: var(--cyan-dark, #C84729); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 14px; }
-  .vs-title { font-family: var(--font-serif); font-size: clamp(24px, 5vw, 36px); font-weight: 700; margin-bottom: 10px; line-height: 1.2; }
-  .vs-sub { color: var(--text-muted); font-size: 15px; line-height: 1.6; }
-
-  .vs-card { background: #fff; border: 1px solid var(--border-light); border-radius: 16px; padding: 28px; }
-  .vs-section-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border-light); }
-  .vs-group { margin-bottom: 28px; }
-
-  .field { margin-bottom: 16px; }
-  .field label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 5px; }
-  .field .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-  .field input, .field select, .field textarea {
-    width: 100%; padding: 10px 13px; border: 1.5px solid var(--border-light);
-    border-radius: 9px; font-size: 14px; font-family: inherit; background: #fff;
-    color: var(--text-primary); outline: none; transition: border-color 0.15s; box-sizing: border-box;
+  body {
+    background: #FFFFFF !important;
   }
-  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--cyan); }
+  .vs-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 100px 24px 80px;
+    background: #FFFFFF;
+  }
+  .field {
+    margin-bottom: 20px;
+  }
+  .field label {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #131B17;
+    margin-bottom: 7px;
+  }
+  .field .hint {
+    font-size: 12.5px;
+    color: var(--text-muted, #71717A);
+    margin-top: 5px;
+    line-height: 1.4;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border: 1.5px solid #E4E4E7;
+    border-radius: 8px;
+    font-size: 14.5px;
+    font-family: inherit;
+    background: #FFFFFF;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    box-sizing: border-box;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
   .field select {
-    appearance: none; -webkit-appearance: none;
+    appearance: none;
+    -webkit-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B6B6B' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 13px center;
-    padding-right: 38px;
+    background-position: right 14px center;
+    padding-right: 40px;
     cursor: pointer;
   }
-  .field textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
-  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  @media(max-width:480px) { .field-row { grid-template-columns: 1fr; } }
+  .field textarea {
+    height: auto;
+    min-height: 110px;
+    padding: 12px 16px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media(max-width:480px) {
+    .field-row { grid-template-columns: 1fr; }
+  }
 
   .vs-cover-upload {
-    width: 100%; aspect-ratio: 16/6; border-radius: 10px; overflow: hidden;
-    border: 1.5px dashed var(--border-light); background: var(--bg-secondary);
-    cursor: pointer; transition: border-color 0.15s;
+    width: 100%;
+    aspect-ratio: 16/7;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px dashed #D1D5DB;
+    background: #FAFAFA;
+    cursor: pointer;
+    transition: border-color 0.15s;
   }
-  .vs-cover-upload:hover { border-color: var(--cyan); }
+  .vs-cover-upload:hover { border-color: #2563EB; }
   .vs-cover-preview { width: 100%; height: 100%; object-fit: cover; display: block; }
   .vs-upload-placeholder {
-    width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 6px; color: var(--text-muted); font-size: 13px; font-weight: 500;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
   }
   .vs-portfolio-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .vs-portfolio-slot {
-    aspect-ratio: 1/1; border-radius: 10px; overflow: hidden;
-    border: 1.5px dashed var(--border-light); background: var(--bg-secondary);
-    cursor: pointer; transition: border-color 0.15s;
-    display: flex; align-items: center; justify-content: center; color: var(--text-muted);
+    aspect-ratio: 1/1;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px dashed #D1D5DB;
+    background: #FAFAFA;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
   }
-  .vs-portfolio-slot:hover { border-color: var(--cyan); }
-
-  .vs-submit-btn {
-    width: 100%; padding: 14px; background: var(--text-primary); color: #fff;
-    border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
-    cursor: pointer; font-family: inherit; transition: opacity 0.15s; margin-top: 8px;
-  }
-  .vs-submit-btn:hover { opacity: 0.85; }
-  .vs-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .vs-portfolio-slot:hover { border-color: #2563EB; }
   .vs-error { font-size: 13px; color: #dc2626; margin-top: 10px; }
-  .vs-login-notice { font-size: 13.5px; color: var(--text-muted); margin-bottom: 20px; padding: 12px 16px; background: rgba(232, 89, 56, 0.04); border: 1px solid rgba(232, 89, 56, 0.2); border-radius: 10px; }
-  .vs-login-notice a { color: var(--cyan-dark, #C84729); text-decoration: none; font-weight: 600; }
+  .vs-login-notice {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: #F4F4F5;
+    border: 1px solid #E4E4E7;
+    border-radius: 8px;
+  }
+  .vs-login-notice a { color: #2563EB; text-decoration: none; font-weight: 600; }
   [x-cloak] { display: none !important; }
 </style>
 {% endblock %}
@@ -75,219 +130,263 @@
 {% include "partials/site_nav.html" %}
 
 <div class="vs-wrap" x-data="vendorSignup()">
-  <div class="vs-header">
-    <div class="vs-tag">Vendor Marketplace</div>
-    <h1 class="vs-title">List your business on Heelo</h1>
-    <p class="vs-sub">Connect with event organizers across Africa. Create your vendor profile in 2 minutes and start receiving enquiries.</p>
+  
+  <!-- Progressive Step Indicator (WordPress.com style) -->
+  <div class="prog-steps" style="margin-bottom: 36px;">
+    <button type="button" @click="currentStep = 1" class="prog-step clickable" :class="{ 'active': currentStep === 1, 'completed': currentStep > 1 }">
+      <div class="prog-step-num">1</div>
+      <span>Business Info</span>
+    </button>
+    <div class="prog-step-divider"></div>
+    <button type="button" @click="validateStep1() && (currentStep = 2)" class="prog-step clickable" :class="{ 'active': currentStep === 2, 'completed': currentStep > 2 }">
+      <div class="prog-step-num">2</div>
+      <span>Location &amp; Pricing</span>
+    </button>
+    <div class="prog-step-divider"></div>
+    <button type="button" @click="validateStep1() && (currentStep = 3)" class="prog-step clickable" :class="{ 'active': currentStep === 3 }">
+      <div class="prog-step-num">3</div>
+      <span>Photos &amp; Launch</span>
+    </button>
   </div>
 
   {% if not user %}
   <div class="vs-login-notice">
-    You'll need a Heelo account to list your business. <a href="/register?next=/vendor-signup">Create a free account</a> or <a href="/login?next=/vendor-signup">sign in</a>.
+    You will need a Heelo account to list your business. <a href="/register?next=/vendor-signup">Create a free account</a> or <a href="/login?next=/vendor-signup">sign in</a>.
   </div>
   {% endif %}
 
-  <div class="vs-card">
-    <div class="vs-group">
-      <div class="vs-section-label">Business details</div>
-
-      <div class="field">
-        <label>Business / Brand name <span style="color:#dc2626;">*</span></label>
-        <input type="text" x-model="form.business_name" placeholder="e.g. Lagos Lens Co." required>
-      </div>
-
-      <div class="field">
-        <label>Category <span style="color:#dc2626;">*</span></label>
-        <select x-model="form.category" required>
-          <option value="">Select your primary service…</option>
-          <option value="photography">Photography</option>
-          <option value="videography">Videography</option>
-          <option value="catering">Catering</option>
-          <option value="decorations">Decorations</option>
-          <option value="security">Security</option>
-          <option value="entertainment">Entertainment / DJ</option>
-          <option value="mc">MC / Event Host</option>
-          <option value="venue">Venue</option>
-          <option value="sound_lighting">Sound &amp; Lighting</option>
-          <option value="branding">Branding &amp; Print</option>
-          <option value="logistics">Logistics / Transport</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Tagline</label>
-        <input type="text" x-model="form.tagline" placeholder="e.g. Capturing moments that last forever" maxlength="255">
-        <div class="hint">A short one-liner that appears on your listing card</div>
-      </div>
-
-      <div class="field">
-        <label>Description</label>
-        <textarea x-model="form.description" placeholder="Tell event organizers what you offer, your experience, and why they should choose you…"></textarea>
-      </div>
+  <!-- Step 1: Business Details -->
+  <div x-show="currentStep === 1" x-transition>
+    <div class="prog-header" style="text-align: left; margin-bottom: 24px;">
+      <h1 class="prog-title">List your business on Heelo</h1>
+      <p class="prog-subtitle" style="margin: 0;">Connect with event organizers. Create your vendor profile in 2 minutes.</p>
     </div>
 
-    <div class="vs-group">
-      <div class="vs-section-label">Photos</div>
-
-      <div class="field">
-        <label>Profile image <span style="color:#dc2626;">*</span></label>
-        <div class="hint" style="margin-top:0;margin-bottom:8px;">Shown as your listing's cover photo: organizers browse visually, so this is required.</div>
-        <div class="vs-cover-upload" @click="$refs.coverInput.click()" :style="coverPreview ? 'border-style:solid;' : ''">
-          <template x-if="coverPreview">
-            <img :src="coverPreview" alt="" class="vs-cover-preview">
-          </template>
-          <template x-if="!coverPreview">
-            <div class="vs-upload-placeholder">
-              <span class="material-symbols-outlined" style="font-size:24px;opacity:.5;">add_photo_alternate</span>
-              <span x-text="coverUploading ? 'Uploading…' : 'Click to upload'"></span>
-            </div>
-          </template>
-        </div>
-        <input type="file" x-ref="coverInput" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="uploadCover($event)">
-      </div>
-
-      <div class="field">
-        <label>Portfolio samples <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
-        <div class="hint" style="margin-top:0;margin-bottom:8px;">Upload up to 3 photos of your past work, or link to a portfolio elsewhere, whichever's easier.</div>
-        <div class="vs-portfolio-grid">
-          <template x-for="(slot, i) in [0, 1, 2]" :key="i">
-            <div class="vs-portfolio-slot" @click="$refs['portfolioInput' + i].click()">
-              <template x-if="portfolioPreviews[i]">
-                <img :src="portfolioPreviews[i]" alt="" class="vs-cover-preview">
-              </template>
-              <template x-if="!portfolioPreviews[i]">
-                <span class="material-symbols-outlined" style="font-size:20px;opacity:.4;" x-text="portfolioUploading[i] ? 'hourglass_empty' : 'add'"></span>
-              </template>
-              <input type="file" :x-ref="'portfolioInput' + i" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="uploadPortfolio($event, i)">
-            </div>
-          </template>
-        </div>
-        <input type="url" x-model="form.portfolio_link" placeholder="https://instagram.com/yourbusiness or a Behance/portfolio link" style="margin-top:10px;">
-      </div>
+    <div class="field">
+      <label>Business / Brand name <span style="color:#dc2626;">*</span></label>
+      <input type="text" x-model="form.business_name" placeholder="e.g. Lagos Lens Co. or Zenith Sound" required autofocus>
     </div>
 
-    <div class="vs-group">
-      <div class="vs-section-label">Location &amp; Currency</div>
-      <div class="field-row">
-        <div class="field">
-          <label>City</label>
-          <input type="text" x-model="form.location_city" placeholder="e.g. London, New York, Lagos">
-        </div>
-        <div class="field">
-          <label>Country</label>
-          <select x-model="form.location_country" @change="onCountryChange()">
-            <option value="">Select country...</option>
-            <optgroup label="United Kingdom &amp; Europe">
-              <option value="GB">United Kingdom (GBP £)</option>
-              <option value="DE">Germany (EUR €)</option>
-              <option value="FR">France (EUR €)</option>
-              <option value="IE">Ireland (EUR €)</option>
-              <option value="ES">Spain (EUR €)</option>
-              <option value="IT">Italy (EUR €)</option>
-              <option value="NL">Netherlands (EUR €)</option>
-            </optgroup>
-            <optgroup label="Americas &amp; Asia-Pacific">
-              <option value="US">United States (USD $)</option>
-              <option value="CA">Canada (CAD $)</option>
-              <option value="AU">Australia (AUD $)</option>
-            </optgroup>
-            <optgroup label="Africa">
-              <option value="NG">Nigeria (NGN ₦)</option>
-              <option value="GH">Ghana (GHS GH₵)</option>
-              <option value="KE">Kenya (KES KSh)</option>
-              <option value="ZA">South Africa (ZAR R)</option>
-            </optgroup>
-          </select>
-        </div>
-      </div>
-      <div class="field-row" style="margin-top:12px;">
-        <div class="field">
-          <label>Operating Currency</label>
-          <select x-model="form.currency">
-            <option value="GBP">GBP (£) - British Pound</option>
-            <option value="USD">USD ($) - US Dollar</option>
-            <option value="EUR">EUR (€) - Euro</option>
-            <option value="CAD">CAD ($) - Canadian Dollar</option>
-            <option value="AUD">AUD ($) - Australian Dollar</option>
-            <option value="NGN">NGN (₦) - Nigerian Naira</option>
-            <option value="GHS">GHS (GH₵) - Ghanaian Cedi</option>
-            <option value="KES">KES (KSh) - Kenyan Shilling</option>
-            <option value="ZAR">ZAR (R) - South African Rand</option>
-          </select>
-          <div class="hint">Currency you will quote and get paid in</div>
-        </div>
-        <div class="field">
-          <label>Starting Price (Optional)</label>
-          <input type="number" x-model="form.starting_price" placeholder="e.g. 150">
-        </div>
-      </div>
-      <div class="field" x-show="form.category === 'venue'" x-cloak style="margin-top:12px;">
-        <label>Full address</label>
-        <input type="text" x-model="form.address" placeholder="e.g. 10 Finsbury Square, London or 12 Admiralty Way, Lekki">
-        <div class="hint">Shown to organizers once they enquire: helps them judge the commute for guests.</div>
-      </div>
+    <div class="field">
+      <label>Category <span style="color:#dc2626;">*</span></label>
+      <select x-model="form.category" required>
+        <option value="">Select your primary service…</option>
+        <option value="photography">Photography</option>
+        <option value="videography">Videography</option>
+        <option value="catering">Catering</option>
+        <option value="decorations">Decorations</option>
+        <option value="security">Security</option>
+        <option value="entertainment">Entertainment / DJ</option>
+        <option value="mc">MC / Event Host</option>
+        <option value="venue">Venue</option>
+        <option value="sound_lighting">Sound &amp; Lighting</option>
+        <option value="branding">Branding &amp; Print</option>
+        <option value="logistics">Logistics / Transport</option>
+        <option value="other">Other</option>
+      </select>
     </div>
 
-    <div class="vs-group" x-show="form.category === 'venue'" x-cloak>
-      <div class="vs-section-label">Venue details</div>
-      <div class="field">
-        <label>Guest capacity</label>
-        <input type="number" x-model.number="form.capacity" placeholder="300" min="1">
-        <div class="hint">Maximum number of guests this venue can seat/host: helps organizers filter by event size.</div>
-      </div>
+    <div class="field">
+      <label>Tagline</label>
+      <input type="text" x-model="form.tagline" placeholder="e.g. Capturing moments that last forever" maxlength="255">
+      <div class="hint">A short one-liner that appears on your listing card</div>
     </div>
 
-    <div class="vs-group">
-      <div class="vs-section-label">Contact &amp; pricing</div>
-      <div class="field-row">
-        <div class="field">
-          <label>Contact email</label>
-          <input type="email" x-model="form.contact_email" placeholder="hello@myvendor.com">
-        </div>
-        <div class="field">
-          <label>Contact phone</label>
-          <input type="tel" x-model="form.contact_phone" placeholder="e.g. +1 555 123 4567 or +44 7911 123456">
-        </div>
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Website</label>
-          <input type="url" x-model="form.website_url" placeholder="https://…">
-        </div>
-        <div class="field">
-          <label>Price range</label>
-          <select x-model="form.price_range">
-            <option value="">Not specified</option>
-            <option value="budget">Budget-friendly</option>
-            <option value="mid">Mid-range</option>
-            <option value="premium">Premium</option>
-          </select>
-        </div>
-      </div>
+    <div class="field">
+      <label>Description</label>
+      <textarea x-model="form.description" placeholder="Tell event organizers what you offer, your experience, and why they should choose you..."></textarea>
     </div>
 
     <div x-show="errorMsg" class="vs-error" x-text="errorMsg"></div>
 
-    <button
-      class="vs-submit-btn"
-      @click="submit()"
-      :disabled="loading || !user || coverUploading"
-      type="button"
-    >
-      <span x-text="loading ? 'Creating profile…' : 'Create vendor profile →'"></span>
-    </button>
-
-    {% if not user %}
-    <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--text-muted);">Sign in or create an account first</p>
-    {% endif %}
+    <div class="prog-actions" style="margin-top: 32px;">
+      <button type="button" @click="goToStep2()" class="prog-btn-primary">
+        <span>Continue to Location &amp; Pricing</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
   </div>
+
+  <!-- Step 2: Location & Pricing -->
+  <div x-show="currentStep === 2" x-transition style="display: none;">
+    <div class="prog-header" style="text-align: left; margin-bottom: 24px;">
+      <h1 class="prog-title">Location &amp; pricing</h1>
+      <p class="prog-subtitle" style="margin: 0;">Tell organizers where you operate and your service rates.</p>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>City</label>
+        <input type="text" x-model="form.location_city" placeholder="e.g. London, New York, Lagos">
+      </div>
+      <div class="field">
+        <label>Country</label>
+        <select x-model="form.location_country" @change="onCountryChange()">
+          <option value="">Select country...</option>
+          <optgroup label="United Kingdom &amp; Europe">
+            <option value="GB">United Kingdom (GBP £)</option>
+            <option value="DE">Germany (EUR €)</option>
+            <option value="FR">France (EUR €)</option>
+            <option value="IE">Ireland (EUR €)</option>
+            <option value="ES">Spain (EUR €)</option>
+            <option value="IT">Italy (EUR €)</option>
+            <option value="NL">Netherlands (EUR €)</option>
+          </optgroup>
+          <optgroup label="Americas &amp; Asia-Pacific">
+            <option value="US">United States (USD $)</option>
+            <option value="CA">Canada (CAD $)</option>
+            <option value="AU">Australia (AUD $)</option>
+          </optgroup>
+          <optgroup label="Africa">
+            <option value="NG">Nigeria (NGN ₦)</option>
+            <option value="GH">Ghana (GHS GH₵)</option>
+            <option value="KE">Kenya (KES KSh)</option>
+            <option value="ZA">South Africa (ZAR R)</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Operating Currency</label>
+        <select x-model="form.currency">
+          <option value="GBP">GBP (£) - British Pound</option>
+          <option value="USD">USD ($) - US Dollar</option>
+          <option value="EUR">EUR (€) - Euro</option>
+          <option value="CAD">CAD ($) - Canadian Dollar</option>
+          <option value="AUD">AUD ($) - Australian Dollar</option>
+          <option value="NGN">NGN (₦) - Nigerian Naira</option>
+          <option value="GHS">GHS (GH₵) - Ghanaian Cedi</option>
+          <option value="KES">KES (KSh) - Kenyan Shilling</option>
+          <option value="ZAR">ZAR (R) - South African Rand</option>
+        </select>
+        <div class="hint">Currency you will quote and get paid in</div>
+      </div>
+      <div class="field">
+        <label>Starting Price (Optional)</label>
+        <input type="number" x-model="form.starting_price" placeholder="e.g. 150">
+      </div>
+    </div>
+
+    <div class="field" x-show="form.category === 'venue'" x-cloak>
+      <label>Full venue address</label>
+      <input type="text" x-model="form.address" placeholder="e.g. 10 Finsbury Square, London or 12 Admiralty Way, Lekki">
+      <div class="hint">Shown to organizers once they enquire.</div>
+    </div>
+
+    <div class="field" x-show="form.category === 'venue'" x-cloak>
+      <label>Guest capacity</label>
+      <input type="number" x-model.number="form.capacity" placeholder="300" min="1">
+      <div class="hint">Maximum number of guests this venue can seat/host.</div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Contact email</label>
+        <input type="email" x-model="form.contact_email" placeholder="hello@myvendor.com">
+      </div>
+      <div class="field">
+        <label>Contact phone</label>
+        <input type="tel" x-model="form.contact_phone" placeholder="e.g. +1 555 123 4567">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Website</label>
+        <input type="url" x-model="form.website_url" placeholder="https://...">
+      </div>
+      <div class="field">
+        <label>Price range</label>
+        <select x-model="form.price_range">
+          <option value="">Not specified</option>
+          <option value="budget">Budget-friendly</option>
+          <option value="mid">Mid-range</option>
+          <option value="premium">Premium</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="prog-actions" style="margin-top: 32px;">
+      <button type="button" @click="currentStep = 3" class="prog-btn-primary">
+        <span>Continue to Photos &amp; Launch</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <button type="button" @click="currentStep = 1" class="prog-btn-back">
+        ‹ Back to Business Info
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 3: Photos & Portfolio -->
+  <div x-show="currentStep === 3" x-transition style="display: none;">
+    <div class="prog-header" style="text-align: left; margin-bottom: 24px;">
+      <h1 class="prog-title">Profile image &amp; work</h1>
+      <p class="prog-subtitle" style="margin: 0;">Add visual showcases of your past work so organizers can book you with confidence.</p>
+    </div>
+
+    <div class="field">
+      <label>Profile / Cover image <span style="color:#dc2626;">*</span></label>
+      <div class="hint" style="margin-top:0; margin-bottom:8px;">Shown as your listing's primary photo: required.</div>
+      <div class="vs-cover-upload" @click="$refs.coverInput.click()" :style="coverPreview ? 'border-style:solid;' : ''">
+        <template x-if="coverPreview">
+          <img :src="coverPreview" alt="" class="vs-cover-preview">
+        </template>
+        <template x-if="!coverPreview">
+          <div class="vs-upload-placeholder">
+            <span class="material-symbols-outlined" style="font-size:24px; opacity:.5;">add_photo_alternate</span>
+            <span x-text="coverUploading ? 'Uploading...' : 'Click to upload cover image'"></span>
+          </div>
+        </template>
+      </div>
+      <input type="file" x-ref="coverInput" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="uploadCover($event)">
+    </div>
+
+    <div class="field">
+      <label>Portfolio samples <span style="font-weight:400; color:var(--text-muted);">(optional)</span></label>
+      <div class="hint" style="margin-top:0; margin-bottom:8px;">Upload up to 3 photos of your work, or link to an external portfolio.</div>
+      <div class="vs-portfolio-grid">
+        <template x-for="(slot, i) in [0, 1, 2]" :key="i">
+          <div class="vs-portfolio-slot" @click="$refs['portfolioInput' + i].click()">
+            <template x-if="portfolioPreviews[i]">
+              <img :src="portfolioPreviews[i]" alt="" class="vs-cover-preview">
+            </template>
+            <template x-if="!portfolioPreviews[i]">
+              <span class="material-symbols-outlined" style="font-size:20px; opacity:.4;" x-text="portfolioUploading[i] ? 'hourglass_empty' : 'add'"></span>
+            </template>
+            <input type="file" :x-ref="'portfolioInput' + i" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="uploadPortfolio($event, i)">
+          </div>
+        </template>
+      </div>
+      <input type="url" x-model="form.portfolio_link" placeholder="https://instagram.com/yourbusiness or Behance link" style="margin-top:12px;">
+    </div>
+
+    <div x-show="errorMsg" class="vs-error" x-text="errorMsg"></div>
+
+    <div class="prog-actions" style="margin-top: 32px;">
+      <button
+        class="prog-btn-primary"
+        @click="submit()"
+        :disabled="loading || !user || coverUploading"
+        type="button"
+      >
+        <span x-text="loading ? 'Creating profile...' : 'Create vendor profile →'"></span>
+      </button>
+
+      <button type="button" @click="currentStep = 2" class="prog-btn-back">
+        ‹ Back to Location &amp; Pricing
+      </button>
+    </div>
+  </div>
+
 </div>
 
 <script>
 const _isLoggedIn = {{ 'true' if user else 'false' }};
 function vendorSignup() {
   return {
+    currentStep: 1,
     user: _isLoggedIn,
     loading: false,
     errorMsg: '',
@@ -307,6 +406,21 @@ function vendorSignup() {
       website_url: '',
       price_range: '',
       portfolio_link: '',
+    },
+    goToStep2() {
+      this.errorMsg = '';
+      if (!this.form.business_name || !this.form.business_name.trim()) {
+        this.errorMsg = 'Please enter your business or brand name.';
+        return;
+      }
+      if (!this.form.category) {
+        this.errorMsg = 'Please select a service category.';
+        return;
+      }
+      this.currentStep = 2;
+    },
+    validateStep1() {
+      return Boolean(this.form.business_name && this.form.category);
     },
     init() {
       try {
@@ -400,30 +514,21 @@ function vendorSignup() {
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            business_name: this.form.business_name,
-            category: this.form.category,
-            tagline: this.form.tagline || null,
-            description: this.form.description || null,
-            location_city: this.form.location_city || null,
-            location_country: this.form.location_country ? this.form.location_country.toUpperCase() : null,
-            currency: this.form.currency || 'USD',
-            starting_price: this.form.starting_price ? parseFloat(this.form.starting_price) : null,
-            address: this.form.category === 'venue' ? (this.form.address || null) : null,
-            capacity: this.form.category === 'venue' ? (this.form.capacity || null) : null,
-            contact_email: this.form.contact_email || null,
-            contact_phone: this.form.contact_phone || null,
-            website_url: this.form.website_url || null,
-            price_range: this.form.price_range || null,
+            ...this.form,
             cover_image_url: this.coverUrl,
-            portfolio_urls: this.portfolioUrls.filter(u => u) ,
-            portfolio_link: this.form.portfolio_link || null,
+            portfolio_images: this.portfolioUrls.filter(Boolean),
+            starting_price: this.form.starting_price ? parseFloat(this.form.starting_price) : null,
+            capacity: this.form.capacity ? parseInt(this.form.capacity) : null,
           }),
         });
         const j = await res.json();
-        if (!res.ok) throw new Error(j.error?.message || 'Failed to create profile.');
+        if (!res.ok) {
+          this.errorMsg = j.error?.message || 'Failed to create vendor profile.';
+          return;
+        }
         window.location.href = `/vendors/${j.data.slug}`;
       } catch (e) {
-        this.errorMsg = e.message;
+        this.errorMsg = 'Network error. Please try again.';
       } finally {
         this.loading = false;
       }
