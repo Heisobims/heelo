@@ -400,21 +400,15 @@ select option,
 
     <!-- Contextual dashboard menu tabs -->
     {% set _active = active_page | default('') %}
+    {% if not org %}
     <nav class="dash-topnav-links" aria-label="Dashboard navigation">
-      {% if org %}
-      <a href="/org/{{ org.slug }}" class="dash-topnav-link {% if _active == 'overview' %}active{% endif %}">Overview</a>
-      <a href="/org/{{ org.slug }}/events" class="dash-topnav-link {% if _active == 'events' %}active{% endif %}">Events</a>
-      <a href="/org/{{ org.slug }}/contacts" class="dash-topnav-link {% if _active == 'contacts' %}active{% endif %}">Contacts</a>
-      <a href="/org/{{ org.slug }}/finance" class="dash-topnav-link {% if _active == 'finance' %}active{% endif %}">Finance</a>
-      <a href="/org/{{ org.slug }}/settings" class="dash-topnav-link {% if _active == 'settings' %}active{% endif %}">Settings</a>
-      {% else %}
       <a href="/my-tickets" class="dash-topnav-link {% if _active == 'my_tickets' %}active{% endif %}">My Tickets</a>
       <a href="/events" class="dash-topnav-link">Find Events</a>
       <a href="/vendors" class="dash-topnav-link">Find Vendor</a>
       <a href="/venues" class="dash-topnav-link">Find Venue</a>
       <a href="/pricing" class="dash-topnav-link">Pricing</a>
-      {% endif %}
     </nav>
+    {% endif %}
 
     <!-- Right actions -->
     <div class="dash-topnav-actions">
