@@ -1216,7 +1216,7 @@ const _formFields = {{ form_fields_json | safe }};
 const _eventSlug = {{ event.slug | tojson }};
 const _feeConfig = {{ fee_config_json | safe }};
 const _platformFeePercent = {{ platform_fee_percent }};
-const _passFeesToBuyer = {{ 'true' if event.pass_fees_to_buyer else 'false' }};
+const _passFeesToBuyer = "{{ 'true' if event.pass_fees_to_buyer else 'false' }}" === "true";
 
 function grossUpForBuyerFees(subtotal) {
   const platformFee = subtotal * (_platformFeePercent / 100);

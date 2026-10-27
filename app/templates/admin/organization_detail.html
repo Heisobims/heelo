@@ -236,9 +236,9 @@
 {% block scripts %}
 <script>
 const _orgId = "{{ detail.org.id }}";
-let _ssoEnforced = {{ 'true' if detail.org.sso_enforced else 'false' }};
-let _ssoVerified = {{ 'true' if detail.org.sso_domain_verified else 'false' }};
-let _domainVerified = {{ 'true' if detail.org.custom_domain_verified else 'false' }};
+let _ssoEnforced = "{{ 'true' if detail.org.sso_enforced else 'false' }}" === "true";
+let _ssoVerified = "{{ 'true' if detail.org.sso_domain_verified else 'false' }}" === "true";
+let _domainVerified = "{{ 'true' if detail.org.custom_domain_verified else 'false' }}" === "true";
 
 async function suspendOrg(id) {
   if (!confirm("Suspend this organization?")) return;

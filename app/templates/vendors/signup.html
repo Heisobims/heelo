@@ -383,7 +383,7 @@
 </div>
 
 <script>
-const _isLoggedIn = {{ 'true' if user else 'false' }};
+const _isLoggedIn = "{{ 'true' if user else 'false' }}" === "true";
 function vendorSignup() {
   return {
     currentStep: 1,
