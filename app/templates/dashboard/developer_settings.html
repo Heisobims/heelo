@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Developer & API · {{ org.name }} | Heelo{% endblock %}
+{% block title %}Developer & API · {{ org.name }} | Tixdoo{% endblock %}
 {% set active_page = 'developer' %}
 
 {% block head %}
@@ -678,7 +678,7 @@
             Your API Key has been generated!
           </div>
           <p style="font-size:12.5px;color:#9A3412;margin:0 0 8px;">
-            Copy your secret key immediately. For security reasons, <strong>Heelo never stores keys in plaintext and will not show it again</strong>.
+            Copy your secret key immediately. For security reasons, <strong>Tixdoo never stores keys in plaintext and will not show it again</strong>.
           </p>
           <div class="secret-code-wrapper">
             <span class="secret-code-text" x-text="newlyCreatedKey"></span>
@@ -754,7 +754,7 @@
             Webhook Subscriptions
           </h2>
           <p class="card-desc">
-            Subscribe your servers to real-time events. Heelo delivers signed JSON HTTP POST payloads with automatic retries and HMAC SHA256 integrity verification.
+            Subscribe your servers to real-time events. Tixdoo delivers signed JSON HTTP POST payloads with automatic retries and HMAC SHA256 integrity verification.
           </p>
         </div>
         <button class="btn-dev btn-dev-primary" @click="showCreateWebhook = true; newlyCreatedSecret = null;">
@@ -769,7 +769,7 @@
         
         <div class="form-group">
           <label>Endpoint URL (HTTPS recommended)</label>
-          <input x-model="newWebhook.url" placeholder="https://api.yourdomain.com/webhooks/heelo" type="url" />
+          <input x-model="newWebhook.url" placeholder="https://api.yourdomain.com/webhooks/tixdoo" type="url" />
           <div class="form-help">Must be an accessible HTTP or HTTPS URL capable of accepting JSON POST requests.</div>
         </div>
 
@@ -855,7 +855,7 @@
             Webhook Signing Secret Generated
           </div>
           <p style="font-size:12.5px;color:#9A3412;margin:0 0 8px;">
-            Save this signing secret. Every request sent by Heelo includes an <code>X-Heelo-Signature: t=timestamp,v1=signature</code> header signed with this secret.
+            Save this signing secret. Every request sent by Tixdoo includes an <code>X-Tixdoo-Signature: t=timestamp,v1=signature</code> header signed with this secret.
           </p>
           <div class="secret-code-wrapper">
             <span class="secret-code-text" x-text="newlyCreatedSecret"></span>
@@ -1018,14 +1018,14 @@
           </button>
         </div>
         <!-- cURL -->
-        <pre class="code-snippet-body" x-show="codeLang === 'curl'">curl -X GET "https://api.heelo.io/api/public/v1/events" \
+        <pre class="code-snippet-body" x-show="codeLang === 'curl'">curl -X GET "https://api.tixdoo.com/api/public/v1/events" \
   -H "X-API-Key: hlo_live_YOUR_SECRET_KEY" \
   -H "Accept: application/json"</pre>
         <!-- Python -->
         <pre class="code-snippet-body" x-show="codeLang === 'python'">import requests
 
 API_KEY = "hlo_live_YOUR_SECRET_KEY"
-url = "https://api.heelo.io/api/public/v1/events"
+url = "https://api.tixdoo.com/api/public/v1/events"
 
 headers = {
     "X-API-Key": API_KEY,
@@ -1039,7 +1039,7 @@ print("Events:", events)</pre>
         <pre class="code-snippet-body" x-show="codeLang === 'node'">const API_KEY = "hlo_live_YOUR_SECRET_KEY";
 
 async function fetchEvents() {
-  const response = await fetch("https://api.heelo.io/api/public/v1/events", {
+  const response = await fetch("https://api.tixdoo.com/api/public/v1/events", {
     headers: {
       "X-API-Key": API_KEY,
       "Accept": "application/json",
@@ -1055,7 +1055,7 @@ fetchEvents();</pre>
       <!-- Example 2: Verifying Webhooks -->
       <h3 style="font-size:14px;font-weight:700;margin:24px 0 6px;color:var(--text-primary);">2. Verify Incoming Webhook Signatures</h3>
       <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 8px;">
-        Heelo signs payloads using HMAC-SHA256 with the subscription secret. Header format: <code>X-Heelo-Signature: t=1697750000,v1=hash</code>.
+        Tixdoo signs payloads using HMAC-SHA256 with the subscription secret. Header format: <code>X-Tixdoo-Signature: t=1697750000,v1=hash</code>.
       </p>
 
       <div class="code-snippet-box">
@@ -1067,7 +1067,7 @@ fetchEvents();</pre>
           </button>
         </div>
         <!-- cURL / General -->
-        <pre class="code-snippet-body" x-show="codeLang === 'curl'"># Verify incoming X-Heelo-Signature: t=&lt;timestamp&gt;,v1=&lt;signature&gt;
+        <pre class="code-snippet-body" x-show="codeLang === 'curl'"># Verify incoming X-Tixdoo-Signature: t=&lt;timestamp&gt;,v1=&lt;signature&gt;
 # 1. Split header into timestamp `t` and signature `v1`
 # 2. Compute HMAC-SHA256 with secret on `&lt;timestamp&gt;.&lt;raw_json_body&gt;`
 # 3. Compare computed digest against `v1` using constant-time comparison.</pre>
@@ -1077,7 +1077,7 @@ import hashlib
 
 WEBHOOK_SECRET = "whsec_YOUR_SIGNING_SECRET"
 
-def verify_heelo_webhook(raw_payload_bytes: bytes, sig_header: str) -> bool:
+def verify_tixdoo_webhook(raw_payload_bytes: bytes, sig_header: str) -> bool:
     try:
         parts = dict(pair.split("=", 1) for pair in sig_header.split(","))
         timestamp, signature = parts["t"], parts["v1"]
@@ -1098,7 +1098,7 @@ def verify_heelo_webhook(raw_payload_bytes: bytes, sig_header: str) -> bool:
 
 const WEBHOOK_SECRET = "whsec_YOUR_SIGNING_SECRET";
 
-function verifyHeeloWebhook(rawBodyBuffer, signatureHeader) {
+function verifyTixdooWebhook(rawBodyBuffer, signatureHeader) {
   try {
     const parts = Object.fromEntries(
       signatureHeader.split(',').map(kv => kv.split('='))
@@ -1200,11 +1200,11 @@ function devPortal() {
       let code = '';
       if (type === 'api_call') {
         if (this.codeLang === 'curl') {
-          code = `curl -X GET "https://api.heelo.io/api/public/v1/events" -H "X-API-Key: hlo_live_YOUR_SECRET_KEY" -H "Accept: application/json"`;
+          code = `curl -X GET "https://api.tixdoo.com/api/public/v1/events" -H "X-API-Key: hlo_live_YOUR_SECRET_KEY" -H "Accept: application/json"`;
         } else if (this.codeLang === 'python') {
-          code = `import requests\n\nAPI_KEY = "hlo_live_YOUR_SECRET_KEY"\nurl = "https://api.heelo.io/api/public/v1/events"\nheaders = {"X-API-Key": API_KEY, "Accept": "application/json"}\nresponse = requests.get(url, headers=headers)\nprint(response.json())`;
+          code = `import requests\n\nAPI_KEY = "hlo_live_YOUR_SECRET_KEY"\nurl = "https://api.tixdoo.com/api/public/v1/events"\nheaders = {"X-API-Key": API_KEY, "Accept": "application/json"}\nresponse = requests.get(url, headers=headers)\nprint(response.json())`;
         } else {
-          code = `const API_KEY = "hlo_live_YOUR_SECRET_KEY";\n\nasync function fetchEvents() {\n  const res = await fetch("https://api.heelo.io/api/public/v1/events", {\n    headers: { "X-API-Key": API_KEY, "Accept": "application/json" },\n  });\n  console.log(await res.json());\n}\nfetchEvents();`;
+          code = `const API_KEY = "hlo_live_YOUR_SECRET_KEY";\n\nasync function fetchEvents() {\n  const res = await fetch("https://api.tixdoo.com/api/public/v1/events", {\n    headers: { "X-API-Key": API_KEY, "Accept": "application/json" },\n  });\n  console.log(await res.json());\n}\nfetchEvents();`;
         }
       }
       this.copyText(code, 'Code snippet copied!');

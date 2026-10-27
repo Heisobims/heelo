@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Payment Settings · {{ org.name }} | Heelo{% endblock %}
+{% block title %}Payment Settings · {{ org.name }} | Tixdoo{% endblock %}
 {% set active_page = 'settings' %}
 
 {% block head %}
@@ -92,7 +92,7 @@
             {% else %}
             <div class="account-payout-detail">
               <span class="material-symbols-outlined">payments</span>
-              Settles automatically via your {{ acct.provider | capitalize }} subaccount · you receive 100% of the ticket price, Heelo's fee is added on top at checkout
+              Settles automatically via your {{ acct.provider | capitalize }} subaccount · you receive 100% of the ticket price, Tixdoo's fee is added on top at checkout
             </div>
             {% endif %}
           </div>
@@ -138,7 +138,7 @@
   {% if is_owner or user_role == "admin" %}
   <div style="background:#fff; border:1px solid var(--border-light); border-radius:12px; padding:28px; margin-bottom:12px;" x-data="connectPayment()">
     <p style="font-size:14px; font-weight:600; margin-bottom:6px;">Connect a payout account</p>
-    <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">You receive 100% of your ticket price: Heelo's 5% fee and payment-processing costs are added on top at checkout, paid by the buyer.</p>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:20px;">You receive 100% of your ticket price: Tixdoo's 5% fee and payment-processing costs are added on top at checkout, paid by the buyer.</p>
 
     <!-- Provider tabs -->
     <div class="provider-tabs">
@@ -291,10 +291,10 @@
     <div>
       <div style="font-size:14px;font-weight:600;margin-bottom:6px;">How payouts work</div>
       <ul style="margin:0;padding-left:1.25rem;font-size:13px;color:var(--text-muted);line-height:1.7;">
-        <li>You receive 100% of the ticket price you set: Heelo's 5% fee and an estimated payment-processing fee are added on top at checkout and paid by the buyer, never deducted from you.</li>
+        <li>You receive 100% of the ticket price you set: Tixdoo's 5% fee and an estimated payment-processing fee are added on top at checkout and paid by the buyer, never deducted from you.</li>
         <li>With Paystack, Flutterwave, or a verified Stripe account connected, that full amount settles automatically to your bank, typically within 24 hours after your event ends.</li>
         <li>Free events have no platform fee.</li>
-        <li>Local accounts are reference-only records: they don't receive automatic payouts. Heelo tracks and settles what's owed to these accounts by hand; see your organization's payout history for details.</li>
+        <li>Local accounts are reference-only records: they don't receive automatic payouts. Tixdoo tracks and settles what's owed to these accounts by hand; see your organization's payout history for details.</li>
       </ul>
     </div>
   </div>

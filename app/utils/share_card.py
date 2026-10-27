@@ -29,7 +29,7 @@ def generate_attendee_share_card(
     im = Image.new("RGBA", (width, height), (15, 15, 18, 255))
     draw = ImageDraw.Draw(im)
 
-    # Accent color (default: Heelo coral orange #E85938)
+    # Accent color (default: Tixdoo coral orange #E85938)
     accent_rgb = (232, 89, 56)
     if brand_color_hex and brand_color_hex.startswith("#") and len(brand_color_hex) == 7:
         try:
@@ -57,7 +57,7 @@ def generate_attendee_share_card(
 
     # Org / Platform header
     font_sub = _load_font(32, bold=False)
-    header_text = f"Presented by {org_name}" if org_name else "heelo.io"
+    header_text = f"Presented by {org_name}" if org_name else "tixdoo.com"
     draw.text((100, 260), header_text, fill=(180, 180, 190, 255), font=font_sub)
 
     # Attendee Name Box
@@ -106,13 +106,13 @@ def generate_attendee_share_card(
     font_footer = _load_font(36, bold=True)
     draw.text(
         (100, 1720),
-        "Get tickets & join me on Heelo",
+        "Get tickets & join me on Tixdoo",
         fill=(255, 255, 255, 255),
         font=font_footer,
     )
     draw.text(
         (100, 1775),
-        "heelo.io",
+        "tixdoo.com",
         fill=accent_rgb,
         font=font_sub,
     )

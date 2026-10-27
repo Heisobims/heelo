@@ -1,6 +1,6 @@
 # Comprehensive Search & Generative Engine Optimization (SEO/GEO/AEO) Report
 
-**Platform**: Heelo Event Ticketing, Intelligence & Marketplace  
+**Platform**: Tixdoo Event Ticketing, Intelligence & Marketplace  
 **Date**: October 21, 2026  
 **Roles**: Senior Technical SEO Engineer, Search Strategy Specialist, Generative Engine Optimization Specialist, Answer Engine Optimization Specialist, Structured Data Engineer, Web Performance Engineer, Full-Stack Developer  
 **Status**: Implemented, Hardened & Automated Tests Verified (100% Green Baseline)  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-A comprehensive, production-ready search and generative engine optimization strategy was executed across the Heelo platform. Every technical, on-page, programmatic, and structured data improvement was implemented directly in the application codebase, verified with automated tests, and tested against live endpoint responses.
+A comprehensive, production-ready search and generative engine optimization strategy was executed across the Tixdoo platform. Every technical, on-page, programmatic, and structured data improvement was implemented directly in the application codebase, verified with automated tests, and tested against live endpoint responses.
 
 ---
 
@@ -35,7 +35,7 @@ A comprehensive, production-ready search and generative engine optimization stra
 
 ## 2. Robots.txt & Crawling Policy
 
-Located at `/robots.txt` ([`app/routers/pages.py`](file:///Users/aflame/heelo/app/routers/pages.py)):
+Located at `/robots.txt` ([`app/routers/pages.py`](file:///Users/aflame/tixdoo/app/routers/pages.py)):
 
 ```text
 User-agent: *
@@ -73,7 +73,7 @@ Allow: /speakers/
 Allow: /p/
 Allow: /static/
 
-Sitemap: https://heelo.io/sitemap.xml
+Sitemap: https://tixdoo.com/sitemap.xml
 ```
 
 ### Privacy & Anti-Leak Protection
@@ -86,7 +86,7 @@ Sitemap: https://heelo.io/sitemap.xml
 
 ## 3. Dynamic XML Sitemap Configuration
 
-Located at `/sitemap.xml` ([`app/routers/pages.py`](file:///Users/aflame/heelo/app/routers/pages.py)):
+Located at `/sitemap.xml` ([`app/routers/pages.py`](file:///Users/aflame/tixdoo/app/routers/pages.py)):
 
 Features:
 - XML Namespace: `xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"` and Google Image extension `xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"`.
@@ -119,7 +119,7 @@ Features:
 
 ### 4.2 WebSite, Organization & FAQ Schema (`app/templates/home/landing.html`)
 - **WebSite**: Declares Sitelinks Searchbox (`SearchAction` targeting `/events?q={search_term_string}`).
-- **Organization**: Declares Heelo brand identity, official logo, and platform scope.
+- **Organization**: Declares Tixdoo brand identity, official logo, and platform scope.
 - **FAQPage**: Encodes verified platform answers (ticket verification, transfer policies, automated payouts, multi-currency options).
 
 ### 4.3 Pricing Schema (`app/templates/marketing/pricing.html`)
@@ -141,38 +141,38 @@ Features:
 
 ## 5. Programmatic SEO & Canonical Clean URLs
 
-To prevent query parameter duplicate content penalties while maximizing targeted search reach, programmatic routes were implemented in [`app/routers/pages.py`](file:///Users/aflame/heelo/app/routers/pages.py):
+To prevent query parameter duplicate content penalties while maximizing targeted search reach, programmatic routes were implemented in [`app/routers/pages.py`](file:///Users/aflame/tixdoo/app/routers/pages.py):
 
 1. **Category Landing Hubs**:
    - URL Pattern: `/events/category/{category_slug}` (e.g. `/events/category/tech`, `/events/category/music`)
-   - Canonical URL: `https://heelo.io/events/category/{category_slug}`
-   - Dynamic Title: `Tech Events | Discover Upcoming Tech Conferences and Meetups | Heelo`
+   - Canonical URL: `https://tixdoo.com/events/category/{category_slug}`
+   - Dynamic Title: `Tech Events | Discover Upcoming Tech Conferences and Meetups | Tixdoo`
    - Dynamic Meta: Contextual summary of category events with clear call to action
    - Structured Data: `BreadcrumbList` and `ItemList` containing top 20 events in that category
 
 2. **City Landing Hubs**:
    - URL Pattern: `/events/city/{city_slug}` (e.g. `/events/city/lagos`, `/events/city/london`)
-   - Canonical URL: `https://heelo.io/events/city/{city_slug}`
-   - Dynamic Title: `Events in Lagos | Discover Top Events, Festivals and Concerts | Heelo`
+   - Canonical URL: `https://tixdoo.com/events/city/{city_slug}`
+   - Dynamic Title: `Events in Lagos | Discover Top Events, Festivals and Concerts | Tixdoo`
    - Dynamic Meta: Location-specific event discovery copy
    - Structured Data: `BreadcrumbList` and `ItemList` containing top 20 events in that city
 
 3. **Canonical Consolidation**:
-   - In [`app/templates/base.html`](file:///Users/aflame/heelo/app/templates/base.html), canonical URLs default to clean paths and consume `custom_canonical` whenever a filtered view is accessed.
-   - Searching or filtering by category on `/events?category=tech` automatically sets `<link rel="canonical" href="https://heelo.io/events/category/tech">`, funneling ranking signals to the canonical category page.
+   - In [`app/templates/base.html`](file:///Users/aflame/tixdoo/app/templates/base.html), canonical URLs default to clean paths and consume `custom_canonical` whenever a filtered view is accessed.
+   - Searching or filtering by category on `/events?category=tech` automatically sets `<link rel="canonical" href="https://tixdoo.com/events/category/tech">`, funneling ranking signals to the canonical category page.
 
 ---
 
 ## 6. Core Web Vitals & Web Performance Hardening
 
 1. **Largest Contentful Paint (LCP)**:
-   - Event hero banner in [`app/templates/events/public.html`](file:///Users/aflame/heelo/app/templates/events/public.html#L919) has `fetchpriority="high"` and `decoding="async"`, instructing the browser to prioritize the hero image during initial resource scheduling.
+   - Event hero banner in [`app/templates/events/public.html`](file:///Users/aflame/tixdoo/app/templates/events/public.html#L919) has `fetchpriority="high"` and `decoding="async"`, instructing the browser to prioritize the hero image during initial resource scheduling.
 2. **First Input Delay (FID) / Interaction to Next Paint (INP)**:
    - External library scripts (`htmx`, `alpine.js`) load with `defer` attributes, preventing render-blocking during main-thread execution.
 3. **Cumulative Layout Shift (CLS)**:
    - Secondary images (gallery pictures, vendor cards, avatars) utilize `loading="lazy" decoding="async"` with explicit CSS aspect ratios to preserve layout geometry during progressive image loading.
 4. **Font Optimization**:
-   - Google Fonts preconnect directives with `&display=swap` configured in [`app/templates/base.html`](file:///Users/aflame/heelo/app/templates/base.html#L68) to prevent font-swap layout flashes.
+   - Google Fonts preconnect directives with `&display=swap` configured in [`app/templates/base.html`](file:///Users/aflame/tixdoo/app/templates/base.html#L68) to prevent font-swap layout flashes.
 
 ---
 
@@ -181,14 +181,14 @@ To prevent query parameter duplicate content penalties while maximizing targeted
 To complete search engine verification in production:
 
 1. **Google Search Console**:
-   - Register domain property for `heelo.io`.
-   - Set the `GOOGLE_SITE_VERIFICATION` environment variable in your production `.env` (or via DNS TXT record). Heelo will automatically render `<meta name="google-site-verification" content="...">` in [`base.html`](file:///Users/aflame/heelo/app/templates/base.html#L31).
-   - Submit sitemap index: `https://heelo.io/sitemap.xml`.
+   - Register domain property for `tixdoo.com`.
+   - Set the `GOOGLE_SITE_VERIFICATION` environment variable in your production `.env` (or via DNS TXT record). Tixdoo will automatically render `<meta name="google-site-verification" content="...">` in [`base.html`](file:///Users/aflame/tixdoo/app/templates/base.html#L31).
+   - Submit sitemap index: `https://tixdoo.com/sitemap.xml`.
 2. **Bing Webmaster Tools**:
    - Import verification directly from Google Search Console.
-   - Confirm sitemap discovery of `https://heelo.io/sitemap.xml`.
+   - Confirm sitemap discovery of `https://tixdoo.com/sitemap.xml`.
 3. **Google Analytics (GA4)**:
    - Create a GA4 property and retrieve the Measurement ID (format: `G-XXXXXXXXXX`).
    - Set `GA_MEASUREMENT_ID=G-XXXXXXXXXX` in `.env`.
-   - Heelo's built-in GDPR/cookie consent banner automatically controls Google Tag consent states (`analytics_storage` and `ad_storage`).
+   - Tixdoo's built-in GDPR/cookie consent banner automatically controls Google Tag consent states (`analytics_storage` and `ad_storage`).
 

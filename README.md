@@ -1,6 +1,6 @@
-# Heelo
+# Tixdoo
 
-**Every great event starts with heelo.**
+**Every great event starts with tixdoo.**
 
 All-in-one event management platform built for Africa and the world.
 

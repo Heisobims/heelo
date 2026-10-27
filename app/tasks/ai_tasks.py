@@ -75,7 +75,7 @@ def suggest_whatsapp_reply(from_phone: str, message_text: str) -> None:
                 if events:
                     ev = events[0]
                     org = db.query(Organization).filter(Organization.id == ev.org_id).first()
-                    org_name = org.name if org else "Heelo"
+                    org_name = org.name if org else "Tixdoo"
                     event_context = ev.title + (
                         f" on {ev.start_datetime.strftime('%b %d, %Y')}"
                         if ev.start_datetime

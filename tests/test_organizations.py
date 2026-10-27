@@ -77,7 +77,7 @@ async def test_invite_team_member(client: AsyncClient, org, other_user, user_hea
 
 
 async def test_cancel_pending_invite_for_unregistered_email(client: AsyncClient, org, user_headers):
-    """Regression test: an invite to someone with no Heelo account yet has no
+    """Regression test: an invite to someone with no Tixdoo account yet has no
     user_id, so cancelling it must be keyed by the membership row's own id -
     previously the remove endpoint required a user_id and silently no-op'd."""
     invite_resp = await client.post(

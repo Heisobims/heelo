@@ -43,7 +43,7 @@ async def paystack_webhook(request: Request, db: DBSession):
 
     if event == "charge.success":
         reference = data.get("reference", "")
-        if reference.startswith("heelo_plan_"):
+        if reference.startswith("tixdoo_plan_"):
             invoice = await pay_svc.verify_paystack_plan(db, reference)
             if invoice:
                 await billing_svc.confirm_plan_invoice(db, invoice)
@@ -121,7 +121,7 @@ async def paystack_webhook(request: Request, db: DBSession):
                 if vendor:
                     vendor.lead_credits_balance += lcp.credits_purchased
                 await db.commit()
-        elif reference.startswith("heelo_"):
+        elif reference.startswith("tixdoo_"):
             await pay_svc.verify_paystack(db, reference)
     elif event == "transfer.success":
         reference = data.get("reference", "")
@@ -225,11 +225,11 @@ async def flutterwave_webhook(request: Request, db: DBSession):
         tx_data = payload.get("data", {})
         tx_id = tx_data.get("id")
         tx_ref = tx_data.get("tx_ref", "")
-        if tx_id and tx_ref.startswith("heelo_plan_"):
+        if tx_id and tx_ref.startswith("tixdoo_plan_"):
             invoice = await pay_svc.verify_flutterwave_plan(db, int(tx_id))
             if invoice:
                 await billing_svc.confirm_plan_invoice(db, invoice)
-        elif tx_id and tx_ref.startswith("heelo_"):
+        elif tx_id and tx_ref.startswith("tixdoo_"):
             await pay_svc.verify_flutterwave(db, int(tx_id))
 
     return {"status": "ok"}

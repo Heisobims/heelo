@@ -149,7 +149,7 @@ async def generate_analytics_insights(
 
     top_ticket = max(ticket_breakdown, key=lambda t: t.get("sold", 0)) if ticket_breakdown else {}
 
-    prompt = f"""You are analyzing event performance data for an organizer on Heelo (Africa's event platform).
+    prompt = f"""You are analyzing event performance data for an organizer on Tixdoo (Africa's event platform).
 
 Stats:
 - Total registrations: {summary.get('total_registrations', 0)}
@@ -190,10 +190,10 @@ def suggest_whatsapp_reply_sync(
         return ""
 
     name_line = f"Attendee name: {attendee_name}" if attendee_name else ""
-    org_line = f"Organization: {org_name}" if org_name else "Organization: Heelo"
+    org_line = f"Organization: {org_name}" if org_name else "Organization: Tixdoo"
     ctx_line = f"Relevant event: {event_context}" if event_context else ""
 
-    prompt = f"""You are a helpful WhatsApp assistant for an event organizer on Heelo.
+    prompt = f"""You are a helpful WhatsApp assistant for an event organizer on Tixdoo.
 {org_line}
 {name_line}
 {ctx_line}

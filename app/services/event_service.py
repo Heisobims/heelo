@@ -608,7 +608,7 @@ async def get_platform_proof(db: AsyncSession, *, thumbnail_count: int = 5) -> d
 
 async def get_spotlight_event(db: AsyncSession) -> Event | dict | None:
     """The single best real event to feature as a case-study spotlight on
-    the landing page (a real substitute for a customer testimonial - Heelo
+    the landing page (a real substitute for a customer testimonial - Tixdoo
     has no real customers to quote yet, but it does have real events
     actually running) - featured first, then soonest-starting. Same
     eligibility and caching convention as get_landing_categories_with_events."""
@@ -662,7 +662,7 @@ CURATED_EVENT_SECTIONS: dict[str, dict] = {
     },
     "new": {
         "key": "new",
-        "title": "New on Heelo",
+        "title": "New on Tixdoo",
         "subtitle": "Freshly added events and newly published experiences",
         "anchor": "new",
         "badge": "Just Added",
@@ -752,7 +752,7 @@ async def search_public_events(
         elif sec in ("weekend", "this_weekend"):
             # Events taking place on Friday (5), Saturday (6), or Sunday (7)
             stmt = stmt.where(extract("isodow", Event.start_datetime).in_([5, 6, 7]))
-        elif sec in ("new", "new_on_heelo"):
+        elif sec in ("new", "new_on_tixdoo"):
             order_by_clause = Event.created_at.desc()
         elif sec in ("above_10k", "above10k"):
             stmt = stmt.where(
@@ -795,7 +795,7 @@ async def get_curated_event_sections(
     """Fetch events grouped by the 6 curated discovery sections for the /events page:
     - featured
     - weekend (Upcoming this weekend)
-    - new (New on Heelo)
+    - new (New on Tixdoo)
     - above_10k (Events above 10,000)
     - below_10k (Events under 10,000)
     - free (Zero dime events)

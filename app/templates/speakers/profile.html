@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ speaker.name }} | Heelo{% endblock %}
-{% block meta_description %}{{ speaker.bio[:160] if speaker.bio else speaker.name + (' · ' + speaker.title if speaker.title else '') + ' on Heelo' }}{% endblock %}
+{% block title %}{{ speaker.name }} | Tixdoo{% endblock %}
+{% block meta_description %}{{ speaker.bio[:160] if speaker.bio else speaker.name + (' · ' + speaker.title if speaker.title else '') + ' on Tixdoo' }}{% endblock %}
 {% block og_title %}{{ speaker.name }}{% endblock %}
 {% block og_description %}{{ self.meta_description() }}{% endblock %}
 {% block og_image %}{{ speaker.photo_url or '/static/icons/og-default.png' }}{% endblock %}

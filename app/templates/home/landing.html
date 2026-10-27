@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% block title %}Heelo: Every great event starts
+{% extends "base.html" %} {% block title %}Tixdoo: Every great event starts
 here{% endblock %} {% block meta_description %}Discover concerts, workshops,
 conferences, and festivals happening near you, or list your own event in
 minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
@@ -11,7 +11,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
       "@type": "WebSite",
       "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#website",
       "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/",
-      "name": "Heelo",
+      "name": "Tixdoo",
       "description": "Global event ticketing, intelligence, and vendor marketplace platform.",
       "potentialAction": {
         "@type": "SearchAction",
@@ -25,7 +25,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     {
       "@type": "Organization",
       "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#organization",
-      "name": "Heelo",
+      "name": "Tixdoo",
       "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/",
       "logo": {
         "@type": "ImageObject",
@@ -42,7 +42,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           "name": "How do verified tickets and QR check-in work?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Every ticket issued on Heelo is cryptographically signed and tied to a unique dynamic QR code. Organizers use our offline-ready gate scanner to validate admissions in less than 0.5 seconds, eliminating counterfeit passes and duplicate entries."
+            "text": "Every ticket issued on Tixdoo is cryptographically signed and tied to a unique dynamic QR code. Organizers use our offline-ready gate scanner to validate admissions in less than 0.5 seconds, eliminating counterfeit passes and duplicate entries."
           }
         },
         {
@@ -66,7 +66,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           "name": "What payment methods and currencies are supported?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Heelo supports multi-currency payments globally including USD, EUR, GBP, CAD, NGN, GHS, KES, and ZAR via Stripe, Paystack, and Flutterwave with card, bank transfer, and mobile money options."
+            "text": "Tixdoo supports multi-currency payments globally including USD, EUR, GBP, CAD, NGN, GHS, KES, and ZAR via Stripe, Paystack, and Flutterwave with card, bank transfer, and mobile money options."
           }
         }
       ]
@@ -80,7 +80,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 />
 <style>
   /* ============================================================
-   Maple-Exact Design System for Heelo Homepage
+   Maple-Exact Design System for Tixdoo Homepage
    Faithfully matching https://www.getmaple.ca visual structure,
    typography (Lora serif + Inter sans), color tokens, pill badges,
    trust bars, 4-card on-demand grids, comparison table, and spotlight.
@@ -856,7 +856,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
   }
 
   /* Elevated Dark Middle Column */
-  .mpl-comp-col-heelo {
+  .mpl-comp-col-tixdoo {
     background: var(--mpl-dark);
     border-radius: 20px;
     color: #faf9f7;
@@ -868,14 +868,14 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     z-index: 2;
   }
 
-  .mpl-comp-col-heelo .mpl-comp-header-cell {
+  .mpl-comp-col-tixdoo .mpl-comp-header-cell {
     height: 84px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .mpl-comp-heelo-logo {
+  .mpl-comp-tixdoo-logo {
     font-family: var(--mpl-font-serif);
     font-style: italic;
     font-size: 28px;
@@ -884,7 +884,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     letter-spacing: -0.5px;
   }
 
-  .mpl-comp-col-heelo .mpl-comp-cell {
+  .mpl-comp-col-tixdoo .mpl-comp-cell {
     height: 64px;
     display: flex;
     align-items: center;
@@ -1086,7 +1086,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     }
   }
 
-  /* ── "How Heelo Works" 3-Step Cards ────────────────────────── */
+  /* ── "How Tixdoo Works" 3-Step Cards ────────────────────────── */
   .mpl-how-section {
     background: var(--mpl-bright);
     padding: 96px 24px;
@@ -1894,10 +1894,10 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           </div>
         </div>
 
-        <!-- Col 2: Elevated Deep Forest Green Card (Heelo) -->
-        <div class="mpl-comp-col-heelo">
+        <!-- Col 2: Elevated Deep Forest Green Card (Tixdoo) -->
+        <div class="mpl-comp-col-tixdoo">
           <div class="mpl-comp-header-cell">
-            <span class="mpl-comp-heelo-logo">heelo</span>
+            <span class="mpl-comp-tixdoo-logo">tixdoo</span>
           </div>
           <div class="mpl-comp-cell">
             <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
@@ -1970,7 +1970,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     <div class="mpl-spotlight-copy">
       <span class="mpl-spotlight-pill-new">New</span>
       <div class="mpl-spotlight-brand-row">
-        <span class="mpl-spotlight-brand-logo">heelo</span>
+        <span class="mpl-spotlight-brand-logo">tixdoo</span>
         <span class="mpl-spotlight-brand-badge">Organizer Suite</span>
       </div>
       <h2 class="mpl-spotlight-title">
@@ -1988,18 +1988,18 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     <div class="mpl-spotlight-image">
       <img
         src="/static/images/landing/spotlight-suite.jpg"
-        alt="Heelo Organizer Suite"
+        alt="Tixdoo Organizer Suite"
         loading="lazy"
       />
     </div>
   </div>
 </section>
 
-<!-- ── "How Heelo Works" 3 Steps ──────────────────────────────── -->
+<!-- ── "How Tixdoo Works" 3 Steps ──────────────────────────────── -->
 <section class="mpl-how-section" id="how-it-works">
   <div class="mpl-how-inner">
     <div class="mpl-how-head">
-      <h2 class="mpl-how-title">How Heelo works</h2>
+      <h2 class="mpl-how-title">How Tixdoo works</h2>
       <p class="mpl-how-sub">
         Everything you need to experience or host great events in three simple
         steps.
@@ -2075,7 +2075,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           <span class="mpl-faq-icon">+</span>
         </button>
         <div class="mpl-faq-body">
-          Every ticket issued on Heelo is cryptographically signed and tied to a
+          Every ticket issued on Tixdoo is cryptographically signed and tied to a
           unique dynamic QR code. Organizers use our offline-ready gate scanner
           to validate admissions in less than 0.5 seconds, eliminating
           counterfeit passes and duplicate entries.
@@ -2112,14 +2112,14 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           <span class="mpl-faq-icon">+</span>
         </button>
         <div class="mpl-faq-body">
-          Heelo powers international transactions with multi-currency checkouts in USD, EUR, GBP, CAD, NGN, KES, GHS, and ZAR.
+          Tixdoo powers international transactions with multi-currency checkouts in USD, EUR, GBP, CAD, NGN, KES, GHS, and ZAR.
           We accept all major cards (Visa, Mastercard, AMEX, Discover), Apple Pay, Google Pay, local bank transfers, and mobile money.
         </div>
       </div>
 
       <div class="mpl-faq-item">
         <button class="mpl-faq-toggle" type="button">
-          <span>How does Heelo ensure security and privacy?</span>
+          <span>How does Tixdoo ensure security and privacy?</span>
           <span class="mpl-faq-icon">+</span>
         </button>
         <div class="mpl-faq-body">
@@ -2150,7 +2150,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
   <div class="mpl-footer-inner">
     <div class="mpl-footer-top">
       <div class="mpl-footer-brand-col">
-        <a href="/" class="mpl-footer-logo">heelo</a>
+        <a href="/" class="mpl-footer-logo">tixdoo</a>
         <p class="mpl-footer-tagline">
           The modern all-in-one event platform: verified ticketing, offline
           check-ins, global multi-currency payouts, and community broadcasts.
@@ -2185,13 +2185,13 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           <a href="/terms">Terms of service</a>
           <a href="/privacy">Privacy policy</a>
           <a href="javascript:void(0)" onclick="window.openCookieConsent && window.openCookieConsent()">Cookie preferences</a>
-          <a href="mailto:hello@heelo.io">Contact support</a>
+          <a href="mailto:hello@tixdoo.com">Contact support</a>
         </div>
       </div>
     </div>
 
     <div class="mpl-footer-bottom">
-      <div>&copy; 2026 Heelo Inc. All rights reserved.</div>
+      <div>&copy; 2026 Tixdoo Inc. All rights reserved.</div>
       <div>Payments secured by Paystack, Flutterwave &amp; Stripe.</div>
     </div>
   </div>

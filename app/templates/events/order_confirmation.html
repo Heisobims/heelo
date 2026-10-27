@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Registration Confirmed · {{ event.title }} | Heelo{% endblock %}
+{% block title %}Registration Confirmed · {{ event.title }} | Tixdoo{% endblock %}
 {% block robots_meta %}<meta name="robots" content="noindex, nofollow" />{% endblock %}
 {% set cyan_text = (org.display_brand_color | contrast_text('#0A0A0A')) if org and org.display_brand_color else '#0A0A0A' %}
 
@@ -257,7 +257,7 @@ fbq('track', 'Purchase', {
       <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); letter-spacing:0.05em;">
         {{ reg.id | string | upper | truncate(8, True, '') }}
       </div>
-      <div style="font-size:11px; color:var(--text-muted);">heelo.io</div>
+      <div style="font-size:11px; color:var(--text-muted);">tixdoo.com</div>
     </div>
   </div>
   {% endif %}

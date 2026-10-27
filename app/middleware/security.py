@@ -15,7 +15,7 @@ _CSP = (
     "https://connect.facebook.net https://analytics.tiktok.com; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
     "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
-    "img-src 'self' data: blob: https://media.heelo.io https://lh3.googleusercontent.com "
+    "img-src 'self' data: blob: https://media.tixdoo.com https://lh3.googleusercontent.com "
     "https://images.unsplash.com https://unsplash.com https://*.unsplash.com "
     "https://www.google-analytics.com https://*.google-analytics.com "
     "https://www.facebook.com https://analytics.tiktok.com; "

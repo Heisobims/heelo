@@ -27,7 +27,7 @@ class Speaker(Base, TimestampMixin):
         nullable=False,
         index=True,
     )
-    # If the speaker has a Heelo account this links them for profile access
+    # If the speaker has a Tixdoo account this links them for profile access
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -122,7 +122,7 @@ class Sponsor(Base, TimestampMixin):
     category: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Self-service sponsor portal - the org creates the Sponsor row, then
-    # invites a real Heelo account to claim and manage it (logo/website/
+    # invites a real Tixdoo account to claim and manage it (logo/website/
     # description only; tier/booth/category stay organizer-controlled).
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True

@@ -82,7 +82,7 @@ async def start_plan_checkout(
 
     currency = (org.currency or "NGN").upper()
     list_price = get_plan_price(plan, currency)
-    # Heelo is the direct merchant here (no organizer subaccount involved),
+    # Tixdoo is the direct merchant here (no organizer subaccount involved),
     # so only the payment gateway's own processing fee needs grossing up -
     # there's no separate "platform fee" to add on top of itself.
     provider = payment_service.select_provider(currency)

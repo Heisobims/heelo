@@ -55,7 +55,7 @@ async def privacy_page(request: Request):
 async def pricing_page(request: Request):
     from app.services import payment_service as pay_svc
 
-    token = request.cookies.get("heelo_access")
+    token = request.cookies.get("tixdoo_access")
     is_logged_in = False
     if token:
         try:
@@ -311,7 +311,7 @@ async def sitemap_xml(db: DBSession) -> Response:
 async def landing_page(request: Request, db: DBSession):
     from app.services import event_service as ev_svc
 
-    token = request.cookies.get("heelo_access")
+    token = request.cookies.get("tixdoo_access")
     is_logged_in = False
     if token:
         try:
@@ -367,7 +367,7 @@ def _current_user_or_none(request: Request):
 
 async def _get_auth_context(request: Request, db: AsyncSession):
     """Return (user, user_orgs) from cookie, or redirect to login if not authed."""
-    token = request.cookies.get("heelo_access")
+    token = request.cookies.get("tixdoo_access")
     if not token:
         return None, []
     try:
@@ -1301,7 +1301,7 @@ async def paystack_callback(request: Request, db: DBSession, reference: str = ""
 
     from app.services import payment_service as pay_svc
 
-    if not reference.startswith("heelo_"):
+    if not reference.startswith("tixdoo_"):
         return RedirectResponse("/?error=invalid_reference", status_code=302)
 
     order = await pay_svc.verify_paystack(db, reference)
@@ -1327,13 +1327,13 @@ async def flutterwave_callback(
 
     from app.services import payment_service as pay_svc
 
-    # tx_ref is "heelo_{order_id}" (see _initialize_flutterwave) - recover
+    # tx_ref is "tixdoo_{order_id}" (see _initialize_flutterwave) - recover
     # the order id up front so a failed/errored verification can still send
     # the buyer back to their own order instead of a bare homepage redirect.
     fallback_url = "/?error=payment_failed"
-    if tx_ref.startswith("heelo_"):
+    if tx_ref.startswith("tixdoo_"):
         try:
-            order_id = uuid.UUID(tx_ref[len("heelo_") :])
+            order_id = uuid.UUID(tx_ref[len("tixdoo_") :])
             fallback_url = f"/orders/{order_id}/confirmation?pending=1&error=1"
         except ValueError:
             pass
@@ -2664,7 +2664,7 @@ async def plan_downgrade_cancel(slug: str, request: Request, db: DBSession):
 async def plan_billing_paystack_callback(request: Request, db: DBSession, reference: str = ""):
     from app.services import payment_service as pay_svc
 
-    if not reference.startswith("heelo_plan_"):
+    if not reference.startswith("tixdoo_plan_"):
         return RedirectResponse("/?error=invalid_reference", status_code=302)
 
     invoice = await pay_svc.verify_paystack_plan(db, reference)
@@ -2838,7 +2838,7 @@ async def public_events_list(
             norm_key = "free"
         elif norm_key in ("this_weekend",):
             norm_key = "weekend"
-        elif norm_key in ("new_on_heelo",):
+        elif norm_key in ("new_on_tixdoo",):
             norm_key = "new"
         elif norm_key in ("under_10k", "under10k"):
             norm_key = "below_10k"

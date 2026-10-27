@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class AttendeeProfile(Base, TimestampMixin):
-    """Public-facing profile for an attendee at heelo.io/p/<username>."""
+    """Public-facing profile for an attendee at tixdoo.com/p/<username>."""
 
     __tablename__ = "attendee_profiles"
 

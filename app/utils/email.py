@@ -62,17 +62,17 @@ async def send_otp_email(email: str, name: str, otp: str) -> None:
     <html>
     <head><meta charset="utf-8"></head>
     <body style="font-family: Arial, sans-serif; background: #fff; color: #0A0A0A; max-width: 520px; margin: 0 auto; padding: 40px 24px;">
-      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">heelo</p>
+      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">tixdoo</p>
       <h1 style="font-size: 28px; font-weight: 700; margin: 32px 0 8px;">Your verification code</h1>
       <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 32px;">Hi {name}, use this code to verify your email address. It expires in {settings.OTP_EXPIRE_MINUTES} minutes.</p>
       <div style="background: #F7F7F5; border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 32px;">
         <p style="font-size: 48px; font-weight: 700; letter-spacing: 12px; margin: 0; font-family: monospace;">{otp}</p>
       </div>
-      <p style="font-size: 13px; color: #ADADAD;">If you didn&rsquo;t create a Heelo account, you can safely ignore this email.</p>
+      <p style="font-size: 13px; color: #ADADAD;">If you didn&rsquo;t create a Tixdoo account, you can safely ignore this email.</p>
     </body>
     </html>
     """
-    await asyncio.to_thread(send_smtp, email, "Your Heelo verification code", html)
+    await asyncio.to_thread(send_smtp, email, "Your Tixdoo verification code", html)
 
 
 async def send_password_reset_email(email: str, name: str, reset_url: str) -> None:
@@ -81,7 +81,7 @@ async def send_password_reset_email(email: str, name: str, reset_url: str) -> No
     <html>
     <head><meta charset="utf-8"></head>
     <body style="font-family: Arial, sans-serif; background: #fff; color: #0A0A0A; max-width: 520px; margin: 0 auto; padding: 40px 24px;">
-      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">heelo</p>
+      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">tixdoo</p>
       <h1 style="font-size: 28px; font-weight: 700; margin: 32px 0 8px;">Reset your password</h1>
       <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 32px;">Hi {name}, click the button below to set a new password. This link expires in 60 minutes.</p>
       <a href="{reset_url}" style="display: inline-block; background: #E85938; color: #FFFFFF; font-weight: 600; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 100px; margin-bottom: 32px;">Reset password</a>
@@ -90,7 +90,7 @@ async def send_password_reset_email(email: str, name: str, reset_url: str) -> No
     </body>
     </html>
     """
-    await asyncio.to_thread(send_smtp, email, "Reset your Heelo password", html)
+    await asyncio.to_thread(send_smtp, email, "Reset your Tixdoo password", html)
 
 
 async def send_welcome_email(email: str, name: str) -> None:
@@ -99,14 +99,14 @@ async def send_welcome_email(email: str, name: str) -> None:
     <html>
     <head><meta charset="utf-8"></head>
     <body style="font-family: Arial, sans-serif; background: #fff; color: #0A0A0A; max-width: 520px; margin: 0 auto; padding: 40px 24px;">
-      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">heelo</p>
+      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">tixdoo</p>
       <h1 style="font-size: 28px; font-weight: 700; margin: 32px 0 8px;">Welcome, {name}.</h1>
       <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 32px;">Your account is ready. Every great event starts here.</p>
       <a href="{settings.FRONTEND_URL}/dashboard" style="display: inline-block; background: #E85938; color: #FFFFFF; font-weight: 600; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 100px;">Go to your dashboard</a>
     </body>
     </html>
     """
-    await asyncio.to_thread(send_smtp, email, "Welcome to Heelo", html)
+    await asyncio.to_thread(send_smtp, email, "Welcome to Tixdoo", html)
 
 
 async def send_team_invite_email(
@@ -125,12 +125,12 @@ async def send_team_invite_email(
     <html>
     <head><meta charset="utf-8"></head>
     <body style="font-family: Arial, sans-serif; background: #fff; color: #0A0A0A; max-width: 520px; margin: 0 auto; padding: 40px 24px;">
-      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">heelo</p>
+      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">tixdoo</p>
       <h1 style="font-size: 28px; font-weight: 700; margin: 32px 0 8px;">You&rsquo;ve been invited</h1>
-      <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 32px;">{inviter_name} has invited you to join <strong>{org_name}</strong> on Heelo.</p>
+      <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 32px;">{inviter_name} has invited you to join <strong>{org_name}</strong> on Tixdoo.</p>
       <a href="{invite_url}" style="display: inline-block; background: {button_bg}; color: {button_text}; font-weight: 600; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 100px; margin-bottom: 32px;">Accept invitation</a>
       <p style="font-size: 13px; color: #ADADAD;">This invitation expires in 24 hours.</p>
     </body>
     </html>
     """
-    await asyncio.to_thread(send_smtp, email, f"You're invited to join {org_name} on Heelo", html)
+    await asyncio.to_thread(send_smtp, email, f"You're invited to join {org_name} on Tixdoo", html)

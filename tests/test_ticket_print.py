@@ -30,7 +30,7 @@ async def test_ticket_view_page_responsive_nav_and_single_page_print(
     token = _make_token(str(user.id))
     resp = await client.get(
         f"/my-tickets/{reg.id}",
-        cookies={"heelo_access": token},
+        cookies={"tixdoo_access": token},
     )
     assert resp.status_code == 200
     html = resp.text
@@ -108,7 +108,7 @@ def test_global_main_css_print_optimization():
         content = f.read()
 
     assert "@media print" in content
-    assert ".heelo-ai-widget-root" in content
-    assert "#heelo-cookie-consent" in content
+    assert ".tixdoo-ai-widget-root" in content
+    assert "#tixdoo-cookie-consent" in content
     assert ".no-print" in content
     assert "break-inside: avoid !important;" in content

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}List your business | Heelo Vendors{% endblock %}
+{% block title %}List your business | Tixdoo Vendors{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/css/dashboard.css">
@@ -151,14 +151,14 @@
 
   {% if not user %}
   <div class="vs-login-notice">
-    You will need a Heelo account to list your business. <a href="/register?next=/vendor-signup">Create a free account</a> or <a href="/login?next=/vendor-signup">sign in</a>.
+    You will need a Tixdoo account to list your business. <a href="/register?next=/vendor-signup">Create a free account</a> or <a href="/login?next=/vendor-signup">sign in</a>.
   </div>
   {% endif %}
 
   <!-- Step 1: Business Details -->
   <div x-show="currentStep === 1" x-transition>
     <div class="prog-header" style="text-align: left; margin-bottom: 24px;">
-      <h1 class="prog-title">List your business on Heelo</h1>
+      <h1 class="prog-title">List your business on Tixdoo</h1>
       <p class="prog-subtitle" style="margin: 0;">Connect with event organizers. Create your vendor profile in 2 minutes.</p>
     </div>
 

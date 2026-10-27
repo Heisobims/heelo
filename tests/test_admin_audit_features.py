@@ -8,7 +8,7 @@ from app.config import settings
 
 def _set_admin_cookie(client: AsyncClient, admin_user):
     token = jwt.encode({"sub": str(admin_user.id)}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    client.cookies.set("heelo_access", token)
+    client.cookies.set("tixdoo_access", token)
 
 
 # ── Feature & Status Toggles ──────────────────────────────────────────────────
@@ -255,7 +255,7 @@ async def test_admin_users_search_query(client: AsyncClient, admin_user):
 async def test_unauthorized_user_redirected_to_login(client: AsyncClient, user):
     # Non-admin user tries to access admin pages
     token = jwt.encode({"sub": str(user.id)}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    client.cookies.set("heelo_access", token)
+    client.cookies.set("tixdoo_access", token)
 
     for route in ["/admin", "/admin/organizations", "/admin/events", "/admin/finance", "/admin/payouts", "/admin/users"]:
         resp = await client.get(route)

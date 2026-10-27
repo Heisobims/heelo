@@ -246,7 +246,7 @@ class TestLivePages:
     ):
         from tests.conftest import _make_token
 
-        client.cookies.set("heelo_access", _make_token(str(user.id)))
+        client.cookies.set("tixdoo_access", _make_token(str(user.id)))
         resp = await client.get(f"/org/{org.slug}/events/{published_event.id}/live")
         assert resp.status_code == 200
         assert "Live" in resp.text
@@ -256,6 +256,6 @@ class TestLivePages:
     ):
         from tests.conftest import _make_token
 
-        client.cookies.set("heelo_access", _make_token(str(other_user.id)))
+        client.cookies.set("tixdoo_access", _make_token(str(other_user.id)))
         resp = await client.get(f"/org/{org.slug}/events/{published_event.id}/live")
         assert resp.status_code == 403

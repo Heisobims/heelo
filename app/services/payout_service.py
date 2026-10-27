@@ -1,9 +1,9 @@
-"""Manual payouts - for organizers whose money Heelo is still holding
+"""Manual payouts - for organizers whose money Tixdoo is still holding
 because no automatic split happened at charge time (no Paystack/Flutterwave
 subaccount, no verified Stripe Connect account, or a "manual" reference-only
 account). This subsystem tracks what's owed and records the bank transfers
-Heelo's ops team sends by hand to settle it; it never moves money itself,
-matching how "manual" accounts have no payment rail Heelo could move money
+Tixdoo's ops team sends by hand to settle it; it never moves money itself,
+matching how "manual" accounts have no payment rail Tixdoo could move money
 through even if it wanted to."""
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from app.models.ticketing import REVENUE_STATUSES, Order
 
 
 async def get_owed_amount(db: AsyncSession, org_id: uuid.UUID) -> Decimal:
-    """What Heelo currently owes this org: net revenue from orders that were
+    """What Tixdoo currently owes this org: net revenue from orders that were
     never auto-split, minus payouts already marked paid. `net_amount -
     refunded_amount` is the same formula analytics_service.get_event_summary
     uses for net_revenue - confirmed correct against cancel_registration's

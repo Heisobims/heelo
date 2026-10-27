@@ -462,7 +462,7 @@ async def register(
         total_amount=float(total_amount),
         net_amount=float(net_amount),
         # For passthrough orders, platform_fee records total - net (platform cut + gateway fee estimate).
-        # For fee-absorbed orders, platform_fee is Heelo's flat 5% cut.
+        # For fee-absorbed orders, platform_fee is Tixdoo's flat 5% cut.
         platform_fee=float(
             platform_fee_amount + gateway_fee_amount
             if fees_passed_to_buyer

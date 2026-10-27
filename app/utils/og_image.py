@@ -1,6 +1,6 @@
 """
 OG image generation using Pillow.
-Produces 1200×630 PNG images branded for Heelo events.
+Produces 1200×630 PNG images branded for Tixdoo events.
 """
 
 from __future__ import annotations
@@ -132,7 +132,7 @@ def generate_event_og_image(
     if meta_items:
         draw.text((padding_x, meta_y), "  ·  ".join(meta_items), font=meta_font, fill=_GRAY)
 
-    # ── Bottom bar: org name + heelo brand ────────────────────────────────────
+    # ── Bottom bar: org name + tixdoo brand ────────────────────────────────────
     bottom_y = H - 80
     brand_font = _load_font(22, bold=True)
     small_font = _load_font(18)
@@ -140,11 +140,11 @@ def generate_event_og_image(
     if org_name:
         draw.text((padding_x, bottom_y), org_name, font=small_font, fill=_DIM_GRAY)
 
-    # "heelo" watermark bottom right
-    heelo_text = "heelo"
-    bbox = draw.textbbox((0, 0), heelo_text, font=brand_font)
+    # "tixdoo" watermark bottom right
+    tixdoo_text = "tixdoo"
+    bbox = draw.textbbox((0, 0), tixdoo_text, font=brand_font)
     text_w = bbox[2] - bbox[0]
-    draw.text((W - padding_x - text_w, bottom_y), heelo_text, font=brand_font, fill=_CYAN)
+    draw.text((W - padding_x - text_w, bottom_y), tixdoo_text, font=brand_font, fill=_CYAN)
 
     # ── Divider line above bottom bar ─────────────────────────────────────────
     draw.rectangle([(padding_x, bottom_y - 16), (W - padding_x, bottom_y - 15)], fill=_DIM_GRAY)

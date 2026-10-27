@@ -1,6 +1,6 @@
 """Add gateway_fee_amount to plan_invoices - org-plan checkout now grosses
 up the charge by an estimated payment-gateway processing fee (mirroring
-orders.gateway_fee_amount) so Heelo nets the full plan list price.
+orders.gateway_fee_amount) so Tixdoo nets the full plan list price.
 """
 
 from __future__ import annotations

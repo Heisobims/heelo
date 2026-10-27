@@ -1,5 +1,5 @@
 /**
- * Heelo Service Worker
+ * Tixdoo Service Worker
  *
  * Strategy:
  *   - Static assets (/static/*)  → Cache-first (versioned cache)
@@ -10,7 +10,7 @@
  *   - All other API              → Network-only (no offline fallback)
  */
 
-const CACHE_VERSION = 'heelo-v7';
+const CACHE_VERSION = 'tixdoo-v7';
 const OFFLINE_URL   = '/offline';
 
 // Precache: these must all return 200 at install time
@@ -25,7 +25,7 @@ const PRECACHE = [
 // Cache kiosk pages when visited (not pre-cached since we don't know event IDs)
 const KIOSK_PATTERN = /\/org\/[^/]+\/events\/[^/]+\/kiosk/;
 
-const CHECKIN_QUEUE_DB = 'heelo-checkin-queue';
+const CHECKIN_QUEUE_DB = 'tixdoo-checkin-queue';
 const CHECKIN_QUEUE_STORE = 'queue';
 
 

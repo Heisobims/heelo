@@ -37,7 +37,7 @@ def _create_sample_logo_png(width: int = 120, height: int = 120, color: tuple = 
 
 def test_generate_qr_png_without_branding():
     """Verify clean QR generation when no logo or org name is provided."""
-    payload = "https://heelo.io/e/tech-summit"
+    payload = "https://tixdoo.com/e/tech-summit"
     qr_bytes = generate_qr_png(payload)
     assert isinstance(qr_bytes, bytes)
     assert len(qr_bytes) > 500
@@ -74,7 +74,7 @@ def test_generate_qr_png_with_logo_bytes():
 
 def test_generate_qr_png_with_monogram_fallback():
     """Verify QR code generates a monogram avatar badge if no image logo is uploaded."""
-    payload = "https://heelo.io/e/lagos-creators"
+    payload = "https://tixdoo.com/e/lagos-creators"
     qr_bytes = generate_qr_png(
         payload,
         box_size=8,

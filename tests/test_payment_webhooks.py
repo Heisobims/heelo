@@ -48,7 +48,7 @@ async def _pending_order(db, published_event, ticket_type, order_id=None):
         platform_fee=float(ticket_type.price) * fee_rate,
         currency=ticket_type.currency,
         payment_provider="paystack",
-        payment_reference=f"heelo_{order_id}",
+        payment_reference=f"tixdoo_{order_id}",
         payment_status="pending",
     )
     db.add(o)
@@ -76,7 +76,7 @@ async def _pending_registration(db, published_event, ticket_type, order):
 
 async def test_paystack_webhook_rejects_invalid_signature(client: AsyncClient, monkeypatch):
     monkeypatch.setattr(settings, "PAYSTACK_SECRET_KEY", "test-secret")
-    body = json.dumps({"event": "charge.success", "data": {"reference": "heelo_x"}}).encode()
+    body = json.dumps({"event": "charge.success", "data": {"reference": "tixdoo_x"}}).encode()
     resp = await client.post(
         "/api/v1/webhooks/paystack",
         content=body,
@@ -176,7 +176,7 @@ async def test_paystack_webhook_replay_is_idempotent(
 
 async def test_flutterwave_webhook_rejects_invalid_signature(client: AsyncClient, monkeypatch):
     monkeypatch.setattr(settings, "FLUTTERWAVE_WEBHOOK_SECRET", "test-secret")
-    body = json.dumps({"status": "successful", "data": {"id": 1, "tx_ref": "heelo_x"}}).encode()
+    body = json.dumps({"status": "successful", "data": {"id": 1, "tx_ref": "tixdoo_x"}}).encode()
     resp = await client.post(
         "/api/v1/webhooks/flutterwave",
         content=body,

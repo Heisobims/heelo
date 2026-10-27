@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Your Profile | Heelo{% endblock %}
+{% block title %}Your Profile | Tixdoo{% endblock %}
 {% set active_page = 'profile' %}
 
 {% block head %}
@@ -101,11 +101,11 @@
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label">Email address</label>
           <input type="email" class="form-input" value="{{ user.email }}" disabled style="background:var(--bg-secondary); color:var(--text-muted); cursor:not-allowed;">
-          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Email changes require support. Contact us at hello@heelo.io</p>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Email changes require support. Contact us at hello@tixdoo.com</p>
         </div>
 
         <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label">Username <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(optional: heelo.io/p/username)</span></label>
+          <label class="form-label">Username <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(optional: tixdoo.com/p/username)</span></label>
           <div style="position:relative;">
             <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px;">@</span>
             <input type="text" class="form-input" x-model="form.username" maxlength="50" placeholder="yourhandle" style="padding-left:28px;" autocorrect="off" autocapitalize="none">

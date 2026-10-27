@@ -51,10 +51,10 @@ def generate_event_pkpass(
 
     pass_json = {
         "formatVersion": 1,
-        "passTypeIdentifier": "pass.io.heelo.ticket",
+        "passTypeIdentifier": "pass.com.tixdoo.ticket",
         "serialNumber": serial_number,
-        "teamIdentifier": "HEELO",
-        "organizationName": org_name or "Heelo Events",
+        "teamIdentifier": "TIXDOO",
+        "organizationName": org_name or "Tixdoo Events",
         "description": event_title,
         "foregroundColor": "rgb(255, 255, 255)",
         "backgroundColor": bg_color,
@@ -102,7 +102,7 @@ def generate_event_pkpass(
                 {
                     "key": "terms",
                     "label": "TICKET INFORMATION",
-                    "value": "This digital pass is verified by Heelo (heelo.io). Please present the QR code on this pass upon entry at the event venue.",
+                    "value": "This digital pass is verified by Tixdoo (tixdoo.com). Please present the QR code on this pass upon entry at the event venue.",
                 },
                 {
                     "key": "ticket_id",

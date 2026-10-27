@@ -1,7 +1,7 @@
 """Add orders.auto_split_applied - tracks, per order, whether the
 organizer's net_amount was actually paid out automatically at charge time
 (a Paystack/Flutterwave subaccount split or a verified Stripe Connect
-destination charge), vs. Heelo still holding it and owing the organizer a
+destination charge), vs. Tixdoo still holding it and owing the organizer a
 manual payout. Needed because an org's payment-account configuration can
 change after an order is placed, so it can't be inferred reliably from
 current state - see app/services/payout_service.py.

@@ -41,11 +41,11 @@ def build_ics(event: Event, *, uid: uuid.UUID) -> bytes:
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//Heelo//Event Calendar//EN",
+        "PRODID:-//Tixdoo//Event Calendar//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
         "BEGIN:VEVENT",
-        f"UID:{uid}@heelo.io",
+        f"UID:{uid}@tixdoo.com",
         f"DTSTAMP:{now}",
         f"DTSTART:{dtstart}",
         f"DTEND:{dtend}",

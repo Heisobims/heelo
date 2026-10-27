@@ -313,7 +313,7 @@ def handle_incoming_message(from_phone: str, message_text: str) -> None:
                 msg = WhatsAppMessage(
                     org_id=org_id,
                     from_number=phone_norm or from_phone,
-                    to_number=settings.WHATSAPP_PHONE_NUMBER_ID or "heelo",
+                    to_number=settings.WHATSAPP_PHONE_NUMBER_ID or "tixdoo",
                     direction="inbound",
                     body=message_text,
                     message_type="text",
@@ -414,7 +414,7 @@ def handle_incoming_message(from_phone: str, message_text: str) -> None:
 
             if not phone_last10:
                 wa.send_text_sync(
-                    from_phone, "Could not look up your number. Visit heelo.io for help."
+                    from_phone, "Could not look up your number. Visit tixdoo.com for help."
                 )
                 return
 

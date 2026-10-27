@@ -1,7 +1,7 @@
 """
 Support AI Chatbot Router.
 Provides public, conversational support and intelligent answers
-grounded in the Heelo platform and database.
+grounded in the Tixdoo platform and database.
 """
 
 from __future__ import annotations
@@ -53,7 +53,7 @@ async def resolve_chat_auth_context(request: Request, db: AsyncSession) -> dict[
     Safely resolve optional authenticated user and organization memberships
     from cookie or Authorization bearer header.
     """
-    token = request.cookies.get("heelo_access")
+    token = request.cookies.get("tixdoo_access")
     if not token:
         auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):

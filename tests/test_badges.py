@@ -24,7 +24,7 @@ class TestBadgePdfGeneration:
             attendee_name="Ada Lovelace",
             ticket_type_name="VIP",
             event_title="Founders Summit",
-            org_name="Heelo Events",
+            org_name="Tixdoo Events",
         )
         pdf_bytes = generate_badge_pdf([data])
         assert pdf_bytes.startswith(b"%PDF")
@@ -36,7 +36,7 @@ class TestBadgePdfGeneration:
                 attendee_name=f"Person {i}",
                 ticket_type_name="General",
                 event_title="Founders Summit",
-                org_name="Heelo Events",
+                org_name="Tixdoo Events",
             )
             for i in range(3)
         ]

@@ -226,7 +226,7 @@ async def resolve_flutterwave_account(account_number: str, bank_code: str) -> di
 # split: the organizer gets their own Stripe Express account (Stripe hosts
 # onboarding/KYC and their payout dashboard - least engineering/compliance
 # overhead of the three Connect account types), and each checkout charge is
-# created on Heelo's own platform account with `transfer_data.destination`
+# created on Tixdoo's own platform account with `transfer_data.destination`
 # pointing at it (see _initialize_stripe in payment_service.py). An Express
 # account isn't usable until the organizer completes Stripe-hosted
 # onboarding, so this returns an *onboarding URL*, not a ready account.

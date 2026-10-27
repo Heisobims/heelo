@@ -1,7 +1,7 @@
 """Add lifestyle/social event categories - weddings, nightlife, hangouts, concerts.
 
 The existing taxonomy skewed toward professional/conference events (Technology,
-Business, Networking...). Heelo is meant to host any kind of event, so this
+Business, Networking...). Tixdoo is meant to host any kind of event, so this
 rounds out the category list with the social/lifestyle side: weddings, night
 clubs, casual hangouts, concerts, and church/religious services (the latter
 folds into the existing "Faith & Spirituality" category rather than

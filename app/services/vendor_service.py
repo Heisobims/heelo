@@ -973,7 +973,7 @@ async def create_booking_from_quotation(
         vendor_earnings=vendor_earnings,
         currency=quotation.currency,
         cancellation_policy=cancellation_policy,
-        cancellation_terms=cancellation_terms or "Standard Heelo cancellation terms apply.",
+        cancellation_terms=cancellation_terms or "Standard Tixdoo cancellation terms apply.",
         payment_reference=f"vbook_{uuid.uuid4().hex[:12]}_{uuid.uuid4().hex[:6]}",
         status="pending_payment",
     )

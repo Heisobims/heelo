@@ -177,7 +177,7 @@ async def test_register_with_self_referral_gets_no_discount(
     data = resp.json()["data"]
     assert float(data["discount_amount"]) == 0
     # Checkout always grosses up - the buyer's total is the ticket price
-    # plus Heelo's fee plus the estimated gateway fee, not the bare price.
+    # plus Tixdoo's fee plus the estimated gateway fee, not the bare price.
     assert float(data["total_amount"]) > float(ticket_type.price)
 
 

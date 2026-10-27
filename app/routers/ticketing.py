@@ -403,7 +403,7 @@ async def register_for_event(
     from app.utils.auth import decode_access_token
 
     user_id: uuid.UUID | None = None
-    token = request.cookies.get("heelo_access")
+    token = request.cookies.get("tixdoo_access")
     if token:
         try:
             payload = decode_access_token(token)

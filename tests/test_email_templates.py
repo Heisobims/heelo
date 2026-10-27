@@ -29,7 +29,7 @@ def _render_reminder(event) -> str:
     return em.render(
         "event_reminder.html",
         event=event,
-        org_name="Heelo",
+        org_name="Tixdoo",
         attendee_name="Jane",
         reminder_headline="is tomorrow!",
         registration_id="reg-1",
@@ -107,12 +107,12 @@ def test_reminder_uses_org_brand_color_when_set():
         brand_color="#FF5500",
     )
     assert "#FF5500" in branded
-    # Unbranded rendering falls back to Heelo's own black/cyan.
+    # Unbranded rendering falls back to Tixdoo's own black/cyan.
     assert "#FF5500" not in html
 
 
-def test_reminder_falls_back_to_heelo_colors_when_org_has_no_brand_color():
-    """Regression test: confirm fallback CTA button uses Heelo's terracotta brand color."""
+def test_reminder_falls_back_to_tixdoo_colors_when_org_has_no_brand_color():
+    """Regression test: confirm fallback CTA button uses Tixdoo's terracotta brand color."""
     html = _render_reminder(_fake_event())
     assert "background-color:#E85938;color:#FFFFFF;" in html
 
@@ -124,7 +124,7 @@ def test_feedback_request_button_defaults_to_cyan_with_black_text():
         attendee_name="Jane",
         registration_id="reg-1",
         frontend_url="http://localhost:8000",
-        org_name="Heelo",
+        org_name="Tixdoo",
     )
     assert "background-color:#E85938;color:#FFFFFF;" in html
 
@@ -134,7 +134,7 @@ def test_interest_nudge_button_defaults_to_cyan_with_black_text():
         "interest_nudge.html",
         event=_fake_event(),
         frontend_url="http://localhost:8000",
-        org_name="Heelo",
+        org_name="Tixdoo",
     )
     assert "background-color:#E85938;color:#FFFFFF;" in html
 
@@ -152,7 +152,7 @@ def test_registration_confirmation_button_defaults_to_cyan_with_black_text():
         buyer_name="Jane",
         gcal_url="http://example.com/gcal",
         frontend_url="http://localhost:8000",
-        org_name="Heelo",
+        org_name="Tixdoo",
     )
     assert "background-color:#E85938;color:#FFFFFF;" in html
 
@@ -231,7 +231,7 @@ def test_platform_wide_cta_stays_unbranded_regardless_of_org_color():
     # The org's card header picks up the brand color...
     assert "#FF5500" in html
     # ...but the platform-wide "Discover Other Events" CTA intentionally stays
-    # Heelo terracotta, since it links off to the whole platform, not this org.
+    # Tixdoo terracotta, since it links off to the whole platform, not this org.
     assert "#E85938" in html
 
 
@@ -252,8 +252,8 @@ def test_vendor_marketplace_email_templates_render_successfully():
         budget_max=400000.0,
         currency="NGN",
         requirements="Need 2 photographers and full drone coverage.",
-        frontend_url="https://heelo.io",
-        dashboard_url="https://heelo.io/my-vendor-dashboard?tab=inquiries",
+        frontend_url="https://tixdoo.com",
+        dashboard_url="https://tixdoo.com/my-vendor-dashboard?tab=inquiries",
     )
     assert "Tech Leaders Gala 2026" in html_rfq
     assert "Lagos Lens Co." in html_rfq
@@ -269,7 +269,7 @@ def test_vendor_marketplace_email_templates_render_successfully():
         event_date="November 20, 2026",
         vendor_count=2,
         vendors_list="Lagos Lens Co., Prime Media",
-        frontend_url="https://heelo.io",
+        frontend_url="https://tixdoo.com",
     )
     assert "Your Quote Request Has Been Dispatched!" in html_org_rfq
     assert "Lagos Lens Co., Prime Media" in html_org_rfq
@@ -288,12 +288,12 @@ def test_vendor_marketplace_email_templates_render_successfully():
         scope_of_work="Includes 8 hours coverage, 2 shooters, and editing.",
         attachment_url="/static/uploads/vendors/quote_123.pdf",
         attachment_name="LagosLens_Proposal_v2.pdf",
-        frontend_url="https://heelo.io",
-        booking_url="https://heelo.io/vendors/lagos-lens",
+        frontend_url="https://tixdoo.com",
+        booking_url="https://tixdoo.com/vendors/lagos-lens",
     )
     assert "Quotation Received: Lagos Lens Co." in html_quote
     assert "250,000.00" in html_quote
-    assert "Heelo Escrow Protection" in html_quote
+    assert "Tixdoo Escrow Protection" in html_quote
     assert "LagosLens_Proposal_v2.pdf" in html_quote
     assert "/static/uploads/vendors/quote_123.pdf" in html_quote
 
@@ -313,7 +313,7 @@ def test_vendor_marketplace_email_templates_render_successfully():
         commission_amount=25000.0,
         vendor_earnings=225000.0,
         currency="NGN",
-        frontend_url="https://heelo.io",
+        frontend_url="https://tixdoo.com",
     )
     assert "New Confirmed Booking!" in html_v_book
     assert "VB-12345" in html_v_book
@@ -332,7 +332,7 @@ def test_vendor_marketplace_email_templates_render_successfully():
         total_amount=250000.0,
         currency="NGN",
         payment_reference="pay_ref_999",
-        frontend_url="https://heelo.io",
+        frontend_url="https://tixdoo.com",
     )
     assert "Your Vendor Booking is Confirmed!" in html_org_book
     assert "VB-12345" in html_org_book
@@ -347,7 +347,7 @@ def test_vendor_marketplace_email_templates_render_successfully():
         vendor_earnings=225000.0,
         payable_balance=500000.0,
         currency="NGN",
-        frontend_url="https://heelo.io",
+        frontend_url="https://tixdoo.com",
     )
     assert "Job Completed &amp; Payout Credited!" in html_v_comp
     assert "225,000.00" in html_v_comp
@@ -360,7 +360,7 @@ def test_vendor_marketplace_email_templates_render_successfully():
         vendor_slug="lagos-lens",
         booking_reference="VB-12345",
         event_name="Tech Leaders Gala 2026",
-        frontend_url="https://heelo.io",
+        frontend_url="https://tixdoo.com",
     )
     assert "Service Completed for Tech Leaders Gala 2026" in html_org_comp
     assert "Leave a Review" in html_org_comp
@@ -374,7 +374,7 @@ def test_vendor_marketplace_email_templates_render_successfully():
         bank_name="GTBank",
         account_number="0123456789",
         account_name="Lagos Lens Enterprises",
-        frontend_url="https://heelo.io",
+        frontend_url="https://tixdoo.com",
     )
     assert "Withdrawal Request Received" in html_p_req
     assert "200,000.00" in html_p_req
@@ -389,7 +389,7 @@ def test_vendor_marketplace_email_templates_render_successfully():
         bank_name="GTBank",
         account_number="0123456789",
         provider_reference="TRF-887766",
-        frontend_url="https://heelo.io",
+        frontend_url="https://tixdoo.com",
     )
     assert "Payout Successfully Disbursed!" in html_p_comp
     assert "TRF-887766" in html_p_comp

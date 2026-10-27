@@ -2,33 +2,33 @@
 
 {% block title %}
 {%- if category_name and city -%}
-{{ category_name }} Events in {{ city }} | Heelo
+{{ category_name }} Events in {{ city }} | Tixdoo
 {%- elif category_name -%}
-{{ category_name }} Events | Discover Upcoming {{ category_name }} Conferences and Meetups | Heelo
+{{ category_name }} Events | Discover Upcoming {{ category_name }} Conferences and Meetups | Tixdoo
 {%- elif city -%}
-Events in {{ city }} | Discover Top Events, Festivals and Concerts | Heelo
+Events in {{ city }} | Discover Top Events, Festivals and Concerts | Tixdoo
 {%- elif active_section_info -%}
-{{ active_section_info.title }} | Discover Events | Heelo
+{{ active_section_info.title }} | Discover Events | Tixdoo
 {%- elif q -%}
-"{{ q }}" Event Search Results | Heelo
+"{{ q }}" Event Search Results | Tixdoo
 {%- else -%}
-Discover Events | Find Conferences, Concerts and Meetups Worldwide | Heelo
+Discover Events | Find Conferences, Concerts and Meetups Worldwide | Tixdoo
 {%- endif -%}
 {% endblock %}
 
 {% block meta_description %}
 {%- if category_name and city -%}
-Explore upcoming {{ category_name }} events, conferences, and meetups in {{ city }}. Book verified tickets, view schedules, and reserve your spot on Heelo.
+Explore upcoming {{ category_name }} events, conferences, and meetups in {{ city }}. Book verified tickets, view schedules, and reserve your spot on Tixdoo.
 {%- elif category_name -%}
-Find and register for the best {{ category_name }} events, summits, workshops, and gatherings worldwide. Verified tickets and instant registration on Heelo.
+Find and register for the best {{ category_name }} events, summits, workshops, and gatherings worldwide. Verified tickets and instant registration on Tixdoo.
 {%- elif city -%}
-Discover top events, conferences, entertainment, and networking sessions in {{ city }}. Explore verified ticket pricing, schedules, and venues on Heelo.
+Discover top events, conferences, entertainment, and networking sessions in {{ city }}. Explore verified ticket pricing, schedules, and venues on Tixdoo.
 {%- elif active_section_info -%}
-Explore {{ active_section_info.title | lower }} on Heelo. {{ active_section_info.subtitle }}.
+Explore {{ active_section_info.title | lower }} on Tixdoo. {{ active_section_info.subtitle }}.
 {%- elif q -%}
-Search results for "{{ q }}" events on Heelo. Find tickets, locations, dates, and event details.
+Search results for "{{ q }}" events on Tixdoo. Find tickets, locations, dates, and event details.
 {%- else -%}
-Discover conferences, workshops, concerts, and festivals happening near you and worldwide. Verified tickets, multi-currency checkouts, and seamless check-in on Heelo.
+Discover conferences, workshops, concerts, and festivals happening near you and worldwide. Verified tickets, multi-currency checkouts, and seamless check-in on Tixdoo.
 {%- endif -%}
 {% endblock %}
 
@@ -1119,7 +1119,7 @@ event.min_price_info %}
       <p class="ev-results-subtitle">
         {% if is_view_all %} Browse all upcoming events across Africa and beyond
         {% elif active_section_info %} {{ active_section_info.subtitle }} {%
-        else %} Browse all matching events on Heelo {% endif %}
+        else %} Browse all matching events on Tixdoo {% endif %}
       </p>
     </div>
     <div class="ev-results-header-right">

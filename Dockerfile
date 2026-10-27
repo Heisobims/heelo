@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user
-RUN addgroup --system heelo && adduser --system --ingroup heelo --no-create-home heelo
+RUN addgroup --system tixdoo && adduser --system --ingroup tixdoo --no-create-home tixdoo
 
 WORKDIR /app
 
@@ -40,12 +40,12 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Application source
-COPY --chown=heelo:heelo . .
+COPY --chown=tixdoo:tixdoo . .
 
 # Make entrypoint scripts executable
 RUN chmod +x scripts/entrypoint.sh scripts/worker.sh scripts/beat.sh
 
-USER heelo
+USER tixdoo
 
 EXPOSE 8000
 

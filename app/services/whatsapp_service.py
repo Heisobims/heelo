@@ -2,7 +2,7 @@
 Meta WhatsApp Business Cloud API client.
 
 Platform-level: one WhatsApp Business number (configured in settings)
-sends on behalf of all Heelo organizers.
+sends on behalf of all Tixdoo organizers.
 
 send_*_sync()  - blocking httpx, for Celery tasks
 send_*_async() - async httpx, for FastAPI handlers
@@ -404,7 +404,7 @@ def build_ticket_status_reply(registrations: list) -> str:
     if not registrations:
         return (
             "No active tickets found for this number.\n"
-            "Visit heelo.io to register for an event.\n\n"
+            "Visit tixdoo.com to register for an event.\n\n"
             "Reply *HELP* for commands."
         )
 
@@ -423,11 +423,11 @@ def build_ticket_status_reply(registrations: list) -> str:
 
 
 HELP_TEXT = (
-    "*Heelo WhatsApp Bot*\n\n"
+    "*Tixdoo WhatsApp Bot*\n\n"
     "Commands:\n"
     "  *TICKET* - see your registered tickets\n"
     "  *HELP*   - show this message\n\n"
     'You can also just ask things like "where is it", "what time", '
     'or "can I bring a guest" about your most recent event.\n\n'
-    "For support, visit heelo.io or contact the event organizer."
+    "For support, visit tixdoo.com or contact the event organizer."
 )

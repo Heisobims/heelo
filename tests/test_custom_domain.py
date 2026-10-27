@@ -126,7 +126,7 @@ async def test_set_custom_domain_succeeds_on_enterprise_org(client: AsyncClient,
     data = resp.json()["data"]
     assert data["domain"] == "events.example.com"
     assert data["verification_record"]["type"] == "TXT"
-    assert data["verification_record"]["name"] == "_heelo-verify.events.example.com"
+    assert data["verification_record"]["name"] == "_tixdoo-verify.events.example.com"
 
 
 async def test_set_custom_domain_rejects_invalid_format(client: AsyncClient, org, user_headers):

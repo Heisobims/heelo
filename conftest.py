@@ -8,11 +8,11 @@ import os
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-only-not-for-production")
 os.environ.setdefault("DATABASE_URL", os.environ.get(
     "TEST_DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/heelo_test",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/tixdoo_test",
 ))
 os.environ.setdefault("DATABASE_URL_SYNC", os.environ.get(
     "TEST_DATABASE_URL_SYNC",
-    "postgresql+psycopg2://postgres:postgres@localhost:5432/heelo_test",
+    "postgresql+psycopg2://postgres:postgres@localhost:5432/tixdoo_test",
 ))
 os.environ.setdefault("APP_ENV", "development")
 os.environ.setdefault("FRONTEND_URL", "http://localhost:8000")

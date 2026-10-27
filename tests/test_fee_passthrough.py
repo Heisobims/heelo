@@ -1,4 +1,4 @@
-"""Fee passthrough: checkout always adds Heelo's 5% fee plus an estimated
+"""Fee passthrough: checkout always adds Tixdoo's 5% fee plus an estimated
 payment-gateway processing fee on top of the ticket price, so the
 organizer's payout always equals exactly the price they set - mandatory
 for every non-free order, not an organizer-configurable toggle. Covers the
@@ -59,7 +59,7 @@ def test_gross_up_for_buyer_fees_falls_back_to_paystack_rates_when_no_provider()
 
 
 def test_gross_up_gateway_fee_only_has_no_platform_fee_component():
-    """Plan billing: Heelo is the direct merchant, so only the gateway's own
+    """Plan billing: Tixdoo is the direct merchant, so only the gateway's own
     fee is grossed up - there's no separate platform cut to add."""
     amount = Decimal("7500")
     total, gateway_fee = pay_svc.gross_up_gateway_fee_only(amount, "paystack")
@@ -124,7 +124,7 @@ async def test_register_grossed_up_order_fields_reconcile(
     order = await db.scalar(select(Order).where(Order.buyer_email == "jane-reconcile@example.com"))
     assert order.fees_passed_to_buyer is True
     assert order.net_amount == float(ticket_type.price)  # organizer's guaranteed net
-    # platform_fee is "everything Heelo retains above the organizer's net"
+    # platform_fee is "everything Tixdoo retains above the organizer's net"
     # (5% cut + gateway fee estimate combined), not just the 5% component,
     # so total = net + platform_fee, and gateway_fee_amount is a breakdown
     # of *part* of platform_fee, not an addition on top of it.

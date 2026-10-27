@@ -18,18 +18,18 @@ from app.models.ticketing import TicketType
 async def seed_events():
     async with AsyncSessionLocal() as db:
         # 1. Fetch admin user
-        admin = await db.scalar(select(User).where(User.email == "admin@heelo.io"))
+        admin = await db.scalar(select(User).where(User.email == "admin@tixdoo.com"))
         if not admin:
-            print("Admin user admin@heelo.io not found. Please create it first.")
+            print("Admin user admin@tixdoo.com not found. Please create it first.")
             return
 
         # 2. Create or fetch organization
-        org = await db.scalar(select(Organization).where(Organization.slug == "heelo-entertainment"))
+        org = await db.scalar(select(Organization).where(Organization.slug == "tixdoo-entertainment"))
         if not org:
             org = Organization(
                 owner_id=admin.id,
-                name="Heelo Entertainment",
-                slug="heelo-entertainment",
+                name="Tixdoo Entertainment",
+                slug="tixdoo-entertainment",
                 description="Official event organization showcasing technology, music, and creator experiences.",
                 brand_color="#E85938",
                 country="NG",
@@ -220,7 +220,7 @@ async def seed_events():
 
         vendor_data = [
             {
-                "email": "apex.visuals@heelo.io",
+                "email": "apex.visuals@tixdoo.com",
                 "name": "Apex Visuals Photography",
                 "slug": "apex-visuals-photography",
                 "category": "photography",
@@ -230,7 +230,7 @@ async def seed_events():
                 "city": "Lagos",
             },
             {
-                "email": "soundwave.dj@heelo.io",
+                "email": "soundwave.dj@tixdoo.com",
                 "name": "SoundWave DJ & Stage Audio",
                 "slug": "soundwave-dj-audio",
                 "category": "dj",
@@ -240,7 +240,7 @@ async def seed_events():
                 "city": "Lagos",
             },
             {
-                "email": "royal.feast@heelo.io",
+                "email": "royal.feast@tixdoo.com",
                 "name": "Royal Feast Catering & Drinks",
                 "slug": "royal-feast-catering",
                 "category": "catering",

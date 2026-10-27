@@ -4,13 +4,13 @@
 
 # ── Test ─────────────────────────────────────────────────────────────────────
 test:
-	TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/heelo_test \
-	TEST_DATABASE_URL_SYNC=postgresql+psycopg2://postgres:postgres@localhost:5432/heelo_test \
+	TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/tixdoo_test \
+	TEST_DATABASE_URL_SYNC=postgresql+psycopg2://postgres:postgres@localhost:5432/tixdoo_test \
 	pytest
 
 test-fast:
-	TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/heelo_test \
-	TEST_DATABASE_URL_SYNC=postgresql+psycopg2://postgres:postgres@localhost:5432/heelo_test \
+	TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/tixdoo_test \
+	TEST_DATABASE_URL_SYNC=postgresql+psycopg2://postgres:postgres@localhost:5432/tixdoo_test \
 	pytest -x --no-cov -q
 
 test-ci:
@@ -66,7 +66,7 @@ prod-down:
 	docker compose -f docker-compose.yml down
 
 # ── SSL - run once to issue a Let's Encrypt cert ─────────────────────────────
-# Usage: make certbot-init DOMAIN=heelo.io EMAIL=you@example.com
+# Usage: make certbot-init DOMAIN=tixdoo.com EMAIL=you@example.com
 certbot-init:
 	docker compose -f docker-compose.yml run --rm certbot \
 	    certonly --webroot -w /var/www/certbot \
@@ -75,4 +75,4 @@ certbot-init:
 
 # ── Database shell ────────────────────────────────────────────────────────────
 db-shell:
-	docker compose exec db psql -U heelo -d heelo
+	docker compose exec db psql -U tixdoo -d tixdoo

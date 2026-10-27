@@ -41,6 +41,6 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> dict:
     all_ok = all(v == "ok" for v in checks.values())
     return {
         "status": "ok" if all_ok else "degraded",
-        "service": "heelo",
+        "service": "tixdoo",
         "checks": checks,
     }

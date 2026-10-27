@@ -1,8 +1,8 @@
 """
-Heelo AI Platform Intelligence & Knowledge Base Assistant Service.
+Tixdoo AI Platform Intelligence & Knowledge Base Assistant Service.
 
 Provides 100% end-to-end intelligent, context-aware responses to user and
-visitor queries across the entire Heelo platform, supporting three primary
+visitor queries across the entire Tixdoo platform, supporting three primary
 specialized assistant experiences:
 1. Attendee Assistant: Natural language event discovery, multi-filter & budget
    search, event comparison, authoritative ticket tiers and availability,
@@ -246,7 +246,7 @@ def extract_location_intent(query: str, client_context: dict[str, Any] | None = 
             "the weekend", "this weekend", "the morning", "the evening", "the afternoon",
             "the area", "my area", "my city", "town", "person", "the world", "october",
             "november", "december", "january", "february", "march", "april", "may",
-            "june", "july", "august", "september", "a conference", "an event", "heelo"
+            "june", "july", "august", "september", "a conference", "an event", "tixdoo"
         }
         if candidate.lower() not in non_locations and len(candidate) > 2:
             return candidate.title(), "query"
@@ -501,7 +501,7 @@ def format_vendor_listing(vd: Any) -> str:
     cat_label = vd.category.replace("_", " ").title() if getattr(vd, "category", "") else "Vendor"
     price_str = f"From ₦{float(vd.starting_price):,.0f}" if getattr(vd, "starting_price", None) else "Contact for quote"
     city = getattr(vd, "location_city", "") or "Nigeria"
-    tagline = getattr(vd, "tagline", "") or getattr(vd, "description", "") or "Verified professional on Heelo."
+    tagline = getattr(vd, "tagline", "") or getattr(vd, "description", "") or "Verified professional on Tixdoo."
 
     return (
         f"- **{vd.business_name}** ({cat_label} in {city})\n"
@@ -943,7 +943,7 @@ async def lookup_order_tickets(
             results.append({
                 "type": "registration",
                 "attendee_name": r.attendee_name,
-                "event_title": ev.title if ev else "Heelo Event",
+                "event_title": ev.title if ev else "Tixdoo Event",
                 "event_slug": ev.slug if ev else "",
                 "tier_name": tt.name if tt else "General",
                 "status": r.status.capitalize(),
@@ -964,7 +964,7 @@ async def lookup_order_tickets(
             results.append({
                 "type": "order",
                 "reference": order.payment_reference,
-                "event_title": ev.title if ev else "Heelo Event",
+                "event_title": ev.title if ev else "Tixdoo Event",
                 "event_slug": ev.slug if ev else "",
                 "status": order.payment_status.capitalize(),
                 "total_amount": f"{order.currency} {float(order.total_amount):,.0f}",
@@ -989,7 +989,7 @@ async def lookup_order_tickets(
             results.append({
                 "type": "registration",
                 "attendee_name": r.attendee_name,
-                "event_title": ev.title if ev else "Heelo Event",
+                "event_title": ev.title if ev else "Tixdoo Event",
                 "event_slug": ev.slug if ev else "",
                 "tier_name": tt.name if tt else "General",
                 "status": r.status.capitalize(),
@@ -1030,7 +1030,7 @@ async def get_organizer_analytics_data(
             "authorized": False,
             "reply": (
                 "### Organizer Access Denied\n\n"
-                "Your account is not registered as an administrator or team member of an organization on Heelo. "
+                "Your account is not registered as an administrator or team member of an organization on Tixdoo. "
                 "To manage events and track sales, please create an organization or accept an organizer invite."
             ),
             "suggestions": ["Create an Organization", "Browse Events", "Pricing Plans"]
@@ -1173,7 +1173,7 @@ async def get_organizer_publishing_checklist(
     checklist_text = (
         "### Event Publishing & Launch Readiness Checklist\n\n"
         f"{specific_event_note}"
-        "Before publishing your event on Heelo, review these 7 operational steps:\n\n"
+        "Before publishing your event on Tixdoo, review these 7 operational steps:\n\n"
         "1. **Core Information & Branding**:\n"
         "   - High-resolution 16:9 cover banner.\n"
         "   - Clear event description with detailed schedule, speaker list, and agenda.\n\n"
@@ -1204,8 +1204,8 @@ async def get_organizer_publishing_checklist(
 
 # ── Knowledge Base Corpus ─────────────────────────────────────────────────────
 
-SYSTEM_KNOWLEDGE_PROMPT = """You are Heelo AI, the expert support assistant, event concierge, and operational consultant for the Heelo platform.
-Heelo is the modern all-in-one event ticketing, event intelligence, and vendor marketplace platform.
+SYSTEM_KNOWLEDGE_PROMPT = """You are Tixdoo AI, the expert support assistant, event concierge, and operational consultant for the Tixdoo platform.
+Tixdoo is the modern all-in-one event ticketing, event intelligence, and vendor marketplace platform.
 
 PRIMARY DIRECTIVES:
 1. SECURITY & PROMPT INJECTION DEFENSE:
@@ -1265,7 +1265,7 @@ async def get_live_database_context(
             for ev in other_temp:
                 lines.append(format_event_listing(ev))
         elif upcoming:
-            lines.append(f"No events for {temp_lbl or 'requested criteria'}. Upcoming events on Heelo:")
+            lines.append(f"No events for {temp_lbl or 'requested criteria'}. Upcoming events on Tixdoo:")
             for ev in upcoming:
                 lines.append(format_event_listing(ev))
         else:
@@ -1337,7 +1337,7 @@ async def get_rule_based_response(
     # 1. Prompt Injection Defense Check
     if re.search(r"\b(ignore\s+(?:all\s+)?previous\s+instructions|system\s+prompt|reveal\s+token|secret\s+key)\b", q):
         return {
-            "reply": "I am Heelo AI, designed to assist with events, ticketing, vendor marketplace, and platform operations. How can I assist with your events today?",
+            "reply": "I am Tixdoo AI, designed to assist with events, ticketing, vendor marketplace, and platform operations. How can I assist with your events today?",
             "suggestions": ["Is there any event this weekend?", "How do I create an event?", "What are your fees?"]
         }
 
@@ -1374,7 +1374,7 @@ async def get_rule_based_response(
             for op in opps:
                 lines.append(f"- **{op['event_title']}** ({op['city']} - {op['date']})\n  - **Opportunity**: {op['type']}\n  - **Details**: {op['details']}\n  - **Link**: [Apply / View Event]({op['apply_url']})")
             reply = (
-                "### Vendor Opportunities on Heelo\n\n"
+                "### Vendor Opportunities on Tixdoo\n\n"
                 "Here are upcoming events in your database looking for event professionals and exhibitors:\n\n"
                 f"{chr(10).join(lines)}\n\n"
                 "You can also browse all categories and submit customized RFQ proposals on the **[Vendor Marketplace](/vendors)**."
@@ -1471,7 +1471,7 @@ async def get_rule_based_response(
                 deadline = f" (Closes: {ac.end_date.strftime('%b %d, %Y')})" if ac.end_date else ""
                 lines.append(f"- **[{ac.title}]({url})** for **{ev_title}**{deadline}\n  - Type: {ac.call_type.capitalize()}\n  - [Submit Proposal]({url})")
             reply = (
-                "### Active Open Calls on Heelo\n\n"
+                "### Active Open Calls on Tixdoo\n\n"
                 "Here are current events accepting proposals for speakers, sponsors, and volunteers:\n\n"
                 f"{chr(10).join(lines)}\n\n"
                 "Click on any call to view guidelines, perks, and submit your proposal!"
@@ -1482,8 +1482,8 @@ async def get_rule_based_response(
             }
         else:
             reply = (
-                "### Open Calls on Heelo\n\n"
-                "Organizers on Heelo can create Open Calls for their events, including:\n"
+                "### Open Calls on Tixdoo\n\n"
+                "Organizers on Tixdoo can create Open Calls for their events, including:\n"
                 "- **Call for Papers & Speakers**: Collect talk and workshop proposals with custom questions.\n"
                 "- **Call for Sponsors**: Accept partnership and sponsor inquiries.\n"
                 "- **Call for Volunteers**: Recruit helpers for registration, logistics, and stage coordination.\n\n"
@@ -1559,10 +1559,10 @@ async def get_rule_based_response(
             v_lines = "\n\n".join(format_vendor_listing(vd) for vd in vendors)
             cat_phrase = f" for **{cat.replace('_', ' ').title()}**" if cat else ""
             reply = (
-                f"### Verified Vendors on Heelo{cat_phrase}\n\n"
+                f"### Verified Vendors on Tixdoo{cat_phrase}\n\n"
                 f"Here are top-rated verified professionals in your database:\n\n"
                 f"{v_lines}\n\n"
-                "All vendor bookings on Heelo feature **milestone escrow protection**: your funds are safely held and only released upon milestone completion.\n\n"
+                "All vendor bookings on Tixdoo feature **milestone escrow protection**: your funds are safely held and only released upon milestone completion.\n\n"
                 "Explore all categories or submit an RFQ on the **[Vendor Marketplace](/vendors)**."
             )
             return {
@@ -1571,8 +1571,8 @@ async def get_rule_based_response(
             }
         else:
             reply = (
-                "### Heelo Vendor Marketplace (/vendors)\n\n"
-                "Planning an event? You can discover and hire verified event professionals directly through Heelo:\n\n"
+                "### Tixdoo Vendor Marketplace (/vendors)\n\n"
+                "Planning an event? You can discover and hire verified event professionals directly through Tixdoo:\n\n"
                 "- **8 Core Categories**: Venues, Catering & Drinks, Photography & Video, Sound & DJ, Decor & Styling, Security & Bouncers, Event Hosts/MCs, Ushers & Protocol.\n"
                 "- **Request a Quote (RFQ)**: Share your event date, location, and budget to receive custom proposals.\n"
                 "- **Escrow Protection**: Your payment is safely held in escrow and only released when the vendor completes their milestones.\n"
@@ -1596,7 +1596,7 @@ async def get_rule_based_response(
 
         loc_phrase = f" based on your location (**{loc}**)" if (loc and loc_src == "client_timezone") else (f" in **{loc}**" if loc else "")
         budget_phrase = f" within budget (under ₦{budget:,.0f} / ${budget:,.0f})" if budget is not None else ""
-        header_temp = (temp_lbl[0].upper() + temp_lbl[1:]) if temp_lbl else "on Heelo"
+        header_temp = (temp_lbl[0].upper() + temp_lbl[1:]) if temp_lbl else "on Tixdoo"
 
         if matched:
             if temp_lbl and loc:
@@ -1606,7 +1606,7 @@ async def get_rule_based_response(
             elif loc:
                 header = f"### Upcoming Events in {loc}\n\nI queried your database for upcoming published events{loc_phrase}{budget_phrase}:\n\n"
             else:
-                header = f"### Upcoming Events on Heelo\n\nHere are upcoming published events found in your database{budget_phrase}:\n\n"
+                header = f"### Upcoming Events on Tixdoo\n\nHere are upcoming published events found in your database{budget_phrase}:\n\n"
 
             event_lines = "\n\n".join(format_event_listing(ev) for ev in matched)
             reply = (
@@ -1660,13 +1660,13 @@ async def get_rule_based_response(
             }
 
     # 12. Greetings & Role Adaptive Introduction
-    if re.search(r"\b(hi|hello|hey|who are you|what is heelo|good morning|good evening)\b", q):
+    if re.search(r"\b(hi|hello|hey|who are you|what is tixdoo|good morning|good evening)\b", q):
         user = (auth_context or {}).get("user")
         orgs = (auth_context or {}).get("user_orgs", [])
         vendor = (auth_context or {}).get("vendor")
 
         user_name = user.first_name if user and user.first_name else ctx.get("user_name")
-        greet_prefix = f"**Hello {user_name}! I am Heelo AI**" if user_name else "**Hello! I am Heelo AI**"
+        greet_prefix = f"**Hello {user_name}! I am Tixdoo AI**" if user_name else "**Hello! I am Tixdoo AI**"
 
         role_items = [
             "- **Events & Discovery**: Finding concerts, conferences, and parties near you or this weekend.\n"
@@ -1683,7 +1683,7 @@ async def get_rule_based_response(
 
         reply = (
             f"{greet_prefix}, your intelligent platform assistant.\n\n"
-            "Heelo is the modern all-in-one event ticketing, event intelligence, and vendor marketplace platform. "
+            "Tixdoo is the modern all-in-one event ticketing, event intelligence, and vendor marketplace platform. "
             "I can assist you with:\n\n"
             f"{chr(10).join(role_items)}\n\n"
             "What would you like to explore today?"
@@ -1696,7 +1696,7 @@ async def get_rule_based_response(
     # 13. Event Creation & Setup
     if re.search(r"\b(create|host|setup|start|publish|new)\s+(an?\s+)?event\b", q) or "how to create" in q or "host an event" in q:
         reply = (
-            "### How to Create an Event on Heelo\n\n"
+            "### How to Create an Event on Tixdoo\n\n"
             "1. **Sign in or Create an Organization**: Head over to your dashboard or click **[Create Event](/events)**.\n"
             "2. **Event Details**: Enter your event title, format (*In-person*, *Virtual*, or *Hybrid*), dates, timezone, and venue/streaming link.\n"
             "3. **Setup Ticket Tiers**: Add Free, General, VIP, Early Bird, or Group tickets with your desired currency (*NGN, USD, GBP, EUR, KES, GHS, ZAR*).\n"
@@ -1712,10 +1712,10 @@ async def get_rule_based_response(
     # 14. Pricing, Fees & Buyer Pass-through
     if re.search(r"\b(price|pricing|cost|fee|fees|percentage|charge|commission|rate)\b", q):
         reply = (
-            "### Heelo Pricing & Fees\n\n"
+            "### Tixdoo Pricing & Fees\n\n"
             "- **Free Events**: **100% free, forever!** No ticket limits, no setup costs, and no forced upgrades.\n"
             "- **Paid Tickets**: Standard platform fee is **3.5% + processing**.\n"
-            "- **Zero-Cost to Organizers**: By default, Heelo passes fees to the ticket buyer at checkout. That means **you keep 100% of your face-value ticket price**!\n"
+            "- **Zero-Cost to Organizers**: By default, Tixdoo passes fees to the ticket buyer at checkout. That means **you keep 100% of your face-value ticket price**!\n"
             "- **Subscription Plans**:\n"
             "  - **Free Tier ($0/mo)**: Unlimited events, paid tickets, 1 team seat.\n"
             "  - **Growth ($19/mo or ₦7,500/mo)**: Custom branding, 3 team seats, recurring events, CRM import, custom form fields.\n"
@@ -1730,10 +1730,10 @@ async def get_rule_based_response(
     # 15. Payouts, Gateways & Bank Transfers
     if re.search(r"\b(payout|payouts|withdraw|transfer|bank|paystack|flutterwave|stripe|money|revenue)\b", q):
         reply = (
-            "### Payouts & Payment Gateways on Heelo\n\n"
-            "Heelo provides multiple automated payout options to ensure organizers get paid quickly and securely:\n\n"
+            "### Payouts & Payment Gateways on Tixdoo\n\n"
+            "Tixdoo provides multiple automated payout options to ensure organizers get paid quickly and securely:\n\n"
             "- **Instant Subaccount Splits**: Connect your Paystack, Flutterwave, or Stripe Connect subaccount in **[Payment Settings](/dashboard)**. Ticket funds automatically split and route directly into your bank account at charge time.\n"
-            "- **Batch Payouts**: For standard accounts, Heelo runs automated batch payouts with **0% platform withholding**.\n"
+            "- **Batch Payouts**: For standard accounts, Tixdoo runs automated batch payouts with **0% platform withholding**.\n"
             "- **Multi-Currency Settlements**: Accept payments in NGN, USD, GBP, EUR, KES, GHS, or ZAR depending on your country and gateway setup.\n"
             "- **Payment Methods**: Attendees can pay using debit/credit cards, bank transfers, Apple Pay, Google Pay, USSD, and Mobile Money."
         )
@@ -1761,7 +1761,7 @@ async def get_rule_based_response(
     if re.search(r"\b(pixel|pixels|meta|facebook|tiktok|google tag|gtm|ga4|tracking|conversion|ad)\b", q):
         reply = (
             "### Ad Conversion Tracking Pixels\n\n"
-            "Heelo provides built-in integration for major advertising networks to measure campaign ROI:\n\n"
+            "Tixdoo provides built-in integration for major advertising networks to measure campaign ROI:\n\n"
             "- **Meta (Facebook) Pixel**: Automatically fires `PageView` and `ViewContent` on event pages, and `Purchase` on checkout with exact revenue and currency.\n"
             "- **Google Tag / GTM / GA4**: Native gtag.js integration with `page_view` and `purchase` ecommerce transaction events.\n"
             "- **TikTok Pixel**: Tracks `ViewContent` and `CompletePayment` conversions from TikTok ads.\n\n"
@@ -1776,7 +1776,7 @@ async def get_rule_based_response(
     if re.search(r"\b(abandon|abandoned|recovery|incomplete|resume|nudge|cart)\b", q):
         reply = (
             "### Automated Abandoned Checkout Recovery\n\n"
-            "Heelo automatically recovers attendees who started purchasing tickets but left before completing payment:\n\n"
+            "Tixdoo automatically recovers attendees who started purchasing tickets but left before completing payment:\n\n"
             "- **Automated Background Cron**: Runs every 15 minutes to identify unpaid checkouts between 20 minutes and 24 hours old.\n"
             "- **1-Click Resumption**: Attendees receive a branded email reminder with a direct link (`/orders/resume/[token]`) that restores their reservation and redirects them straight to payment.\n"
             "- **Inventory Protection**: If tickets sell out or the event is cancelled, the resumption link safely informs the attendee."
@@ -1804,7 +1804,7 @@ async def get_rule_based_response(
         reply = (
             "### Need Additional Assistance?\n\n"
             "Our team is always here to help:\n\n"
-            "- **Email Support**: Reach us directly at **[hello@heelo.io](mailto:hello@heelo.io)**.\n"
+            "- **Email Support**: Reach us directly at **[hello@tixdoo.com](mailto:hello@tixdoo.com)**.\n"
             "- **Organizer Portal**: Manage your events, team members, and finances in the **[Dashboard](/dashboard)**.\n"
             "- **Response Time**: We typically respond within a few hours on business days."
         )
@@ -1816,7 +1816,7 @@ async def get_rule_based_response(
     # Generic Fallback with Project Knowledge
     extra_events = f"\n\n{live_context}" if live_context and "database_context type='events'" in live_context else ""
     reply = (
-        "**Heelo is the all-in-one event and vendor marketplace platform.**\n\n"
+        "**Tixdoo is the all-in-one event and vendor marketplace platform.**\n\n"
         "Here are key things I can assist you with:\n"
         "- **Event Discovery & Comparison**: Search concerts, conferences, and parties with budget filters, or compare two events side-by-side.\n"
         "- **Organizer Intelligence**: Track real-time ticket sales, revenue, check-in rates, or get a pre-launch publishing checklist.\n"
@@ -1837,7 +1837,7 @@ async def get_rule_based_response(
 CLAUDE_TOOLS = [
     {
         "name": "search_events",
-        "description": "Search the live Heelo database for published events by timeframe, location, budget limit, format, or keyword.",
+        "description": "Search the live Tixdoo database for published events by timeframe, location, budget limit, format, or keyword.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2065,7 +2065,7 @@ async def get_chatbot_reply(
     clean_message = (user_message or "").strip()
     if not clean_message:
         return {
-            "reply": "How can I help you with Heelo today? Ask me about discovering events, ticket pricing, sales analytics, hiring vendors, or payouts!",
+            "reply": "How can I help you with Tixdoo today? Ask me about discovering events, ticket pricing, sales analytics, hiring vendors, or payouts!",
             "suggestions": ["Is there any event this weekend?", "What are your fees?", "Can I hire vendors?"]
         }
 

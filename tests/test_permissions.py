@@ -126,11 +126,11 @@ class TestFinanceRoleEnforcement:
     only checked on the finance dashboard page, nowhere else."""
 
     async def test_finance_can_view_finance_page(self, client: AsyncClient, org, finance_member):
-        # Page routes (app/routers/pages.py) authenticate via the heelo_access
+        # Page routes (app/routers/pages.py) authenticate via the tixdoo_access
         # cookie, not an Authorization header - unlike the JSON API.
         from tests.conftest import _make_token
 
-        client.cookies.set("heelo_access", _make_token(str(finance_member.user_id)))
+        client.cookies.set("tixdoo_access", _make_token(str(finance_member.user_id)))
         resp = await client.get(f"/org/{org.slug}/finance")
         assert resp.status_code == 200
 

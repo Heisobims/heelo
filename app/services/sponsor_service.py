@@ -110,9 +110,9 @@ def _send_sponsor_invite_email(
     <html>
     <head><meta charset="utf-8"></head>
     <body style="font-family: Arial, sans-serif; background: #fff; color: #0A0A0A; max-width: 520px; margin: 0 auto; padding: 40px 24px;">
-      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">heelo</p>
+      <p style="font-size: 24px; font-weight: 700; margin: 0 0 8px;">tixdoo</p>
       <h1 style="font-size: 28px; font-weight: 700; margin: 32px 0 8px;">You&rsquo;ve been added as a sponsor</h1>
-      <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 32px;"><strong>{sponsor_name}</strong> has been listed as a sponsor of <strong>{event_title}</strong> on Heelo. Claim this listing to manage your logo, website, and description yourself.</p>
+      <p style="font-size: 15px; color: #6B6B6B; margin: 0 0 32px;"><strong>{sponsor_name}</strong> has been listed as a sponsor of <strong>{event_title}</strong> on Tixdoo. Claim this listing to manage your logo, website, and description yourself.</p>
       <a href="{invite_url}" style="display: inline-block; background: #E85938; color: #FFFFFF; font-weight: 600; font-size: 15px; text-decoration: none; padding: 14px 28px; border-radius: 100px; margin-bottom: 32px;">Claim sponsorship</a>
       <p style="font-size: 13px; color: #ADADAD;">This invitation expires in 14 days.</p>
     </body>

@@ -1,7 +1,7 @@
 """get_landing_categories_with_events, get_platform_proof, and
 get_spotlight_event (app/services/event_service.py) - the landing page's
 "browse by category" section, social-proof stat/marquee, and case-study
-spotlight (a real-event substitute for a customer testimonial, since Heelo
+spotlight (a real-event substitute for a customer testimonial, since Tixdoo
 has no real customers to quote yet). The first two replace the old flat
 get_landing_showcase_events grid this session moved to a category-grouped
 layout. Redis isn't running in the test environment by default, so the

@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %}
-{% block title %}Plan & Billing | {{ org.name }} | Heelo{% endblock %}
+{% block title %}Plan & Billing | {{ org.name }} | Tixdoo{% endblock %}
 {% set active_page = 'plan' %}
 
 {% block head %}
@@ -193,7 +193,7 @@
     <button
       type="button"
       class="btn btn-secondary btn-sm"
-      onclick="heeloPlanAction('/org/{{ org.slug }}/plan/downgrade/cancel')"
+      onclick="tixdooPlanAction('/org/{{ org.slug }}/plan/downgrade/cancel')"
     >Cancel downgrade</button>
   </div>
   {% elif org.plan_expires_at %}
@@ -239,7 +239,7 @@
       <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>QR check-in, kiosk mode, certificates</span></div>
       <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>WhatsApp: 100 messages/mo</span></div>
       <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>AI tools: 5 generations/mo</span></div>
-      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">Custom branding: shows Heelo's</span></div>
+      <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">Custom branding: shows Tixdoo's</span></div>
       <div class="plan-feature"><span class="material-symbols-outlined">close</span><span style="color:var(--text-muted);">Speakers, agenda, sponsors</span></div>
       <div class="plan-cta">
         {% if org.plan == 'free' %}
@@ -251,7 +251,7 @@
           type="button"
           class="btn btn-secondary btn-sm"
           style="width:100%;"
-          onclick="if (confirm('Downgrade to Free? You keep {{ org.plan | capitalize }} until {{ downgrade_until }}.')) { heeloPlanAction('/org/{{ org.slug }}/plan/downgrade'); }"
+          onclick="if (confirm('Downgrade to Free? You keep {{ org.plan | capitalize }} until {{ downgrade_until }}.')) { tixdooPlanAction('/org/{{ org.slug }}/plan/downgrade'); }"
         >Downgrade</button>
         {% endif %}
       </div>
@@ -316,7 +316,7 @@
       {% if org.plan == 'enterprise' %}<div class="plan-badge current-badge">Your plan</div>{% endif %}
       <div class="plan-name">Enterprise</div>
       <div class="plan-price" style="font-size:20px;">Custom</div>
-      <div class="plan-tagline">Heelo as infrastructure, with the guarantees procurement asks for.</div>
+      <div class="plan-tagline">Tixdoo as infrastructure, with the guarantees procurement asks for.</div>
       <hr class="plan-divider">
       <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>Unlimited seats & organizations</span></div>
       <div class="plan-feature"><span class="material-symbols-outlined">check</span><span>SSO</span></div>
@@ -328,7 +328,7 @@
         {% if org.plan == 'enterprise' %}
         <button class="btn btn-secondary btn-sm" disabled style="width:100%; opacity:.6;">Current plan</button>
         {% else %}
-        <a href="mailto:hello@heelo.io?subject=Enterprise enquiry for {{ org.slug }}" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Contact sales</a>
+        <a href="mailto:hello@tixdoo.com?subject=Enterprise enquiry for {{ org.slug }}" class="btn btn-secondary btn-sm" style="width:100%; text-align:center;">Contact sales</a>
         {% endif %}
       </div>
     </div>
@@ -405,7 +405,7 @@
       <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Global ticketing infrastructure, automated local payouts</div>
       <div style="font-size:13px; color:var(--text-muted); line-height:1.6;">
         All plans support multi-currency checkouts and automated payouts via Stripe Connect (USD, EUR, GBP, CAD) as well as Paystack &amp; Flutterwave (NGN, GHS, KES, ZAR, and more).
-        Need custom enterprise terms or international wire settlement? <a href="mailto:hello@heelo.io" style="color:var(--cyan); text-decoration:none;">Reach out</a>: we work with you.
+        Need custom enterprise terms or international wire settlement? <a href="mailto:hello@tixdoo.com" style="color:var(--cyan); text-decoration:none;">Reach out</a>: we work with you.
       </div>
     </div>
   </div>
@@ -417,7 +417,7 @@
   // the X-CSRF-Token header the CSRF middleware requires, so this goes
   // through the app's normal fetch() wrapper (app/static/js/main.js) instead,
   // which attaches it automatically.
-  async function heeloPlanAction(url) {
+  async function tixdooPlanAction(url) {
     const res = await fetch(url, { method: 'POST', credentials: 'include' });
     if (res.redirected) {
       window.location.href = res.url;

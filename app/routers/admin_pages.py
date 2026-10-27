@@ -31,7 +31,7 @@ async def _require_admin_ctx(request: Request, db):
     from app.config import settings
     from app.models.user import User
 
-    token = request.cookies.get("heelo_access")
+    token = request.cookies.get("tixdoo_access")
     if not token:
         return None
     try:

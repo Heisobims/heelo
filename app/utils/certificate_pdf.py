@@ -103,11 +103,11 @@ def _draw_certificate(c: canvas.Canvas, data: CertificateData) -> None:
     c.setFont("Times-Roman", 13)
     c.drawCentredString(center_x, PAGE_HEIGHT - 5.5 * inch, data.event_date.strftime("%B %-d, %Y"))
 
-    # "Powered by Heelo" footer - omitted for orgs on the full-white-label tier
+    # "Powered by Tixdoo" footer - omitted for orgs on the full-white-label tier
     if data.show_powered_by:
         c.setFillColor(HexColor("#B5B5B5"))
         c.setFont("Helvetica", 8)
-        c.drawCentredString(center_x, margin + 0.18 * inch, "Generated with Heelo | heelo.io")
+        c.drawCentredString(center_x, margin + 0.18 * inch, "Generated with Tixdoo | tixdoo.com")
 
 
 def generate_certificate_pdf(certificates: list[CertificateData]) -> bytes:

@@ -22,7 +22,7 @@ async def _raw_client(db) -> AsyncClient:
 
 async def test_login_is_never_blocked_by_csrf(client: AsyncClient, user):
     """No session cookie exists yet pre-login, so the CSRF check (which only
-    fires when a heelo_access cookie is present) must not fire here."""
+    fires when a tixdoo_access cookie is present) must not fire here."""
     resp = await client.post(
         "/api/v1/auth/login", json={"email": user.email, "password": "password123"}
     )
@@ -42,7 +42,7 @@ async def test_cookie_authed_post_without_csrf_token_is_rejected(db, user):
             "/api/v1/auth/login", json={"email": user.email, "password": "password123"}
         )
         assert login.status_code == 200
-        assert "heelo_access" in raw.cookies
+        assert "tixdoo_access" in raw.cookies
 
         # No X-CSRF-Token header attached - unlike the shared `client`
         # fixture, this raw client has no auto-echo hook.

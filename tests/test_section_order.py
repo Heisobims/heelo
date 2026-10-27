@@ -162,7 +162,7 @@ class TestPublicPageReordering:
             headers=user_headers,
         )
 
-        client.cookies.set("heelo_access", _make_token(str(user.id)))
+        client.cookies.set("tixdoo_access", _make_token(str(user.id)))
         resp = await client.get(f"/org/{org.slug}/events/{published_event.id}/edit")
         assert resp.status_code == 200
         assert "existingSectionOrder" in resp.text

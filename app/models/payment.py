@@ -116,7 +116,7 @@ class PlanInvoice(Base, TimestampMixin):
     # growth | pro - tier being paid for
     plan: Mapped[str] = mapped_column(String(20), nullable=False)
     # Total actually charged - the plan's list price plus gateway_fee_amount,
-    # so Heelo nets the full list price regardless of what the payment
+    # so Tixdoo nets the full list price regardless of what the payment
     # gateway deducts (mirrors Order.total_amount/gateway_fee_amount).
     amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     gateway_fee_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)

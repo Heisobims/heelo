@@ -181,7 +181,7 @@ async def get_my_bookmarked_sessions(
     slug: str,
     db: DBSession,
     authorization: str | None = Header(default=None),
-    heelo_access: str | None = Cookie(default=None),
+    tixdoo_access: str | None = Cookie(default=None),
 ):
     from app.models.event import Event
 
@@ -192,8 +192,8 @@ async def get_my_bookmarked_sessions(
     token = None
     if authorization and authorization.startswith("Bearer "):
         token = authorization.removeprefix("Bearer ").strip()
-    elif heelo_access:
-        token = heelo_access
+    elif tixdoo_access:
+        token = tixdoo_access
 
     if not token:
         return {"success": True, "bookmarks": [], "bookmarked_session_ids": []}

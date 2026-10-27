@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>{% block title %}Admin{% endblock %} | Heelo Admin</title>
+  <title>{% block title %}Admin{% endblock %} | Tixdoo Admin</title>
   <script>
     // Set theme before first paint (defaults to 'light' to match user dashboard)
-    document.documentElement.setAttribute('data-theme', localStorage.getItem('heelo_admin_theme') || 'light');
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('tixdoo_admin_theme') || 'light');
   </script>
   <meta name="csrf-token" content="{{ request.cookies.get('csrf_token', '') }}" id="csrf-token-meta" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -717,8 +717,8 @@
 
 <header class="admin-header">
   <!-- Logo with Admin badge -->
-  <a href="/admin" class="admin-logo-link" title="Heelo Admin Overview">
-    <div class="admin-logo">heelo<span class="dot">.</span></div>
+  <a href="/admin" class="admin-logo-link" title="Tixdoo Admin Overview">
+    <div class="admin-logo">tixdoo<span class="dot">.</span></div>
     <span class="admin-badge">ADMIN</span>
   </a>
 
@@ -866,7 +866,7 @@
     const html = document.documentElement;
     const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     html.setAttribute('data-theme', next);
-    localStorage.setItem('heelo_admin_theme', next);
+    localStorage.setItem('tixdoo_admin_theme', next);
   }
 
   (function () {

@@ -1121,7 +1121,7 @@ async def initialize_booking_payment(
                         "currency": booking.currency.lower(),
                         "product_data": {
                             "name": f"Booking: {booking.event_name or 'Event Service'}",
-                            "description": booking.service_summary or "Vendor booking on Heelo",
+                            "description": booking.service_summary or "Vendor booking on Tixdoo",
                         },
                         "unit_amount": unit_amount,
                     },

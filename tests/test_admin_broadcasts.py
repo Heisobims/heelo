@@ -177,7 +177,7 @@ async def test_create_broadcast_succeeds_and_enqueues_send(client: AsyncClient, 
         "/api/v1/admin/broadcasts",
         json={
             "subject": "Welcome",
-            "body": "Hi {{name}}, welcome to Heelo!",
+            "body": "Hi {{name}}, welcome to Tixdoo!",
             "audience_category": "all",
             "channel": "email",
         },

@@ -1,5 +1,5 @@
 """Manual payouts (app/services/payout_service.py) - tracking and settling
-money Heelo holds for organizers with no auto-split rail (no verified
+money Tixdoo holds for organizers with no auto-split rail (no verified
 Paystack/Flutterwave/Stripe account). Covers the owed-amount math (including
 a partial refund), the admin create/mark-paid/mark-failed routes, and the
 weekly digest task."""

@@ -19,17 +19,17 @@ DBSession = Annotated[AsyncSession, Depends(get_db)]
 # ── JWT token extraction - header OR httpOnly cookie ─────────────────────────
 async def _resolve_token(
     authorization: str | None = Header(default=None),
-    heelo_access: str | None = Cookie(default=None),
+    tixdoo_access: str | None = Cookie(default=None),
 ) -> str:
     """
     Accepts JWT from:
       1. `Authorization: Bearer <token>` header  (API clients)
-      2. `heelo_access` httpOnly cookie          (browser / HTMX clients)
+      2. `tixdoo_access` httpOnly cookie          (browser / HTMX clients)
     """
     if authorization and authorization.startswith("Bearer "):
         return authorization.removeprefix("Bearer ").strip()
-    if heelo_access:
-        return heelo_access
+    if tixdoo_access:
+        return tixdoo_access
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
 
 

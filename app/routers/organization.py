@@ -126,7 +126,7 @@ async def set_custom_domain(
             "verified": updated.custom_domain_verified,
             "verification_record": {
                 "type": "TXT",
-                "name": f"_heelo-verify.{updated.custom_domain}",
+                "name": f"_tixdoo-verify.{updated.custom_domain}",
                 "value": updated.custom_domain_verification_token,
             },
         }
@@ -182,7 +182,7 @@ async def set_sso_domain(
             "enforced": updated.sso_enforced,
             "verification_record": {
                 "type": "TXT",
-                "name": f"_heelo-sso-verify.{updated.sso_domain}",
+                "name": f"_tixdoo-sso-verify.{updated.sso_domain}",
                 "value": updated.sso_verification_token,
             },
         }

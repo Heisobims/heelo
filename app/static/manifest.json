@@ -1,6 +1,6 @@
 {
-  "name": "Heelo",
-  "short_name": "Heelo",
+  "name": "Tixdoo",
+  "short_name": "Tixdoo",
   "description": "All-in-one event management platform",
   "start_url": "/dashboard",
   "display": "standalone",

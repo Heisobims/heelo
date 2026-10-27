@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#E85938" />
 
     <title>
-      {% block title %}Heelo | Every great event starts here{% endblock %}
+      {% block title %}Tixdoo | Every great event starts here{% endblock %}
     </title>
     <meta
       name="description"
@@ -17,11 +17,11 @@
     <link rel="canonical" href="{% block canonical %}{{ custom_canonical or _canonical_url }}{% endblock %}">
 
     <!-- OG / Social -->
-    <meta property="og:site_name" content="Heelo" />
+    <meta property="og:site_name" content="Tixdoo" />
     <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
     <meta property="og:url" content="{% block og_url %}{{ custom_canonical or _canonical_url }}{% endblock %}" />
-    <meta property="og:title" content="{% block og_title %}Heelo{% endblock %}" />
-    <meta property="og:description" content="{% block og_description %}Every great event starts with heelo.{% endblock %}" />
+    <meta property="og:title" content="{% block og_title %}Tixdoo{% endblock %}" />
+    <meta property="og:description" content="{% block og_description %}Every great event starts with tixdoo.{% endblock %}" />
     <meta property="og:image" content="{% block og_image %}/static/icons/og-default.png{% endblock %}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="{{ self.og_title() }}" />
@@ -40,7 +40,7 @@
         dataLayer.push(arguments);
       }
       try {
-        var _c = localStorage.getItem("heelo_cookie_consent");
+        var _c = localStorage.getItem("tixdoo_cookie_consent");
         if (_c) {
           var _p = JSON.parse(_c);
           gtag("consent", "default", {

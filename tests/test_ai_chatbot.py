@@ -1,5 +1,5 @@
 """
-Tests for the public Heelo AI Support Chatbot.
+Tests for the public Tixdoo AI Support Chatbot.
 
 Verifies:
 1. Public chat endpoint (/api/v1/support/chat) responses for platform questions.
@@ -22,7 +22,7 @@ async def test_support_chat_event_creation(client: AsyncClient):
     """Verify chatbot answers questions about creating an event."""
     resp = await client.post(
         "/api/v1/support/chat",
-        json={"message": "How do I create and publish an event on Heelo?"},
+        json={"message": "How do I create and publish an event on Tixdoo?"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -142,13 +142,13 @@ async def test_ai_chat_widget_rendered_in_templates(client: AsyncClient):
     """Verify AI chatbot widget is embedded in pages extending base.html."""
     resp = await client.get("/")
     assert resp.status_code == 200
-    assert "heelo-ai-widget-root" in resp.text
-    assert "heeloAiChat()" in resp.text
-    assert "Heelo AI Assistant" in resp.text
+    assert "tixdoo-ai-widget-root" in resp.text
+    assert "tixdooAiChat()" in resp.text
+    assert "Tixdoo AI Assistant" in resp.text
 
     resp_pricing = await client.get("/pricing")
     assert resp_pricing.status_code == 200
-    assert "heelo-ai-widget-root" in resp_pricing.text
+    assert "tixdoo-ai-widget-root" in resp_pricing.text
 
 
 async def test_support_chat_events_this_weekend_with_location_context(
@@ -538,7 +538,7 @@ async def test_support_chat_prompt_injection_defense(client: AsyncClient):
     assert resp.status_code == 200
     data = resp.json()
     reply = data["data"]["reply"]
-    assert "Heelo AI" in reply
+    assert "Tixdoo AI" in reply
     assert "secret tokens" not in reply.lower()
     assert "\u2014" not in reply
 

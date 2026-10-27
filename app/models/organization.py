@@ -54,7 +54,7 @@ class Organization(Base, TimestampMixin):
     # Custom domain for white-label - e.g. events.mycompany.com
     custom_domain: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
     custom_domain_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    # Expected TXT record value at _heelo-verify.{custom_domain} - proves
+    # Expected TXT record value at _tixdoo-verify.{custom_domain} - proves
     # domain ownership before it's allowed to go live.
     custom_domain_verification_token: Mapped[str | None] = mapped_column(String(64), nullable=True)
     # Domain-restricted SSO (Enterprise) - members whose email matches this

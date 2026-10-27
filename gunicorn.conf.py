@@ -28,11 +28,11 @@ access_log_format = (
 )
 
 # ── Process ───────────────────────────────────────────────────────────────────
-proc_name = "heelo"
+proc_name = "tixdoo"
 
 # ── Hooks ─────────────────────────────────────────────────────────────────────
 def on_starting(server):  # noqa: N802
-    server.log.info("Heelo gunicorn master starting.")
+    server.log.info("Tixdoo gunicorn master starting.")
 
 
 def worker_exit(server, worker):  # noqa: N802

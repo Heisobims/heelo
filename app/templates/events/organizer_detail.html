@@ -1,5 +1,5 @@
 {% extends "dashboard/layout.html" %} {% block title %}{{ event.title }} | {{
-org.name }} | Heelo{% endblock %} {% set active_page = 'events' %} {% block
+org.name }} | Tixdoo{% endblock %} {% set active_page = 'events' %} {% block
 main_content %}
 <div class="dash-content">
   <!-- Breadcrumb -->
@@ -365,7 +365,7 @@ main_content %}
         type="button"
         class="event-tab-btn"
         :class="{ 'active': tab === '{{ tab_id }}' }"
-        @click="tab = '{{ tab_id }}'; history.replaceState(null, '', '?tab={{ tab_id }}'); $dispatch('heelo:tab', { tab: '{{ tab_id }}' })"
+        @click="tab = '{{ tab_id }}'; history.replaceState(null, '', '?tab={{ tab_id }}'); $dispatch('tixdoo:tab', { tab: '{{ tab_id }}' })"
       >
         {{ tab_label }}
       </button>
@@ -1032,7 +1032,7 @@ main_content %}
               <strong
                 x-text="newTt.currency + ' ' + (parseFloat(newTt.price) || 0).toLocaleString()"
               ></strong
-              >, the guest covers Heelo's {{ platform_fee_percent }}% fee and
+              >, the guest covers Tixdoo's {{ platform_fee_percent }}% fee and
               processing fees on top at checkout.
             </div>
           </div>
@@ -1493,7 +1493,7 @@ main_content %}
       x-show="tab === 'waitlist'"
       style="display: none"
       x-data="waitlistTab()"
-      @heelo:tab.window="if ($event.detail.tab === 'waitlist' && !loaded) load()"
+      @tixdoo:tab.window="if ($event.detail.tab === 'waitlist' && !loaded) load()"
     >
       <div
         x-show="loading"
@@ -1643,7 +1643,7 @@ main_content %}
       x-show="tab === 'calls'"
       style="display: none"
       x-data="callsTab()"
-      @heelo:tab.window="if ($event.detail.tab === 'calls' && !loaded) load()"
+      @tixdoo:tab.window="if ($event.detail.tab === 'calls' && !loaded) load()"
     >
       <!-- Floating Toast Notification -->
       <div
@@ -2925,7 +2925,7 @@ main_content %}
       x-show="tab === 'sponsors'"
       style="display: none"
       x-data="sponsorsTab()"
-      @heelo:tab.window="if ($event.detail.tab === 'sponsors' && !loaded) load()"
+      @tixdoo:tab.window="if ($event.detail.tab === 'sponsors' && !loaded) load()"
     >
       <div
         x-show="loading"
@@ -3162,7 +3162,7 @@ main_content %}
       x-show="tab === 'feedback'"
       style="display: none"
       x-data="feedbackTab()"
-      @heelo:tab.window="if ($event.detail.tab === 'feedback' && !loaded) load()"
+      @tixdoo:tab.window="if ($event.detail.tab === 'feedback' && !loaded) load()"
     >
       <template x-if="loaded && summary">
         <div>

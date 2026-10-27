@@ -1,4 +1,4 @@
-/* Heelo - main.js
+/* Tixdoo - main.js
    Alpine.js components defined as plain global functions.
    main.js loads BEFORE Alpine (see base.html script order), so these are
    available when Alpine evaluates x-data="componentName()" expressions.
@@ -28,7 +28,7 @@
 // ── HTMX global config ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('htmx:configRequest', (evt) => {
-    const token = getCookie('heelo_access')
+    const token = getCookie('tixdoo_access')
     if (token) evt.detail.headers['Authorization'] = `Bearer ${token}`
 
     const csrfToken = getCookie('csrf_token')
@@ -409,4 +409,4 @@ async function streamAIResponse(url, body, targetEl, onDone) {
   if (onDone) onDone(targetEl.textContent)
 }
 
-window.Heelo = { streamAIResponse }
+window.Tixdoo = { streamAIResponse }

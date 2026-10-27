@@ -137,7 +137,7 @@ class TestMessagePages:
     async def test_thread_page_403s_when_not_connected(self, client: AsyncClient, user, other_user):
         from tests.conftest import _make_token
 
-        client.cookies.set("heelo_access", _make_token(str(user.id)))
+        client.cookies.set("tixdoo_access", _make_token(str(user.id)))
         resp = await client.get(f"/messages/{other_user.id}")
         assert resp.status_code == 403
 
@@ -147,7 +147,7 @@ class TestMessagePages:
         from tests.conftest import _make_token
 
         await _make_accepted_connection(db, user, other_user)
-        client.cookies.set("heelo_access", _make_token(str(user.id)))
+        client.cookies.set("tixdoo_access", _make_token(str(user.id)))
         resp = await client.get(f"/messages/{other_user.id}")
         assert resp.status_code == 200
         assert other_user.full_name in resp.text
@@ -161,7 +161,7 @@ class TestMessagePages:
         await db.flush()
         await _make_accepted_connection(db, user, other_user)
 
-        client.cookies.set("heelo_access", _make_token(str(user.id)))
+        client.cookies.set("tixdoo_access", _make_token(str(user.id)))
         resp = await client.get(f"/p/{other_user.username}")
         assert resp.status_code == 200
         assert f"/messages/{other_user.id}" in resp.text

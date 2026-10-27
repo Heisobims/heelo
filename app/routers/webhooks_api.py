@@ -165,7 +165,7 @@ async def test_webhook(slug: str, sub_id: str, db: DBSession, org_access: Webhoo
         payload={
             "event": "webhook.test",
             "org_id": str(org.id),
-            "message": "Test delivery from Heelo.",
+            "message": "Test delivery from Tixdoo.",
         },
         status="pending",
     )

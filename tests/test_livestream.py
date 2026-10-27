@@ -125,7 +125,7 @@ class TestLivePageVideoPlayer:
             json={"livestream_url": "https://youtube.com/watch?v=abc12345678"},
             headers=user_headers,
         )
-        client.cookies.set("heelo_access", _make_token(str(user.id)))
+        client.cookies.set("tixdoo_access", _make_token(str(user.id)))
         resp = await client.get(f"/org/{org.slug}/events/{published_event.id}/live")
         assert resp.status_code == 200
         assert "https://youtube.com/watch?v=abc12345678" in resp.text

@@ -1,31 +1,31 @@
-<!-- ── Heelo AI Support Chatbot Widget ───────────────────────────── -->
+<!-- ── Tixdoo AI Support Chatbot Widget ───────────────────────────── -->
 <div
-  x-data="heeloAiChat()"
+  x-data="tixdooAiChat()"
   x-cloak
-  @toggle-heelo-ai-chat.window="toggleChat()"
-  @open-heelo-ai-chat.window="openChat()"
-  class="heelo-ai-widget-root"
+  @toggle-tixdoo-ai-chat.window="toggleChat()"
+  @open-tixdoo-ai-chat.window="openChat()"
+  class="tixdoo-ai-widget-root"
 >
   <!-- Floating Launcher Button -->
   <button
     type="button"
-    class="heelo-ai-launcher"
+    class="tixdoo-ai-launcher"
     :class="{ 'is-open': isOpen }"
     @click="toggleChat()"
-    :title="isOpen ? 'Close Heelo Assistant' : 'Chat with Heelo AI Assistant'"
-    aria-label="Toggle Heelo AI Chatbot"
+    :title="isOpen ? 'Close Tixdoo Assistant' : 'Chat with Tixdoo AI Assistant'"
+    aria-label="Toggle Tixdoo AI Chatbot"
   >
     <!-- Closed Icon: Chat -->
     <template x-if="!isOpen">
-      <div class="heelo-ai-icon-wrap">
-        <svg class="heelo-ai-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <div class="tixdoo-ai-icon-wrap">
+        <svg class="tixdoo-ai-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="currentColor" stroke="none" />
         </svg>
       </div>
     </template>
     <!-- Open Icon: Close X -->
     <template x-if="isOpen">
-      <svg class="heelo-ai-svg-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <svg class="tixdoo-ai-svg-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <line x1="18" y1="6" x2="6" y2="18"></line>
         <line x1="6" y1="6" x2="18" y2="18"></line>
       </svg>
@@ -34,35 +34,35 @@
 
   <!-- Chat Dialog Window -->
   <div
-    class="heelo-ai-dialog"
+    class="tixdoo-ai-dialog"
     x-show="isOpen"
-    x-transition:enter="heelo-ai-enter"
-    x-transition:enter-start="heelo-ai-enter-start"
-    x-transition:enter-end="heelo-ai-enter-end"
-    x-transition:leave="heelo-ai-leave"
-    x-transition:leave-start="heelo-ai-leave-start"
-    x-transition:leave-end="heelo-ai-leave-end"
+    x-transition:enter="tixdoo-ai-enter"
+    x-transition:enter-start="tixdoo-ai-enter-start"
+    x-transition:enter-end="tixdoo-ai-enter-end"
+    x-transition:leave="tixdoo-ai-leave"
+    x-transition:leave-start="tixdoo-ai-leave-start"
+    x-transition:leave-end="tixdoo-ai-leave-end"
     @keydown.escape.window="isOpen = false"
     style="display: none;"
   >
     <!-- Header -->
-    <div class="heelo-ai-header">
-      <div class="heelo-ai-header-info">
-        <div class="heelo-ai-avatar">
+    <div class="tixdoo-ai-header">
+      <div class="tixdoo-ai-header-info">
+        <div class="tixdoo-ai-avatar">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="#ffffff">
             <path d="M12 2L14.4 7.6L20 8.4L15.8 12.5L17 18.2L12 15.2L7 18.2L8.2 12.5L4 8.4L9.6 7.6L12 2Z" />
           </svg>
-          <span class="heelo-ai-online-dot" title="Online"></span>
+          <span class="tixdoo-ai-online-dot" title="Online"></span>
         </div>
         <div>
-          <div class="heelo-ai-title">Heelo AI Assistant</div>
-          <div class="heelo-ai-subtitle">Online · Instant platform answers</div>
+          <div class="tixdoo-ai-title">Tixdoo AI Assistant</div>
+          <div class="tixdoo-ai-subtitle">Online · Instant platform answers</div>
         </div>
       </div>
-      <div class="heelo-ai-header-actions">
+      <div class="tixdoo-ai-header-actions">
         <button
           type="button"
-          class="heelo-ai-head-btn"
+          class="tixdoo-ai-head-btn"
           @click="clearChat()"
           title="Restart conversation"
           aria-label="Restart chat"
@@ -76,7 +76,7 @@
         </button>
         <button
           type="button"
-          class="heelo-ai-head-btn"
+          class="tixdoo-ai-head-btn"
           @click="isOpen = false"
           title="Minimize chat"
           aria-label="Minimize"
@@ -90,31 +90,31 @@
     </div>
 
     <!-- Messages Container -->
-    <div class="heelo-ai-messages" x-ref="messagesBox">
+    <div class="tixdoo-ai-messages" x-ref="messagesBox">
       <!-- Welcome Intro (shown when messages is empty) -->
       <template x-if="messages.length === 0">
-        <div class="heelo-ai-welcome-card">
-          <div class="heelo-ai-welcome-badge">Platform Support</div>
-          <div class="heelo-ai-welcome-text">
-            Hi! I am Heelo AI, trained on the entire Heelo platform. Ask me anything about:
+        <div class="tixdoo-ai-welcome-card">
+          <div class="tixdoo-ai-welcome-badge">Platform Support</div>
+          <div class="tixdoo-ai-welcome-text">
+            Hi! I am Tixdoo AI, trained on the entire Tixdoo platform. Ask me anything about:
           </div>
-          <div class="heelo-ai-suggestions">
-            <button type="button" class="heelo-ai-pill" @click="quickAsk('How do I create and publish an event?')">
+          <div class="tixdoo-ai-suggestions">
+            <button type="button" class="tixdoo-ai-pill" @click="quickAsk('How do I create and publish an event?')">
               How do I create an event?
             </button>
-            <button type="button" class="heelo-ai-pill" @click="quickAsk('What are your ticketing fees and pricing plans?')">
+            <button type="button" class="tixdoo-ai-pill" @click="quickAsk('What are your ticketing fees and pricing plans?')">
               How do fees & pricing work?
             </button>
-            <button type="button" class="heelo-ai-pill" @click="quickAsk('How do automated payouts and bank splits work?')">
+            <button type="button" class="tixdoo-ai-pill" @click="quickAsk('How do automated payouts and bank splits work?')">
               How do payouts work?
             </button>
-            <button type="button" class="heelo-ai-pill" @click="quickAsk('How do I hire caterers, sound, or photographers on Heelo?')">
+            <button type="button" class="tixdoo-ai-pill" @click="quickAsk('How do I hire caterers, sound, or photographers on Tixdoo?')">
               Can I hire event vendors?
             </button>
-            <button type="button" class="heelo-ai-pill" @click="quickAsk('What are Apple Wallet passes and Box Office check-in?')">
+            <button type="button" class="tixdoo-ai-pill" @click="quickAsk('What are Apple Wallet passes and Box Office check-in?')">
               What are Apple Wallet passes?
             </button>
-            <button type="button" class="heelo-ai-pill" @click="quickAsk('How do Meta, Google, and TikTok ad pixels work on Heelo?')">
+            <button type="button" class="tixdoo-ai-pill" @click="quickAsk('How do Meta, Google, and TikTok ad pixels work on Tixdoo?')">
               How do ad tracking pixels work?
             </button>
           </div>
@@ -123,51 +123,51 @@
 
       <!-- Message History -->
       <template x-for="(msg, index) in messages" :key="index">
-        <div :class="msg.role === 'user' ? 'heelo-ai-msg-row user' : 'heelo-ai-msg-row bot'">
+        <div :class="msg.role === 'user' ? 'tixdoo-ai-msg-row user' : 'tixdoo-ai-msg-row bot'">
           <template x-if="msg.role === 'assistant'">
-            <div class="heelo-ai-bot-avatar">
+            <div class="tixdoo-ai-bot-avatar">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="#ffffff">
                 <path d="M12 2L14.4 7.6L20 8.4L15.8 12.5L17 18.2L12 15.2L7 18.2L8.2 12.5L4 8.4L9.6 7.6L12 2Z" />
               </svg>
             </div>
           </template>
-          <div class="heelo-ai-bubble" :class="msg.role === 'user' ? 'user-bubble' : 'bot-bubble'">
-            <div class="heelo-ai-content" x-html="renderMarkdown(msg.content)"></div>
+          <div class="tixdoo-ai-bubble" :class="msg.role === 'user' ? 'user-bubble' : 'bot-bubble'">
+            <div class="tixdoo-ai-content" x-html="renderMarkdown(msg.content)"></div>
           </div>
         </div>
       </template>
 
       <!-- Typing Indicator -->
-      <div x-show="isLoading" class="heelo-ai-msg-row bot" style="display: none;">
-        <div class="heelo-ai-bot-avatar">
+      <div x-show="isLoading" class="tixdoo-ai-msg-row bot" style="display: none;">
+        <div class="tixdoo-ai-bot-avatar">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="#ffffff">
             <path d="M12 2L14.4 7.6L20 8.4L15.8 12.5L17 18.2L12 15.2L7 18.2L8.2 12.5L4 8.4L9.6 7.6L12 2Z" />
           </svg>
         </div>
-        <div class="heelo-ai-bubble bot-bubble typing-bubble">
-          <span class="heelo-ai-dot"></span>
-          <span class="heelo-ai-dot"></span>
-          <span class="heelo-ai-dot"></span>
+        <div class="tixdoo-ai-bubble bot-bubble typing-bubble">
+          <span class="tixdoo-ai-dot"></span>
+          <span class="tixdoo-ai-dot"></span>
+          <span class="tixdoo-ai-dot"></span>
         </div>
       </div>
     </div>
 
     <!-- Quick Suggestion Chips (after assistant responses) -->
     <template x-if="suggestions.length > 0 && !isLoading">
-      <div class="heelo-ai-chips-bar">
+      <div class="tixdoo-ai-chips-bar">
         <template x-for="(sug, sIndex) in suggestions" :key="sIndex">
-          <button type="button" class="heelo-ai-chip" @click="quickAsk(sug)" x-text="sug"></button>
+          <button type="button" class="tixdoo-ai-chip" @click="quickAsk(sug)" x-text="sug"></button>
         </template>
       </div>
     </template>
 
     <!-- Footer Input Bar -->
-    <form class="heelo-ai-input-form" @submit.prevent="sendMessage()">
-      <div class="heelo-ai-input-wrap">
+    <form class="tixdoo-ai-input-form" @submit.prevent="sendMessage()">
+      <div class="tixdoo-ai-input-wrap">
         <input
           type="text"
-          class="heelo-ai-input"
-          placeholder="Ask a question about Heelo..."
+          class="tixdoo-ai-input"
+          placeholder="Ask a question about Tixdoo..."
           x-model="inputQuery"
           :disabled="isLoading"
           maxlength="1000"
@@ -176,7 +176,7 @@
         />
         <button
           type="submit"
-          class="heelo-ai-send-btn"
+          class="tixdoo-ai-send-btn"
           :disabled="isLoading || !inputQuery.trim()"
           title="Send message"
           aria-label="Send"
@@ -187,9 +187,9 @@
           </svg>
         </button>
       </div>
-      <div class="heelo-ai-footnote">
-        <span>Heelo AI Platform Assistant</span>
-        <a href="mailto:hello@heelo.io" class="heelo-ai-foot-link">Need human support?</a>
+      <div class="tixdoo-ai-footnote">
+        <span>Tixdoo AI Platform Assistant</span>
+        <a href="mailto:hello@tixdoo.com" class="tixdoo-ai-foot-link">Need human support?</a>
       </div>
     </form>
   </div>
@@ -197,12 +197,12 @@
 
 <!-- ── Scoped Styling ────────────────────────────────────────────── -->
 <style>
-  .heelo-ai-widget-root {
+  .tixdoo-ai-widget-root {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
   /* Launcher Button */
-  .heelo-ai-launcher {
+  .tixdoo-ai-launcher {
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -219,10 +219,10 @@
     cursor: pointer;
     border: none;
     transition: transform 180ms ease, box-shadow 180ms ease;
-    animation: heeloAiPulse 3.5s infinite;
+    animation: tixdooAiPulse 3.5s infinite;
   }
 
-  @keyframes heeloAiPulse {
+  @keyframes tixdooAiPulse {
     0% {
       box-shadow: 0 8px 24px rgba(232, 89, 56, 0.45), 0 0 0 0 rgba(232, 89, 56, 0.35);
     }
@@ -234,32 +234,32 @@
     }
   }
 
-  .heelo-ai-launcher:hover {
+  .tixdoo-ai-launcher:hover {
     transform: scale(1.08);
     box-shadow: 0 12px 30px rgba(232, 89, 56, 0.6);
   }
 
-  .heelo-ai-icon-wrap {
+  .tixdoo-ai-icon-wrap {
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
-  .heelo-ai-svg {
+  .tixdoo-ai-svg {
     width: 26px;
     height: 26px;
     fill: currentColor;
   }
 
-  .heelo-ai-svg-close {
+  .tixdoo-ai-svg-close {
     width: 24px;
     height: 24px;
     stroke: currentColor;
   }
 
   /* Chat Dialog Window */
-  .heelo-ai-dialog {
+  .tixdoo-ai-dialog {
     position: fixed;
     bottom: 92px;
     right: 24px;
@@ -278,31 +278,31 @@
   }
 
   /* Transitions */
-  .heelo-ai-enter {
+  .tixdoo-ai-enter {
     transition: opacity 200ms ease-out, transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .heelo-ai-enter-start {
+  .tixdoo-ai-enter-start {
     opacity: 0;
     transform: translateY(16px) scale(0.96);
   }
-  .heelo-ai-enter-end {
+  .tixdoo-ai-enter-end {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-  .heelo-ai-leave {
+  .tixdoo-ai-leave {
     transition: opacity 150ms ease-in, transform 150ms ease-in;
   }
-  .heelo-ai-leave-start {
+  .tixdoo-ai-leave-start {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-  .heelo-ai-leave-end {
+  .tixdoo-ai-leave-end {
     opacity: 0;
     transform: translateY(14px) scale(0.96);
   }
 
   /* Header */
-  .heelo-ai-header {
+  .tixdoo-ai-header {
     background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
     color: #ffffff;
     padding: 14px 16px;
@@ -312,13 +312,13 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  .heelo-ai-header-info {
+  .tixdoo-ai-header-info {
     display: flex;
     align-items: center;
     gap: 10px;
   }
 
-  .heelo-ai-avatar {
+  .tixdoo-ai-avatar {
     position: relative;
     width: 34px;
     height: 34px;
@@ -330,7 +330,7 @@
     box-shadow: 0 2px 8px rgba(232, 89, 56, 0.4);
   }
 
-  .heelo-ai-online-dot {
+  .tixdoo-ai-online-dot {
     position: absolute;
     bottom: -2px;
     right: -2px;
@@ -341,26 +341,26 @@
     border: 2px solid #0F172A;
   }
 
-  .heelo-ai-title {
+  .tixdoo-ai-title {
     font-size: 14.5px;
     font-weight: 700;
     line-height: 1.2;
     letter-spacing: -0.2px;
   }
 
-  .heelo-ai-subtitle {
+  .tixdoo-ai-subtitle {
     font-size: 11px;
     color: #94A3B8;
     margin-top: 2px;
   }
 
-  .heelo-ai-header-actions {
+  .tixdoo-ai-header-actions {
     display: flex;
     align-items: center;
     gap: 4px;
   }
 
-  .heelo-ai-head-btn {
+  .tixdoo-ai-head-btn {
     background: transparent;
     border: none;
     color: #94A3B8;
@@ -374,13 +374,13 @@
     transition: background 140ms ease, color 140ms ease;
   }
 
-  .heelo-ai-head-btn:hover {
+  .tixdoo-ai-head-btn:hover {
     background: rgba(255, 255, 255, 0.12);
     color: #ffffff;
   }
 
   /* Messages area */
-  .heelo-ai-messages {
+  .tixdoo-ai-messages {
     flex: 1;
     padding: 16px;
     overflow-y: auto;
@@ -392,7 +392,7 @@
   }
 
   /* Welcome Card */
-  .heelo-ai-welcome-card {
+  .tixdoo-ai-welcome-card {
     background: #ffffff;
     border: 1px solid #E2E8F0;
     border-radius: 14px;
@@ -400,7 +400,7 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   }
 
-  .heelo-ai-welcome-badge {
+  .tixdoo-ai-welcome-badge {
     display: inline-block;
     font-size: 11px;
     font-weight: 700;
@@ -411,20 +411,20 @@
     margin-bottom: 8px;
   }
 
-  .heelo-ai-welcome-text {
+  .tixdoo-ai-welcome-text {
     font-size: 13px;
     color: #475569;
     line-height: 1.45;
     margin-bottom: 12px;
   }
 
-  .heelo-ai-suggestions {
+  .tixdoo-ai-suggestions {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
 
-  .heelo-ai-pill {
+  .tixdoo-ai-pill {
     text-align: left;
     background: #F1F5F9;
     border: 1px solid #E2E8F0;
@@ -437,24 +437,24 @@
     transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
   }
 
-  .heelo-ai-pill:hover {
+  .tixdoo-ai-pill:hover {
     background: #E2E8F0;
     border-color: #CBD5E1;
     transform: translateX(3px);
   }
 
   /* Message rows */
-  .heelo-ai-msg-row {
+  .tixdoo-ai-msg-row {
     display: flex;
     align-items: flex-start;
     gap: 8px;
   }
 
-  .heelo-ai-msg-row.user {
+  .tixdoo-ai-msg-row.user {
     justify-content: flex-end;
   }
 
-  .heelo-ai-bot-avatar {
+  .tixdoo-ai-bot-avatar {
     width: 24px;
     height: 24px;
     border-radius: 6px;
@@ -467,7 +467,7 @@
     margin-top: 3px;
   }
 
-  .heelo-ai-bubble {
+  .tixdoo-ai-bubble {
     padding: 10px 14px;
     font-size: 13.5px;
     line-height: 1.5;
@@ -492,31 +492,31 @@
   }
 
   /* Content typography */
-  .heelo-ai-content h3 {
+  .tixdoo-ai-content h3 {
     font-size: 14px;
     font-weight: 700;
     margin: 4px 0 6px 0;
     color: #0F172A;
   }
-  .heelo-ai-content p {
+  .tixdoo-ai-content p {
     margin: 4px 0;
   }
-  .heelo-ai-content ul, .heelo-ai-content ol {
+  .tixdoo-ai-content ul, .tixdoo-ai-content ol {
     margin: 4px 0 6px 18px;
     padding: 0;
   }
-  .heelo-ai-content li {
+  .tixdoo-ai-content li {
     margin: 3px 0;
   }
-  .heelo-ai-content a {
+  .tixdoo-ai-content a {
     color: #E85938;
     text-decoration: underline;
     font-weight: 600;
   }
-  .heelo-ai-content a:hover {
+  .tixdoo-ai-content a:hover {
     color: #C2410C;
   }
-  .heelo-ai-content code {
+  .tixdoo-ai-content code {
     background: #F1F5F9;
     padding: 1px 5px;
     border-radius: 4px;
@@ -533,24 +533,24 @@
     padding: 12px 16px;
   }
 
-  .heelo-ai-dot {
+  .tixdoo-ai-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: #94A3B8;
-    animation: heeloAiBounce 1.4s infinite both;
+    animation: tixdooAiBounce 1.4s infinite both;
   }
 
-  .heelo-ai-dot:nth-child(1) { animation-delay: -0.32s; }
-  .heelo-ai-dot:nth-child(2) { animation-delay: -0.16s; }
+  .tixdoo-ai-dot:nth-child(1) { animation-delay: -0.32s; }
+  .tixdoo-ai-dot:nth-child(2) { animation-delay: -0.16s; }
 
-  @keyframes heeloAiBounce {
+  @keyframes tixdooAiBounce {
     0%, 80%, 100% { transform: scale(0); }
     40% { transform: scale(1); }
   }
 
   /* Suggestions Bar */
-  .heelo-ai-chips-bar {
+  .tixdoo-ai-chips-bar {
     padding: 8px 16px;
     background: #FAFAFC;
     border-top: 1px solid #F1F5F9;
@@ -560,9 +560,9 @@
     white-space: nowrap;
     scrollbar-width: none;
   }
-  .heelo-ai-chips-bar::-webkit-scrollbar { display: none; }
+  .tixdoo-ai-chips-bar::-webkit-scrollbar { display: none; }
 
-  .heelo-ai-chip {
+  .tixdoo-ai-chip {
     background: #F1F5F9;
     border: 1px solid #CBD5E1;
     border-radius: 100px;
@@ -574,20 +574,20 @@
     flex-shrink: 0;
     transition: background 120ms ease, color 120ms ease;
   }
-  .heelo-ai-chip:hover {
+  .tixdoo-ai-chip:hover {
     background: #E85938;
     color: #ffffff;
     border-color: #E85938;
   }
 
   /* Input Form */
-  .heelo-ai-input-form {
+  .tixdoo-ai-input-form {
     background: #ffffff;
     padding: 12px 14px;
     border-top: 1px solid #E2E8F0;
   }
 
-  .heelo-ai-input-wrap {
+  .tixdoo-ai-input-wrap {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -598,13 +598,13 @@
     transition: border-color 150ms ease, box-shadow 150ms ease;
   }
 
-  .heelo-ai-input-wrap:focus-within {
+  .tixdoo-ai-input-wrap:focus-within {
     border-color: #E85938;
     box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.15);
     background: #ffffff;
   }
 
-  .heelo-ai-input {
+  .tixdoo-ai-input {
     flex: 1;
     border: none;
     background: transparent;
@@ -614,7 +614,7 @@
     min-width: 0;
   }
 
-  .heelo-ai-send-btn {
+  .tixdoo-ai-send-btn {
     width: 32px;
     height: 32px;
     border-radius: 8px;
@@ -629,18 +629,18 @@
     flex-shrink: 0;
   }
 
-  .heelo-ai-send-btn:hover:not(:disabled) {
+  .tixdoo-ai-send-btn:hover:not(:disabled) {
     background: #C2410C;
     transform: scale(1.05);
   }
 
-  .heelo-ai-send-btn:disabled {
+  .tixdoo-ai-send-btn:disabled {
     background: #CBD5E1;
     cursor: not-allowed;
     transform: none;
   }
 
-  .heelo-ai-footnote {
+  .tixdoo-ai-footnote {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -650,23 +650,23 @@
     padding: 0 2px;
   }
 
-  .heelo-ai-foot-link {
+  .tixdoo-ai-foot-link {
     color: #64748B;
     text-decoration: underline;
   }
 
-  .heelo-ai-foot-link:hover {
+  .tixdoo-ai-foot-link:hover {
     color: #E85938;
   }
 
   @media (max-width: 480px) {
-    .heelo-ai-dialog {
+    .tixdoo-ai-dialog {
       right: 12px;
       bottom: 84px;
       width: calc(100vw - 24px);
       height: 75vh;
     }
-    .heelo-ai-launcher {
+    .tixdoo-ai-launcher {
       bottom: 18px;
       right: 18px;
       width: 50px;
@@ -677,7 +677,7 @@
 
 <!-- ── Alpine.js Controller ──────────────────────────────────────── -->
 <script>
-  function heeloAiChat() {
+  function tixdooAiChat() {
     return {
       isOpen: false,
       isLoading: false,
@@ -687,7 +687,7 @@
 
       init() {
         try {
-          const saved = sessionStorage.getItem('heelo_ai_chat_history');
+          const saved = sessionStorage.getItem('tixdoo_ai_chat_history');
           if (saved) {
             this.messages = JSON.parse(saved);
           }
@@ -740,8 +740,8 @@
             eventSlug = eMatch[1];
           }
 
-          const userName = window.HEELO_USER_NAME || null;
-          const userEmail = window.HEELO_USER_EMAIL || null;
+          const userName = window.TIXDOO_USER_NAME || null;
+          const userEmail = window.TIXDOO_USER_EMAIL || null;
 
           const res = await fetch('/api/v1/support/chat', {
             method: 'POST',
@@ -773,7 +773,7 @@
               this.suggestions = data.data.suggestions;
             }
           } else {
-            const errDetail = data?.error?.message || 'Sorry, I encountered an issue. Please try again or email hello@heelo.io.';
+            const errDetail = data?.error?.message || 'Sorry, I encountered an issue. Please try again or email hello@tixdoo.com.';
             this.messages.push({
               role: 'assistant',
               content: errDetail,
@@ -798,14 +798,14 @@
         this.messages = [];
         this.suggestions = [];
         try {
-          sessionStorage.removeItem('heelo_ai_chat_history');
+          sessionStorage.removeItem('tixdoo_ai_chat_history');
         } catch (e) {}
         if (this.$refs.queryInput) this.$refs.queryInput.focus();
       },
 
       saveHistory() {
         try {
-          sessionStorage.setItem('heelo_ai_chat_history', JSON.stringify(this.messages.slice(-16)));
+          sessionStorage.setItem('tixdoo_ai_chat_history', JSON.stringify(this.messages.slice(-16)));
         } catch (e) {}
       },
 

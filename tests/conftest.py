@@ -1,8 +1,8 @@
 """
-Shared test fixtures for Heelo.
+Shared test fixtures for Tixdoo.
 
 Database strategy:
-  - Session-scoped engine connects to `heelo_test` PostgreSQL DB.
+  - Session-scoped engine connects to `tixdoo_test` PostgreSQL DB.
   - All tables are created once per session and truncated between each test.
   - `db` fixture: direct async session for fixtures that insert test data.
   - `client` fixture: httpx.AsyncClient with overridden get_db dependency.
@@ -46,7 +46,7 @@ from app.utils.auth import hash_password
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@localhost:5432/heelo_test",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/tixdoo_test",
 )
 
 

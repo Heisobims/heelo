@@ -43,10 +43,10 @@ def _db() -> Session:
 def _org_branding(db: Session, org_id) -> dict:
     """org_name/org_logo_url/brand_color kwargs for em.render() - every
     org/event-related email template reads these to theme its header and
-    CTA buttons with the organizer's own branding instead of Heelo's.
+    CTA buttons with the organizer's own branding instead of Tixdoo's.
 
     Custom branding (logo + brand color) is a Growth+ feature - Free-tier
-    orgs get Heelo's own black/cyan look and a "Powered by Heelo" footer
+    orgs get Tixdoo's own black/cyan look and a "Powered by Tixdoo" footer
     line; Enterprise additionally drops that footer line (full white-label).
     """
     from app.models.organization import Organization
@@ -56,7 +56,7 @@ def _org_branding(db: Session, org_id) -> dict:
     plan = org.plan if org else "free"
     branded = has_feature(plan, PlanFeature.CUSTOM_BRANDING)
     return {
-        "org_name": org.name if org else "Heelo",
+        "org_name": org.name if org else "Tixdoo",
         "org_logo_url": (org.logo_url if org else None) if branded else None,
         "brand_color": (org.brand_color if org else None) if branded else None,
         "show_powered_by": not has_feature(plan, PlanFeature.FULL_WHITE_LABEL),
@@ -679,8 +679,8 @@ def send_event_update(event_id: str, changes: list[dict]) -> None:
 #
 # These go to the org OWNER's account email, not org.contact_email (which is
 # public-facing, shown in campaign footers) - billing notices are an account
-# matter. Sent with no org-branding overrides (Heelo's own black/cyan look),
-# since these are emails from Heelo about the org's own subscription, not
+# matter. Sent with no org-branding overrides (Tixdoo's own black/cyan look),
+# since these are emails from Tixdoo about the org's own subscription, not
 # organizer-branded attendee-facing mail.
 
 
@@ -713,7 +713,7 @@ def send_plan_renewal_reminder(org_id: str) -> None:
             expires_date=org.plan_expires_at.strftime("%B %d, %Y"),
         )
         em.send_sync(
-            to=to, subject=f"Your Heelo {org.plan.capitalize()} plan renews soon", html=html
+            to=to, subject=f"Your Tixdoo {org.plan.capitalize()} plan renews soon", html=html
         )
 
     log.info("email.plan_renewal_reminder.sent", org_id=org_id)
@@ -772,7 +772,7 @@ def send_plan_receipt(invoice_id: str) -> None:
                 org.plan_expires_at.strftime("%B %d, %Y") if org.plan_expires_at else "-"
             ),
         )
-        em.send_sync(to=to, subject=f"Receipt: Heelo {invoice.plan.capitalize()} plan", html=html)
+        em.send_sync(to=to, subject=f"Receipt: Tixdoo {invoice.plan.capitalize()} plan", html=html)
 
     log.info("email.plan_receipt.sent", invoice_id=invoice_id)
 
@@ -973,7 +973,7 @@ def send_vendor_quote_request_notification(quote_request_id: str) -> None:
             try:
                 em.send_sync(
                     to=to_email,
-                    subject=f"New Quote Request: {req.event_name} on Heelo",
+                    subject=f"New Quote Request: {req.event_name} on Tixdoo",
                     html=html,
                 )
             except Exception as exc:

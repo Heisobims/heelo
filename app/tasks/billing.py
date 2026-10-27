@@ -119,7 +119,7 @@ def process_plan_renewals() -> None:
 
 @shared_task(name="app.tasks.billing.send_pending_payouts_digest")
 def send_pending_payouts_digest() -> None:
-    """Weekly summary of orgs Heelo owes a manual payout to (no auto-split
+    """Weekly summary of orgs Tixdoo owes a manual payout to (no auto-split
     rail - see app/services/payout_service.py, whose get_owed_amount/
     list_orgs_with_pending_payouts this mirrors in sync form, matching how
     process_plan_renewals above also duplicates its query in sync form
@@ -197,7 +197,7 @@ def send_pending_payouts_digest() -> None:
 
     em.send_sync(
         to=settings.OPS_ALERT_EMAIL,
-        subject=f"Heelo: {len(pending)} pending manual payout(s)",
+        subject=f"Tixdoo: {len(pending)} pending manual payout(s)",
         html=html,
     )
     log.info("billing.pending_payouts_digest.sent", org_count=len(pending))

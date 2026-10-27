@@ -27,7 +27,7 @@ def send_sms_sync(to_phone: str, message: str) -> dict:
             url = "https://api.ng.termii.com/api/sms/send"
             payload = {
                 "to": cleaned_phone.lstrip("+"),
-                "from": settings.TERMII_SENDER_ID or "Heelo",
+                "from": settings.TERMII_SENDER_ID or "Tixdoo",
                 "sms": message,
                 "type": "plain",
                 "channel": "generic",
@@ -82,7 +82,7 @@ async def send_sms_async(to_phone: str, message: str) -> dict:
             url = "https://api.ng.termii.com/api/sms/send"
             payload = {
                 "to": cleaned_phone.lstrip("+"),
-                "from": settings.TERMII_SENDER_ID or "Heelo",
+                "from": settings.TERMII_SENDER_ID or "Tixdoo",
                 "sms": message,
                 "type": "plain",
                 "channel": "generic",

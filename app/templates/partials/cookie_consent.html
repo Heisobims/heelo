@@ -1,5 +1,5 @@
 <!-- ── Cookie Consent Banner & Preferences Modal ────────────────────────────── -->
-<div id="heelo-cookie-consent" class="hcc-container" style="display: none;" role="region" aria-label="Cookie consent banner">
+<div id="tixdoo-cookie-consent" class="hcc-container" style="display: none;" role="region" aria-label="Cookie consent banner">
   <div class="hcc-card">
 
     <!-- ── Main View ────────────────────────────────────────── -->
@@ -22,7 +22,7 @@
       </div>
 
       <p class="hcc-body-text">
-        Heelo uses essential cookies to ensure secure logins and seamless ticket checkouts. With your permission, we also use analytical cookies to improve event discovery. Learn more in our 
+        Tixdoo uses essential cookies to ensure secure logins and seamless ticket checkouts. With your permission, we also use analytical cookies to improve event discovery. Learn more in our 
         <a href="/privacy" class="hcc-link" target="_blank">Privacy Policy</a> and <a href="/terms" class="hcc-link" target="_blank">Terms</a>.
       </p>
 
@@ -374,7 +374,7 @@
 
 <script>
 (function() {
-  var CONSENT_KEY = 'heelo_cookie_consent';
+  var CONSENT_KEY = 'tixdoo_cookie_consent';
 
   function getSavedConsent() {
     try {
@@ -404,7 +404,7 @@
   }
 
   function hideBanner() {
-    var banner = document.getElementById('heelo-cookie-consent');
+    var banner = document.getElementById('tixdoo-cookie-consent');
     if (!banner) return;
     banner.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
     banner.style.opacity = '0';
@@ -415,7 +415,7 @@
   }
 
   function showBanner(showPrefs) {
-    var banner = document.getElementById('heelo-cookie-consent');
+    var banner = document.getElementById('tixdoo-cookie-consent');
     if (!banner) return;
     var mainView = document.getElementById('hcc-main-view');
     var prefsView = document.getElementById('hcc-prefs-view');

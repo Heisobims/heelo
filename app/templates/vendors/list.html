@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ 'Find Event Venues and Spaces | Halls, Auditoriums and Studios' if venue_mode else 'Event Vendor Marketplace | Photographers, Caterers and Decorators' }} | Heelo{% endblock %}
-{% block meta_description %}{{ 'Search and compare event venues, conference halls, and banquet spaces by capacity and location on Heelo.' if venue_mode else 'Connect with verified event professionals, photographers, caterers, decorators, and entertainers on Heelo.' }}{% endblock %}
+{% block title %}{{ 'Find Event Venues and Spaces | Halls, Auditoriums and Studios' if venue_mode else 'Event Vendor Marketplace | Photographers, Caterers and Decorators' }} | Tixdoo{% endblock %}
+{% block meta_description %}{{ 'Search and compare event venues, conference halls, and banquet spaces by capacity and location on Tixdoo.' if venue_mode else 'Connect with verified event professionals, photographers, caterers, decorators, and entertainers on Tixdoo.' }}{% endblock %}
 
 {% block og_title %}{{ self.title() | trim }}{% endblock %}
 {% block og_description %}{{ self.meta_description() | trim }}{% endblock %}
@@ -342,7 +342,7 @@
   <div style="margin-top:24px; padding:12px 18px; border-radius:12px; background:rgba(232,89,56,0.06); border:1px solid rgba(232,89,56,0.2); display:inline-flex; align-items:center; gap:10px; font-size:13px; text-align:left;">
     <span class="material-symbols-outlined" style="color:var(--cyan); font-size:20px; flex-shrink:0;">storefront</span>
     <span>
-      <strong>Looking to exhibit at an event?</strong> Organizers now accept booth and exhibitor applications directly on Heelo with automated invoice approval.
+      <strong>Looking to exhibit at an event?</strong> Organizers now accept booth and exhibitor applications directly on Tixdoo with automated invoice approval.
     </span>
   </div>
 </div>
@@ -494,7 +494,7 @@
         {% if venue_mode and v.capacity %}
         Up to {{ "{:,}".format(v.capacity) }} guests · Venue
         {% else %}
-        {{ v.tagline or (v.description[:80] ~ '…' if v.description else (v.category | replace('_', ' ') | title ~ ' on Heelo')) }}
+        {{ v.tagline or (v.description[:80] ~ '…' if v.description else (v.category | replace('_', ' ') | title ~ ' on Tixdoo')) }}
         {% endif %}
       </div>
       <div class="vm-card-price">

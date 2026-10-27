@@ -4,7 +4,7 @@ Custom-domain routing (Pro+ feature).
 Every existing route already works identically regardless of which
 hostname reached the server - FastAPI/Starlette route on *path*, not
 *Host*. The one thing that genuinely differs by domain is the root path
-"/": on heelo.io it's the marketing landing page, but on an organizer's
+"/": on tixdoo.com it's the marketing landing page, but on an organizer's
 own verified domain it should land straight on their event instead.
 
 This middleware only ever touches that one case. It looks up the

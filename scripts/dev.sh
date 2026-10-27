@@ -5,7 +5,7 @@ set -euo pipefail
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 echo "=================================================="
-echo " Starting Heelo Local Development Environment"
+echo " Starting Tixdoo Local Development Environment"
 echo " (Uvicorn + Celery Worker + Celery Beat)"
 echo "=================================================="
 

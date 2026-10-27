@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Discover | Heelo{% endblock %}
+{% block title %}Discover | Tixdoo{% endblock %}
 {% block meta_description %}Scroll through upcoming events near you and across Africa.{% endblock %}
 
 {% block head %}
@@ -98,7 +98,7 @@
 
 {% block body %}
 <nav class="feed-nav">
-  <a href="/" class="feed-nav-logo">heelo<span>.</span></a>
+  <a href="/" class="feed-nav-logo">tixdoo<span>.</span></a>
   <div class="feed-nav-links">
     <a href="/discover" class="active">Feed</a>
     <a href="/events">Events</a>
@@ -185,7 +185,7 @@
 })();
 
 // Global so it works for cards rendered on load AND cards appended later via HTMX infinite scroll.
-async function heeloToggleInterest(btn) {
+async function tixdooToggleInterest(btn) {
   if (btn.dataset.loggedIn !== 'true') {
     window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
     return;

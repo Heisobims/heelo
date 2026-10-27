@@ -104,7 +104,7 @@ class TestCheckoutFieldScoping:
     async def test_organizer_edit_page_preloads_form_fields(
         self, client: AsyncClient, org, published_event, ticket_type, user, user_headers
     ):
-        # Page routes (app/routers/pages.py) authenticate via the heelo_access
+        # Page routes (app/routers/pages.py) authenticate via the tixdoo_access
         # cookie, not an Authorization header - unlike the JSON API.
         from tests.conftest import _make_token
 
@@ -114,7 +114,7 @@ class TestCheckoutFieldScoping:
             headers=user_headers,
         )
 
-        client.cookies.set("heelo_access", _make_token(str(user.id)))
+        client.cookies.set("tixdoo_access", _make_token(str(user.id)))
         resp = await client.get(f"/org/{org.slug}/events/{published_event.id}/edit")
         assert resp.status_code == 200
         assert "Preloaded question" in resp.text

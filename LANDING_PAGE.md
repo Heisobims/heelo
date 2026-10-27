@@ -1,4 +1,4 @@
-# Heelo Landing Page - Audit, Positioning & Copy
+# Tixdoo Landing Page - Audit, Positioning & Copy
 
 This document is the source of truth behind the rebuilt `home/landing.html`. Every feature claim below was verified against the actual codebase (file:line evidence available on request) - nothing here is aspirational. Where something looked like a real feature but wasn't wired up end-to-end, it's flagged explicitly in **§1.3** and excluded from copy.
 
@@ -18,7 +18,7 @@ This document is the source of truth behind the rebuilt `home/landing.html`. Eve
 - Promo codes (percent or fixed), waitlists with automatic offer-on-cancellation.
 - Payments via Paystack (NGN, GHS, ZAR, KES, EGP), with Flutterwave and Stripe as configured fallbacks for other currencies - all three are real, live integrations, not stubs.
 - Flat 5% platform fee, separate from payment gateway processing costs. **Organizer chooses who pays it**, per event: absorb it (default) or pass it, plus an estimated payment-processing fee, to the buyer at checkout. This is a genuine, working toggle, not a plan.
-- Referral program: attendees get a shareable link; a referred friend gets 5% off, and the discount is absorbed by Heelo's fee first, not deducted from the organizer's payout.
+- Referral program: attendees get a shareable link; a referred friend gets 5% off, and the discount is absorbed by Tixdoo's fee first, not deducted from the organizer's payout.
 - Real payout splitting to the organizer's own connected Paystack/Flutterwave subaccount (or a manually-recorded local account for reference).
 
 **Check-in**
@@ -49,7 +49,7 @@ This document is the source of truth behind the rebuilt `home/landing.html`. Eve
 
 **Integrations**
 - Public REST API (read event/registration data, plus programmatic check-in) and signed webhooks, both with real API-key auth and HMAC signing.
-- Custom domain support (Pro+), SSO for Google Workspace domains (Enterprise), full white-label removal of Heelo branding (Enterprise).
+- Custom domain support (Pro+), SSO for Google Workspace domains (Enterprise), full white-label removal of Tixdoo branding (Enterprise).
 
 **Team & plans**
 - Role-based team seats (admin/organizer/finance/check-in staff), 24-hour invite links with one-click resend.
@@ -69,22 +69,22 @@ This document is the source of truth behind the rebuilt `home/landing.html`. Eve
 | "Attendance heatmap" | Not built - this was already aspirational copy sitting in the *old* landing page with zero backing code. Removed. |
 | "AI-powered WhatsApp replies" | The code exists (`suggest_whatsapp_reply_sync` + a Celery task) but is never called from the live webhook path. The bot that actually runs is keyword-based only. Do not claim AI here. |
 | Full webhook event catalog | Seven event types are defined; only `order.paid` and `checkin.completed` are ever actually fired. Copy only claims what fires. |
-| Vendor marketplace as a monetized/commission marketplace | No commission, fee, or payment code exists anywhere in the vendor flow. It's framed as discovery + leads, not "Heelo takes a cut." |
+| Vendor marketplace as a monetized/commission marketplace | No commission, fee, or payment code exists anywhere in the vendor flow. It's framed as discovery + leads, not "Tixdoo takes a cut." |
 | "Vetted" or "verified" vendors | Vendors go live immediately on self-signup; admin moderation is reactive (suspend after the fact), not a pre-listing approval queue. |
-| Public API as full integration platform | It's read-mostly plus one write action (check-in). Copy says "pull your data and check attendees in programmatically," not "build anything on Heelo." |
+| Public API as full integration platform | It's read-mostly plus one write action (check-in). Copy says "pull your data and check attendees in programmatically," not "build anything on Tixdoo." |
 
 ---
 
 ## 2. Differentiation - what's genuinely distinctive vs. Tix Africa / Selar-style platforms
 
-Generic Nigerian ticketing platforms are, at their core, ticketing-first: create an event, sell a ticket, scan a QR code. Heelo's real differentiation, backed by the audit above:
+Generic Nigerian ticketing platforms are, at their core, ticketing-first: create an event, sell a ticket, scan a QR code. Tixdoo's real differentiation, backed by the audit above:
 
 1. **WhatsApp as a first-class channel, not an afterthought.** Tickets are delivered as WhatsApp images, not just email. Reminders, waitlist offers, and campaigns all run through WhatsApp with real opt-out compliance.
 2. **Offline check-in that actually survives no signal.** A real service worker + IndexedDB queue + background sync - built for venues where the WiFi is the least reliable part of the event, which is most venues.
-3. **You decide who eats the fee.** Absorb Heelo's 5% and the processing fee yourself, or pass both to the buyer at checkout, a per-event switch, not a fixed platform-wide policy.
+3. **You decide who eats the fee.** Absorb Tixdoo's 5% and the processing fee yourself, or pass both to the buyer at checkout, a per-event switch, not a fixed platform-wide policy.
 4. **A conference toolkit most ticketing platforms don't have.** Speakers, multi-track agendas, and a self-service sponsor portal - built for summits and conferences, not just concerts and parties.
 5. **AI where it actually saves time.** Event descriptions, campaign copy, and post-event analytics summaries are generated in the workflow itself, not a separate "AI tools" tab you have to remember exists.
-6. **A referral loop that costs the organizer nothing.** Every attendee gets a shareable link; Heelo's own fee absorbs the referral discount first.
+6. **A referral loop that costs the organizer nothing.** Every attendee gets a shareable link; Tixdoo's own fee absorbs the referral discount first.
 7. **A discovery feed people actually scroll.** Vertical, one-event-at-a-time browsing, not a static list of upcoming events nobody opens twice.
 
 ---
@@ -97,7 +97,7 @@ Generic Nigerian ticketing platforms are, at their core, ticketing-first: create
 # Tickets your guests actually open.
 
 **Subheadline:**
-Heelo sends tickets straight to WhatsApp, settles payouts to your Paystack or Flutterwave account, and keeps check-in running even when the venue WiFi gives up. Built for organizers running real events in Nigeria - not a platform that happens to work here.
+Tixdoo sends tickets straight to WhatsApp, settles payouts to your Paystack or Flutterwave account, and keeps check-in running even when the venue WiFi gives up. Built for organizers running real events in Nigeria - not a platform that happens to work here.
 
 **CTA:** `Start free - no card required` · `See how it works`
 
@@ -113,7 +113,7 @@ Heelo sends tickets straight to WhatsApp, settles payouts to your Paystack or Fl
 **Body:**
 Most ticketing platforms were built somewhere else and shipped here unchanged - email confirmations nobody opens, check-in apps that fall over the moment the signal drops, and a payout structure you find out about after the money's already moved.
 
-Heelo starts from what actually happens at a Nigerian event: your guests live on WhatsApp, your gate staff need check-in to work with or without signal, and you should know exactly what you're taking home before you publish a single ticket. That's not a feature list - it's the whole design.
+Tixdoo starts from what actually happens at a Nigerian event: your guests live on WhatsApp, your gate staff need check-in to work with or without signal, and you should know exactly what you're taking home before you publish a single ticket. That's not a feature list - it's the whole design.
 
 ---
 
@@ -126,7 +126,7 @@ Heelo starts from what actually happens at a Nigerian event: your guests live on
 
 1. **WhatsApp-native tickets** - QR tickets, reminders, and waitlist offers land where your guests actually read messages, no app download required.
 2. **Check-in that doesn't care about signal** - scan or search offline, and every check-in syncs automatically the moment connectivity comes back.
-3. **You choose who pays the fee**: absorb Heelo's 5% and processing costs yourself, or pass them to the buyer at checkout, per event.
+3. **You choose who pays the fee**: absorb Tixdoo's 5% and processing costs yourself, or pass them to the buyer at checkout, per event.
 4. **Real conference tools, not just ticket scanning** - speaker profiles, multi-track agendas, and a self-service sponsor portal for summits that outgrow a spreadsheet.
 5. **AI baked into the actual workflow** - write your event description, your campaign message, and get a plain-English read on how the event went, without leaving the page you're already on.
 6. **A referral loop that pays for itself** - every attendee gets a link to share; friends get 5% off, and it never comes out of your payout.
@@ -153,7 +153,7 @@ Heelo starts from what actually happens at a Nigerian event: your guests live on
 
 ### 3.5 Social Proof - PLACEHOLDER
 
-> **This section is a marked placeholder.** No real testimonials, logos, or usage numbers exist yet - do not publish fabricated quotes or made-up organizer names. Replace this block with real attributed quotes, event logos, or a genuine usage stat (e.g. "X events run on Heelo") the moment you have them. Until then, the built page below ships with a quiet, honest "early access" framing instead of fake social proof.
+> **This section is a marked placeholder.** No real testimonials, logos, or usage numbers exist yet - do not publish fabricated quotes or made-up organizer names. Replace this block with real attributed quotes, event logos, or a genuine usage stat (e.g. "X events run on Tixdoo") the moment you have them. Until then, the built page below ships with a quiet, honest "early access" framing instead of fake social proof.
 
 ---
 

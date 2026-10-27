@@ -153,7 +153,7 @@ async def test_set_sso_domain_succeeds_on_enterprise_org(client, org, user_heade
     data = resp.json()["data"]
     assert data["domain"] == "acme.com"
     assert data["verification_record"]["type"] == "TXT"
-    assert data["verification_record"]["name"] == "_heelo-sso-verify.acme.com"
+    assert data["verification_record"]["name"] == "_tixdoo-sso-verify.acme.com"
 
 
 async def test_set_sso_domain_rejects_invalid_format(client, org, user_headers):

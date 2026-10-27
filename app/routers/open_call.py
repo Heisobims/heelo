@@ -44,13 +44,13 @@ router_applicant = APIRouter(
 
 async def _resolve_optional_user_id(
     authorization: str | None = Header(default=None),
-    heelo_access: str | None = Cookie(default=None),
+    tixdoo_access: str | None = Cookie(default=None),
 ) -> uuid.UUID | None:
     token = None
     if authorization and authorization.startswith("Bearer "):
         token = authorization.removeprefix("Bearer ").strip()
-    elif heelo_access:
-        token = heelo_access
+    elif tixdoo_access:
+        token = tixdoo_access
     if not token:
         return None
     try:

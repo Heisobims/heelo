@@ -90,7 +90,7 @@ async def test_start_plan_checkout_creates_pending_invoice(db, monkeypatch):
     assert invoice.plan == "growth"
     assert invoice.status == "pending"
     # amount is grossed up to include an estimated gateway processing fee -
-    # Heelo still nets the full list price, the buyer/org pays the rest.
+    # Tixdoo still nets the full list price, the buyer/org pays the rest.
     list_price = float(billing_svc.PLAN_PRICES["growth"])
     assert invoice.gateway_fee_amount > 0
     assert float(invoice.amount) == list_price + invoice.gateway_fee_amount
@@ -299,7 +299,7 @@ async def test_paystack_webhook_confirms_plan_invoice(client: AsyncClient, db, m
     monkeypatch.setattr(settings, "PAYSTACK_SECRET_KEY", "test-secret")
     _, org = await _make_org(db, plan="free")
     invoice = await _make_invoice(db, org, plan="growth")
-    reference = f"heelo_plan_{invoice.id}"
+    reference = f"tixdoo_plan_{invoice.id}"
 
     fake_client = _fake_async_client(
         _fake_httpx_get_response(
@@ -334,7 +334,7 @@ async def test_paystack_webhook_rejects_plan_invoice_amount_mismatch(
     monkeypatch.setattr(settings, "PAYSTACK_SECRET_KEY", "test-secret")
     _, org = await _make_org(db, plan="free")
     invoice = await _make_invoice(db, org, plan="growth")
-    reference = f"heelo_plan_{invoice.id}"
+    reference = f"tixdoo_plan_{invoice.id}"
 
     fake_client = _fake_async_client(
         _fake_httpx_get_response(

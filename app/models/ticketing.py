@@ -258,7 +258,7 @@ class Order(Base, TimestampMixin):
     # real deducted fee may vary slightly from this estimate (it depends on
     # the payment method the buyer picks on the gateway's own checkout page,
     # which isn't known until after this order is created) - any variance is
-    # absorbed by Heelo, never the organizer or the buyer.
+    # absorbed by Tixdoo, never the organizer or the buyer.
     gateway_fee_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     # Cumulative gross amount refunded back to the buyer across all cancelled
     # items in this order. Subtract from net_amount/total_amount to get what
@@ -271,7 +271,7 @@ class Order(Base, TimestampMixin):
     # once, at initialize_payment() time, and never changed afterward, since
     # an org's payment-account configuration can change after the fact and
     # this must reflect what actually happened to *this* order's money, not
-    # the org's current setup. False means Heelo is holding net_amount and
+    # the org's current setup. False means Tixdoo is holding net_amount and
     # owes it to the organizer - see app/services/payout_service.py.
     auto_split_applied: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 

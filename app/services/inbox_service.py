@@ -140,7 +140,7 @@ async def send_reply(
 
     msg = WhatsAppMessage(
         org_id=org_id,
-        from_number=settings.WHATSAPP_PHONE_NUMBER_ID or "heelo",
+        from_number=settings.WHATSAPP_PHONE_NUMBER_ID or "tixdoo",
         to_number=phone,
         direction="outbound",
         body=body,
@@ -167,7 +167,7 @@ async def store_inbound(
     msg = WhatsAppMessage(
         org_id=org_id,
         from_number=from_phone,
-        to_number=settings.WHATSAPP_PHONE_NUMBER_ID or "heelo",
+        to_number=settings.WHATSAPP_PHONE_NUMBER_ID or "tixdoo",
         direction="inbound",
         body=body,
         message_type="text",

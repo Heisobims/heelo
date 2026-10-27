@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     )
 
     # ── Application ───────────────────────────────────────────────────────────
-    APP_NAME: str = "Heelo"
+    APP_NAME: str = "Tixdoo"
     APP_ENV: Literal["development", "staging", "production"] = "development"
     SECRET_KEY: str
     FRONTEND_URL: str = "http://localhost:8000"
@@ -69,22 +69,22 @@ class Settings(BaseSettings):
 
     # ── Email - Resend ────────────────────────────────────────────────────────
     RESEND_API_KEY: str = ""
-    RESEND_FROM_EMAIL: str = "hello@heelo.io"
-    RESEND_FROM_NAME: str = "Heelo"
+    RESEND_FROM_EMAIL: str = "hello@tixdoo.com"
+    RESEND_FROM_NAME: str = "Tixdoo"
 
     # ── Email - SMTP ─────────────────────────────────────────────────────────
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_FROM_EMAIL: str = "hello@heelo.io"
-    SMTP_FROM_NAME: str = "Heelo"
+    SMTP_FROM_EMAIL: str = "hello@tixdoo.com"
+    SMTP_FROM_NAME: str = "Tixdoo"
     SMTP_TLS: bool = True  # STARTTLS (port 587)
     SMTP_SSL: bool = False  # Direct SSL (port 465)
 
     # ── SMS ───────────────────────────────────────────────────────────────────
     TERMII_API_KEY: str = ""
-    TERMII_SENDER_ID: str = "Heelo"
+    TERMII_SENDER_ID: str = "Tixdoo"
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""
     TWILIO_PHONE_NUMBER: str = ""
@@ -125,8 +125,8 @@ class Settings(BaseSettings):
     CLOUDFLARE_R2_ACCOUNT_ID: str = ""
     CLOUDFLARE_R2_ACCESS_KEY_ID: str = ""
     CLOUDFLARE_R2_SECRET_ACCESS_KEY: str = ""
-    CLOUDFLARE_R2_BUCKET: str = "heelo-media"
-    CLOUDFLARE_R2_PUBLIC_URL: str = "https://media.heelo.io"
+    CLOUDFLARE_R2_BUCKET: str = "tixdoo-media"
+    CLOUDFLARE_R2_PUBLIC_URL: str = "https://media.tixdoo.com"
 
     # ── Database pool ─────────────────────────────────────────────────────────
     # Every gunicorn worker (gunicorn.conf.py: cpu_count()*2+1 by default) and

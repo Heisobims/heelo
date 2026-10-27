@@ -316,7 +316,7 @@ select option,
   class="dash-root"
   x-data="{
     sidebarOpen: false,
-    sidebarCollapsed: localStorage.getItem('heelo_sidebar_collapsed') === 'true',
+    sidebarCollapsed: localStorage.getItem('tixdoo_sidebar_collapsed') === 'true',
     userMenuOpen: false,
     orgSwitcherOpen: false,
     currentSlug: '{{ org.slug if org else "" }}',
@@ -326,7 +326,7 @@ select option,
     },
     toggleSidebarCollapse() {
       this.sidebarCollapsed = !this.sidebarCollapsed;
-      localStorage.setItem('heelo_sidebar_collapsed', this.sidebarCollapsed);
+      localStorage.setItem('tixdoo_sidebar_collapsed', this.sidebarCollapsed);
     }
   }"
   @click.away="userMenuOpen = false; orgSwitcherOpen = false"
@@ -347,7 +347,7 @@ select option,
       </svg>
     </button>
 
-    <a href="/" class="dash-topnav-logo">heelo</a>
+    <a href="/" class="dash-topnav-logo">tixdoo</a>
 
     {% if org %}
     <div class="dash-topnav-divider"></div>
@@ -516,7 +516,7 @@ select option,
     <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
     <aside class="dash-sidebar" :class="{ 'open': sidebarOpen, 'collapsed': sidebarCollapsed }">
       <div class="mobile-sidebar-header">
-        <span class="mobile-sidebar-title">heelo</span>
+        <span class="mobile-sidebar-title">tixdoo</span>
         <button type="button" class="mobile-sidebar-close" @click="sidebarOpen = false" aria-label="Close sidebar">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>

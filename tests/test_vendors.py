@@ -158,7 +158,7 @@ def _access_cookie(user_id) -> dict:
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM,
     )
-    return {"heelo_access": token}
+    return {"tixdoo_access": token}
 
 
 async def test_vendor_detail_page_shows_qr_section_to_owner(

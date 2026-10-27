@@ -37,7 +37,7 @@ class User(Base, SoftDeleteMixin):
     oauth_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     whatsapp_number: Mapped[str | None] = mapped_column(String(30), nullable=True)
     whatsapp_opted_in: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    # Public profile slug - e.g. heelo.io/p/<username>
+    # Public profile slug - e.g. tixdoo.com/p/<username>
     username: Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True, index=True)
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

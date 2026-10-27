@@ -46,7 +46,7 @@ class ApiKey(Base, TimestampMixin):
 
 
 class WebhookSubscription(Base, TimestampMixin):
-    """A URL that Heelo will POST to on specified event types."""
+    """A URL that Tixdoo will POST to on specified event types."""
 
     __tablename__ = "webhook_subscriptions"
     __table_args__ = (Index("ix_webhook_subscriptions_org_active", "org_id", "is_active"),)

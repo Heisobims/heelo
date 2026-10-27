@@ -43,7 +43,7 @@ VENDOR_PRICE_RANGES = ["budget", "mid", "premium"]
 
 
 class Vendor(Base, TimestampMixin):
-    """A service vendor that event organizers and attendees can hire through Heelo."""
+    """A service vendor that event organizers and attendees can hire through Tixdoo."""
 
     __tablename__ = "vendors"
     __table_args__ = (
@@ -170,7 +170,7 @@ class Vendor(Base, TimestampMixin):
 
 
 class VendorLead(Base, TimestampMixin):
-    """Tracks when an organizer contacts a vendor through Heelo."""
+    """Tracks when an organizer contacts a vendor through Tixdoo."""
 
     __tablename__ = "vendor_leads"
     __table_args__ = (

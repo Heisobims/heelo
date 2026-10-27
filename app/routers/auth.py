@@ -58,8 +58,8 @@ templates.env.globals["settings"] = settings
 router_api = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 router_pages = APIRouter(tags=["Auth Pages"])
 
-_COOKIE_ACCESS = "heelo_access"
-_COOKIE_REFRESH = "heelo_refresh"
+_COOKIE_ACCESS = "tixdoo_access"
+_COOKIE_REFRESH = "tixdoo_refresh"
 _COOKIE_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 
 
@@ -244,11 +244,11 @@ async def login(
 async def logout(
     response: Response,
     db: AsyncSession = Depends(get_db),
-    heelo_refresh: Annotated[str | None, Cookie()] = None,
+    tixdoo_refresh: Annotated[str | None, Cookie()] = None,
 ):
     """Revoke the refresh token and clear auth cookies."""
-    if heelo_refresh:
-        await AuthService(db).logout(heelo_refresh)
+    if tixdoo_refresh:
+        await AuthService(db).logout(tixdoo_refresh)
     _clear_auth_cookies(response)
 
 
@@ -256,15 +256,15 @@ async def logout(
 async def refresh_tokens(
     response: Response,
     db: AsyncSession = Depends(get_db),
-    heelo_refresh: Annotated[str | None, Cookie()] = None,
+    tixdoo_refresh: Annotated[str | None, Cookie()] = None,
     body: RefreshRequest | None = None,
 ):
     """
     Issue a new access token using the refresh token.
-    Accepts the token from the `heelo_refresh` cookie (browser) or the request body (API clients).
+    Accepts the token from the `tixdoo_refresh` cookie (browser) or the request body (API clients).
     Implements token rotation - the old refresh token is revoked and a new one is issued.
     """
-    raw = (heelo_refresh or "") if heelo_refresh else (body.refresh_token if body else "")
+    raw = (tixdoo_refresh or "") if tixdoo_refresh else (body.refresh_token if body else "")
     if not raw:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="No refresh token provided."
@@ -376,7 +376,7 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
 async def me(
     current_user_id: CurrentUserID,
     db: AsyncSession = Depends(get_db),
-    heelo_access: Annotated[str | None, Cookie()] = None,
+    tixdoo_access: Annotated[str | None, Cookie()] = None,
 ):
     """Return the authenticated user's profile."""
     from sqlalchemy import select

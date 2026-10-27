@@ -187,7 +187,7 @@ async def affiliate_short_link(code: str, db: DBSession):
 
     response = RedirectResponse(f"/e/{aff.event.slug}?ref={aff.affiliate_code}", status_code=302)
     response.set_cookie(
-        key="heelo_ref",
+        key="tixdoo_ref",
         value=f"{aff.event_id}:{aff.affiliate_code}",
         max_age=30 * 24 * 3600,
         httponly=False,

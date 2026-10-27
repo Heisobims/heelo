@@ -197,7 +197,7 @@ def generate_invoice_pdf(data: InvoiceData) -> bytes:
     # ── Footer ───────────────────────────────────────────────────────────────
     c.setFont("Helvetica", 8)
     c.setFillColor(_MUTED)
-    footer_text = "This receipt was automatically generated and verified by Heelo (heelo.io). Thank you for your business."
+    footer_text = "This receipt was automatically generated and verified by Tixdoo (tixdoo.com). Thank you for your business."
     c.drawCentredString(PAGE_WIDTH / 2, margin + 20, footer_text)
 
     c.showPage()

@@ -85,9 +85,9 @@ def deliver_webhook(delivery_id: str) -> None:
                     content=body.encode(),
                     headers={
                         "Content-Type": "application/json",
-                        "X-Heelo-Signature": signature,
-                        "X-Heelo-Event": delivery.event_type,
-                        "User-Agent": "Heelo-Webhooks/1.0",
+                        "X-Tixdoo-Signature": signature,
+                        "X-Tixdoo-Event": delivery.event_type,
+                        "User-Agent": "Tixdoo-Webhooks/1.0",
                     },
                 )
             status_code = resp.status_code

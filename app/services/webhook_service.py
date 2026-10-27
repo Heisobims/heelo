@@ -26,7 +26,7 @@ WEBHOOK_EVENTS = [
 
 
 def sign_payload(secret: str, payload: dict) -> str:
-    """Return `t=<ts>,v1=<hmac>` for X-Heelo-Signature header."""
+    """Return `t=<ts>,v1=<hmac>` for X-Tixdoo-Signature header."""
     ts = str(int(time.time()))
     body = json.dumps(payload, separators=(",", ":"), sort_keys=True)
     msg = f"{ts}.{body}".encode()

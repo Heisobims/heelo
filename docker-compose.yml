@@ -6,13 +6,13 @@ services:
     build:
       context: .
       target: runtime
-    image: heelo:latest
-    container_name: heelo_app
+    image: tixdoo:latest
+    container_name: tixdoo_app
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://heelo:${POSTGRES_PASSWORD:-heelo}@db:5432/heelo
-      DATABASE_URL_SYNC: postgresql+psycopg2://heelo:${POSTGRES_PASSWORD:-heelo}@db:5432/heelo
+      DATABASE_URL: postgresql+asyncpg://tixdoo:${POSTGRES_PASSWORD:-tixdoo}@db:5432/tixdoo
+      DATABASE_URL_SYNC: postgresql+psycopg2://tixdoo:${POSTGRES_PASSWORD:-tixdoo}@db:5432/tixdoo
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
@@ -24,7 +24,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - heelo_net
+      - tixdoo_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -37,14 +37,14 @@ services:
     build:
       context: .
       target: runtime
-    image: heelo:latest
-    container_name: heelo_worker
+    image: tixdoo:latest
+    container_name: tixdoo_worker
     restart: unless-stopped
     command: scripts/worker.sh
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://heelo:${POSTGRES_PASSWORD:-heelo}@db:5432/heelo
-      DATABASE_URL_SYNC: postgresql+psycopg2://heelo:${POSTGRES_PASSWORD:-heelo}@db:5432/heelo
+      DATABASE_URL: postgresql+asyncpg://tixdoo:${POSTGRES_PASSWORD:-tixdoo}@db:5432/tixdoo
+      DATABASE_URL_SYNC: postgresql+psycopg2://tixdoo:${POSTGRES_PASSWORD:-tixdoo}@db:5432/tixdoo
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
@@ -60,21 +60,21 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - heelo_net
+      - tixdoo_net
 
   # ── Celery beat (scheduled tasks) ───────────────────────────────────────────
   celery-beat:
     build:
       context: .
       target: runtime
-    image: heelo:latest
-    container_name: heelo_beat
+    image: tixdoo:latest
+    container_name: tixdoo_beat
     restart: unless-stopped
     command: celery -A app.tasks.celery_app beat --loglevel=info
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://heelo:${POSTGRES_PASSWORD:-heelo}@db:5432/heelo
-      DATABASE_URL_SYNC: postgresql+psycopg2://heelo:${POSTGRES_PASSWORD:-heelo}@db:5432/heelo
+      DATABASE_URL: postgresql+asyncpg://tixdoo:${POSTGRES_PASSWORD:-tixdoo}@db:5432/tixdoo
+      DATABASE_URL_SYNC: postgresql+psycopg2://tixdoo:${POSTGRES_PASSWORD:-tixdoo}@db:5432/tixdoo
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
@@ -86,15 +86,15 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - heelo_net
+      - tixdoo_net
 
   # ── Celery Flower (task monitoring - not exposed publicly) ──────────────────
   flower:
     build:
       context: .
       target: runtime
-    image: heelo:latest
-    container_name: heelo_flower
+    image: tixdoo:latest
+    container_name: tixdoo_flower
     restart: unless-stopped
     command: celery -A app.tasks.celery_app flower --port=5555 --basic-auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-changeme}
     env_file: .env
@@ -105,23 +105,23 @@ services:
     depends_on:
       - redis
     networks:
-      - heelo_net
+      - tixdoo_net
 
   # ── PostgreSQL ───────────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
-    container_name: heelo_db
+    container_name: tixdoo_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: heelo
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-heelo}
-      POSTGRES_DB: heelo
+      POSTGRES_USER: tixdoo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tixdoo}
+      POSTGRES_DB: tixdoo
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - heelo_net
+      - tixdoo_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U heelo -d heelo"]
+      test: ["CMD-SHELL", "pg_isready -U tixdoo -d tixdoo"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -129,13 +129,13 @@ services:
   # ── Redis ────────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: heelo_redis
+    container_name: tixdoo_redis
     restart: unless-stopped
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-}
     volumes:
       - redis_data:/data
     networks:
-      - heelo_net
+      - tixdoo_net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -145,7 +145,7 @@ services:
   # ── Nginx ────────────────────────────────────────────────────────────────────
   nginx:
     image: nginx:1.27-alpine
-    container_name: heelo_nginx
+    container_name: tixdoo_nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -160,12 +160,12 @@ services:
       app:
         condition: service_healthy
     networks:
-      - heelo_net
+      - tixdoo_net
 
   # ── Certbot (Let's Encrypt) ──────────────────────────────────────────────────
   certbot:
     image: certbot/certbot:latest
-    container_name: heelo_certbot
+    container_name: tixdoo_certbot
     volumes:
       - ssl_certs:/etc/letsencrypt
       - certbot_webroot:/var/www/certbot
@@ -173,7 +173,7 @@ services:
     # After cert obtained, nginx reads from ssl_certs volume.
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
     networks:
-      - heelo_net
+      - tixdoo_net
 
 volumes:
   postgres_data:
@@ -184,5 +184,5 @@ volumes:
   nginx_logs:
 
 networks:
-  heelo_net:
+  tixdoo_net:
     driver: bridge

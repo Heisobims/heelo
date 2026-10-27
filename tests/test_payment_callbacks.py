@@ -43,7 +43,7 @@ async def _pending_order(db, published_event, ticket_type, order_id=None):
         platform_fee=float(ticket_type.price) * fee_rate,
         currency=ticket_type.currency,
         payment_provider="flutterwave",
-        payment_reference=f"heelo_{order_id}",
+        payment_reference=f"tixdoo_{order_id}",
         payment_status="pending",
     )
     db.add(o)
@@ -135,7 +135,7 @@ async def test_flutterwave_callback_unrecognized_reference_falls_back_to_home(
 
     resp = await client.get(
         "/payments/flutterwave/callback",
-        params={"status": "successful", "tx_ref": "not-a-heelo-ref", "transaction_id": "123"},
+        params={"status": "successful", "tx_ref": "not-a-tixdoo-ref", "transaction_id": "123"},
         follow_redirects=False,
     )
     assert resp.status_code == 302

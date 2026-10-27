@@ -24,8 +24,8 @@ from reportlab.pdfgen import canvas
 BADGE_WIDTH = 4 * inch
 BADGE_HEIGHT = 6 * inch
 
-_DEFAULT_ACCENT = "#E85938"  # Heelo brand terracotta
-_INK = "#0A0A0A"  # Heelo brand near-black - the badge's other brand color
+_DEFAULT_ACCENT = "#E85938"  # Tixdoo brand terracotta
+_INK = "#0A0A0A"  # Tixdoo brand near-black - the badge's other brand color
 
 
 @dataclass
@@ -214,7 +214,7 @@ def _draw_badge(c: canvas.Canvas, data: BadgeData) -> None:
         c.saveState()
         c.setFillAlpha(0.65)
         c.setFont("Helvetica", 6.2)
-        c.drawCentredString(BADGE_WIDTH / 2, 10.0, "Powered by Heelo  •  heelo.io")
+        c.drawCentredString(BADGE_WIDTH / 2, 10.0, "Powered by Tixdoo  •  tixdoo.com")
         c.restoreState()
     else:
         tier_y = (banner_height / 2) - (tier_size / 2.8)

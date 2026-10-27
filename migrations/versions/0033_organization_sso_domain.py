@@ -1,6 +1,6 @@
 """Add SSO domain-restriction columns to organizations - Enterprise orgs can
 verify ownership of their email domain (same TXT-record ownership proof as
-custom domains, at _heelo-sso-verify.{domain}) and then enforce that members
+custom domains, at _tixdoo-sso-verify.{domain}) and then enforce that members
 on that domain must sign in via Google Workspace SSO rather than a password.
 """
 

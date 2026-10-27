@@ -1,5 +1,5 @@
 /* ============================================================
-   Heelo Design System - main.css
+   Tixdoo Design System - main.css
    Light-first. Electric cyan. Editorial confidence.
    ============================================================ */
 
@@ -2055,10 +2055,10 @@ html, body {
   .navbar,
   .footer,
   .site-footer,
-  .heelo-ai-widget-root,
-  .heelo-ai-launcher,
-  .heelo-ai-dialog,
-  #heelo-cookie-consent,
+  .tixdoo-ai-widget-root,
+  .tixdoo-ai-launcher,
+  .tixdoo-ai-dialog,
+  #tixdoo-cookie-consent,
   .hcc-container,
   .cookie-consent-bar {
     display: none !important;

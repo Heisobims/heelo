@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Live · {{ event.title }} | Heelo{% endblock %}
+{% block title %}Live · {{ event.title }} | Tixdoo{% endblock %}
 
 {% block head %}
 {% if org and org.display_brand_color %}
@@ -49,7 +49,7 @@
 {% endblock %}
 
 {% block body %}
-<nav class="lv-nav"><a href="/" class="lv-nav-logo">heelo<span>.</span></a></nav>
+<nav class="lv-nav"><a href="/" class="lv-nav-logo">tixdoo<span>.</span></a></nav>
 
 <div class="lv-wrap" x-data="liveEngagement()" x-init="init()">
   <div class="lv-event-title">{{ event.title }}</div>
@@ -142,8 +142,8 @@ function liveEngagement() {
     draftBody: '',
     draftName: '',
     submitting: false,
-    votedPolls: JSON.parse(localStorage.getItem('heelo_voted_polls') || '{}'),
-    upvotedQuestions: JSON.parse(localStorage.getItem('heelo_upvoted_questions') || '{}'),
+    votedPolls: JSON.parse(localStorage.getItem('tixdoo_voted_polls') || '{}'),
+    upvotedQuestions: JSON.parse(localStorage.getItem('tixdoo_upvoted_questions') || '{}'),
 
     hasVoted(pollId) { return !!this.votedPolls[pollId]; },
     hasUpvoted(qId) { return !!this.upvotedQuestions[qId]; },
@@ -155,7 +155,7 @@ function liveEngagement() {
     async vote(optionId) {
       if (!this.poll || this.hasVoted(this.poll.id)) return;
       this.votedPolls[this.poll.id] = optionId;
-      localStorage.setItem('heelo_voted_polls', JSON.stringify(this.votedPolls));
+      localStorage.setItem('tixdoo_voted_polls', JSON.stringify(this.votedPolls));
       try {
         const res = await fetch(`/api/v1/events/{{ event.slug }}/live/polls/${this.poll.id}/vote`, {
           method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -185,7 +185,7 @@ function liveEngagement() {
     async upvote(qId) {
       if (this.hasUpvoted(qId)) return;
       this.upvotedQuestions[qId] = true;
-      localStorage.setItem('heelo_upvoted_questions', JSON.stringify(this.upvotedQuestions));
+      localStorage.setItem('tixdoo_upvoted_questions', JSON.stringify(this.upvotedQuestions));
       try {
         const res = await fetch(`/api/v1/events/{{ event.slug }}/live/questions/${qId}/upvote`, { method: 'POST' });
         const j = await res.json();

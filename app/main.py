@@ -45,17 +45,17 @@ if settings.SENTRY_DSN:
 # ── Lifespan ──────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    logger.info("heelo.startup", env=settings.APP_ENV)
+    logger.info("tixdoo.startup", env=settings.APP_ENV)
     yield
     await engine.dispose()
-    logger.info("heelo.shutdown")
+    logger.info("tixdoo.shutdown")
 
 
 # ── App factory ───────────────────────────────────────────────────────────────
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
-        description="Every great event starts with heelo.",
+        description="Every great event starts with tixdoo.",
         version="1.0.0",
         docs_url="/api/docs" if not settings.is_production else None,
         redoc_url="/api/redoc" if not settings.is_production else None,

@@ -1,5 +1,5 @@
 """Plan-gated branding - custom logo/brand color is a Growth+ feature; the
-"Powered by Heelo" mark shows on every tier except Enterprise. Covers the
+"Powered by Tixdoo" mark shows on every tier except Enterprise. Covers the
 Organization model properties, the public event page, outbound email
 branding, and the certificate/badge PDF generators."""
 

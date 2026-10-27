@@ -1,5 +1,5 @@
 """Add custom_domain_verification_token to organizations - the expected TXT
-record value an organizer must publish at _heelo-verify.{domain} to prove
+record value an organizer must publish at _tixdoo-verify.{domain} to prove
 ownership before their custom domain goes live (Pro+ feature).
 """
 

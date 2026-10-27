@@ -54,7 +54,7 @@ def select_provider(currency: str) -> str | None:
 # deducted fee depends on the payment method the buyer picks on its own
 # hosted checkout page (card vs bank transfer vs USSD all cost differently),
 # which isn't knowable until after this amount is fixed and charged. Any gap
-# between this estimate and the real fee is absorbed by Heelo - the
+# between this estimate and the real fee is absorbed by Tixdoo - the
 # organizer's net and the buyer's charged total are both already fixed by
 # the time that gap could be known, so neither of them can absorb it.
 _GATEWAY_FEE_RATES: dict[str, dict[str, Decimal | None]] = {
@@ -104,7 +104,7 @@ def gross_up_for_buyer_fees(
     any discounts), return (total_to_charge, platform_fee, gateway_fee)
     such that total = subtotal + platform_fee + gateway_fee.
 
-    platform_fee is Heelo's flat 5%; gateway_fee is a gross-up estimate of
+    platform_fee is Tixdoo's flat 5%; gateway_fee is a gross-up estimate of
     what `provider` will deduct from a charge of `total` (fee-inclusive
     pricing).
     """
@@ -116,7 +116,7 @@ def gross_up_for_buyer_fees(
 
 def gross_up_gateway_fee_only(amount: Decimal, provider: str | None) -> tuple[Decimal, Decimal]:
     """Same gross-up, without a platform-fee component - for charges where
-    Heelo is directly the merchant (org plan billing), so there's no
+    Tixdoo is directly the merchant (org plan billing), so there's no
     separate "platform cut" to add on top of itself, only the payment
     gateway's own processing fee. Returns (total_to_charge, gateway_fee)."""
     total = _gross_up_base(amount, provider)
@@ -147,7 +147,7 @@ def fee_estimate_config(currency: str) -> dict:
 
 def expected_split(order: Order) -> tuple[Decimal, Decimal]:
     """The single source of truth for "how much of this order's total_amount
-    is Heelo's cut vs. the organizer's net" - used both to tell the payment
+    is Tixdoo's cut vs. the organizer's net" - used both to tell the payment
     provider how to split the real transaction (at initialize time) and to
     finalize our own bookkeeping (at confirm time), so the two can never
     drift apart. Returns (platform_fee, net_amount)."""
@@ -207,7 +207,7 @@ async def initialize_payment(
 async def _initialize_paystack(db: AsyncSession, order: Order, event, org) -> str:
     from app.services.payment_account_service import get_default_payment_account
 
-    reference = f"heelo_{order.id}"
+    reference = f"tixdoo_{order.id}"
     amount_kobo = max(int(float(order.total_amount) * 100), 100)
 
     payload: dict = {
@@ -234,8 +234,8 @@ async def _initialize_paystack(db: AsyncSession, order: Order, event, org) -> st
         platform_cut_kobo = max(int(float(platform_fee) * 100), 1)
         payload["subaccount"] = account.provider_account_id
         payload["transaction_charge"] = platform_cut_kobo
-        # "account" (Heelo), not "subaccount" (organizer) - Paystack's own
-        # processing fee comes out of Heelo's cut, so the organizer always
+        # "account" (Tixdoo), not "subaccount" (organizer) - Paystack's own
+        # processing fee comes out of Tixdoo's cut, so the organizer always
         # receives exactly the net amount computed above regardless of
         # which payment method the buyer used or how accurate our gateway-
         # fee estimate turned out to be.
@@ -275,7 +275,7 @@ async def _initialize_flutterwave(db: AsyncSession, order: Order, event, org) ->
     cover = getattr(event, "cover_image_url", None) or ""
 
     payload: dict = {
-        "tx_ref": f"heelo_{order.id}",
+        "tx_ref": f"tixdoo_{order.id}",
         "amount": float(order.total_amount),
         "currency": org.currency or "NGN",
         "redirect_url": f"{settings.FRONTEND_URL}/payments/flutterwave/callback",
@@ -302,7 +302,7 @@ async def _initialize_flutterwave(db: AsyncSession, order: Order, event, org) ->
         # the organizer's actual cut tracks this specific order's discount/
         # fee-passthrough math instead of always taking a flat percentage.
         # NB: "transaction_charge" here is what Flutterwave routes to the
-        # *platform* (Heelo), mirroring Paystack's field of the same name -
+        # *platform* (Tixdoo), mirroring Paystack's field of the same name -
         # verify this against Flutterwave's current API docs before
         # depending on it in production; if the platform's own Flutterwave
         # account isn't itself a subaccount reference, this is the standard
@@ -383,9 +383,9 @@ async def _initialize_stripe(db: AsyncSession, order: Order, event, org) -> str:
     account = await get_default_payment_account(db, org.id, "stripe")
     if account and account.is_verified:
         platform_fee, _net = expected_split(order)
-        # Destination charge: the charge stays owned by Heelo's platform
+        # Destination charge: the charge stays owned by Tixdoo's platform
         # account (no on_behalf_of), so Stripe's own processing fee comes
-        # out of Heelo's application_fee_amount, never the organizer's
+        # out of Tixdoo's application_fee_amount, never the organizer's
         # transfer - same "bearer=account" semantics as Paystack, so the
         # organizer's net is exactly what expected_split() computed
         # regardless of Stripe's real fee.
@@ -514,8 +514,8 @@ async def verify_stripe_session(db: AsyncSession, session_id: str) -> Order | No
 
 
 async def _order_from_reference(db: AsyncSession, reference: str) -> Order | None:
-    """Extract order_id from a heelo_{uuid} reference string and return the order."""
-    if not reference.startswith("heelo_"):
+    """Extract order_id from a tixdoo_{uuid} reference string and return the order."""
+    if not reference.startswith("tixdoo_"):
         return None
     try:
         order_id = uuid.UUID(reference[6:])
@@ -533,8 +533,8 @@ async def _order_from_reference(db: AsyncSession, reference: str) -> Order | Non
 # ticket-order path has heavy test coverage and real production traffic
 # implications; a shared/generalized "payable" abstraction would touch both
 # to save a modest amount of duplication for comparatively little benefit.
-# Reference format is `heelo_plan_{invoice.id}` (ticket orders use
-# `heelo_{order.id}`) so the two are never ambiguous to a webhook handler.
+# Reference format is `tixdoo_plan_{invoice.id}` (ticket orders use
+# `tixdoo_{order.id}`) so the two are never ambiguous to a webhook handler.
 
 
 async def initialize_plan_payment(db: AsyncSession, invoice: PlanInvoice, org) -> str:
@@ -563,7 +563,7 @@ async def initialize_plan_payment(db: AsyncSession, invoice: PlanInvoice, org) -
 
 
 async def _initialize_paystack_plan(invoice: PlanInvoice, org) -> str:
-    reference = f"heelo_plan_{invoice.id}"
+    reference = f"tixdoo_plan_{invoice.id}"
     amount_kobo = max(int(float(invoice.amount) * 100), 100)
 
     payload: dict = {
@@ -609,14 +609,14 @@ async def _initialize_paystack_plan(invoice: PlanInvoice, org) -> str:
 
 async def _initialize_flutterwave_plan(invoice: PlanInvoice, org) -> str:
     payload = {
-        "tx_ref": f"heelo_plan_{invoice.id}",
+        "tx_ref": f"tixdoo_plan_{invoice.id}",
         "amount": float(invoice.amount),
         "currency": invoice.currency,
         "redirect_url": f"{settings.FRONTEND_URL}/billing/flutterwave/callback",
         "customer": {"email": org.contact_email or _org_billing_email(org), "name": org.name},
         "meta": {"invoice_id": str(invoice.id), "org_id": str(org.id), "kind": "plan_invoice"},
         "customizations": {
-            "title": f"Heelo {invoice.plan.capitalize()} plan",
+            "title": f"Tixdoo {invoice.plan.capitalize()} plan",
             "description": f"{invoice.plan.capitalize()} plan (30 days)",
         },
     }
@@ -663,7 +663,7 @@ async def _initialize_stripe_plan(invoice: PlanInvoice, org) -> str:
                         "currency": (invoice.currency or "USD").lower(),
                         "unit_amount": int(float(invoice.amount) * 100),
                         "product_data": {
-                            "name": f"Heelo {invoice.plan.capitalize()} plan (30 days)",
+                            "name": f"Tixdoo {invoice.plan.capitalize()} plan (30 days)",
                         },
                     },
                     "quantity": 1,
@@ -683,7 +683,7 @@ async def _initialize_stripe_plan(invoice: PlanInvoice, org) -> str:
 def _org_billing_email(org) -> str:
     """Best-effort billing email when the org has no contact_email set -
     Paystack/Stripe require *some* email on the checkout session."""
-    return f"billing+{org.slug}@heelo.io"
+    return f"billing+{org.slug}@tixdoo.com"
 
 
 async def verify_paystack_plan(db: AsyncSession, reference: str) -> PlanInvoice | None:
@@ -789,11 +789,11 @@ async def verify_stripe_plan_session(db: AsyncSession, session_id: str) -> PlanI
 
 
 async def _plan_invoice_from_reference(db: AsyncSession, reference: str) -> PlanInvoice | None:
-    """Extract invoice_id from a heelo_plan_{uuid} reference string."""
-    if not reference.startswith("heelo_plan_"):
+    """Extract invoice_id from a tixdoo_plan_{uuid} reference string."""
+    if not reference.startswith("tixdoo_plan_"):
         return None
     try:
-        invoice_id = uuid.UUID(reference[len("heelo_plan_") :])
+        invoice_id = uuid.UUID(reference[len("tixdoo_plan_") :])
     except ValueError:
         return None
     return await db.get(PlanInvoice, invoice_id)

@@ -2,7 +2,7 @@
 
 The dashboard is a server-rendered app where nearly all mutating requests
 are issued by the browser as fetch()/HTMX calls authenticating purely via
-the httpOnly `heelo_access` session cookie (see app/dependencies.py's
+the httpOnly `tixdoo_access` session cookie (see app/dependencies.py's
 _resolve_token - browser clients never send an explicit Authorization
 header, the cookie is auto-attached). That's protected today only by
 SameSite=Lax, which is a real but single layer of defense. This adds a
@@ -71,7 +71,7 @@ class CSRFMiddleware:
         existing_token = request.cookies.get(_COOKIE_NAME)
         method = scope["method"].upper()
 
-        session_cookie_present = bool(request.cookies.get("heelo_access"))
+        session_cookie_present = bool(request.cookies.get("tixdoo_access"))
         has_explicit_bearer = bool(Headers(scope=scope).get("authorization"))
 
         if method not in _SAFE_METHODS and session_cookie_present and not has_explicit_bearer:

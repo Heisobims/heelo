@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}{{ vendor.business_name }} | Heelo Vendors{% endblock %}
-{% block meta_description %}{{ vendor.tagline or vendor.description[:160] if vendor.description else vendor.business_name + ' on Heelo vendor marketplace' }}{% endblock %}
+{% block title %}{{ vendor.business_name }} | Tixdoo Vendors{% endblock %}
+{% block meta_description %}{{ vendor.tagline or vendor.description[:160] if vendor.description else vendor.business_name + ' on Tixdoo vendor marketplace' }}{% endblock %}
 {% block og_title %}{{ vendor.business_name }}{% endblock %}
 {% block og_description %}{{ self.meta_description() }}{% endblock %}
 {% block og_image %}{{ vendor.cover_image_url or '/static/icons/og-default.png' }}{% endblock %}
@@ -874,7 +874,7 @@
           <span class="material-symbols-outlined" style="font-size:32px; color:var(--text-muted); opacity:0.5; margin-bottom:8px; display:block;">rate_review</span>
           <strong>No customer reviews yet.</strong>
           <p style="font-size:13px; margin-top:4px; max-width:420px; margin-left:auto; margin-right:auto;">
-            Reviews on Heelo are published exclusively by genuine event organizers following completed, verified bookings.
+            Reviews on Tixdoo are published exclusively by genuine event organizers following completed, verified bookings.
           </p>
         </div>
         {% endif %}
@@ -911,7 +911,7 @@
           <div style="padding-top:18px; border-top:1px solid var(--border-light); display:flex; flex-direction:column; gap:12px;">
             <div class="vd-trust-item">
               <span class="material-symbols-outlined" style="font-size:18px; color:#16a34a; flex-shrink:0;">verified_user</span>
-              <span><strong>Heelo Escrow Protection:</strong> Funds released only after your service is fulfilled.</span>
+              <span><strong>Tixdoo Escrow Protection:</strong> Funds released only after your service is fulfilled.</span>
             </div>
             <div class="vd-trust-item">
               <span class="material-symbols-outlined" style="font-size:18px; color:var(--cyan); flex-shrink:0;">bolt</span>
@@ -1001,7 +1001,7 @@
           <span class="material-symbols-outlined" style="color:#16a34a; font-size:56px; margin-bottom:12px;">check_circle</span>
           <h4 style="font-size:20px; font-weight:800; margin-bottom:8px;">Request Dispatched!</h4>
           <p style="color:var(--text-secondary); font-size:14.5px; line-height:1.6; margin-bottom:24px;">
-            {{ vendor.business_name }} has received your specifications and will respond with an itemized quotation directly in your Heelo inbox.
+            {{ vendor.business_name }} has received your specifications and will respond with an itemized quotation directly in your Tixdoo inbox.
           </p>
           <button type="button" @click="showRfqModal = false" class="vd-btn vd-btn-primary">Done</button>
         </div>
@@ -1037,7 +1037,7 @@
           <input type="text" x-model="bookingForm.event_location" placeholder="e.g. Eko Hotel Grand Ballroom" style="width:100%; height:44px; padding:0 14px; border:1.5px solid var(--border-light); border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
         </div>
         <div style="margin-bottom:20px; font-size:12.5px; color:var(--text-muted); line-height:1.5;">
-          By proceeding, your payment will be held securely in escrow by Heelo until you confirm completion of the event service.
+          By proceeding, your payment will be held securely in escrow by Tixdoo until you confirm completion of the event service.
         </div>
         <div x-show="bookingError" x-text="bookingError" style="color:#dc2626; font-size:13px; margin-bottom:12px;"></div>
         <button type="submit" :disabled="bookingLoading" class="vd-btn vd-btn-primary" style="width:100%; padding:14px; font-size:15px;">

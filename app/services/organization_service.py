@@ -136,7 +136,7 @@ async def update_organization(
 # use) rather than by routing traffic to it - that keeps verification
 # possible before DNS is even fully configured. Verifying ownership here is
 # the whole of what *this application* can do: making the domain actually
-# resolve to Heelo (CNAME/A record) and terminate TLS for it is real DNS/CDN
+# resolve to Tixdoo (CNAME/A record) and terminate TLS for it is real DNS/CDN
 # infrastructure work outside this codebase - see the org settings page copy
 # for the instructions an organizer needs to complete that part themselves.
 
@@ -176,7 +176,7 @@ def check_custom_domain_txt_record(domain: str, expected_token: str) -> bool:
     import dns.resolver
 
     try:
-        answers = dns.resolver.resolve(f"_heelo-verify.{domain}", "TXT", lifetime=5.0)
+        answers = dns.resolver.resolve(f"_tixdoo-verify.{domain}", "TXT", lifetime=5.0)
         for rdata in answers:
             value = b"".join(rdata.strings).decode("utf-8", errors="ignore")
             if value == expected_token:
@@ -198,7 +198,7 @@ async def verify_custom_domain(db: AsyncSession, org: Organization) -> Organizat
         raise HTTPException(
             400,
             f"Couldn't find the verification TXT record at "
-            f"_heelo-verify.{org.custom_domain}. DNS changes can take a few "
+            f"_tixdoo-verify.{org.custom_domain}. DNS changes can take a few "
             "minutes to propagate - try again shortly.",
         )
 
@@ -256,7 +256,7 @@ def check_sso_domain_txt_record(domain: str, expected_token: str) -> bool:
     import dns.resolver
 
     try:
-        answers = dns.resolver.resolve(f"_heelo-sso-verify.{domain}", "TXT", lifetime=5.0)
+        answers = dns.resolver.resolve(f"_tixdoo-sso-verify.{domain}", "TXT", lifetime=5.0)
         for rdata in answers:
             value = b"".join(rdata.strings).decode("utf-8", errors="ignore")
             if value == expected_token:
@@ -278,7 +278,7 @@ async def verify_sso_domain(db: AsyncSession, org: Organization) -> Organization
         raise HTTPException(
             400,
             f"Couldn't find the verification TXT record at "
-            f"_heelo-sso-verify.{org.sso_domain}. DNS changes can take a few "
+            f"_tixdoo-sso-verify.{org.sso_domain}. DNS changes can take a few "
             "minutes to propagate - try again shortly.",
         )
 

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ profile_user.full_name }} | Heelo{% endblock %}
-{% block meta_description %}{{ profile_user.full_name }}'s profile on Heelo. Discover organized events, community connections, and badges.{% endblock %}
-{% block og_title %}{{ profile_user.full_name }} | Heelo{% endblock %}
+{% block title %}{{ profile_user.full_name }} | Tixdoo{% endblock %}
+{% block meta_description %}{{ profile_user.full_name }}'s profile on Tixdoo. Discover organized events, community connections, and badges.{% endblock %}
+{% block og_title %}{{ profile_user.full_name }} | Tixdoo{% endblock %}
 {% block og_description %}{{ self.meta_description() }}{% endblock %}
 {% block og_image %}{{ profile_user.avatar_url or '/static/icons/og-default.png' }}{% endblock %}
 
@@ -109,7 +109,7 @@
       <button class="pp-connect-btn pending" disabled>Check your notifications to respond</button>
       {% else %}
       <button class="pp-connect-btn pp-btn-primary" id="connect-btn"
-        onclick="heeloSendConnectRequest('{{ profile_user.id }}', this)">
+        onclick="tixdooSendConnectRequest('{{ profile_user.id }}', this)">
         <span class="material-symbols-outlined" style="font-size:14px;">person_add</span>Connect
       </button>
       {% endif %}
@@ -118,7 +118,7 @@
   </div>
 
   <script>
-  async function heeloSendConnectRequest(targetUserId, btn) {
+  async function tixdooSendConnectRequest(targetUserId, btn) {
     btn.disabled = true;
     btn.textContent = 'Sending…';
     try {
