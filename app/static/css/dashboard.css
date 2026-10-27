@@ -614,10 +614,12 @@
   margin-bottom: 28px;
 }
 
+.dash-page-header h1,
+.dash-content h1,
 .dash-greeting {
   font-size: 24px;
   font-weight: 500;
-  font-family: var(--font-serif);
+  font-family: var(--font-serif, Georgia, serif);
   color: var(--text-primary);
   margin-bottom: 4px;
 }
