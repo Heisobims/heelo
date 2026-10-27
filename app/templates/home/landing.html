@@ -217,12 +217,14 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-top: 4px;
+    margin-top: 6px;
+    padding: 4px 0;
   }
 
   .mpl-avatar-group {
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
   }
 
   .mpl-avatar-circle {
@@ -434,13 +436,19 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     }
     .mpl-hero-header {
       flex-direction: column;
-      gap: 18px;
+      gap: 20px;
       margin-bottom: 28px;
     }
     .mpl-hero-aside-col {
       width: 100%;
+      max-width: 580px;
       padding-top: 0;
       gap: 14px;
+    }
+    .mpl-hero-social-proof {
+      gap: 14px;
+      margin-top: 2px;
+      padding: 2px 0;
     }
     .mpl-hero-title {
       font-size: clamp(32px, 8vw, 48px);
@@ -460,6 +468,28 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     }
     .mpl-hero-header {
       margin-bottom: 22px;
+      gap: 16px;
+    }
+    .mpl-hero-aside-col {
+      gap: 12px;
+    }
+    .mpl-hero-social-proof {
+      gap: 12px;
+      margin-top: 0;
+      padding: 2px 0;
+      flex-wrap: wrap;
+    }
+    .mpl-avatar-circle {
+      width: 33px;
+      height: 33px;
+      margin-left: -9px;
+      border-width: 2px;
+    }
+    .mpl-proof-text {
+      font-size: 12.5px;
+      line-height: 1.4;
+      flex: 1;
+      min-width: 170px;
     }
     .mpl-hero-title {
       font-size: clamp(28px, 8.5vw, 36px);
@@ -498,6 +528,22 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     }
     .mpl-toast-l2 {
       display: none;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .mpl-hero-social-proof {
+      gap: 10px;
+    }
+    .mpl-avatar-circle {
+      width: 30px;
+      height: 30px;
+      margin-left: -8px;
+    }
+    .mpl-proof-text {
+      font-size: 12px;
+      line-height: 1.35;
+      min-width: 150px;
     }
   }
 
