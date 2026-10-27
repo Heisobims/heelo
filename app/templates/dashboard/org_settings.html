@@ -452,22 +452,49 @@
   </div><!-- /x-data -->
 </div>
 
+<script id="org-settings-data" type="application/json">
+{
+  "name": {{ org.name | tojson }},
+  "description": {{ (org.description or '') | tojson }},
+  "website": {{ (org.website or '') | tojson }},
+  "country": {{ (org.country or '') | tojson }},
+  "currency": {{ org.currency | tojson }},
+  "contact_email": {{ (org.contact_email or '') | tojson }},
+  "instagram_url": {{ (org.instagram_url or '') | tojson }},
+  "twitter_url": {{ (org.twitter_url or '') | tojson }},
+  "facebook_url": {{ (org.facebook_url or '') | tojson }},
+  "linkedin_url": {{ (org.linkedin_url or '') | tojson }},
+  "brand_color": {{ (org.brand_color or '') | tojson }},
+  "custom_domain": {{ (org.custom_domain or '') | tojson }},
+  "custom_domain_verified": {{ (org.custom_domain_verified or false) | tojson }},
+  "custom_domain_verification_token": {{ (org.custom_domain_verification_token or '') | tojson }},
+  "sso_domain": {{ (org.sso_domain or '') | tojson }},
+  "sso_domain_verified": {{ (org.sso_domain_verified or false) | tojson }},
+  "sso_verification_token": {{ (org.sso_verification_token or '') | tojson }},
+  "sso_enforced": {{ (org.sso_enforced or false) | tojson }}
+}
+</script>
+
 <script>
+const _orgSettingsData = JSON.parse(document.getElementById('org-settings-data')?.textContent || '{}');
+const _orgSlug = "{{ org.slug }}";
+
 function orgSettings() {
+  const data = _orgSettingsData;
   return {
     tab: 'general',
     form: {
-      name: {{ org.name | tojson }},
-      description: {{ (org.description or '') | tojson }},
-      website: {{ (org.website or '') | tojson }},
-      country: {{ (org.country or '') | tojson }},
-      currency: {{ org.currency | tojson }},
-      contact_email: {{ (org.contact_email or '') | tojson }},
-      instagram_url: {{ (org.instagram_url or '') | tojson }},
-      twitter_url: {{ (org.twitter_url or '') | tojson }},
-      facebook_url: {{ (org.facebook_url or '') | tojson }},
-      linkedin_url: {{ (org.linkedin_url or '') | tojson }},
-      brand_color: {{ (org.brand_color or '') | tojson }},
+      name: data.name || '',
+      description: data.description || '',
+      website: data.website || '',
+      country: data.country || '',
+      currency: data.currency || 'NGN',
+      contact_email: data.contact_email || '',
+      instagram_url: data.instagram_url || '',
+      twitter_url: data.twitter_url || '',
+      facebook_url: data.facebook_url || '',
+      linkedin_url: data.linkedin_url || '',
+      brand_color: data.brand_color || '',
     },
     saving: false,
     success: '',
@@ -493,7 +520,7 @@ function orgSettings() {
           linkedin_url: this.form.linkedin_url.trim() || null,
           brand_color: this.form.brand_color.trim() || null,
         };
-        const res = await fetch('/api/v1/organizations/{{ org.slug }}', {
+        const res = await fetch('/api/v1/organizations/' + _orgSlug, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -527,7 +554,7 @@ function orgSettings() {
       const fd = new FormData();
       fd.append('logo', file);
       try {
-        const res = await fetch('/api/v1/organizations/{{ org.slug }}/logo', {
+        const res = await fetch('/api/v1/organizations/' + _orgSlug + '/logo', {
           method: 'POST', credentials: 'include', body: fd,
         });
         const data = await res.json();
@@ -544,10 +571,11 @@ function orgSettings() {
 }
 
 function domainSettings() {
+  const data = _orgSettingsData;
   return {
-    domain: {{ (org.custom_domain or '') | tojson }},
-    verified: {{ (org.custom_domain_verified or false) | tojson }},
-    verificationToken: {{ (org.custom_domain_verification_token or '') | tojson }},
+    domain: data.custom_domain || '',
+    verified: !!data.custom_domain_verified,
+    verificationToken: data.custom_domain_verification_token || '',
     newDomain: '',
     settingDomain: false,
     verifying: false,
@@ -557,7 +585,7 @@ function domainSettings() {
       this.domainError = '';
       this.settingDomain = true;
       try {
-        const res = await fetch('/api/v1/organizations/{{ org.slug }}/custom-domain', {
+        const res = await fetch('/api/v1/organizations/' + _orgSlug + '/custom-domain', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -579,7 +607,7 @@ function domainSettings() {
       this.domainError = '';
       this.verifying = true;
       try {
-        const res = await fetch('/api/v1/organizations/{{ org.slug }}/custom-domain/verify', {
+        const res = await fetch('/api/v1/organizations/' + _orgSlug + '/custom-domain/verify', {
           method: 'POST', credentials: 'include',
         });
         const data = await res.json();
@@ -595,7 +623,7 @@ function domainSettings() {
     async removeDomain() {
       if (!confirm('Remove this custom domain?')) return;
       try {
-        await fetch('/api/v1/organizations/{{ org.slug }}/custom-domain', {
+        await fetch('/api/v1/organizations/' + _orgSlug + '/custom-domain', {
           method: 'DELETE', credentials: 'include',
         });
         this.domain = '';
@@ -607,11 +635,12 @@ function domainSettings() {
 }
 
 function ssoSettings() {
+  const data = _orgSettingsData;
   return {
-    domain: {{ (org.sso_domain or '') | tojson }},
-    verified: {{ (org.sso_domain_verified or false) | tojson }},
-    verificationToken: {{ (org.sso_verification_token or '') | tojson }},
-    enforced: {{ (org.sso_enforced or false) | tojson }},
+    domain: data.sso_domain || '',
+    verified: !!data.sso_domain_verified,
+    verificationToken: data.sso_verification_token || '',
+    enforced: !!data.sso_enforced,
     newDomain: '',
     settingDomain: false,
     verifying: false,
@@ -622,7 +651,7 @@ function ssoSettings() {
       this.ssoError = '';
       this.settingDomain = true;
       try {
-        const res = await fetch('/api/v1/organizations/{{ org.slug }}/sso', {
+        const res = await fetch('/api/v1/organizations/' + _orgSlug + '/sso', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -645,7 +674,7 @@ function ssoSettings() {
       this.ssoError = '';
       this.verifying = true;
       try {
-        const res = await fetch('/api/v1/organizations/{{ org.slug }}/sso/verify', {
+        const res = await fetch('/api/v1/organizations/' + _orgSlug + '/sso/verify', {
           method: 'POST', credentials: 'include',
         });
         const data = await res.json();
@@ -663,7 +692,7 @@ function ssoSettings() {
       this.enforcing = true;
       const desired = this.enforced;
       try {
-        const res = await fetch('/api/v1/organizations/{{ org.slug }}/sso/enforce', {
+        const res = await fetch('/api/v1/organizations/' + _orgSlug + '/sso/enforce', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -683,7 +712,7 @@ function ssoSettings() {
     async removeDomain() {
       if (!confirm('Remove SSO for this domain? Members will be able to log in with a password again.')) return;
       try {
-        await fetch('/api/v1/organizations/{{ org.slug }}/sso', {
+        await fetch('/api/v1/organizations/' + _orgSlug + '/sso', {
           method: 'DELETE', credentials: 'include',
         });
         this.domain = '';
