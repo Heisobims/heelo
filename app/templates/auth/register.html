@@ -8,27 +8,67 @@
   body, .auth-page {
     background: #FFFFFF !important;
   }
-  .prog-auth-title {
+  .prog-auth-topnav {
+    width: 100%;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #F0EFEA;
+    background: #FFFFFF;
+  }
+  .prog-auth-logo {
     font-family: var(--font-serif, Georgia, serif);
-    font-size: clamp(28px, 4vw, 36px);
+    font-size: 24px;
+    font-weight: 700;
+    color: #131B17;
+    text-decoration: none;
+    letter-spacing: -0.5px;
+  }
+  .prog-auth-nav-link {
+    font-size: 14px;
     font-weight: 500;
     color: #131B17;
-    margin: 0 0 10px;
+    text-decoration: underline;
+    transition: opacity 0.15s ease;
+  }
+  .prog-auth-nav-link:hover {
+    opacity: 0.75;
+  }
+  .prog-auth-container {
+    max-width: 440px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 48px 20px 64px;
+    box-sizing: border-box;
+  }
+  .prog-auth-title {
+    font-family: var(--font-serif, Georgia, serif);
+    font-size: clamp(30px, 4vw, 38px);
+    font-weight: 500;
+    color: #131B17;
+    margin: 0 0 16px;
     letter-spacing: -0.5px;
     line-height: 1.2;
+    text-align: center;
   }
   .prog-auth-sub {
-    font-size: 14.5px;
+    font-size: 14px;
     color: var(--text-muted, #71717A);
-    margin: 0 0 28px;
+    margin: 0 auto 28px;
+    max-width: 380px;
     line-height: 1.5;
+    text-align: center;
   }
   .prog-auth-label {
     display: block;
     font-size: 13.5px;
-    font-weight: 600;
+    font-weight: 500;
     color: #131B17;
     margin-bottom: 8px;
+    text-align: left;
   }
   .prog-auth-input {
     width: 100%;
@@ -76,8 +116,8 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    margin-top: 16px;
     text-decoration: none;
+    transition: color 0.15s ease;
   }
   .prog-auth-toggle:hover {
     color: #131B17;
@@ -103,24 +143,36 @@
     border-color: #131B17;
     background: #FAFAFA;
   }
+  .prog-auth-legal {
+    text-align: center;
+    margin-top: 32px;
+    line-height: 1.5;
+    font-size: 12.5px;
+    color: var(--text-muted, #71717A);
+  }
+  .prog-auth-legal a {
+    color: #131B17;
+    text-decoration: underline;
+  }
 </style>
 {% endblock %}
 
 {% block body %}
-{% include "partials/site_nav.html" %}
+<!-- Minimal distraction-free header (WordPress.com style) -->
+<header class="prog-auth-topnav">
+  <a href="/" class="prog-auth-logo">heelo</a>
+  <a href="/login" class="prog-auth-nav-link">Log in</a>
+</header>
 
 <div class="auth-page">
-  <main class="auth-main" style="background:#FFFFFF; min-height:calc(100vh - 64px); display:flex; align-items:center; justify-content:center;">
-    <div class="auth-container" style="max-width: 440px; margin: 0 auto; text-align: left;">
+  <main class="auth-main" style="background:#FFFFFF; min-height:calc(100vh - 64px); display:flex; align-items:flex-start; justify-content:center;">
+    <div class="prog-auth-container">
 
       <div id="reg-error" class="alert alert-danger mb-4" style="display:none; text-align:left;"></div>
 
-      <!-- Step 1: Email Entry (WordPress.com style) -->
+      <!-- View 1: Email Entry (WordPress.com Screenshot 1 & 3) -->
       <div id="step-email-wrap">
         <h1 class="prog-auth-title">Create your account</h1>
-        <p class="prog-auth-sub">
-          Start discovering events or launch your own ticketed experience.
-        </p>
 
         <form id="step1-form" novalidate style="display:flex; flex-direction:column; gap:16px;">
           <div>
@@ -129,12 +181,12 @@
               id="reg-email"
               type="email"
               class="prog-auth-input"
-              placeholder="ada@company.com"
+              placeholder=""
               autocomplete="email"
               required
               autofocus
             >
-            <p class="field-error" id="err-email" style="color:var(--danger); font-size:12.5px; margin-top:4px; display:none;"></p>
+            <p class="field-error" id="err-email" style="color:var(--danger, #DC2626); font-size:12.5px; margin-top:4px; display:none; text-align:left;"></p>
           </div>
 
           <div>
@@ -144,37 +196,55 @@
           </div>
 
           <div style="text-align: center; margin-top: 8px;">
-            <button type="button" id="btn-toggle-options" class="prog-auth-toggle">
-              <span id="options-toggle-text">‹ See all options</span>
+            <button type="button" id="btn-show-options" class="prog-auth-toggle">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <span>See all options</span>
             </button>
-          </div>
-
-          <!-- Social auth list (WordPress.com style) -->
-          <div id="social-options" style="display:none; flex-direction:column; gap:10px; margin-top:12px;">
-            <a href="/api/v1/auth/google" class="social-auth-btn">
-              <img src="/static/icons/google.svg" alt="Google" width="18" height="18">
-              <span>Continue with Google</span>
-            </a>
-            <a href="/api/v1/auth/facebook" class="social-auth-btn">
-              <img src="/static/icons/facebook.svg" alt="Facebook" width="18" height="18">
-              <span>Continue with Facebook</span>
-            </a>
           </div>
         </form>
 
-        <p class="small text-muted text-center" style="margin-top:32px; line-height:1.5; font-size:12.5px;">
+        <p class="prog-auth-legal">
           By clicking "Continue," you agree to our
-          <a href="/terms" style="color:var(--text-primary); text-decoration:underline;">Terms of Service</a>
+          <a href="/terms">Terms of Service</a>
           and have read our
-          <a href="/privacy" style="color:var(--text-primary); text-decoration:underline;">Privacy Policy</a>.
+          <a href="/privacy">Privacy Policy</a>.
         </p>
       </div>
 
-      <!-- Step 2: Name & Password Entry -->
+      <!-- View 2: All Social Options (WordPress.com Screenshot 2) -->
+      <div id="step-social-wrap" style="display:none;">
+        <h1 class="prog-auth-title">Create your account</h1>
+        <p class="prog-auth-sub">
+          By continuing with any of the options listed, you agree to our
+          <a href="/terms" style="color:#131B17; text-decoration:underline;">Terms of Service</a>
+          and have read our
+          <a href="/privacy" style="color:#131B17; text-decoration:underline;">Privacy Policy</a>.
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <a href="/api/v1/auth/google" class="social-auth-btn">
+            <img src="/static/icons/google.svg" alt="" width="18" height="18">
+            <span>Continue with Google</span>
+          </a>
+          <a href="/api/v1/auth/facebook" class="social-auth-btn">
+            <img src="/static/icons/facebook.svg" alt="" width="18" height="18">
+            <span>Continue with Facebook</span>
+          </a>
+          <button type="button" id="btn-show-email" class="social-auth-btn" style="cursor:pointer; font-family:inherit;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+            </svg>
+            <span>Continue with email</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- View 3: Name & Password Entry -->
       <div id="step-profile-wrap" style="display:none;">
         <h1 class="prog-auth-title">Create your account</h1>
         <p class="prog-auth-sub">
-          Finishing setting up your profile for <strong id="display-selected-email" style="color:#131B17;"></strong>
+          Finish setting up your profile for <strong id="display-selected-email" style="color:#131B17;"></strong>
         </p>
 
         <form id="reg-form" novalidate style="display:flex; flex-direction:column; gap:18px;">
@@ -188,7 +258,7 @@
               autocomplete="name"
               required
             >
-            <p class="field-error" id="err-full-name" style="color:var(--danger); font-size:12.5px; margin-top:4px; display:none;"></p>
+            <p class="field-error" id="err-full-name" style="color:var(--danger, #DC2626); font-size:12.5px; margin-top:4px; display:none; text-align:left;"></p>
           </div>
 
           <div>
@@ -213,7 +283,7 @@
                 <svg id="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
               </button>
             </div>
-            <p class="field-error" id="err-password" style="color:var(--danger); font-size:12.5px; margin-top:4px; display:none;"></p>
+            <p class="field-error" id="err-password" style="color:var(--danger, #DC2626); font-size:12.5px; margin-top:4px; display:none; text-align:left;"></p>
           </div>
 
           <div style="margin-top:6px;">
@@ -224,7 +294,8 @@
 
           <div style="text-align:center;">
             <button type="button" id="btn-back-to-step1" class="prog-auth-toggle">
-              ‹ Change email
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              <span>Change email</span>
             </button>
           </div>
         </form>
@@ -236,28 +307,35 @@
 
 <script>
 (function () {
-  var step1Wrap    = document.getElementById('step-email-wrap');
-  var step2Wrap    = document.getElementById('step-profile-wrap');
-  var step1Form    = document.getElementById('step1-form');
-  var regForm      = document.getElementById('reg-form');
-  var emailInput   = document.getElementById('reg-email');
-  var fullNameInput= document.getElementById('reg-full-name');
-  var pwInput      = document.getElementById('reg-password');
-  var dispEmail    = document.getElementById('display-selected-email');
-  var errBox       = document.getElementById('reg-error');
-  var btnSubmit    = document.getElementById('reg-submit');
-  var btnLabel     = document.getElementById('reg-btn-label');
-  var eyeOpen      = document.getElementById('eye-open');
-  var eyeClosed    = document.getElementById('eye-closed');
-  var btnBack      = document.getElementById('btn-back-to-step1');
-  var btnToggle    = document.getElementById('btn-toggle-options');
-  var socialOpts   = document.getElementById('social-options');
+  var step1Wrap     = document.getElementById('step-email-wrap');
+  var stepSocialWrap= document.getElementById('step-social-wrap');
+  var step2Wrap     = document.getElementById('step-profile-wrap');
+  var step1Form     = document.getElementById('step1-form');
+  var regForm       = document.getElementById('reg-form');
+  var emailInput    = document.getElementById('reg-email');
+  var fullNameInput = document.getElementById('reg-full-name');
+  var pwInput       = document.getElementById('reg-password');
+  var dispEmail     = document.getElementById('display-selected-email');
+  var errBox        = document.getElementById('reg-error');
+  var btnSubmit     = document.getElementById('reg-submit');
+  var btnLabel      = document.getElementById('reg-btn-label');
+  var eyeOpen       = document.getElementById('eye-open');
+  var eyeClosed     = document.getElementById('eye-closed');
+  var btnBack       = document.getElementById('btn-back-to-step1');
+  var btnShowOptions= document.getElementById('btn-show-options');
+  var btnShowEmail  = document.getElementById('btn-show-email');
 
-  // Toggle social options
-  btnToggle.addEventListener('click', function () {
-    var isOpen = socialOpts.style.display !== 'none';
-    socialOpts.style.display = isOpen ? 'none' : 'flex';
-    document.getElementById('options-toggle-text').textContent = isOpen ? '‹ See all options' : 'Hide other options';
+  // Toggle to social options view (WordPress.com Screenshot 2)
+  btnShowOptions.addEventListener('click', function () {
+    step1Wrap.style.display = 'none';
+    stepSocialWrap.style.display = 'block';
+  });
+
+  // Toggle back to email input view (WordPress.com Screenshot 1)
+  btnShowEmail.addEventListener('click', function () {
+    stepSocialWrap.style.display = 'none';
+    step1Wrap.style.display = 'block';
+    emailInput.focus();
   });
 
   // Password visibility toggle
@@ -295,6 +373,7 @@
     }
     dispEmail.textContent = email;
     step1Wrap.style.display = 'none';
+    stepSocialWrap.style.display = 'none';
     step2Wrap.style.display = 'block';
     fullNameInput.focus();
   });
@@ -303,6 +382,7 @@
   btnBack.addEventListener('click', function () {
     clearErrors();
     step2Wrap.style.display = 'none';
+    stepSocialWrap.style.display = 'none';
     step1Wrap.style.display = 'block';
     emailInput.focus();
   });
@@ -347,6 +427,7 @@
         if (details.full_name) { setFieldError('err-full-name', details.full_name[0]); didField = true; }
         if (details.email) {
           step2Wrap.style.display = 'none';
+          stepSocialWrap.style.display = 'none';
           step1Wrap.style.display = 'block';
           setFieldError('err-email', details.email[0]);
           emailInput.focus();
