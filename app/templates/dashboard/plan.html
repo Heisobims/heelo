@@ -111,35 +111,177 @@
   .usage-bar-fill.warn { background: #f59e0b; }
   .usage-bar-fill.full { background: #ef4444; }
 
+  .compare-mobile-hint {
+    display: none;
+  }
+  @media (max-width: 768px) {
+    .compare-mobile-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      background: rgba(19, 27, 23, 0.04);
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+    .compare-mobile-hint .material-symbols-outlined {
+      font-size: 15px;
+      color: var(--cyan);
+    }
+  }
+
   .plan-compare-table {
     background: #fff;
     border: 1px solid var(--border-light);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 12px;
+    border-radius: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(19, 27, 23, 0.04);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(19, 27, 23, 0.16) transparent;
   }
+  .plan-compare-table::-webkit-scrollbar {
+    height: 6px;
+  }
+  .plan-compare-table::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .plan-compare-table::-webkit-scrollbar-thumb {
+    background: rgba(19, 27, 23, 0.16);
+    border-radius: 9999px;
+  }
+  .plan-compare-table::-webkit-scrollbar-thumb:hover {
+    background: rgba(19, 27, 23, 0.28);
+  }
+
   .compare-head {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: minmax(180px, 2fr) minmax(95px, 1fr) minmax(95px, 1fr) minmax(95px, 1fr) minmax(105px, 1fr);
+    min-width: 620px;
     background: var(--bg-secondary);
-    padding: 12px 20px;
-    font-size: 12px; font-weight: 600;
     border-bottom: 1px solid var(--border-light);
-  }
-  .compare-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-    padding: 11px 20px;
-    font-size: 13px;
-    border-bottom: 1px solid var(--border-light);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-primary);
     align-items: center;
   }
-  .compare-row:last-child { border-bottom: none; }
-  .compare-row:hover { background: var(--bg-secondary); }
-  .compare-row .feature-label { color: var(--text-secondary); }
-  .compare-val { text-align: center; font-weight: 500; }
-  .compare-val.yes { color: #22c55e; }
-  .compare-val.no { color: var(--border-color); }
+  .compare-head > div {
+    padding: 13px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .compare-head > div:first-child {
+    justify-content: flex-start;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: var(--bg-secondary);
+    padding-left: 20px;
+  }
+  .compare-head > div:first-child::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-light);
+    box-shadow: 3px 0 6px rgba(19, 27, 23, 0.04);
+  }
+
+  .compare-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 2fr) minmax(95px, 1fr) minmax(95px, 1fr) minmax(95px, 1fr) minmax(105px, 1fr);
+    min-width: 620px;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13px;
+    align-items: center;
+    transition: background 0.12s ease;
+  }
+  .compare-row:last-child {
+    border-bottom: none;
+  }
+  .compare-row:hover {
+    background: var(--bg-secondary);
+  }
+  .compare-row > div {
+    padding: 12px 14px;
+  }
+  .compare-row .feature-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+    padding-left: 20px;
+    padding-right: 14px;
+    line-height: 1.4;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .compare-row:hover .feature-label {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+  .compare-row .feature-label::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-light);
+    box-shadow: 3px 0 6px rgba(19, 27, 23, 0.04);
+  }
+
+  .compare-val {
+    text-align: center;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-primary);
+  }
+  .compare-val.yes {
+    color: #22c55e;
+  }
+  .compare-val.no {
+    color: var(--border-color);
+  }
+  .compare-val .material-symbols-outlined {
+    font-size: 20px;
+  }
+
+  @media (max-width: 580px) {
+    .compare-head {
+      font-size: 12px;
+    }
+    .compare-head > div {
+      padding: 10px 10px;
+    }
+    .compare-head > div:first-child {
+      padding-left: 14px;
+    }
+    .compare-row {
+      font-size: 12px;
+    }
+    .compare-row > div {
+      padding: 10px 10px;
+    }
+    .compare-row .feature-label {
+      padding-left: 14px;
+      font-size: 12px;
+    }
+    .compare-val .material-symbols-outlined {
+      font-size: 18px;
+    }
+  }
 
   .plan-banner {
     border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;
@@ -336,6 +478,13 @@
   </div>
 
   <!-- ── Feature comparison ─────────────────────────────── -->
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-top:36px; margin-bottom:12px;">
+    <h2 style="font-size:16px; font-weight:700; margin:0; color:var(--text-primary);">Compare plan features</h2>
+    <div class="compare-mobile-hint">
+      <span class="material-symbols-outlined">swipe</span>
+      <span>Swipe to compare</span>
+    </div>
+  </div>
   <div class="plan-compare-table">
     <div class="compare-head">
       <div>Feature</div>
