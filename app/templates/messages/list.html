@@ -1,38 +1,135 @@
-{% extends "base.html" %}
-{% block title %}Messages | Tixdoo{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="/static/css/dashboard.css">
+{% extends "base.html" %} {% block title %}Messages | Tixdoo{% endblock %} {%
+block head %}
+<link rel="stylesheet" href="/static/css/dashboard.css" />
 <style>
-  body { background: var(--bg-secondary); }
-  .ml-nav {
-    position: sticky; top: 0; z-index: 40;
-    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-light);
-    display: flex; align-items: center; gap: 16px; padding: 0 24px; height: 56px;
+  body {
+    background: var(--bg-secondary);
   }
-  .ml-nav-logo { font-family: var(--font-serif); font-style: italic; font-weight: 700; font-size: 18px; letter-spacing: 0; text-decoration: none; color: var(--text-primary); }
-  .ml-nav-logo span { color: var(--cyan-dark, #C84729); }
-  .ml-wrap { max-width: 640px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
-  .ml-title { font-family: var(--font-serif, 'STK Bureau Serif', Georgia, serif); font-size: 1.6rem; font-weight: 500; margin: 0 0 1.5rem; }
+  .ml-nav {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    height: 56px;
+  }
+  .ml-nav-logo {
+    font-family: var(--font-serif);
+    font-style: bold;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    color: var(--text-primary);
+  }
+  .ml-nav-logo span {
+    color: var(--cyan-dark, #c84729);
+  }
+  .ml-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  .ml-title {
+    font-family: var(--font-serif, "STK Bureau Serif", Georgia, serif);
+    font-size: 1.6rem;
+    font-weight: 500;
+    margin: 0 0 1.5rem;
+  }
 
-  .thread-item { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.875rem 1.25rem; border-bottom: 1px solid var(--border-light); text-decoration: none; color: var(--text-primary); background: #fff; transition: background 120ms; }
-  .thread-item:first-child { border-radius: 12px 12px 0 0; }
-  .thread-item:last-child { border-radius: 0 0 12px 12px; border-bottom: none; }
-  .thread-item:hover { background: var(--bg-secondary); }
-  .thread-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, var(--cyan) 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; color: #000; overflow: hidden; }
-  .thread-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .thread-meta { flex: 1; min-width: 0; }
-  .thread-name { font-weight: 600; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .thread-preview { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 0.15rem; }
-  .thread-time { font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap; }
-  .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); flex-shrink: 0; margin-top: 6px; }
-  .ml-empty { text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary); background: #fff; border: 1px solid var(--border-light); border-radius: 14px; font-size: 0.9rem; }
-  .ml-list { border: 1px solid var(--border-light); border-radius: 12px; overflow: hidden; }
+  .thread-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.875rem 1.25rem;
+    border-bottom: 1px solid var(--border-light);
+    text-decoration: none;
+    color: var(--text-primary);
+    background: #fff;
+    transition: background 120ms;
+  }
+  .thread-item:first-child {
+    border-radius: 12px 12px 0 0;
+  }
+  .thread-item:last-child {
+    border-radius: 0 0 12px 12px;
+    border-bottom: none;
+  }
+  .thread-item:hover {
+    background: var(--bg-secondary);
+  }
+  .thread-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--cyan) 0%, #7c3aed 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #000;
+    overflow: hidden;
+  }
+  .thread-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .thread-meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .thread-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .thread-preview {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 0.15rem;
+  }
+  .thread-time {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+  .unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cyan);
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+  .ml-empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-secondary);
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    font-size: 0.9rem;
+  }
+  .ml-list {
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    overflow: hidden;
+  }
 </style>
-{% endblock %}
-
-{% block body %}
+{% endblock %} {% block body %}
 <nav class="ml-nav">
   <a href="/" class="ml-nav-logo">tixdoo<span>.</span></a>
 </nav>
@@ -45,24 +142,41 @@
     {% for t in threads %}
     <a href="/messages/{{ t.other_user.id }}" class="thread-item">
       <div class="thread-avatar">
-        {% if t.other_user.avatar_url %}<img src="{{ t.other_user.avatar_url }}" alt="">{% else %}{{ t.other_user.full_name[0].upper() }}{% endif %}
+        {% if t.other_user.avatar_url %}<img
+          src="{{ t.other_user.avatar_url }}"
+          alt=""
+        />{% else %}{{ t.other_user.full_name[0].upper() }}{% endif %}
       </div>
       <div class="thread-meta">
         <div class="thread-name">{{ t.other_user.full_name }}</div>
         <div class="thread-preview">
-          {% if t.last_message.sender_id == user.id %}You: {% endif %}{{ t.last_message.body }}
+          {% if t.last_message.sender_id == user.id %}You: {% endif %}{{
+          t.last_message.body }}
         </div>
       </div>
-      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.375rem; flex-shrink:0;">
-        <div class="thread-time">{{ t.last_message.created_at.strftime('%b %d') }}</div>
-        {% if t.unread_count > 0 %}<div class="unread-dot"></div>{% endif %}
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 0.375rem;
+          flex-shrink: 0;
+        "
+      >
+        <div class="thread-time">
+          {{ t.last_message.created_at.strftime('%b %d') }}
+        </div>
+        {% if t.unread_count > 0 %}
+        <div class="unread-dot"></div>
+        {% endif %}
       </div>
     </a>
     {% endfor %}
   </div>
   {% else %}
   <div class="ml-empty">
-    No messages yet. Connect with other attendees from an event page to start a conversation.
+    No messages yet. Connect with other attendees from an event page to start a
+    conversation.
   </div>
   {% endif %}
 </div>

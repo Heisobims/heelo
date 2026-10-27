@@ -1,892 +1,1328 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="robots" content="noindex, nofollow" />
-  <title>{% block title %}Admin{% endblock %} | Tixdoo Admin</title>
-  <script>
-    // Set theme before first paint (defaults to 'light' to match user dashboard)
-    document.documentElement.setAttribute('data-theme', localStorage.getItem('tixdoo_admin_theme') || 'light');
-  </script>
-  <meta name="csrf-token" content="{{ request.cookies.get('csrf_token', '') }}" id="csrf-token-meta" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-  <link rel="stylesheet" href="/static/css/main.css?v=15" />
-  
-  <!-- Font Awesome, main.js & Alpine.js -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <script src="/static/js/main.js?v=14"></script>
-  <script src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js" defer></script>
-  <script>
-    // Global toast helper for admin dashboard
-    function showAdminToast(message, type = 'success') {
-      let toast = document.getElementById('admin-toast');
-      if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'admin-toast';
-        toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999999;padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.18);display:flex;align-items:center;gap:8px;transition:all 0.25s cubic-bezier(0.16,1,0.3,1);transform:translateY(20px);opacity:0;';
-        document.body.appendChild(toast);
-      }
-      toast.style.background = type === 'success' ? '#131B17' : '#DC2626';
-      toast.style.color = '#FFFFFF';
-      toast.innerHTML = (type === 'success' ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>') + ' ' + message;
-      toast.style.transform = 'translateY(0)';
-      toast.style.opacity = '1';
-      clearTimeout(window._adminToastTimer);
-      window._adminToastTimer = setTimeout(() => {
-        toast.style.transform = 'translateY(20px)';
-        toast.style.opacity = '0';
-      }, 3500);
-    }
-    
-    // Fallback CSRF token resolver for direct fetch calls
-    function getAdminCsrfToken() {
-      return (
-        (window.getCookie && window.getCookie('csrf_token')) ||
-        document.cookie.split('; ').find(r => r.startsWith('csrf_token='))?.split('=')[1] ||
-        document.getElementById('csrf-token-meta')?.getAttribute('content') ||
-        ''
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{% block title %}Admin{% endblock %} | Tixdoo Admin</title>
+    <script>
+      // Set theme before first paint (defaults to 'light' to match user dashboard)
+      document.documentElement.setAttribute(
+        "data-theme",
+        localStorage.getItem("tixdoo_admin_theme") || "light",
       );
-    }
-  </script>
+    </script>
+    <meta
+      name="csrf-token"
+      content="{{ request.cookies.get('csrf_token', '') }}"
+      id="csrf-token-meta"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    />
+    <link rel="stylesheet" href="/static/css/main.css?v=15" />
 
-  <style>
-    /* Hide Alpine-managed elements before init */
-    [x-cloak] { display: none !important; }
+    <!-- Font Awesome, main.js & Alpine.js -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <script src="/static/js/main.js?v=14"></script>
+    <script
+      src="https://unpkg.com/alpinejs@3.14.3/dist/cdn.min.js"
+      defer
+    ></script>
+    <script>
+      // Global toast helper for admin dashboard
+      function showAdminToast(message, type = "success") {
+        let toast = document.getElementById("admin-toast");
+        if (!toast) {
+          toast = document.createElement("div");
+          toast.id = "admin-toast";
+          toast.style.cssText =
+            "position:fixed;bottom:24px;right:24px;z-index:999999;padding:12px 20px;border-radius:12px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,0.18);display:flex;align-items:center;gap:8px;transition:all 0.25s cubic-bezier(0.16,1,0.3,1);transform:translateY(20px);opacity:0;";
+          document.body.appendChild(toast);
+        }
+        toast.style.background = type === "success" ? "#131B17" : "#DC2626";
+        toast.style.color = "#FFFFFF";
+        toast.innerHTML =
+          (type === "success"
+            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>') +
+          " " +
+          message;
+        toast.style.transform = "translateY(0)";
+        toast.style.opacity = "1";
+        clearTimeout(window._adminToastTimer);
+        window._adminToastTimer = setTimeout(() => {
+          toast.style.transform = "translateY(20px)";
+          toast.style.opacity = "0";
+        }, 3500);
+      }
 
-    /* ── Admin Theme Tokens (Aligned with User Dashboard & Design System) ── */
-    :root, [data-theme="light"] {
-      --admin-bg: #FAF7F2;
-      --admin-surface: #FFFFFF;
-      --admin-surface-raised: #F5F1EB;
-      --admin-border: #EFEAE3;
-      --admin-border-light: #F4EFEB;
-      --admin-accent: #E85938;
-      --admin-accent-hover: #D04828;
-      --admin-accent-subtle: rgba(232, 89, 56, 0.08);
-      --text: #131B17;
-      --text-muted: #71717A;
-      --text-secondary: #52525B;
-      --admin-nav-bg: rgba(250, 249, 247, 0.96);
-      --admin-shadow: 0 2px 12px rgba(19, 27, 23, 0.04);
-      --admin-card-shadow: 0 1px 3px rgba(19, 27, 23, 0.04), 0 1px 2px rgba(19, 27, 23, 0.02);
-    }
-    [data-theme="dark"] {
-      --admin-bg: #0E1411;
-      --admin-surface: #151D18;
-      --admin-surface-raised: #1C2620;
-      --admin-border: #25332C;
-      --admin-border-light: #1F2C25;
-      --admin-accent: #E85938;
-      --admin-accent-hover: #F06D4D;
-      --admin-accent-subtle: rgba(232, 89, 56, 0.16);
-      --text: #FAF9F7;
-      --text-muted: #9CA3AF;
-      --text-secondary: #D1D5DB;
-      --admin-nav-bg: rgba(21, 29, 24, 0.96);
-      --admin-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-      --admin-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    }
+      // Fallback CSRF token resolver for direct fetch calls
+      function getAdminCsrfToken() {
+        return (
+          (window.getCookie && window.getCookie("csrf_token")) ||
+          document.cookie
+            .split("; ")
+            .find((r) => r.startsWith("csrf_token="))
+            ?.split("=")[1] ||
+          document.getElementById("csrf-token-meta")?.getAttribute("content") ||
+          ""
+        );
+      }
+    </script>
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--admin-bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      transition: background 0.15s ease, color 0.15s ease;
-      -webkit-font-smoothing: antialiased;
-    }
+    <style>
+      /* Hide Alpine-managed elements before init */
+      [x-cloak] {
+        display: none !important;
+      }
 
-    /* ── Top Header Navigation Bar (Matches .dash-topnav aesthetic) ── */
-    .admin-header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      height: 64px;
-      padding: 0 24px;
-      background: var(--admin-nav-bg);
-      backdrop-filter: blur(20px) saturate(180%);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      border-bottom: 1px solid var(--admin-border);
-      box-shadow: var(--admin-shadow);
-    }
+      /* ── Admin Theme Tokens (Aligned with User Dashboard & Design System) ── */
+      :root,
+      [data-theme="light"] {
+        --admin-bg: #faf7f2;
+        --admin-surface: #ffffff;
+        --admin-surface-raised: #f5f1eb;
+        --admin-border: #efeae3;
+        --admin-border-light: #f4efeb;
+        --admin-accent: #e85938;
+        --admin-accent-hover: #d04828;
+        --admin-accent-subtle: rgba(232, 89, 56, 0.08);
+        --text: #131b17;
+        --text-muted: #71717a;
+        --text-secondary: #52525b;
+        --admin-nav-bg: rgba(250, 249, 247, 0.96);
+        --admin-shadow: 0 2px 12px rgba(19, 27, 23, 0.04);
+        --admin-card-shadow:
+          0 1px 3px rgba(19, 27, 23, 0.04), 0 1px 2px rgba(19, 27, 23, 0.02);
+      }
+      [data-theme="dark"] {
+        --admin-bg: #0e1411;
+        --admin-surface: #151d18;
+        --admin-surface-raised: #1c2620;
+        --admin-border: #25332c;
+        --admin-border-light: #1f2c25;
+        --admin-accent: #e85938;
+        --admin-accent-hover: #f06d4d;
+        --admin-accent-subtle: rgba(232, 89, 56, 0.16);
+        --text: #faf9f7;
+        --text-muted: #9ca3af;
+        --text-secondary: #d1d5db;
+        --admin-nav-bg: rgba(21, 29, 24, 0.96);
+        --admin-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        --admin-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
 
-    .admin-logo-link {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      flex-shrink: 0;
-      transition: opacity 0.15s ease;
-    }
-    .admin-logo-link:hover { opacity: 0.88; }
-    .admin-logo {
-      font-family: var(--font-serif, 'Lora', Georgia, serif);
-      font-style: italic;
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: 0;
-      line-height: 1;
-    }
-    .admin-logo span.dot {
-      color: var(--admin-accent);
-    }
-    .admin-badge {
-      background: #131B17;
-      color: #FFFFFF;
-      font-size: 9.5px;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 9999px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      line-height: 1;
-      display: inline-flex;
-      align-items: center;
-    }
-    [data-theme="dark"] .admin-badge {
-      background: var(--admin-accent);
-      color: #FFFFFF;
-    }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: var(--admin-bg);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        transition:
+          background 0.15s ease,
+          color 0.15s ease;
+        -webkit-font-smoothing: antialiased;
+      }
 
-    .admin-divider {
-      width: 1px;
-      height: 22px;
-      background: var(--admin-border);
-      flex-shrink: 0;
-    }
+      /* ── Top Header Navigation Bar (Matches .dash-topnav aesthetic) ── */
+      .admin-header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 64px;
+        padding: 0 24px;
+        background: var(--admin-nav-bg);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border-bottom: 1px solid var(--admin-border);
+        box-shadow: var(--admin-shadow);
+      }
 
-    /* ── Navigation Tabs ── */
-    .admin-nav {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-left: 8px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
-      flex-shrink: 1;
-      min-width: 0;
-    }
-    .admin-nav::-webkit-scrollbar { display: none; }
-    .admin-nav a {
-      font-size: 13.5px;
-      color: var(--text-muted);
-      font-weight: 500;
-      text-decoration: none;
-      padding: 7px 14px;
-      border-radius: 9999px;
-      white-space: nowrap;
-      flex-shrink: 0;
-      transition: background 140ms ease, color 140ms ease;
-    }
-    .admin-nav a:hover {
-      background: var(--admin-surface-raised);
-      color: var(--text);
-    }
-    .admin-nav a.active {
-      background: #131B17;
-      color: #FFFFFF !important;
-      font-weight: 600;
-    }
-    [data-theme="dark"] .admin-nav a.active {
-      background: #FFFFFF;
-      color: #131B17 !important;
-    }
+      .admin-logo-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        flex-shrink: 0;
+        transition: opacity 0.15s ease;
+      }
+      .admin-logo-link:hover {
+        opacity: 0.88;
+      }
+      .admin-logo {
+        font-family: var(--font-serif, "Lora", Georgia, serif);
+        font-style: bold;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.02em;
+        line-height: 1;
+      }
+      .admin-logo span.dot {
+        color: var(--admin-accent);
+      }
+      .admin-badge {
+        background: #131b17;
+        color: #ffffff;
+        font-size: 9.5px;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 9999px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+      }
+      [data-theme="dark"] .admin-badge {
+        background: var(--admin-accent);
+        color: #ffffff;
+      }
 
-    /* ── Right Actions Area ── */
-    .admin-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
-      flex-shrink: 0;
-    }
+      .admin-divider {
+        width: 1px;
+        height: 22px;
+        background: var(--admin-border);
+        flex-shrink: 0;
+      }
 
-    .admin-app-btn {
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--text-secondary);
-      background: var(--admin-surface);
-      border: 1px solid var(--admin-border);
-      padding: 6px 13px;
-      border-radius: 9999px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 140ms ease;
-      white-space: nowrap;
-    }
-    .admin-app-btn:hover {
-      border-color: var(--text);
-      color: var(--text);
-      background: var(--admin-surface-raised);
-    }
+      /* ── Navigation Tabs ── */
+      .admin-nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: 8px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        flex-shrink: 1;
+        min-width: 0;
+      }
+      .admin-nav::-webkit-scrollbar {
+        display: none;
+      }
+      .admin-nav a {
+        font-size: 13.5px;
+        color: var(--text-muted);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 7px 14px;
+        border-radius: 9999px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition:
+          background 140ms ease,
+          color 140ms ease;
+      }
+      .admin-nav a:hover {
+        background: var(--admin-surface-raised);
+        color: var(--text);
+      }
+      .admin-nav a.active {
+        background: #131b17;
+        color: #ffffff !important;
+        font-weight: 600;
+      }
+      [data-theme="dark"] .admin-nav a.active {
+        background: #ffffff;
+        color: #131b17 !important;
+      }
 
-    /* Sign in / Sign up quick links */
-    .admin-auth-link {
-      font-size: 12.5px;
-      font-weight: 600;
-      color: var(--text);
-      text-decoration: none;
-      padding: 6px 12px;
-      border-radius: 9999px;
-      transition: all 140ms ease;
-      white-space: nowrap;
-    }
-    .admin-auth-link:hover {
-      background: var(--admin-surface-raised);
-      color: var(--admin-accent);
-    }
-    .admin-auth-link.signup {
-      background: var(--admin-accent);
-      color: #FFFFFF !important;
-      padding: 6px 14px;
-    }
-    .admin-auth-link.signup:hover {
-      background: var(--admin-accent-hover);
-      box-shadow: 0 2px 8px rgba(232, 89, 56, 0.28);
-    }
+      /* ── Right Actions Area ── */
+      .admin-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+        flex-shrink: 0;
+      }
 
-    /* Direct sign out pill */
-    .admin-signout-btn {
-      font-size: 12.5px;
-      font-weight: 600;
-      color: #EF4444;
-      background: rgba(239, 68, 68, 0.08);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      padding: 6px 13px;
-      border-radius: 9999px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-family: inherit;
-      transition: all 140ms ease;
-      white-space: nowrap;
-    }
-    .admin-signout-btn:hover {
-      background: #EF4444;
-      color: #FFFFFF;
-      border-color: #EF4444;
-    }
+      .admin-app-btn {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        background: var(--admin-surface);
+        border: 1px solid var(--admin-border);
+        padding: 6px 13px;
+        border-radius: 9999px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 140ms ease;
+        white-space: nowrap;
+      }
+      .admin-app-btn:hover {
+        border-color: var(--text);
+        color: var(--text);
+        background: var(--admin-surface-raised);
+      }
 
-    /* Theme toggle */
-    .theme-toggle {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: var(--admin-surface);
-      border: 1px solid var(--admin-border);
-      color: var(--text-secondary);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 140ms ease;
-      flex-shrink: 0;
-    }
-    .theme-toggle:hover {
-      border-color: var(--admin-accent);
-      color: var(--admin-accent);
-      background: var(--admin-surface-raised);
-    }
-    .theme-toggle .icon-dark { display: none; }
-    [data-theme="dark"] .theme-toggle .icon-dark { display: block; }
-    [data-theme="dark"] .theme-toggle .icon-light { display: none; }
+      /* Sign in / Sign up quick links */
+      .admin-auth-link {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--text);
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 9999px;
+        transition: all 140ms ease;
+        white-space: nowrap;
+      }
+      .admin-auth-link:hover {
+        background: var(--admin-surface-raised);
+        color: var(--admin-accent);
+      }
+      .admin-auth-link.signup {
+        background: var(--admin-accent);
+        color: #ffffff !important;
+        padding: 6px 14px;
+      }
+      .admin-auth-link.signup:hover {
+        background: var(--admin-accent-hover);
+        box-shadow: 0 2px 8px rgba(232, 89, 56, 0.28);
+      }
 
-    /* User Avatar & Dropdown */
-    .user-avatar-btn {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      background: #131B17;
-      border: 1.5px solid var(--admin-border);
-      cursor: pointer;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      font-weight: 700;
-      color: #FFFFFF;
-      transition: opacity 0.15s, transform 0.15s;
-      flex-shrink: 0;
-    }
-    [data-theme="dark"] .user-avatar-btn {
-      background: var(--admin-accent);
-      color: #FFFFFF;
-    }
-    .user-avatar-btn:hover {
-      opacity: 0.9;
-      transform: scale(1.04);
-    }
-    .user-avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
+      /* Direct sign out pill */
+      .admin-signout-btn {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.08);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        padding: 6px 13px;
+        border-radius: 9999px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-family: inherit;
+        transition: all 140ms ease;
+        white-space: nowrap;
+      }
+      .admin-signout-btn:hover {
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #ef4444;
+      }
 
-    .user-menu-dropdown {
-      position: absolute;
-      top: calc(100% + 10px);
-      right: 0;
-      min-width: 240px;
-      background: var(--admin-surface);
-      border: 1px solid var(--admin-border);
-      border-radius: 16px;
-      box-shadow: 0 16px 40px rgba(19, 27, 23, 0.12), 0 2px 8px rgba(19, 27, 23, 0.04);
-      padding: 6px;
-      overflow: hidden;
-      z-index: 100;
-    }
-    .user-menu-header {
-      padding: 10px 12px 12px;
-      border-bottom: 1px solid var(--admin-border);
-      margin-bottom: 4px;
-    }
-    .user-menu-name { font-size: 14px; font-weight: 700; color: var(--text); }
-    .user-menu-email { font-size: 12px; color: var(--text-muted); margin-top: 2px; word-break: break-all; }
-    .admin-badge-pill {
-      font-size: 9px;
-      font-weight: 800;
-      background: var(--admin-accent-subtle);
-      color: var(--admin-accent);
-      border: 1px solid rgba(232, 89, 56, 0.25);
-      padding: 1.5px 6px;
-      border-radius: 9999px;
-      letter-spacing: 0.05em;
-    }
+      /* Theme toggle */
+      .theme-toggle {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--admin-surface);
+        border: 1px solid var(--admin-border);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 140ms ease;
+        flex-shrink: 0;
+      }
+      .theme-toggle:hover {
+        border-color: var(--admin-accent);
+        color: var(--admin-accent);
+        background: var(--admin-surface-raised);
+      }
+      .theme-toggle .icon-dark {
+        display: none;
+      }
+      [data-theme="dark"] .theme-toggle .icon-dark {
+        display: block;
+      }
+      [data-theme="dark"] .theme-toggle .icon-light {
+        display: none;
+      }
 
-    .user-menu-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 12px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text);
-      text-decoration: none;
-      border-radius: 8px;
-      background: transparent;
-      border: none;
-      width: 100%;
-      text-align: left;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 120ms ease, color 120ms ease;
-    }
-    .user-menu-item:hover {
-      background: var(--admin-surface-raised);
-      color: var(--text);
-    }
-    .user-menu-item.danger {
-      color: #EF4444;
-    }
-    .user-menu-item.danger:hover {
-      background: rgba(239, 68, 68, 0.08);
-      color: #DC2626;
-    }
+      /* User Avatar & Dropdown */
+      .user-avatar-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #131b17;
+        border: 1.5px solid var(--admin-border);
+        cursor: pointer;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        color: #ffffff;
+        transition:
+          opacity 0.15s,
+          transform 0.15s;
+        flex-shrink: 0;
+      }
+      [data-theme="dark"] .user-avatar-btn {
+        background: var(--admin-accent);
+        color: #ffffff;
+      }
+      .user-avatar-btn:hover {
+        opacity: 0.9;
+        transform: scale(1.04);
+      }
+      .user-avatar-btn img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
 
-    /* ── Content Layout & Cards ── */
-    .admin-content {
-      flex: 1;
-      padding: 32px 24px 60px;
-      max-width: 1320px;
-      width: 100%;
-      margin: 0 auto;
-    }
+      .user-menu-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        min-width: 240px;
+        background: var(--admin-surface);
+        border: 1px solid var(--admin-border);
+        border-radius: 16px;
+        box-shadow:
+          0 16px 40px rgba(19, 27, 23, 0.12),
+          0 2px 8px rgba(19, 27, 23, 0.04);
+        padding: 6px;
+        overflow: hidden;
+        z-index: 100;
+      }
+      .user-menu-header {
+        padding: 10px 12px 12px;
+        border-bottom: 1px solid var(--admin-border);
+        margin-bottom: 4px;
+      }
+      .user-menu-name {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .user-menu-email {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 2px;
+        word-break: break-all;
+      }
+      .admin-badge-pill {
+        font-size: 9px;
+        font-weight: 800;
+        background: var(--admin-accent-subtle);
+        color: var(--admin-accent);
+        border: 1px solid rgba(232, 89, 56, 0.25);
+        padding: 1.5px 6px;
+        border-radius: 9999px;
+        letter-spacing: 0.05em;
+      }
 
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-    .stat-card {
-      background: var(--admin-surface);
-      border: 1.5px solid var(--admin-border);
-      border-radius: 16px;
-      padding: 22px;
-      box-shadow: var(--admin-card-shadow);
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .stat-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 14px rgba(19, 27, 23, 0.06);
-    }
-    .stat-label {
-      font-size: 11.5px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 8px;
-    }
-    .stat-value {
-      font-size: 28px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -0.02em;
-      line-height: 1.15;
-    }
+      .user-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text);
+        text-decoration: none;
+        border-radius: 8px;
+        background: transparent;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        font-family: inherit;
+        transition:
+          background 120ms ease,
+          color 120ms ease;
+      }
+      .user-menu-item:hover {
+        background: var(--admin-surface-raised);
+        color: var(--text);
+      }
+      .user-menu-item.danger {
+        color: #ef4444;
+      }
+      .user-menu-item.danger:hover {
+        background: rgba(239, 68, 68, 0.08);
+        color: #dc2626;
+      }
 
-    .section-card {
-      background: var(--admin-surface);
-      border: 1.5px solid var(--admin-border);
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: var(--admin-card-shadow);
-    }
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .section-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: -0.01em;
-    }
+      /* ── Content Layout & Cards ── */
+      .admin-content {
+        flex: 1;
+        padding: 32px 24px 60px;
+        max-width: 1320px;
+        width: 100%;
+        margin: 0 auto;
+      }
 
-    /* ── Data Tables ── */
-    .data-table-wrap {
-      width: 100%;
-      overflow-x: auto;
-      border: 1px solid var(--admin-border);
-      border-radius: 12px;
-      background: var(--admin-surface);
-    }
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-    }
-    .data-table th {
-      font-size: 11.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      padding: 12px 16px;
-      background: var(--admin-surface-raised);
-      border-bottom: 1.5px solid var(--admin-border);
-      white-space: nowrap;
-    }
-    .data-table td {
-      padding: 13px 16px;
-      font-size: 13.5px;
-      border-bottom: 1px solid var(--admin-border);
-      color: var(--text);
-      vertical-align: middle;
-    }
-    .data-table tr:last-child td { border-bottom: none; }
-    .data-table tr:hover td { background: var(--admin-surface-raised); }
-    .data-table a {
-      color: var(--admin-accent);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .data-table a:hover { text-decoration: underline; }
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .stat-card {
+        background: var(--admin-surface);
+        border: 1.5px solid var(--admin-border);
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: var(--admin-card-shadow);
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+      }
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 14px rgba(19, 27, 23, 0.06);
+      }
+      .stat-label {
+        font-size: 11.5px;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 8px;
+      }
+      .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+      }
 
-    /* ── Badges ── */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 3px 10px;
-      border-radius: 9999px;
-      font-size: 11.5px;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-      white-space: nowrap;
-    }
-    .badge-active { background: rgba(16, 185, 129, 0.12); color: #047857; }
-    .badge-suspended { background: rgba(239, 68, 68, 0.12); color: #DC2626; }
-    .badge-pending { background: rgba(245, 158, 11, 0.12); color: #D97706; }
-    .badge-plan-free { background: rgba(113, 113, 122, 0.12); color: #71717A; }
-    .badge-plan-growth { background: rgba(59, 130, 246, 0.12); color: #2563EB; }
-    .badge-plan-pro { background: rgba(139, 92, 246, 0.12); color: #7C3AED; }
-    .badge-plan-enterprise { background: rgba(245, 158, 11, 0.12); color: #D97706; }
-    .badge-admin { background: var(--admin-accent-subtle); color: var(--admin-accent); font-weight: 700; }
+      .section-card {
+        background: var(--admin-surface);
+        border: 1.5px solid var(--admin-border);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: var(--admin-card-shadow);
+      }
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .section-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text);
+        letter-spacing: -0.01em;
+      }
 
-    /* ── Buttons ── */
-    .btn {
-      padding: 7px 16px;
-      border-radius: 9999px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      font-family: inherit;
-      transition: all 0.15s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      text-decoration: none;
-      line-height: 1.2;
-    }
-    .btn:hover { opacity: 0.92; transform: translateY(-1px); }
-    .btn:active { transform: scale(0.98); }
-    .btn-primary { background: #131B17; color: #FFFFFF; }
-    [data-theme="dark"] .btn-primary { background: #FFFFFF; color: #131B17; }
-    .btn-accent { background: var(--admin-accent); color: #FFFFFF; }
-    .btn-danger { background: #EF4444; color: #FFFFFF; }
-    .btn-ghost { background: transparent; border-color: var(--admin-border); color: var(--text-muted); }
-    .btn-ghost:hover { background: var(--admin-surface-raised); color: var(--text); border-color: var(--text); }
-    .btn-secondary { background: var(--admin-surface); border-color: var(--admin-border); color: var(--text); }
-    .btn-secondary:hover { background: var(--admin-surface-raised); border-color: var(--text); }
-    .btn-sm { padding: 4px 11px; font-size: 12px; }
-    .btn .material-symbols-outlined {
-      font-size: 16px;
-      line-height: 1;
-    }
-    .btn-sm .material-symbols-outlined {
-      font-size: 15px;
-      line-height: 1;
-    }
+      /* ── Data Tables ── */
+      .data-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--admin-border);
+        border-radius: 12px;
+        background: var(--admin-surface);
+      }
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+      .data-table th {
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        padding: 12px 16px;
+        background: var(--admin-surface-raised);
+        border-bottom: 1.5px solid var(--admin-border);
+        white-space: nowrap;
+      }
+      .data-table td {
+        padding: 13px 16px;
+        font-size: 13.5px;
+        border-bottom: 1px solid var(--admin-border);
+        color: var(--text);
+        vertical-align: middle;
+      }
+      .data-table tr:last-child td {
+        border-bottom: none;
+      }
+      .data-table tr:hover td {
+        background: var(--admin-surface-raised);
+      }
+      .data-table a {
+        color: var(--admin-accent);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .data-table a:hover {
+        text-decoration: underline;
+      }
 
-    /* ── Material Symbols Outlined Icon Standard ── */
-    .material-symbols-outlined {
-      font-family: 'Material Symbols Outlined' !important;
-      font-weight: normal;
-      font-style: normal;
-      font-size: 1.15rem;
-      line-height: 1;
-      letter-spacing: normal;
-      text-transform: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap;
-      word-wrap: normal;
-      direction: ltr;
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-      font-feature-settings: 'liga';
-      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-      vertical-align: middle;
-      flex-shrink: 0;
-      user-select: none;
-    }
-    .material-symbols-outlined.fill {
-      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-    }
+      /* ── Badges ── */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+      }
+      .badge-active {
+        background: rgba(16, 185, 129, 0.12);
+        color: #047857;
+      }
+      .badge-suspended {
+        background: rgba(239, 68, 68, 0.12);
+        color: #dc2626;
+      }
+      .badge-pending {
+        background: rgba(245, 158, 11, 0.12);
+        color: #d97706;
+      }
+      .badge-plan-free {
+        background: rgba(113, 113, 122, 0.12);
+        color: #71717a;
+      }
+      .badge-plan-growth {
+        background: rgba(59, 130, 246, 0.12);
+        color: #2563eb;
+      }
+      .badge-plan-pro {
+        background: rgba(139, 92, 246, 0.12);
+        color: #7c3aed;
+      }
+      .badge-plan-enterprise {
+        background: rgba(245, 158, 11, 0.12);
+        color: #d97706;
+      }
+      .badge-admin {
+        background: var(--admin-accent-subtle);
+        color: var(--admin-accent);
+        font-weight: 700;
+      }
 
-    /* ── Search Bar & Filter Inputs ── */
-    .search-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-    .search-bar input, .search-bar select {
-      background: var(--admin-surface);
-      border: 1.5px solid var(--admin-border);
-      color: var(--text);
-      border-radius: 10px;
-      padding: 8px 14px;
-      font-size: 13.5px;
-      font-family: inherit;
-      height: 42px;
-      box-sizing: border-box;
-      outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .search-bar input { flex: 1; min-width: 220px; }
-    .search-bar input:focus, .search-bar select:focus {
-      border-color: var(--admin-accent);
-      box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
-    }
-    .search-bar select {
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 36px;
-      cursor: pointer;
-    }
+      /* ── Buttons ── */
+      .btn {
+        padding: 7px 16px;
+        border-radius: 9999px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        text-decoration: none;
+        line-height: 1.2;
+      }
+      .btn:hover {
+        opacity: 0.92;
+        transform: translateY(-1px);
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn-primary {
+        background: #131b17;
+        color: #ffffff;
+      }
+      [data-theme="dark"] .btn-primary {
+        background: #ffffff;
+        color: #131b17;
+      }
+      .btn-accent {
+        background: var(--admin-accent);
+        color: #ffffff;
+      }
+      .btn-danger {
+        background: #ef4444;
+        color: #ffffff;
+      }
+      .btn-ghost {
+        background: transparent;
+        border-color: var(--admin-border);
+        color: var(--text-muted);
+      }
+      .btn-ghost:hover {
+        background: var(--admin-surface-raised);
+        color: var(--text);
+        border-color: var(--text);
+      }
+      .btn-secondary {
+        background: var(--admin-surface);
+        border-color: var(--admin-border);
+        color: var(--text);
+      }
+      .btn-secondary:hover {
+        background: var(--admin-surface-raised);
+        border-color: var(--text);
+      }
+      .btn-sm {
+        padding: 4px 11px;
+        font-size: 12px;
+      }
+      .btn .material-symbols-outlined {
+        font-size: 16px;
+        line-height: 1;
+      }
+      .btn-sm .material-symbols-outlined {
+        font-size: 15px;
+        line-height: 1;
+      }
 
-    .pagination { display: flex; gap: 8px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
-    .pagination a {
-      padding: 6px 13px;
-      border-radius: 8px;
-      border: 1px solid var(--admin-border);
-      background: var(--admin-surface);
-      font-size: 13px;
-      color: var(--text-muted);
-      text-decoration: none;
-      transition: all 0.14s ease;
-    }
-    .pagination a:hover {
-      border-color: var(--text);
-      color: var(--text);
-    }
-    .pagination .current {
-      background: #131B17;
-      color: #FFFFFF;
-      border-color: #131B17;
-      padding: 6px 13px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 700;
-    }
-    [data-theme="dark"] .pagination .current {
-      background: #FFFFFF;
-      color: #131B17;
-    }
-    .pagination .info { color: var(--text-muted); font-size: 13px; margin-left: auto; }
+      /* ── Material Symbols Outlined Icon Standard ── */
+      .material-symbols-outlined {
+        font-family: "Material Symbols Outlined" !important;
+        font-weight: normal;
+        font-style: normal;
+        font-size: 1.15rem;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        font-feature-settings: "liga";
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+        vertical-align: middle;
+        flex-shrink: 0;
+        user-select: none;
+      }
+      .material-symbols-outlined.fill {
+        font-variation-settings:
+          "FILL" 1,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
 
-    /* ── Mobile Hamburger & Drawer ── */
-    .admin-hamburger {
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      gap: 5px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 6px;
-    }
-    .admin-hamburger span {
-      display: block;
-      width: 20px;
-      height: 2px;
-      background: var(--text);
-      transition: transform 200ms, opacity 200ms;
-      border-radius: 2px;
-    }
-    .admin-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-    .admin-hamburger.open span:nth-child(2) { opacity: 0; }
-    .admin-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+      /* ── Search Bar & Filter Inputs ── */
+      .search-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      .search-bar input,
+      .search-bar select {
+        background: var(--admin-surface);
+        border: 1.5px solid var(--admin-border);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 13.5px;
+        font-family: inherit;
+        height: 42px;
+        box-sizing: border-box;
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .search-bar input {
+        flex: 1;
+        min-width: 220px;
+      }
+      .search-bar input:focus,
+      .search-bar select:focus {
+        border-color: var(--admin-accent);
+        box-shadow: 0 0 0 3px rgba(232, 89, 56, 0.12);
+      }
+      .search-bar select {
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+        cursor: pointer;
+      }
 
-    .admin-mobile-menu {
-      display: none;
-      flex-direction: column;
-      background: var(--admin-surface);
-      border-bottom: 1px solid var(--admin-border);
-      padding: 12px 20px 20px;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
-    }
-    .admin-mobile-menu.open { display: flex; }
-    .admin-mobile-menu a, .admin-mobile-menu button {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text);
-      text-decoration: none;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--admin-border);
-      background: transparent;
-      border-left: none; border-right: none; border-top: none;
-      text-align: left;
-      font-family: inherit;
-      cursor: pointer;
-    }
-    .admin-mobile-menu a.active { color: var(--admin-accent); font-weight: 700; }
-    .admin-mobile-user {
-      padding: 14px 0 6px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+      .pagination {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+      .pagination a {
+        padding: 6px 13px;
+        border-radius: 8px;
+        border: 1px solid var(--admin-border);
+        background: var(--admin-surface);
+        font-size: 13px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: all 0.14s ease;
+      }
+      .pagination a:hover {
+        border-color: var(--text);
+        color: var(--text);
+      }
+      .pagination .current {
+        background: #131b17;
+        color: #ffffff;
+        border-color: #131b17;
+        padding: 6px 13px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      [data-theme="dark"] .pagination .current {
+        background: #ffffff;
+        color: #131b17;
+      }
+      .pagination .info {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin-left: auto;
+      }
 
-    @media (max-width: 1080px) {
-      .admin-nav { display: none; }
-      .admin-hamburger { display: flex; }
-      .admin-app-btn { display: none; }
-    }
-    @media (max-width: 640px) {
-      .admin-header { padding: 0 16px; }
-      .admin-content { padding: 20px 16px 40px; }
-      .admin-auth-link { display: none; }
-      .admin-signout-btn span { display: none; }
-      .admin-signout-btn { padding: 6px 8px; }
-    }
-  </style>
-  {% block head %}{% endblock %}
-</head>
-<body>
+      /* ── Mobile Hamburger & Drawer ── */
+      .admin-hamburger {
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+      }
+      .admin-hamburger span {
+        display: block;
+        width: 20px;
+        height: 2px;
+        background: var(--text);
+        transition:
+          transform 200ms,
+          opacity 200ms;
+        border-radius: 2px;
+      }
+      .admin-hamburger.open span:nth-child(1) {
+        transform: translateY(7px) rotate(45deg);
+      }
+      .admin-hamburger.open span:nth-child(2) {
+        opacity: 0;
+      }
+      .admin-hamburger.open span:nth-child(3) {
+        transform: translateY(-7px) rotate(-45deg);
+      }
 
-<header class="admin-header">
-  <!-- Logo with Admin badge -->
-  <a href="/admin" class="admin-logo-link" title="Tixdoo Admin Overview">
-    <div class="admin-logo">tixdoo<span class="dot">.</span></div>
-    <span class="admin-badge">ADMIN</span>
-  </a>
+      .admin-mobile-menu {
+        display: none;
+        flex-direction: column;
+        background: var(--admin-surface);
+        border-bottom: 1px solid var(--admin-border);
+        padding: 12px 20px 20px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+      }
+      .admin-mobile-menu.open {
+        display: flex;
+      }
+      .admin-mobile-menu a,
+      .admin-mobile-menu button {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text);
+        text-decoration: none;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--admin-border);
+        background: transparent;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        text-align: left;
+        font-family: inherit;
+        cursor: pointer;
+      }
+      .admin-mobile-menu a.active {
+        color: var(--admin-accent);
+        font-weight: 700;
+      }
+      .admin-mobile-user {
+        padding: 14px 0 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
 
-  <div class="admin-divider" aria-hidden="true"></div>
+      @media (max-width: 1080px) {
+        .admin-nav {
+          display: none;
+        }
+        .admin-hamburger {
+          display: flex;
+        }
+        .admin-app-btn {
+          display: none;
+        }
+      }
+      @media (max-width: 640px) {
+        .admin-header {
+          padding: 0 16px;
+        }
+        .admin-content {
+          padding: 20px 16px 40px;
+        }
+        .admin-auth-link {
+          display: none;
+        }
+        .admin-signout-btn span {
+          display: none;
+        }
+        .admin-signout-btn {
+          padding: 6px 8px;
+        }
+      }
+    </style>
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <header class="admin-header">
+      <!-- Logo with Admin badge -->
+      <a href="/admin" class="admin-logo-link" title="Tixdoo Admin Overview">
+        <div class="admin-logo">tixdoo<span class="dot">.</span></div>
+        <span class="admin-badge">ADMIN</span>
+      </a>
 
-  <!-- Navigation Tabs -->
-  <nav class="admin-nav" aria-label="Admin Navigation">
-    <a href="/admin" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
-    <a href="/admin/organizations" class="{{ 'active' if active_page == 'organizations' else '' }}">Organizations</a>
-    <a href="/admin/events" class="{{ 'active' if active_page == 'events' else '' }}">Events</a>
-    <a href="/admin/vendors" class="{{ 'active' if active_page == 'vendors' else '' }}">Vendors</a>
-    <a href="/admin/finance" class="{{ 'active' if active_page == 'finance' else '' }}">Finance</a>
-    <a href="/admin/payouts" class="{{ 'active' if active_page == 'payouts' else '' }}">Payouts</a>
-    <a href="/admin/users" class="{{ 'active' if active_page == 'users' else '' }}">Users</a>
-    <a href="/admin/broadcasts" class="{{ 'active' if active_page == 'broadcasts' else '' }}">Broadcasts</a>
-    <a href="/admin/insights" class="{{ 'active' if active_page == 'insights' else '' }}">Insights</a>
-  </nav>
+      <div class="admin-divider" aria-hidden="true"></div>
 
-  <!-- Right Actions: App link, Sign in, Sign up, Theme toggle, Avatar, Sign out -->
-  <div class="admin-actions">
-    <!-- User Dashboard link -->
-    <a href="/dashboard" class="admin-app-btn" title="Open user dashboard">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-      <span>User Dashboard</span>
-    </a>
+      <!-- Navigation Tabs -->
+      <nav class="admin-nav" aria-label="Admin Navigation">
+        <a
+          href="/admin"
+          class="{{ 'active' if active_page == 'overview' else '' }}"
+          >Overview</a
+        >
+        <a
+          href="/admin/organizations"
+          class="{{ 'active' if active_page == 'organizations' else '' }}"
+          >Organizations</a
+        >
+        <a
+          href="/admin/events"
+          class="{{ 'active' if active_page == 'events' else '' }}"
+          >Events</a
+        >
+        <a
+          href="/admin/vendors"
+          class="{{ 'active' if active_page == 'vendors' else '' }}"
+          >Vendors</a
+        >
+        <a
+          href="/admin/finance"
+          class="{{ 'active' if active_page == 'finance' else '' }}"
+          >Finance</a
+        >
+        <a
+          href="/admin/payouts"
+          class="{{ 'active' if active_page == 'payouts' else '' }}"
+          >Payouts</a
+        >
+        <a
+          href="/admin/users"
+          class="{{ 'active' if active_page == 'users' else '' }}"
+          >Users</a
+        >
+        <a
+          href="/admin/broadcasts"
+          class="{{ 'active' if active_page == 'broadcasts' else '' }}"
+          >Broadcasts</a
+        >
+        <a
+          href="/admin/insights"
+          class="{{ 'active' if active_page == 'insights' else '' }}"
+          >Insights</a
+        >
+      </nav>
 
-    <!-- Sign in / Sign up quick links -->
-    <a href="/login" class="admin-auth-link" title="Sign in with another account">Sign in</a>
-    <a href="/register" class="admin-auth-link signup" title="Register new user">Sign up</a>
+      <!-- Right Actions: App link, Sign in, Sign up, Theme toggle, Avatar, Sign out -->
+      <div class="admin-actions">
+        <!-- User Dashboard link -->
+        <a href="/dashboard" class="admin-app-btn" title="Open user dashboard">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+            <polyline points="10 17 15 12 10 7" />
+            <line x1="15" y1="12" x2="3" y2="12" />
+          </svg>
+          <span>User Dashboard</span>
+        </a>
 
-    <!-- Light/Dark Theme toggle -->
-    <button class="theme-toggle" onclick="toggleAdminTheme()" aria-label="Toggle light/dark mode" type="button" title="Toggle color theme">
-      <svg class="icon-dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="icon-light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-    </button>
+        <!-- Sign in / Sign up quick links -->
+        <a
+          href="/login"
+          class="admin-auth-link"
+          title="Sign in with another account"
+          >Sign in</a
+        >
+        <a
+          href="/register"
+          class="admin-auth-link signup"
+          title="Register new user"
+          >Sign up</a
+        >
 
-    <!-- User Profile Dropdown (Alpine-powered like user dashboard) -->
-    <div style="position:relative;" x-data="{ open: false }">
-      <button
-        class="user-avatar-btn"
-        @click="open = !open"
-        @click.outside="open = false"
-        type="button"
-        title="{{ admin_user.full_name or admin_user.email }}"
-      >
-        {% if admin_user.avatar_url %}
-        <img src="{{ admin_user.avatar_url }}" alt="{{ admin_user.full_name or admin_user.email }}">
-        {% else %}
-        {{ (admin_user.full_name or admin_user.email)[0].upper() }}
-        {% endif %}
-      </button>
+        <!-- Light/Dark Theme toggle -->
+        <button
+          class="theme-toggle"
+          onclick="toggleAdminTheme()"
+          aria-label="Toggle light/dark mode"
+          type="button"
+          title="Toggle color theme"
+        >
+          <svg
+            class="icon-dark"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          <svg
+            class="icon-light"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+        </button>
 
-      <div x-show="open" x-transition class="user-menu-dropdown" style="display:none;">
-        <div class="user-menu-header">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
-            <div class="user-menu-name">{{ admin_user.full_name or 'Administrator' }}</div>
-            <span class="admin-badge-pill">STAFF</span>
+        <!-- User Profile Dropdown (Alpine-powered like user dashboard) -->
+        <div style="position: relative" x-data="{ open: false }">
+          <button
+            class="user-avatar-btn"
+            @click="open = !open"
+            @click.outside="open = false"
+            type="button"
+            title="{{ admin_user.full_name or admin_user.email }}"
+          >
+            {% if admin_user.avatar_url %}
+            <img
+              src="{{ admin_user.avatar_url }}"
+              alt="{{ admin_user.full_name or admin_user.email }}"
+            />
+            {% else %} {{ (admin_user.full_name or admin_user.email)[0].upper()
+            }} {% endif %}
+          </button>
+
+          <div
+            x-show="open"
+            x-transition
+            class="user-menu-dropdown"
+            style="display: none"
+          >
+            <div class="user-menu-header">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  gap: 6px;
+                "
+              >
+                <div class="user-menu-name">
+                  {{ admin_user.full_name or 'Administrator' }}
+                </div>
+                <span class="admin-badge-pill">STAFF</span>
+              </div>
+              <div class="user-menu-email">{{ admin_user.email }}</div>
+            </div>
+
+            <a href="/dashboard" class="user-menu-item">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+              </svg>
+              User Dashboard
+            </a>
+            <a href="/profile" class="user-menu-item">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              My Profile
+            </a>
+
+            <div
+              style="border-top: 1px solid var(--admin-border); margin: 4px 0"
+            ></div>
+
+            <a href="/login" class="user-menu-item">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+              Sign in (another account)
+            </a>
+            <a href="/register" class="user-menu-item">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="8.5" cy="7" r="4" />
+                <line x1="20" y1="8" x2="20" y2="14" />
+                <line x1="23" y1="11" x2="17" y2="11" />
+              </svg>
+              Sign up new account
+            </a>
+
+            <div
+              style="border-top: 1px solid var(--admin-border); margin: 4px 0"
+            ></div>
+
+            <button
+              class="user-menu-item danger"
+              @click="fetch('/api/v1/auth/logout', {method:'POST',credentials:'include'}).then(()=>window.location.href='/login')"
+              type="button"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Sign out
+            </button>
           </div>
-          <div class="user-menu-email">{{ admin_user.email }}</div>
         </div>
 
-        <a href="/dashboard" class="user-menu-item">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          User Dashboard
-        </a>
-        <a href="/profile" class="user-menu-item">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          My Profile
-        </a>
-
-        <div style="border-top:1px solid var(--admin-border); margin:4px 0;"></div>
-
-        <a href="/login" class="user-menu-item">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-          Sign in (another account)
-        </a>
-        <a href="/register" class="user-menu-item">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-          Sign up new account
-        </a>
-
-        <div style="border-top:1px solid var(--admin-border); margin:4px 0;"></div>
-
+        <!-- Direct Sign out pill button on topnav for 1-click convenience -->
         <button
-          class="user-menu-item danger"
-          @click="fetch('/api/v1/auth/logout', {method:'POST',credentials:'include'}).then(()=>window.location.href='/login')"
+          class="admin-signout-btn"
+          onclick="
+            fetch('/api/v1/auth/logout', {
+              method: 'POST',
+              credentials: 'include',
+            }).then(() => (window.location.href = '/login'))
+          "
+          title="Sign out of admin session"
           type="button"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Sign out
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Sign out</span>
+        </button>
+
+        <!-- Mobile Hamburger Toggle -->
+        <button
+          class="admin-hamburger"
+          id="admin-hamburger"
+          aria-label="Toggle menu"
+          type="button"
+        >
+          <span></span><span></span><span></span>
         </button>
       </div>
+    </header>
+
+    <div class="admin-mobile-menu" id="admin-mobile-menu">
+      <div class="admin-mobile-user">
+        <div style="font-weight: 700; color: var(--text)">
+          {{ admin_user.full_name or 'Administrator' }}
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted)">
+          {{ admin_user.email }} &bull; STAFF
+        </div>
+      </div>
+      <a
+        href="/admin"
+        class="{{ 'active' if active_page == 'overview' else '' }}"
+        >Overview</a
+      >
+      <a
+        href="/admin/organizations"
+        class="{{ 'active' if active_page == 'organizations' else '' }}"
+        >Organizations</a
+      >
+      <a
+        href="/admin/events"
+        class="{{ 'active' if active_page == 'events' else '' }}"
+        >Events</a
+      >
+      <a
+        href="/admin/vendors"
+        class="{{ 'active' if active_page == 'vendors' else '' }}"
+        >Vendors</a
+      >
+      <a
+        href="/admin/finance"
+        class="{{ 'active' if active_page == 'finance' else '' }}"
+        >Finance</a
+      >
+      <a
+        href="/admin/payouts"
+        class="{{ 'active' if active_page == 'payouts' else '' }}"
+        >Payouts</a
+      >
+      <a
+        href="/admin/users"
+        class="{{ 'active' if active_page == 'users' else '' }}"
+        >Users</a
+      >
+      <a
+        href="/admin/broadcasts"
+        class="{{ 'active' if active_page == 'broadcasts' else '' }}"
+        >Broadcasts</a
+      >
+      <a
+        href="/admin/insights"
+        class="{{ 'active' if active_page == 'insights' else '' }}"
+        >Insights</a
+      >
+      <a href="/dashboard">User Dashboard</a>
+      <a href="/login">Sign in (another account)</a>
+      <a href="/register" style="color: var(--admin-accent); font-weight: 700"
+        >Sign up new account</a
+      >
+      <button
+        onclick="
+          fetch('/api/v1/auth/logout', {
+            method: 'POST',
+            credentials: 'include',
+          }).then(() => (window.location.href = '/login'))
+        "
+        style="color: #ef4444; font-weight: 600"
+        type="button"
+      >
+        Sign out
+      </button>
     </div>
 
-    <!-- Direct Sign out pill button on topnav for 1-click convenience -->
-    <button
-      class="admin-signout-btn"
-      onclick="fetch('/api/v1/auth/logout', {method:'POST',credentials:'include'}).then(()=>window.location.href='/login')"
-      title="Sign out of admin session"
-      type="button"
-    >
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-      <span>Sign out</span>
-    </button>
+    <main class="admin-content">{% block content %}{% endblock %}</main>
 
-    <!-- Mobile Hamburger Toggle -->
-    <button class="admin-hamburger" id="admin-hamburger" aria-label="Toggle menu" type="button">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</header>
+    <script>
+      function toggleAdminTheme() {
+        const html = document.documentElement;
+        const next =
+          html.getAttribute("data-theme") === "light" ? "dark" : "light";
+        html.setAttribute("data-theme", next);
+        localStorage.setItem("tixdoo_admin_theme", next);
+      }
 
-<div class="admin-mobile-menu" id="admin-mobile-menu">
-  <div class="admin-mobile-user">
-    <div style="font-weight:700; color:var(--text);">{{ admin_user.full_name or 'Administrator' }}</div>
-    <div style="font-size:12px; color:var(--text-muted);">{{ admin_user.email }} &bull; STAFF</div>
-  </div>
-  <a href="/admin" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
-  <a href="/admin/organizations" class="{{ 'active' if active_page == 'organizations' else '' }}">Organizations</a>
-  <a href="/admin/events" class="{{ 'active' if active_page == 'events' else '' }}">Events</a>
-  <a href="/admin/vendors" class="{{ 'active' if active_page == 'vendors' else '' }}">Vendors</a>
-  <a href="/admin/finance" class="{{ 'active' if active_page == 'finance' else '' }}">Finance</a>
-  <a href="/admin/payouts" class="{{ 'active' if active_page == 'payouts' else '' }}">Payouts</a>
-  <a href="/admin/users" class="{{ 'active' if active_page == 'users' else '' }}">Users</a>
-  <a href="/admin/broadcasts" class="{{ 'active' if active_page == 'broadcasts' else '' }}">Broadcasts</a>
-  <a href="/admin/insights" class="{{ 'active' if active_page == 'insights' else '' }}">Insights</a>
-  <a href="/dashboard">User Dashboard</a>
-  <a href="/login">Sign in (another account)</a>
-  <a href="/register" style="color:var(--admin-accent); font-weight:700;">Sign up new account</a>
-  <button
-    onclick="fetch('/api/v1/auth/logout', {method:'POST',credentials:'include'}).then(()=>window.location.href='/login')"
-    style="color:#EF4444; font-weight:600;"
-    type="button"
-  >
-    Sign out
-  </button>
-</div>
+      (function () {
+        var btn = document.getElementById("admin-hamburger");
+        var menu = document.getElementById("admin-mobile-menu");
+        if (btn && menu) {
+          btn.addEventListener("click", function () {
+            btn.classList.toggle("open");
+            menu.classList.toggle("open");
+          });
+          menu.querySelectorAll("a").forEach(function (a) {
+            a.addEventListener("click", function () {
+              btn.classList.remove("open");
+              menu.classList.remove("open");
+            });
+          });
+        }
+      })();
+    </script>
 
-<main class="admin-content">
-  {% block content %}{% endblock %}
-</main>
-
-<script>
-  function toggleAdminTheme() {
-    const html = document.documentElement;
-    const next = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('tixdoo_admin_theme', next);
-  }
-
-  (function () {
-    var btn = document.getElementById('admin-hamburger');
-    var menu = document.getElementById('admin-mobile-menu');
-    if (btn && menu) {
-      btn.addEventListener('click', function () {
-        btn.classList.toggle('open');
-        menu.classList.toggle('open');
-      });
-      menu.querySelectorAll('a').forEach(function (a) {
-        a.addEventListener('click', function () {
-          btn.classList.remove('open');
-          menu.classList.remove('open');
-        });
-      });
-    }
-  })();
-</script>
-
-{% block scripts %}{% endblock %}
-</body>
+    {% block scripts %}{% endblock %}
+  </body>
 </html>

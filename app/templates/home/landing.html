@@ -4,75 +4,75 @@ conferences, and festivals happening near you, or list your own event in
 minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 {% block head %}
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebSite",
-      "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#website",
-      "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/",
-      "name": "Tixdoo",
-      "description": "Global event ticketing, intelligence, and vendor marketplace platform.",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": {
-          "@type": "EntryPoint",
-          "urlTemplate": "{{ settings.FRONTEND_URL.rstrip('/') }}/events?q={search_term_string}"
-        },
-        "query-input": "required name=search_term_string"
-      }
-    },
-    {
-      "@type": "Organization",
-      "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#organization",
-      "name": "Tixdoo",
-      "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/static/icons/icon-512.svg"
-      },
-      "sameAs": []
-    },
-    {
-      "@type": "FAQPage",
-      "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#faq",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How do verified tickets and QR check-in work?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Every ticket issued on Tixdoo is cryptographically signed and tied to a unique dynamic QR code. Organizers use our offline-ready gate scanner to validate admissions in less than 0.5 seconds, eliminating counterfeit passes and duplicate entries."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I transfer or resell my ticket to a friend?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes. From your attendee dashboard or confirmation email, you can securely reassign tickets to a friend with one click. A fresh QR code is immediately generated for the new holder."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How quickly do event organizers receive their payouts?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Payouts are automated and deposited directly into your verified bank account via Paystack, Stripe, or Flutterwave according to your payout schedule (next-day or rolling daily)."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What payment methods and currencies are supported?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Tixdoo supports multi-currency payments globally including USD, EUR, GBP, CAD, NGN, GHS, KES, and ZAR via Stripe, Paystack, and Flutterwave with card, bank transfer, and mobile money options."
-          }
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#website",
+        "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/",
+        "name": "Tixdoo",
+        "description": "Global event ticketing, intelligence, and vendor marketplace platform.",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "{{ settings.FRONTEND_URL.rstrip('/') }}/events?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
         }
-      ]
-    }
-  ]
-}
+      },
+      {
+        "@type": "Organization",
+        "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#organization",
+        "name": "Tixdoo",
+        "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "{{ settings.FRONTEND_URL.rstrip('/') }}/static/icons/icon-512.svg"
+        },
+        "sameAs": []
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "{{ settings.FRONTEND_URL.rstrip('/') }}/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do verified tickets and QR check-in work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Every ticket issued on Tixdoo is cryptographically signed and tied to a unique dynamic QR code. Organizers use our offline-ready gate scanner to validate admissions in less than 0.5 seconds, eliminating counterfeit passes and duplicate entries."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I transfer or resell my ticket to a friend?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. From your attendee dashboard or confirmation email, you can securely reassign tickets to a friend with one click. A fresh QR code is immediately generated for the new holder."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How quickly do event organizers receive their payouts?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Payouts are automated and deposited directly into your verified bank account via Paystack, Stripe, or Flutterwave according to your payout schedule (next-day or rolling daily)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What payment methods and currencies are supported?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tixdoo supports multi-currency payments globally including USD, EUR, GBP, CAD, NGN, GHS, KES, and ZAR via Stripe, Paystack, and Flutterwave with card, bank transfer, and mobile money options."
+            }
+          }
+        ]
+      }
+    ]
+  }
 </script>
 <link
   rel="stylesheet"
@@ -98,7 +98,8 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     --mpl-text-muted: #56625c;
     --mpl-font-serif: "Lora", Georgia, "Times New Roman", serif;
     --mpl-font-sans:
-      "Bricolage Grotesque", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      "Bricolage Grotesque", "Inter", -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, sans-serif;
   }
 
   body {
@@ -122,7 +123,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     background-image:
       linear-gradient(
         180deg,
-        rgba(19, 27, 23, 0.40) 0%,
+        rgba(19, 27, 23, 0.4) 0%,
         rgba(19, 27, 23, 0.64) 100%
       ),
       url("/static/images/landing/hero-bg.jpg");
@@ -136,14 +137,19 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
   }
 
   .mpl-hero-section::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 620px;
     height: 380px;
-    background: radial-gradient(circle, rgba(110, 230, 215, 0.22) 0%, rgba(232, 89, 56, 0.15) 50%, transparent 72%);
+    background: radial-gradient(
+      circle,
+      rgba(110, 230, 215, 0.22) 0%,
+      rgba(232, 89, 56, 0.15) 50%,
+      transparent 72%
+    );
     border-radius: 50%;
     pointer-events: none;
     z-index: 1;
@@ -152,7 +158,8 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
   }
 
   @keyframes mplGlowFloat {
-    0%, 100% {
+    0%,
+    100% {
       transform: translate(-50%, -50%) scale(1);
       opacity: 0.2;
     }
@@ -217,10 +224,12 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
   }
 
   @keyframes mplCursorBlink {
-    0%, 49% {
+    0%,
+    49% {
       opacity: 1;
     }
-    50%, 100% {
+    50%,
+    100% {
       opacity: 0;
     }
   }
@@ -687,7 +696,9 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     flex-direction: column;
     text-decoration: none;
     color: inherit;
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 240ms ease;
+    transition:
+      transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 240ms ease;
     border-radius: 14px;
   }
 
@@ -738,7 +749,10 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     height: 2px;
     background-color: var(--mpl-coral-light);
     border-radius: 2px;
-    transition: background-color 200ms ease, box-shadow 200ms ease, height 200ms ease;
+    transition:
+      background-color 200ms ease,
+      box-shadow 200ms ease,
+      height 200ms ease;
   }
 
   .mpl-demand-card:hover .mpl-demand-line {
@@ -877,11 +891,11 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 
   .mpl-comp-tixdoo-logo {
     font-family: var(--mpl-font-serif);
-    font-style: italic;
+    font-style: bold;
     font-size: 28px;
     font-weight: 700;
     color: #faf9f7;
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
   }
 
   .mpl-comp-col-tixdoo .mpl-comp-cell {
@@ -1016,11 +1030,11 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 
   .mpl-spotlight-brand-logo {
     font-family: var(--mpl-font-serif);
-    font-style: italic;
+    font-style: bold;
     font-size: 30px;
     font-weight: 700;
     color: var(--mpl-dark);
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
   }
 
   .mpl-spotlight-brand-badge {
@@ -1133,7 +1147,9 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     flex-direction: column;
     border: 1px solid #e5e0d8;
     box-shadow: 0 4px 18px rgba(19, 27, 23, 0.04);
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 240ms ease;
+    transition:
+      transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 240ms ease;
   }
 
   .mpl-how-card:hover {
@@ -1280,7 +1296,9 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     font-family: var(--mpl-font-sans);
     font-weight: 300;
     color: var(--mpl-dark);
-    transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1), color 180ms ease;
+    transition:
+      transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 180ms ease;
     line-height: 1;
     flex-shrink: 0;
     margin-left: 12px;
@@ -1300,7 +1318,10 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
     font-size: 15.5px;
     color: var(--mpl-text-muted);
     line-height: 1.65;
-    transition: max-height 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease, padding 320ms ease;
+    transition:
+      max-height 320ms cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 260ms ease,
+      padding 320ms ease;
   }
 
   .mpl-faq-item.active .mpl-faq-body {
@@ -1336,7 +1357,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
       linear-gradient(
         180deg,
         rgba(19, 27, 23, 0.82) 0%,
-        rgba(19, 27, 23, 0.90) 100%
+        rgba(19, 27, 23, 0.9) 100%
       ),
       url("/static/images/landing/cta-bg.jpg");
     background-position: center center;
@@ -1417,11 +1438,11 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 
   .mpl-footer-logo {
     font-family: var(--mpl-font-serif);
-    font-style: italic;
+    font-style: bold;
     font-size: 30px;
     font-weight: 700;
     color: #faf9f7;
-    letter-spacing: 0;
+    letter-spacing: -0.02em;
     text-decoration: none;
     margin-bottom: 12px;
   }
@@ -1530,13 +1551,19 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 
   @keyframes mplChatPulse {
     0% {
-      box-shadow: 0 8px 24px rgba(232, 89, 56, 0.4), 0 0 0 0 rgba(232, 89, 56, 0.4);
+      box-shadow:
+        0 8px 24px rgba(232, 89, 56, 0.4),
+        0 0 0 0 rgba(232, 89, 56, 0.4);
     }
     50% {
-      box-shadow: 0 8px 24px rgba(232, 89, 56, 0.4), 0 0 0 10px rgba(232, 89, 56, 0);
+      box-shadow:
+        0 8px 24px rgba(232, 89, 56, 0.4),
+        0 0 0 10px rgba(232, 89, 56, 0);
     }
     100% {
-      box-shadow: 0 8px 24px rgba(232, 89, 56, 0.4), 0 0 0 0 rgba(232, 89, 56, 0);
+      box-shadow:
+        0 8px 24px rgba(232, 89, 56, 0.4),
+        0 0 0 0 rgba(232, 89, 56, 0);
     }
   }
 
@@ -1566,7 +1593,12 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
 <section class="mpl-hero-section">
   <div class="mpl-hero-content">
     <h1 class="mpl-hero-title">
-      Create <span class="mpl-typed-wrap"><span class="mpl-typed-word" id="heroTypedWord">memories</span><span class="mpl-typed-cursor" aria-hidden="true">|</span></span> that last a lifetime.
+      Create
+      <span class="mpl-typed-wrap"
+        ><span class="mpl-typed-word" id="heroTypedWord">memories</span
+        ><span class="mpl-typed-cursor" aria-hidden="true">|</span></span
+      >
+      that last a lifetime.
     </h1>
     <p class="mpl-hero-subtitle">
       If you need same-day tickets, a VIP pass, or help hosting your own event,
@@ -1901,22 +1933,46 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
             <span class="mpl-comp-tixdoo-logo">tixdoo</span>
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+            <span class="mpl-comp-check-white"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >check</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+            <span class="mpl-comp-check-white"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >check</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+            <span class="mpl-comp-check-white"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >check</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+            <span class="mpl-comp-check-white"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >check</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+            <span class="mpl-comp-check-white"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >check</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-check-white"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+            <span class="mpl-comp-check-white"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >check</span
+              ></span
+            >
           </div>
         </div>
 
@@ -1939,28 +1995,53 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
             <span>Walk-in box offices</span>
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-check-dark"><span class="material-symbols-outlined" style="font-size:18px;">check</span></span>
+            <span class="mpl-comp-check-dark"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >check</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+            <span class="mpl-comp-cross-muted"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >close</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+            <span class="mpl-comp-cross-muted"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >close</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+            <span class="mpl-comp-cross-muted"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >close</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+            <span class="mpl-comp-cross-muted"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >close</span
+              ></span
+            >
           </div>
           <div class="mpl-comp-cell">
-            <span class="mpl-comp-cross-muted"><span class="material-symbols-outlined" style="font-size:18px;">close</span></span>
+            <span class="mpl-comp-cross-muted"
+              ><span class="material-symbols-outlined" style="font-size: 18px"
+                >close</span
+              ></span
+            >
           </div>
         </div>
       </div>
     </div>
     <div class="mpl-comp-swipe-hint">
-      <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i> Swipe table to compare
+      <i class="fa-solid fa-arrows-left-right" aria-hidden="true"></i> Swipe
+      table to compare
     </div>
   </div>
 </section>
@@ -2076,9 +2157,9 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           <span class="mpl-faq-icon">+</span>
         </button>
         <div class="mpl-faq-body">
-          Every ticket issued on Tixdoo is cryptographically signed and tied to a
-          unique dynamic QR code. Organizers use our offline-ready gate scanner
-          to validate admissions in less than 0.5 seconds, eliminating
+          Every ticket issued on Tixdoo is cryptographically signed and tied to
+          a unique dynamic QR code. Organizers use our offline-ready gate
+          scanner to validate admissions in less than 0.5 seconds, eliminating
           counterfeit passes and duplicate entries.
         </div>
       </div>
@@ -2113,8 +2194,10 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           <span class="mpl-faq-icon">+</span>
         </button>
         <div class="mpl-faq-body">
-          Tixdoo powers international transactions with multi-currency checkouts in USD, EUR, GBP, CAD, NGN, KES, GHS, and ZAR.
-          We accept all major cards (Visa, Mastercard, AMEX, Discover), Apple Pay, Google Pay, local bank transfers, and mobile money.
+          Tixdoo powers international transactions with multi-currency checkouts
+          in USD, EUR, GBP, CAD, NGN, KES, GHS, and ZAR. We accept all major
+          cards (Visa, Mastercard, AMEX, Discover), Apple Pay, Google Pay, local
+          bank transfers, and mobile money.
         </div>
       </div>
 
@@ -2185,7 +2268,11 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
           <h5>Company</h5>
           <a href="/terms">Terms of service</a>
           <a href="/privacy">Privacy policy</a>
-          <a href="javascript:void(0)" onclick="window.openCookieConsent && window.openCookieConsent()">Cookie preferences</a>
+          <a
+            href="javascript:void(0)"
+            onclick="window.openCookieConsent && window.openCookieConsent()"
+            >Cookie preferences</a
+          >
           <a href="mailto:hello@tixdoo.com">Contact support</a>
         </div>
       </div>
@@ -2310,7 +2397,7 @@ minutes. Verified tickets, instant payouts, and seamless check-in.{% endblock %}
         "moments",
         "experiences",
         "impressions",
-        "milestones"
+        "milestones",
       ];
       var wordIndex = 0;
       var charIndex = words[0].length;

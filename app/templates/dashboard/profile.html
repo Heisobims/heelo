@@ -1,22 +1,25 @@
-{% extends "dashboard/layout.html" %}
-{% block title %}Your Profile | Tixdoo{% endblock %}
-{% set active_page = 'profile' %}
-
-{% block head %}
-{{ super() }}
+{% extends "dashboard/layout.html" %} {% block title %}Your Profile | Tixdoo{%
+endblock %} {% set active_page = 'profile' %} {% block head %} {{ super() }}
 <style>
   .profile-avatar {
-    width: 80px; height: 80px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: var(--cyan);
     color: #000;
     font-size: 28px;
     font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     overflow: hidden;
   }
-  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
   .profile-card {
     background: #fff;
     border: 1px solid var(--border-light);
@@ -25,20 +28,29 @@
     margin-bottom: 12px;
   }
   .profile-card-title {
-    font-size: 14px; font-weight: 600;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 20px;
     letter-spacing: -0.01em;
   }
   .save-bar {
-    display: flex; align-items: center; justify-content: flex-end;
-    gap: 10px; padding: 16px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 0 0;
   }
   .success-pill {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 5px 12px; border-radius: 100px;
-    font-size: 12px; font-weight: 500;
-    background: rgba(232, 89, 56, 0.12); color: #C84729;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(232, 89, 56, 0.12);
+    color: #c84729;
   }
   .danger-zone {
     border: 1px solid #fee2e2;
@@ -48,41 +60,83 @@
     margin-bottom: 12px;
   }
 </style>
-{% endblock %}
-
-{% block main_content %}
-<div class="dash-content" style="max-width:680px; padding-bottom:48px;">
-
-  <div style="margin-bottom:8px; font-size:13px; color:var(--text-muted);">Account</div>
-  <h1 class="dash-greeting" style="margin-bottom:28px; font-size:24px; font-weight:500; font-family:var(--font-serif);">Your profile</h1>
+{% endblock %} {% block main_content %}
+<div class="dash-content" style="max-width: 680px; padding-bottom: 48px">
+  <div style="margin-bottom: 8px; font-size: 13px; color: var(--text-muted)">
+    Account
+  </div>
+  <h1
+    class="dash-greeting"
+    style="
+      margin-bottom: 28px;
+      font-size: 24px;
+      font-weight: 500;
+      font-family: var(--font-serif);
+    "
+  >
+    Your profile
+  </h1>
 
   <div x-data="profileForm()">
-
     <!-- Global feedback -->
-    <div x-show="success" class="success-pill" style="margin-bottom:16px; display:none;">
-      <span class="material-symbols-outlined">check_circle</span> <span x-text="success"></span>
+    <div
+      x-show="success"
+      class="success-pill"
+      style="margin-bottom: 16px; display: none"
+    >
+      <span class="material-symbols-outlined">check_circle</span>
+      <span x-text="success"></span>
     </div>
-    <div x-show="error" x-text="error" class="alert alert-danger" style="margin-bottom:16px; display:none;"></div>
+    <div
+      x-show="error"
+      x-text="error"
+      class="alert alert-danger"
+      style="margin-bottom: 16px; display: none"
+    ></div>
 
     <!-- ── Avatar + name header ─────────────────────────────── -->
-    <div class="profile-card" style="display:flex; align-items:center; gap:20px; margin-bottom:12px;">
+    <div
+      class="profile-card"
+      style="display: flex; align-items: center; gap: 20px; margin-bottom: 12px"
+    >
       <div class="profile-avatar" id="avatarPreview">
         {% if user.avatar_url %}
-        <img src="{{ user.avatar_url }}" alt="{{ user.full_name }}">
-        {% else %}
-        {{ user.full_name[0].upper() }}
-        {% endif %}
+        <img src="{{ user.avatar_url }}" alt="{{ user.full_name }}" />
+        {% else %} {{ user.full_name[0].upper() }} {% endif %}
       </div>
       <div>
-        <div style="font-size:18px; font-weight:700;">{{ user.full_name }}</div>
-        <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">{{ user.email }}</div>
-        <div style="margin-top:8px; display:flex; gap:8px;">
-          <label class="btn btn-secondary btn-sm" style="cursor:pointer;">
-            <span class="material-symbols-outlined" style="margin-right:4px;">photo_camera</span> Change photo
-            <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none;" @change="uploadAvatar($event)">
+        <div style="font-size: 18px; font-weight: 700">
+          {{ user.full_name }}
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted); margin-top: 2px">
+          {{ user.email }}
+        </div>
+        <div style="margin-top: 8px; display: flex; gap: 8px">
+          <label class="btn btn-secondary btn-sm" style="cursor: pointer">
+            <span class="material-symbols-outlined" style="margin-right: 4px"
+              >photo_camera</span
+            >
+            Change photo
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              style="display: none"
+              @change="uploadAvatar($event)"
+            />
           </label>
           {% if user.role == 'organizer' or user.role == 'both' %}
-          <span class="badge" style="background:rgba(232, 89, 56, 0.12);color:#C84729;padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;">Organizer</span>
+          <span
+            class="badge"
+            style="
+              background: rgba(232, 89, 56, 0.12);
+              color: #c84729;
+              padding: 4px 10px;
+              border-radius: 100px;
+              font-size: 12px;
+              font-weight: 600;
+            "
+            >Organizer</span
+          >
           {% endif %}
         </div>
       </div>
@@ -91,35 +145,109 @@
     <!-- ── Personal info ────────────────────────────────────── -->
     <div class="profile-card">
       <p class="profile-card-title">Personal information</p>
-      <div style="display:flex; flex-direction:column; gap:16px;">
-
-        <div class="form-group" style="margin-bottom:0;">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div class="form-group" style="margin-bottom: 0">
           <label class="form-label">Full name</label>
-          <input type="text" class="form-input" x-model="form.full_name" maxlength="255" placeholder="Your full name">
+          <input
+            type="text"
+            class="form-input"
+            x-model="form.full_name"
+            maxlength="255"
+            placeholder="Your full name"
+          />
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
+        <div class="form-group" style="margin-bottom: 0">
           <label class="form-label">Email address</label>
-          <input type="email" class="form-input" value="{{ user.email }}" disabled style="background:var(--bg-secondary); color:var(--text-muted); cursor:not-allowed;">
-          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Email changes require support. Contact us at hello@tixdoo.com</p>
+          <input
+            type="email"
+            class="form-input"
+            value="{{ user.email }}"
+            disabled
+            style="
+              background: var(--bg-secondary);
+              color: var(--text-muted);
+              cursor: not-allowed;
+            "
+          />
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px">
+            Email changes require support. Contact us at hello@tixdoo.com
+          </p>
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label">Username <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(optional: tixdoo.com/p/username)</span></label>
-          <div style="position:relative;">
-            <span style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px;">@</span>
-            <input type="text" class="form-input" x-model="form.username" maxlength="50" placeholder="yourhandle" style="padding-left:28px;" autocorrect="off" autocapitalize="none">
+        <div class="form-group" style="margin-bottom: 0">
+          <label class="form-label"
+            >Username
+            <span
+              style="
+                font-size: 11px;
+                color: var(--text-muted);
+                font-weight: 400;
+              "
+              >(optional: tixdoo.com/p/username)</span
+            ></label
+          >
+          <div style="position: relative">
+            <span
+              style="
+                position: absolute;
+                left: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--text-muted);
+                font-size: 14px;
+              "
+              >@</span
+            >
+            <input
+              type="text"
+              class="form-input"
+              x-model="form.username"
+              maxlength="50"
+              placeholder="yourhandle"
+              style="padding-left: 28px"
+              autocorrect="off"
+              autocapitalize="none"
+            />
           </div>
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label">WhatsApp number <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(optional)</span></label>
-          <input type="tel" class="form-input" x-model="form.whatsapp_number" placeholder="e.g. +1 555 123 4567 or +44 7911 123456" maxlength="30">
-          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Used for event reminders and notifications via WhatsApp.</p>
+        <div class="form-group" style="margin-bottom: 0">
+          <label class="form-label"
+            >WhatsApp number
+            <span
+              style="
+                font-size: 11px;
+                color: var(--text-muted);
+                font-weight: 400;
+              "
+              >(optional)</span
+            ></label
+          >
+          <input
+            type="tel"
+            class="form-input"
+            x-model="form.whatsapp_number"
+            placeholder="e.g. +1 555 123 4567 or +44 7911 123456"
+            maxlength="30"
+          />
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px">
+            Used for event reminders and notifications via WhatsApp.
+          </p>
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label">Country <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(optional)</span></label>
+        <div class="form-group" style="margin-bottom: 0">
+          <label class="form-label"
+            >Country
+            <span
+              style="
+                font-size: 11px;
+                color: var(--text-muted);
+                font-weight: 400;
+              "
+              >(optional)</span
+            ></label
+          >
           <select class="form-select" x-model="form.country">
             <option value="">Select country…</option>
             <option value="NG">Nigeria</option>
@@ -141,15 +269,41 @@
           </select>
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label">Birth year <span style="font-size:11px; color:var(--text-muted); font-weight:400;">(optional)</span></label>
-          <input type="number" class="form-input" x-model="form.birth_year" placeholder="1995" min="1920" :max="maxBirthYear" style="max-width:160px;">
-          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Helps us tailor events and offers to your age group. Never shown on your public profile.</p>
+        <div class="form-group" style="margin-bottom: 0">
+          <label class="form-label"
+            >Birth year
+            <span
+              style="
+                font-size: 11px;
+                color: var(--text-muted);
+                font-weight: 400;
+              "
+              >(optional)</span
+            ></label
+          >
+          <input
+            type="number"
+            class="form-input"
+            x-model="form.birth_year"
+            placeholder="1995"
+            min="1920"
+            :max="maxBirthYear"
+            style="max-width: 160px"
+          />
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px">
+            Helps us tailor events and offers to your age group. Never shown on
+            your public profile.
+          </p>
         </div>
-
       </div>
       <div class="save-bar">
-        <button type="button" class="btn btn-primary" :class="{'btn-loading': saving}" :disabled="saving" @click="saveProfile()">
+        <button
+          type="button"
+          class="btn btn-primary"
+          :class="{'btn-loading': saving}"
+          :disabled="saving"
+          @click="saveProfile()"
+        >
           Save changes
         </button>
       </div>
@@ -159,27 +313,48 @@
     {% if has_password %}
     <div class="profile-card">
       <p class="profile-card-title">Security</p>
-      <div style="display:flex; flex-direction:column; gap:16px;">
-
-        <div class="form-group" style="margin-bottom:0;">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div class="form-group" style="margin-bottom: 0">
           <label class="form-label">Current password</label>
-          <input type="password" class="form-input" x-model="pw.current" autocomplete="current-password">
+          <input
+            type="password"
+            class="form-input"
+            x-model="pw.current"
+            autocomplete="current-password"
+          />
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
+        <div class="form-group" style="margin-bottom: 0">
           <label class="form-label">New password</label>
-          <input type="password" class="form-input" x-model="pw.new" autocomplete="new-password">
-          <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">At least 8 characters with one letter and one number.</p>
+          <input
+            type="password"
+            class="form-input"
+            x-model="pw.new"
+            autocomplete="new-password"
+          />
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px">
+            At least 8 characters with one letter and one number.
+          </p>
         </div>
 
-        <div class="form-group" style="margin-bottom:0;">
+        <div class="form-group" style="margin-bottom: 0">
           <label class="form-label">Confirm new password</label>
-          <input type="password" class="form-input" x-model="pw.confirm" autocomplete="new-password">
+          <input
+            type="password"
+            class="form-input"
+            x-model="pw.confirm"
+            autocomplete="new-password"
+          />
         </div>
-
       </div>
       <div class="save-bar">
-        <button type="button" class="btn btn-secondary" :class="{'btn-loading': pwSaving}" :disabled="pwSaving" @click="changePassword()">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          :class="{'btn-loading': pwSaving}"
+          :disabled="pwSaving"
+          @click="changePassword()"
+        >
           Update password
         </button>
       </div>
@@ -187,146 +362,164 @@
     {% else %}
     <div class="profile-card">
       <p class="profile-card-title">Security</p>
-      <p style="font-size:13px; color:var(--text-muted);">
-        Your account uses social login (<strong>{{ user.oauth_provider or 'OAuth' }}</strong>). Password management is handled by your identity provider.
+      <p style="font-size: 13px; color: var(--text-muted)">
+        Your account uses social login (<strong
+          >{{ user.oauth_provider or 'OAuth' }}</strong
+        >). Password management is handled by your identity provider.
       </p>
     </div>
     {% endif %}
 
     <!-- ── Danger zone ──────────────────────────────────────── -->
     <div class="danger-zone">
-      <p style="font-size:14px; font-weight:600; color:#dc2626; margin-bottom:6px;">Danger zone</p>
-      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:14px;">
-        Deleting your account is permanent and cannot be undone. All your data will be removed.
+      <p
+        style="
+          font-size: 14px;
+          font-weight: 600;
+          color: #dc2626;
+          margin-bottom: 6px;
+        "
+      >
+        Danger zone
+      </p>
+      <p
+        style="
+          font-size: 13px;
+          color: var(--text-secondary);
+          margin-bottom: 14px;
+        "
+      >
+        Deleting your account is permanent and cannot be undone. All your data
+        will be removed.
       </p>
       <button
         type="button"
         class="btn btn-secondary btn-sm"
-        style="border-color:#dc2626; color:#dc2626;"
+        style="border-color: #dc2626; color: #dc2626"
         @click="if(confirm('Are you sure? This cannot be undone.')) deleteAccount()"
       >
         Delete my account
       </button>
     </div>
-
-  </div><!-- /x-data -->
+  </div>
+  <!-- /x-data -->
 </div>
 
 <script>
-function profileForm() {
-  return {
-    form: {
-      full_name: {{ user.full_name | tojson }},
-      username: {{ (user.username or '') | tojson }},
-      whatsapp_number: {{ (user.whatsapp_number or '') | tojson }},
-      country: {{ (user.country or '') | tojson }},
-      birth_year: {{ (user.birth_year or '') | tojson }},
-      avatar_url: {{ (user.avatar_url or '') | tojson }},
-    },
-    maxBirthYear: new Date().getFullYear() - 5,
-    pw: { current: '', new: '', confirm: '' },
-    saving: false,
-    pwSaving: false,
-    success: '',
-    error: '',
+  function profileForm() {
+    return {
+      form: {
+        full_name: {{ user.full_name | tojson }},
+        username: {{ (user.username or '') | tojson }},
+        whatsapp_number: {{ (user.whatsapp_number or '') | tojson }},
+        country: {{ (user.country or '') | tojson }},
+        birth_year: {{ (user.birth_year or '') | tojson }},
+        avatar_url: {{ (user.avatar_url or '') | tojson }},
+      },
+      maxBirthYear: new Date().getFullYear() - 5,
+      pw: { current: '', new: '', confirm: '' },
+      saving: false,
+      pwSaving: false,
+      success: '',
+      error: '',
 
-    async saveProfile() {
-      this.success = '';
-      this.error = '';
-      this.saving = true;
-      try {
-        const body = {};
-        if (this.form.full_name.trim()) body.full_name = this.form.full_name.trim();
-        body.username = this.form.username.trim() || null;
-        body.whatsapp_number = this.form.whatsapp_number.trim() || null;
-        body.country = this.form.country || null;
-        body.birth_year = this.form.birth_year ? parseInt(this.form.birth_year, 10) : null;
-        if (this.form.avatar_url) body.avatar_url = this.form.avatar_url;
+      async saveProfile() {
+        this.success = '';
+        this.error = '';
+        this.saving = true;
+        try {
+          const body = {};
+          if (this.form.full_name.trim()) body.full_name = this.form.full_name.trim();
+          body.username = this.form.username.trim() || null;
+          body.whatsapp_number = this.form.whatsapp_number.trim() || null;
+          body.country = this.form.country || null;
+          body.birth_year = this.form.birth_year ? parseInt(this.form.birth_year, 10) : null;
+          if (this.form.avatar_url) body.avatar_url = this.form.avatar_url;
 
-        const res = await fetch('/api/v1/auth/me', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(body),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          this.error = data.detail || data.error?.message || 'Save failed.';
-          return;
-        }
-        this.success = 'Profile saved!';
-        setTimeout(() => this.success = '', 3000);
-      } catch { this.error = 'Network error.'; }
-      finally { this.saving = false; }
-    },
-
-    async changePassword() {
-      this.success = '';
-      this.error = '';
-      if (!this.pw.current || !this.pw.new) { this.error = 'Fill in all password fields.'; return; }
-      if (this.pw.new !== this.pw.confirm) { this.error = 'New passwords do not match.'; return; }
-      this.pwSaving = true;
-      try {
-        const res = await fetch('/api/v1/auth/me/password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ current_password: this.pw.current, new_password: this.pw.new }),
-        });
-        if (!res.ok) {
+          const res = await fetch('/api/v1/auth/me', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body),
+          });
           const data = await res.json();
-          this.error = data.detail || data.error?.message || 'Password update failed.';
-          return;
-        }
-        this.pw = { current: '', new: '', confirm: '' };
-        this.success = 'Password updated!';
-        setTimeout(() => this.success = '', 3000);
-      } catch { this.error = 'Network error.'; }
-      finally { this.pwSaving = false; }
-    },
-
-    async uploadAvatar(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      if (file.size > 5 * 1024 * 1024) { this.error = 'Avatar must be under 5 MB.'; return; }
-      // Show local preview immediately
-      const reader = new FileReader();
-      reader.onload = e => {
-        const el = document.getElementById('avatarPreview');
-        if (el) el.innerHTML = `<img src="${e.target.result}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-      };
-      reader.readAsDataURL(file);
-      // Upload to server
-      const fd = new FormData();
-      fd.append('file', file);
-      try {
-        const res = await fetch('/api/v1/auth/me/avatar', {
-          method: 'POST',
-          credentials: 'include',
-          body: fd,
-        });
-        const data = await res.json();
-        if (res.ok) {
-          if (data.avatar_url) {
-            this.form.avatar_url = data.avatar_url;
-            const el = document.getElementById('avatarPreview');
-            if (el) el.innerHTML = `<img src="${data.avatar_url}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+          if (!res.ok) {
+            this.error = data.detail || data.error?.message || 'Save failed.';
+            return;
           }
-          this.success = 'Profile photo updated!';
+          this.success = 'Profile saved!';
           setTimeout(() => this.success = '', 3000);
-        } else {
-          this.error = data.detail || 'Upload failed.';
-        }
-      } catch { this.error = 'Network error. Try again.'; }
-    },
+        } catch { this.error = 'Network error.'; }
+        finally { this.saving = false; }
+      },
 
-    async deleteAccount() {
-      try {
-        await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
-        window.location.href = '/';
-      } catch {}
-    },
-  };
-}
+      async changePassword() {
+        this.success = '';
+        this.error = '';
+        if (!this.pw.current || !this.pw.new) { this.error = 'Fill in all password fields.'; return; }
+        if (this.pw.new !== this.pw.confirm) { this.error = 'New passwords do not match.'; return; }
+        this.pwSaving = true;
+        try {
+          const res = await fetch('/api/v1/auth/me/password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ current_password: this.pw.current, new_password: this.pw.new }),
+          });
+          if (!res.ok) {
+            const data = await res.json();
+            this.error = data.detail || data.error?.message || 'Password update failed.';
+            return;
+          }
+          this.pw = { current: '', new: '', confirm: '' };
+          this.success = 'Password updated!';
+          setTimeout(() => this.success = '', 3000);
+        } catch { this.error = 'Network error.'; }
+        finally { this.pwSaving = false; }
+      },
+
+      async uploadAvatar(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) { this.error = 'Avatar must be under 5 MB.'; return; }
+        // Show local preview immediately
+        const reader = new FileReader();
+        reader.onload = e => {
+          const el = document.getElementById('avatarPreview');
+          if (el) el.innerHTML = `<img src="${e.target.result}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        };
+        reader.readAsDataURL(file);
+        // Upload to server
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+          const res = await fetch('/api/v1/auth/me/avatar', {
+            method: 'POST',
+            credentials: 'include',
+            body: fd,
+          });
+          const data = await res.json();
+          if (res.ok) {
+            if (data.avatar_url) {
+              this.form.avatar_url = data.avatar_url;
+              const el = document.getElementById('avatarPreview');
+              if (el) el.innerHTML = `<img src="${data.avatar_url}" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            }
+            this.success = 'Profile photo updated!';
+            setTimeout(() => this.success = '', 3000);
+          } else {
+            this.error = data.detail || 'Upload failed.';
+          }
+        } catch { this.error = 'Network error. Try again.'; }
+      },
+
+      async deleteAccount() {
+        try {
+          await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
+          window.location.href = '/';
+        } catch {}
+      },
+    };
+  }
 </script>
 {% endblock %}
