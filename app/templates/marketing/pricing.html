@@ -57,11 +57,11 @@
 }
 </script>
 <style>
-  .pr-wrap { max-width: 760px; margin: 0 auto; padding: 130px 24px 40px; }
+  .pr-wrap { max-width: 1280px; margin: 0 auto; padding: 130px 24px 40px; box-sizing: border-box; }
 
   .pr-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); margin-bottom: 12px; }
   .pr-title { font-family: var(--font-serif); font-size: clamp(30px, 5vw, 44px); font-weight: 500; line-height: 1.12; letter-spacing: -0.01em; margin-bottom: 14px; }
-  .pr-dek { font-size: 16px; line-height: 1.6; color: var(--text-secondary); max-width: 52ch; margin-bottom: 48px; }
+  .pr-dek { font-size: 16px; line-height: 1.6; color: var(--text-secondary); max-width: 64ch; margin-bottom: 48px; }
 
   .pr-fee-card {
     background: var(--primary-dark);
@@ -84,7 +84,8 @@
   .pr-section { margin-bottom: 56px; }
   .pr-section h2 { font-size: 20px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.005em; }
 
-  .pr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .pr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 960px) { .pr-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 560px) { .pr-grid { grid-template-columns: 1fr; } }
   .pr-item {
     display: flex;
@@ -98,15 +99,16 @@
   }
   .pr-item svg { flex-shrink: 0; margin-top: 2px; color: var(--primary); }
 
-  .pr-rules { display: flex; flex-direction: column; gap: 20px; }
+  .pr-rules { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 32px; }
+  @media (max-width: 768px) { .pr-rules { grid-template-columns: 1fr; gap: 20px; } }
   .pr-rule { display: grid; grid-template-columns: 28px 1fr; gap: 14px; }
   .pr-rule-mark { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); border: 2px solid var(--primary); margin-top: 6px; }
   .pr-rule h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
   .pr-rule p { font-size: 14.5px; line-height: 1.65; color: var(--text-secondary); margin: 0; }
 
-  /* ── Shared wide-section wrapper (matches the landing page's) ────── */
-  .ln-section { padding: 88px 24px; }
-  .ln-section-inner { max-width: 1100px; margin: 0 auto; }
+  /* ── Shared wide-section wrapper (matches site nav alignment) ────── */
+  .ln-section { padding: 88px 24px; box-sizing: border-box; }
+  .ln-section-inner { max-width: 1280px; margin: 0 auto; box-sizing: border-box; }
   .ln-label {
     font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--primary); margin-bottom: 14px;
@@ -181,9 +183,9 @@
   .curr-pill:hover { border-color: var(--primary); color: var(--primary); }
   .curr-pill.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
-  /* ── Real numbers, redesigned for this page's narrower rhythm ───── */
+  /* ── Real numbers, redesigned for this page's rhythm ───── */
   .pr-stats-head { max-width: 640px; margin: 0 auto 40px; text-align: center; }
-  .pr-stats-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .pr-stats-grid { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; box-sizing: border-box; }
   .pr-stat { background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 26px 24px; transition: transform 200ms ease, border-color 200ms ease; }
   .pr-stat:hover { transform: translateY(-3px); border-color: var(--cyan); }
   .pr-stat-num { font-family: var(--font-mono); font-weight: 700; font-size: clamp(28px, 3.2vw, 36px); letter-spacing: -1px; display: block; margin-bottom: 12px; }
@@ -227,7 +229,7 @@
   .ln-pillar-link:hover { color: var(--cyan); filter: brightness(0.7); }
 
   /* ── Built for every kind of event (use-case tabs) ───────────────── */
-  .ln-usecases { padding: 88px 24px; background: #fff; }
+  .ln-usecases { padding: 88px 24px; background: #fff; box-sizing: border-box; }
   .uc-tabs {
     display: flex; gap: 0; margin: 40px 0 36px; border-bottom: 1px solid var(--border);
     overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
@@ -296,11 +298,27 @@
     .uc-card:nth-child(2), .uc-card:nth-child(3) { grid-row: auto; grid-column: auto; }
   }
   @media (max-width: 768px) {
+    .pr-wrap {
+      padding: 110px 16px 36px;
+    }
+    .ln-section,
+    .ln-usecases {
+      padding: 64px 16px;
+    }
     .uc-tabs { margin: 32px 0 28px; }
     .uc-tab { margin-right: 22px; font-size: 13.5px; }
   }
   @media (max-width: 480px) {
     .pr-stats-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 420px) {
+    .pr-wrap {
+      padding: 100px 12px 32px;
+    }
+    .ln-section,
+    .ln-usecases {
+      padding: 56px 12px;
+    }
   }
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }

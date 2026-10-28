@@ -110,6 +110,7 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
     text-align: center;
     max-width: 660px;
     margin: 0 auto;
+    box-sizing: border-box;
   }
   .ev-hero h1 {
     font-family: var(--font-serif);
@@ -125,7 +126,7 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
   }
 
   .ev-search-bar {
-    max-width: 1100px;
+    max-width: 1280px;
     margin: 0 auto 32px;
     padding: 0 24px;
     display: flex;
@@ -259,12 +260,13 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
   }
 
   .ev-active-filters {
-    max-width: 860px;
+    max-width: 1280px;
     margin: 0 auto 20px;
     padding: 0 24px;
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+    box-sizing: border-box;
   }
   .ev-filter-chip {
     display: inline-flex;
@@ -286,12 +288,13 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
   }
 
   .ev-results-header {
-    max-width: 1240px;
+    max-width: 1280px;
     margin: 0 auto 20px;
     padding: 0 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    box-sizing: border-box;
   }
   .ev-results-count {
     font-size: 13.5px;
@@ -300,14 +303,10 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
 
   /* Quick nav pills */
   .ev-quick-nav {
-    max-width: 1240px;
+    max-width: 1280px;
     margin: 0 auto 36px;
     padding: 0 24px;
-  }
-  @media (min-width: 1380px) {
-    .ev-quick-nav {
-      max-width: 1400px;
-    }
+    box-sizing: border-box;
   }
   .ev-quick-nav-pills {
     display: flex;
@@ -349,15 +348,11 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
 
   /* Section blocks & 4-in-a-row carousel */
   .ev-section-block {
-    max-width: 1240px;
+    max-width: 1280px;
     margin: 0 auto 60px;
     padding: 0 24px;
     scroll-margin-top: 90px;
-  }
-  @media (min-width: 1380px) {
-    .ev-section-block {
-      max-width: 1400px;
-    }
+    box-sizing: border-box;
   }
   .ev-section-header {
     display: flex;
@@ -458,7 +453,8 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
     justify-content: center;
     margin: 32px auto 48px;
     padding: 0 24px;
-    max-width: 1240px;
+    max-width: 1280px;
+    box-sizing: border-box;
   }
   .ev-main-view-all-btn {
     display: inline-flex;
@@ -503,14 +499,10 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
 
   /* Filtered view specific styles */
   .ev-filtered-view-wrap {
-    max-width: 1240px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 0 24px;
-  }
-  @media (min-width: 1380px) {
-    .ev-filtered-view-wrap {
-      max-width: 1400px;
-    }
+    box-sizing: border-box;
   }
 
   .ev-results-header {
@@ -585,27 +577,19 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
     transform: translateX(-2px);
   }
 
-  /* Multi-column uniform grid: 4 columns on desktop, 5 columns on widescreen */
+  /* Multi-column uniform grid matching topnav: 4 columns on desktop */
   .ev-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 28px 20px;
-    max-width: 1240px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 0 24px;
+    box-sizing: border-box;
   }
   .ev-section-block .ev-grid,
   .ev-filtered-view-wrap .ev-grid {
     padding: 0;
-  }
-  @media (min-width: 1380px) {
-    .ev-grid {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      max-width: 1400px;
-    }
-    .ev-results-header {
-      max-width: 1400px;
-    }
   }
   @media (max-width: 1080px) {
     .ev-grid {
@@ -786,11 +770,14 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
   }
 
   .ev-pagination {
+    max-width: 1280px;
+    margin: 40px auto 60px;
     display: flex;
     gap: 8px;
     align-items: center;
     justify-content: center;
-    padding: 40px 24px;
+    padding: 0 24px;
+    box-sizing: border-box;
   }
   .ev-pagination a {
     padding: 7px 14px;
@@ -814,6 +801,56 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
     border-radius: 8px;
     font-size: 13.5px;
     font-weight: 700;
+  }
+
+  /* Responsive margin and padding alignment with .site-nav-inner */
+  @media (max-width: 768px) {
+    .ev-hero {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    .ev-search-bar,
+    .ev-active-filters,
+    .ev-results-header,
+    .ev-quick-nav,
+    .ev-section-block,
+    .ev-all-events-cta-wrap,
+    .ev-filtered-view-wrap,
+    .ev-grid,
+    .ev-pagination {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    .ev-section-block .ev-grid,
+    .ev-filtered-view-wrap .ev-grid,
+    .ev-filtered-view-wrap .ev-results-header {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+  @media (max-width: 420px) {
+    .ev-hero {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+    .ev-search-bar,
+    .ev-active-filters,
+    .ev-results-header,
+    .ev-quick-nav,
+    .ev-section-block,
+    .ev-all-events-cta-wrap,
+    .ev-filtered-view-wrap,
+    .ev-grid,
+    .ev-pagination {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+    .ev-section-block .ev-grid,
+    .ev-filtered-view-wrap .ev-grid,
+    .ev-filtered-view-wrap .ev-results-header {
+      padding-left: 0;
+      padding-right: 0;
+    }
   }
 </style>
 {% endblock %} {% macro render_event_card(event) %} {% set price_info =

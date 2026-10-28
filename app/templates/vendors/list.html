@@ -40,7 +40,7 @@
   .vm-btn-cyan:hover { background: #233029; color: #fff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(19, 27, 23, 0.16); }
 
   .vm-search-bar {
-    max-width: 1100px; margin: 0 auto 32px; padding: 0 24px;
+    max-width: 1280px; margin: 0 auto 32px; padding: 0 24px;
     display: flex; gap: 10px; align-items: center; box-sizing: border-box;
     flex-wrap: nowrap;
   }
@@ -142,26 +142,18 @@
   }
 
 
-  .vm-results-header { max-width: 1240px; margin: 0 auto 16px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .vm-results-header { max-width: 1280px; margin: 0 auto 16px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; }
   .vm-results-count { font-size: 13.5px; color: var(--text-muted); }
 
-  /* Multi-column uniform grid matching events listing: 4 columns on desktop, 5 on widescreen */
+  /* Multi-column uniform grid matching events listing: 4 columns on desktop */
   .vm-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 24px 20px;
-    max-width: 1240px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 0 24px 80px;
-  }
-  @media (min-width: 1380px) {
-    .vm-grid {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      max-width: 1400px;
-    }
-    .vm-results-header {
-      max-width: 1400px;
-    }
+    box-sizing: border-box;
   }
   @media (max-width: 1080px) {
     .vm-grid {
@@ -170,23 +162,39 @@
     }
   }
   @media (max-width: 768px) {
+    .vm-hero {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+    .vm-search-bar,
+    .vm-results-header,
+    .vm-grid {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
     .vm-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px 14px;
-      padding: 0 16px 64px;
-    }
-    .vm-results-header {
-      padding: 0 16px;
-    }
-    .vm-search-bar {
-      padding: 0 16px;
+      padding-bottom: 64px;
     }
   }
   @media (max-width: 520px) {
     .vm-grid {
       grid-template-columns: 1fr;
       gap: 16px;
-      padding: 0 16px 56px;
+      padding-bottom: 56px;
+    }
+  }
+  @media (max-width: 420px) {
+    .vm-hero {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+    .vm-search-bar,
+    .vm-results-header,
+    .vm-grid {
+      padding-left: 12px;
+      padding-right: 12px;
     }
   }
 
