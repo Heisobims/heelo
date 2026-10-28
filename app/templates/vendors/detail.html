@@ -340,6 +340,26 @@ block head %}
     gap: 8px;
     margin-bottom: 22px;
   }
+  @media (max-width: 768px) {
+    .vd-be-action-buttons {
+      flex-direction: row;
+      gap: 8px;
+    }
+    .vd-be-btn-follow,
+    .vd-be-btn-msg,
+    .vd-be-btn-save {
+      flex: 1 1 0;
+      padding: 0 8px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+  }
+  @media (max-width: 360px) {
+    .vd-be-btn-follow span:last-child,
+    .vd-be-btn-save span:last-child {
+      display: none;
+    }
+  }
   .vd-be-btn-follow {
     width: 100%;
     height: 40px;
@@ -797,6 +817,23 @@ block head %}
     max-width: 90vw;
     transition: transform 220ms ease;
   }
+  @media (max-width: 580px) {
+    .vd-floating-hire-bar {
+      bottom: 14px;
+      padding: 5px 6px 5px 10px;
+      gap: 8px;
+      width: calc(100% - 24px);
+      max-width: 420px;
+    }
+    .vd-floating-text span:last-child {
+      display: none;
+    }
+    .vd-floating-btn {
+      height: 34px;
+      padding: 0 14px;
+      font-size: 12.5px;
+    }
+  }
   .vd-floating-avatar {
     width: 32px;
     height: 32px;
@@ -1047,7 +1084,7 @@ block head %}
       <!-- Verified on Tixdoo Card (Shown exclusively when verified in DB) -->
       {% if vendor.is_verified or vendor.verification_status == 'verified' %}
       <div class="vd-be-verified-box">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0057ff">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#7C3AED">
           <circle cx="12" cy="12" r="10" />
           <path
             d="m8.5 12 2.5 2.5 4.5-4.5"

@@ -77,6 +77,7 @@ Africa.{% endblock %} {% block head %}
   /* ── Vertical scroll-snap feed - one card at a time ─────────────────────── */
   .feed-container {
     height: 100vh;
+    height: 100dvh;
     overflow-y: scroll;
     scroll-snap-type: y mandatory;
     scrollbar-width: none;
@@ -89,6 +90,7 @@ Africa.{% endblock %} {% block head %}
     scroll-snap-align: start;
     scroll-snap-stop: always;
     height: 100vh;
+    height: 100dvh;
     display: block;
   }
   .feed-card-link {
@@ -354,7 +356,7 @@ Africa.{% endblock %} {% block head %}
   <a href="/home">Dashboard</a>
   {% else %}
   <a href="/login">Sign in</a>
-  <Sign href="/register" class="feed-btn-primary">Sign up</a>
+  <a href="/register" class="feed-btn-primary">Sign up</a>
   {% endif %}
 </div>
 

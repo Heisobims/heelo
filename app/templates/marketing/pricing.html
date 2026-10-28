@@ -296,6 +296,9 @@
     .uc-card:nth-child(2), .uc-card:nth-child(3) { grid-row: auto; grid-column: auto; }
   }
   @media (max-width: 768px) {
+    .pr-wrap {
+      padding: 96px 16px 36px;
+    }
     .ln-section,
     .ln-usecases {
       padding: 64px 16px;
@@ -303,10 +306,24 @@
     .uc-tabs { margin: 32px 0 28px; }
     .uc-tab { margin-right: 22px; font-size: 13.5px; }
   }
+  @media (max-width: 560px) {
+    .pr-fee-card {
+      padding: 24px 20px;
+      gap: 16px;
+      border-radius: 16px;
+      margin-bottom: 40px;
+    }
+    .pr-fee-number {
+      font-size: 44px;
+    }
+  }
   @media (max-width: 480px) {
     .pr-stats-grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 420px) {
+    .pr-wrap {
+      padding: 88px 12px 32px;
+    }
     .ln-section,
     .ln-usecases {
       padding: 56px 12px;

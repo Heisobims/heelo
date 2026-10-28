@@ -236,7 +236,7 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
     transform: translateY(-1px);
   }
 
-  @media (max-width: 860px) {
+  @media (max-width: 1024px) {
     .ev-search-bar {
       flex-wrap: wrap;
     }
@@ -253,7 +253,27 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
       flex: 1 1 100%;
     }
   }
-  @media (max-width: 520px) {
+  @media (max-width: 640px) {
+    .ev-search-bar {
+      gap: 8px;
+    }
+    .ev-search-input input,
+    .ev-filter-select,
+    .ev-search-btn {
+      height: 44px;
+    }
+    .ev-filter-select {
+      flex: 1 1 calc(50% - 4px);
+      min-width: 0;
+      font-size: 13px;
+      padding: 0 28px 0 10px;
+      background-position: right 9px center;
+    }
+    .ev-search-btn {
+      flex: 1 1 100%;
+    }
+  }
+  @media (max-width: 360px) {
     .ev-filter-select {
       flex: 1 1 100%;
     }
@@ -441,6 +461,13 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
   }
   @media (max-width: 480px) {
     .ev-carousel-item {
+      flex: 0 0 calc(50% - 6px);
+      min-width: calc(50% - 6px);
+      max-width: calc(50% - 6px);
+    }
+  }
+  @media (max-width: 340px) {
+    .ev-carousel-item {
       flex: 0 0 85%;
       min-width: 85%;
       max-width: 85%;
@@ -594,19 +621,25 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
   @media (max-width: 1080px) {
     .ev-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 24px 18px;
+      gap: 20px 16px;
     }
   }
   @media (max-width: 768px) {
     .ev-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px 14px;
+      gap: 16px 12px;
     }
   }
   @media (max-width: 480px) {
     .ev-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 10px;
+    }
+  }
+  @media (max-width: 340px) {
+    .ev-grid {
       grid-template-columns: 1fr;
-      gap: 20px;
+      gap: 16px;
     }
   }
 
@@ -801,9 +834,36 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
     font-weight: 700;
   }
 
+  @media (max-width: 480px) {
+    .ev-card-body {
+      padding-top: 8px;
+      gap: 2px;
+    }
+    .ev-card-title {
+      font-size: 13.5px;
+    }
+    .ev-card-location {
+      font-size: 12px;
+    }
+    .ev-card-date {
+      font-size: 11.5px;
+    }
+    .ev-card-price {
+      font-size: 12.5px;
+    }
+    .ev-card-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      top: 6px;
+      left: 6px;
+    }
+  }
+
   /* Responsive margin and padding alignment with .site-nav-inner */
   @media (max-width: 768px) {
     .ev-hero {
+      padding-top: 96px;
+      padding-bottom: 28px;
       padding-left: 16px;
       padding-right: 16px;
     }
@@ -828,6 +888,8 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
   }
   @media (max-width: 420px) {
     .ev-hero {
+      padding-top: 88px;
+      padding-bottom: 24px;
       padding-left: 12px;
       padding-right: 12px;
     }

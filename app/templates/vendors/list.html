@@ -115,7 +115,7 @@
   }
   .vm-search-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-  @media (max-width: 960px) {
+  @media (max-width: 1024px) {
     .vm-search-bar {
       flex-wrap: wrap;
     }
@@ -123,20 +123,49 @@
       flex: 1 1 100%;
     }
     .vm-filter-select {
-      flex: 1 1 calc(50% - 6px);
+      flex: 1 1 calc(33.333% - 7px);
       min-width: 120px;
       max-width: none;
     }
     .vm-verified-label {
-      flex: 1 1 100%;
+      flex: 1 1 auto;
       justify-content: center;
     }
     .vm-search-btn {
       flex: 1 1 100%;
     }
   }
-  @media (max-width: 520px) {
+  @media (max-width: 640px) {
+    .vm-search-bar {
+      gap: 8px;
+    }
+    .vm-search-input input,
+    .vm-filter-select,
+    .vm-verified-label,
+    .vm-search-btn {
+      height: 44px;
+    }
     .vm-filter-select {
+      flex: 1 1 calc(50% - 4px);
+      min-width: 0;
+      font-size: 13px;
+      padding: 0 28px 0 10px;
+      background-position: right 9px center;
+    }
+    .vm-verified-label {
+      flex: 1 1 calc(50% - 4px);
+      min-width: 0;
+      font-size: 12.5px;
+      padding: 0 10px;
+      justify-content: center;
+    }
+    .vm-search-btn {
+      flex: 1 1 100%;
+    }
+  }
+  @media (max-width: 360px) {
+    .vm-filter-select,
+    .vm-verified-label {
       flex: 1 1 100%;
     }
   }
@@ -158,11 +187,13 @@
   @media (max-width: 1080px) {
     .vm-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 24px 18px;
+      gap: 20px 16px;
     }
   }
   @media (max-width: 768px) {
     .vm-hero {
+      padding-top: 96px;
+      padding-bottom: 28px;
       padding-left: 16px;
       padding-right: 16px;
     }
@@ -174,19 +205,21 @@
     }
     .vm-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 20px 14px;
-      padding-bottom: 64px;
+      gap: 16px 12px;
+      padding-bottom: 60px;
     }
   }
   @media (max-width: 480px) {
     .vm-grid {
-      grid-template-columns: 1fr;
-      gap: 20px;
-      padding-bottom: 56px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 10px;
+      padding-bottom: 48px;
     }
   }
   @media (max-width: 420px) {
     .vm-hero {
+      padding-top: 88px;
+      padding-bottom: 24px;
       padding-left: 12px;
       padding-right: 12px;
     }
@@ -195,6 +228,12 @@
     .vm-grid {
       padding-left: 12px;
       padding-right: 12px;
+    }
+  }
+  @media (max-width: 340px) {
+    .vm-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
     }
   }
 
@@ -349,13 +388,38 @@
     stroke: #047857;
   }
 
-  @media (max-width: 520px) {
+  @media (max-width: 480px) {
     .vm-card-body {
-      padding-top: 10px;
-      gap: 3px;
+      padding-top: 8px;
+      gap: 2px;
     }
     .vm-card-name {
-      font-size: 15.5px;
+      font-size: 13.5px;
+    }
+    .vm-card-location {
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vm-card-tagline {
+      font-size: 11.5px;
+      -webkit-line-clamp: 1;
+    }
+    .vm-card-price {
+      font-size: 12.5px;
+    }
+    .vm-card-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      top: 6px;
+      left: 6px;
+    }
+    .vm-card-rating {
+      font-size: 10.5px;
+      padding: 2px 6px;
+      top: 6px;
+      right: 6px;
     }
   }
 
@@ -380,7 +444,7 @@
     <a href="/vendor-signup" class="vm-btn-cyan">Become a Vendor, List your Business.</a>
   </div>
 
-  <div style="margin-top:24px; padding:12px 18px; border-radius:12px; background:rgba(232,89,56,0.06); border:1px solid rgba(232,89,56,0.2); display:inline-flex; align-items:center; gap:10px; font-size:13px; text-align:left;">
+  <div style="margin-top:24px; padding:12px 18px; border-radius:12px; background:rgba(232,89,56,0.06); border:1px solid rgba(232,89,56,0.2); display:inline-flex; align-items:center; gap:10px; font-size:13px; text-align:left; max-width:100%; box-sizing:border-box; word-break:break-word;">
     <span class="material-symbols-outlined" style="color:var(--cyan); font-size:20px; flex-shrink:0;">storefront</span>
     <span>
       <strong>Looking to exhibit at an event?</strong> Organizers now accept booth and exhibitor applications directly on Tixdoo with automated invoice approval.
