@@ -54,14 +54,27 @@
 <link rel="stylesheet" href="/static/css/dashboard.css">
 <style>
   body { 
-    background: #f7f7f6; 
+    background: #ffffff; 
     color: #191919;
     font-family: inherit;
+  }
+
+  /* Typography for Headings: Lora 400, no italics, letter-spacing -0.02rem */
+  h1, h2, h3, h4, h5, h6,
+  .vd-be-name,
+  .vd-service-title,
+  .vd-be-hire-title,
+  .vd-section-head {
+    font-family: 'Lora', var(--font-serif, Georgia, serif) !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    letter-spacing: -0.02rem !important;
   }
 
   .vd-page-wrap {
     min-height: 100vh;
     padding-top: 64px; /* site-nav clearance */
+    background: #ffffff;
   }
 
   /* ── Full-Width Panoramic Cover Banner (Behance style) ─────────────────── */
@@ -222,8 +235,11 @@
   }
 
   .vd-be-name {
-    font-size: 22px;
-    font-weight: 800;
+    font-family: 'Lora', var(--font-serif, Georgia, serif);
+    font-size: 28px;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: -0.02rem;
     line-height: 1.25;
     color: #131B17;
     margin: 0 0 12px;
@@ -285,14 +301,15 @@
     margin-top: 2px;
   }
 
-  /* Primary Action Buttons: Follow & Message */
+  /* Primary Action Buttons: Follow, Message & Save Vendor (Stacked Behance style) */
   .vd-be-action-buttons {
     display: flex;
+    flex-direction: column;
     gap: 8px;
     margin-bottom: 22px;
   }
   .vd-be-btn-follow {
-    flex: 1;
+    width: 100%;
     height: 40px;
     border-radius: 9999px;
     background: #0057ff;
@@ -312,14 +329,14 @@
     transform: translateY(-1px);
   }
   .vd-be-btn-follow.active {
-    background: #131B17;
+    background: #191919;
   }
   .vd-be-btn-msg {
-    flex: 1;
+    width: 100%;
     height: 40px;
     border-radius: 9999px;
     background: #ffffff;
-    color: #131B17;
+    color: #191919;
     font-size: 14px;
     font-weight: 700;
     border: 1.5px solid #d1d5db;
@@ -331,8 +348,34 @@
     transition: all 160ms;
   }
   .vd-be-btn-msg:hover {
-    border-color: #131B17;
+    border-color: #191919;
+    background: #fafaf9;
     transform: translateY(-1px);
+  }
+  .vd-be-btn-save {
+    width: 100%;
+    height: 40px;
+    border-radius: 9999px;
+    background: #ffffff;
+    color: #191919;
+    font-size: 14px;
+    font-weight: 700;
+    border: 1.5px solid #d1d5db;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 160ms;
+  }
+  .vd-be-btn-save:hover {
+    border-color: #191919;
+    background: #fafaf9;
+    transform: translateY(-1px);
+  }
+  .vd-be-btn-save.active {
+    background: #f3f4f6;
+    border-color: #9ca3af;
   }
 
   /* Hire Vendor Box (matches Behance's "Hire Laurentiu Gabriel" card) */
@@ -345,9 +388,12 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.03);
   }
   .vd-be-hire-title {
-    font-size: 13.5px;
-    font-weight: 800;
-    color: #131B17;
+    font-family: 'Lora', var(--font-serif, Georgia, serif);
+    font-size: 16px;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: -0.02rem;
+    color: #191919;
     margin-bottom: 12px;
     display: flex;
     align-items: center;
@@ -362,7 +408,7 @@
     background: #fafaf9;
     border: 1px solid #f0f0ee;
     text-decoration: none;
-    color: #131B17;
+    color: #191919;
     font-size: 13px;
     font-weight: 700;
     margin-bottom: 8px;
@@ -391,12 +437,10 @@
     color: #0057ff;
   }
 
-  /* Metrics Block (Project Views, Appreciations, Followers) */
+  /* Metrics Block (Clean Behance list directly on canvas) */
   .vd-be-metrics-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #e5e7eb;
     margin-bottom: 20px;
   }
   .vd-be-metric-row {
@@ -404,20 +448,18 @@
     justify-content: space-between;
     align-items: center;
     font-size: 13px;
-    padding: 6px 0;
-    color: #4b5563;
+    padding: 5px 0;
+    color: #555555;
   }
   .vd-be-metric-row strong {
-    color: #131B17;
+    color: #191919;
     font-weight: 700;
   }
 
   /* Milestones Block (Escrow Protected, Deliveries) */
   .vd-be-milestones-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #e5e7eb;
     margin-bottom: 20px;
   }
   .vd-be-milestone-title {
@@ -427,6 +469,9 @@
     text-transform: uppercase;
     color: #9ca3af;
     margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
   .vd-be-milestone-item {
     display: flex;
@@ -434,7 +479,7 @@
     gap: 10px;
     font-size: 13px;
     font-weight: 600;
-    color: #131B17;
+    color: #191919;
     margin-bottom: 10px;
   }
   .vd-be-milestone-item:last-child {
@@ -443,10 +488,8 @@
 
   /* On The Web Section */
   .vd-be-web-card {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid #e5e7eb;
     margin-bottom: 20px;
   }
   .vd-be-web-link {
@@ -472,47 +515,60 @@
   .vd-be-tabs-bar {
     display: flex;
     align-items: center;
-    gap: 32px;
+    justify-content: space-between;
     border-bottom: 1px solid #e5e7eb;
     margin-bottom: 24px;
+  }
+  .vd-be-tabs-left {
+    display: flex;
+    align-items: center;
+    gap: 32px;
     overflow-x: auto;
     scrollbar-width: none;
   }
-  .vd-be-tabs-bar::-webkit-scrollbar {
+  .vd-be-tabs-left::-webkit-scrollbar {
     display: none;
   }
   .vd-be-tab-item {
     padding: 14px 2px;
-    font-size: 14.5px;
+    font-size: 15px;
     font-weight: 700;
-    color: #6b7280;
+    color: #767676;
     text-decoration: none;
     cursor: pointer;
-    border-bottom: 2px solid transparent;
+    border: none;
+    background: none;
+    border-bottom: 2.5px solid transparent;
+    margin-bottom: -1px;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     white-space: nowrap;
     transition: all 140ms ease;
   }
   .vd-be-tab-item:hover {
-    color: #131B17;
+    color: #191919;
   }
   .vd-be-tab-item.active {
-    color: #131B17;
-    border-bottom-color: #131B17;
+    color: #191919;
+    border-bottom-color: #191919;
   }
-  .vd-be-tab-badge {
-    font-size: 11px;
+  .vd-be-tabs-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .vd-be-ribbon-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
     font-weight: 700;
-    padding: 2px 7px;
-    border-radius: 9999px;
-    background: #f3f4f6;
-    color: #4b5563;
-  }
-  .vd-be-tab-item.active .vd-be-tab-badge {
-    background: #131B17;
-    color: #ffffff;
+    color: #6b7280;
+    padding: 4px 10px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
   }
 
   /* ── Work / Portfolio Grid (Matches Behance Masonry Artwork Grid) ────────── */
@@ -622,8 +678,11 @@
     margin-bottom: 12px;
   }
   .vd-service-title {
-    font-size: 17px;
-    font-weight: 800;
+    font-family: 'Lora', var(--font-serif, Georgia, serif);
+    font-size: 19px;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: -0.02rem;
     margin: 0 0 4px;
     color: #131B17;
   }
@@ -709,16 +768,14 @@
     left: 50%;
     transform: translateX(-50%);
     z-index: 50;
-    background: rgba(19, 27, 23, 0.94);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: #191919;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 9999px;
-    padding: 8px 12px 8px 16px;
+    padding: 6px 8px 6px 14px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+    gap: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
     max-width: 90vw;
     transition: transform 220ms ease;
   }
@@ -727,13 +784,13 @@
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
-    background: #fff;
+    background: #ffffff;
     flex-shrink: 0;
   }
   .vd-floating-text {
     color: #ffffff;
     font-size: 13.5px;
-    font-weight: 600;
+    font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -744,10 +801,10 @@
   }
   .vd-floating-btn {
     height: 36px;
-    padding: 0 18px;
+    padding: 0 20px;
     border-radius: 9999px;
-    background: #e85938;
-    color: #ffffff;
+    background: #ffffff;
+    color: #191919;
     font-size: 13px;
     font-weight: 700;
     border: none;
@@ -758,6 +815,10 @@
     gap: 6px;
     transition: background 150ms, transform 100ms;
     flex-shrink: 0;
+  }
+  .vd-floating-btn:hover {
+    background: #f0f0ee;
+    transform: scale(1.02);
   }
   .vd-floating-btn:hover {
     background: #cf492b;
@@ -923,7 +984,7 @@
         </div>
       </div>
 
-      <!-- Follow & Message Buttons -->
+      <!-- Follow, Message, and Save Vendor Buttons (Stacked Behance style) -->
       <div class="vd-be-action-buttons">
         <button type="button" @click="toggleFollow()" class="vd-be-btn-follow" :class="{ 'active': followed }">
           <span class="material-symbols-outlined" style="font-size:17px;" x-text="followed ? 'check' : 'add'">add</span>
@@ -932,6 +993,10 @@
         <button type="button" @click="showRfqModal = true" class="vd-be-btn-msg">
           <span class="material-symbols-outlined" style="font-size:17px;">mail</span>
           <span>Message</span>
+        </button>
+        <button type="button" @click="toggleSave()" class="vd-be-btn-save" :class="{ 'active': saved }">
+          <span class="material-symbols-outlined" style="font-size:17px;" x-text="saved ? 'bookmark_added' : 'bookmark_border'">bookmark_border</span>
+          <span x-text="saved ? 'Saved' : 'Save Vendor'">Save Vendor</span>
         </button>
       </div>
 
@@ -1028,7 +1093,7 @@
       <!-- Owner QR Code Card (Required by test suite) -->
       {% if is_owner %}
       <div class="vd-be-milestones-card">
-        <h3 style="font-size:15px; font-weight:800; margin:0 0 8px; color:#131B17;">Your QR code</h3>
+        <h3 style="font-size:16px; margin:0 0 8px; color:#131B17;">Your QR code</h3>
         <p style="font-size:12.5px; color:#4b5563; line-height:1.5; margin:0 0 12px;">
           Share your direct booking QR code at physical events or exhibitor booths.
         </p>
@@ -1050,25 +1115,31 @@
 
       <!-- Behance-Style Tabs Header (Replacing Adobe Stock with Event Packages) -->
       <nav class="vd-be-tabs-bar" aria-label="Vendor profile navigation">
-        <button type="button" @click="activeTab = 'work'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'work' }">
-          <span>Work</span>
-          <span class="vd-be-tab-badge">{{ (vendor.portfolio_urls | length) if vendor.portfolio_urls else 8 }}</span>
-        </button>
+        <div class="vd-be-tabs-left">
+          <button type="button" @click="activeTab = 'work'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'work' }">
+            Work
+          </button>
 
-        <!-- Particular to Tixdoo: Replaces Adobe Stock tab with Event Packages! -->
-        <button type="button" @click="activeTab = 'packages'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'packages' }">
-          <span>Event Packages</span>
-          <span class="vd-be-tab-badge">{{ services | length }}</span>
-        </button>
+          <!-- Particular to Tixdoo: Replaces Adobe Stock tab with Event Packages! -->
+          <button type="button" @click="activeTab = 'packages'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'packages' }">
+            Event Packages
+          </button>
 
-        <button type="button" @click="activeTab = 'reviews'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'reviews' }">
-          <span>Reviews</span>
-          <span class="vd-be-tab-badge">★ {{ reviews_total or (reviews | length) or 0 }}</span>
-        </button>
+          <button type="button" @click="activeTab = 'reviews'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'reviews' }">
+            Reviews
+          </button>
 
-        <button type="button" @click="activeTab = 'about'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'about' }">
-          <span>About</span>
-        </button>
+          <button type="button" @click="activeTab = 'about'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'about' }">
+            About
+          </button>
+        </div>
+
+        <div class="vd-be-tabs-right">
+          <span class="vd-be-ribbon-badge" title="Tixdoo Verified Business">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#0057ff"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <span>Verified</span>
+          </span>
+        </div>
       </nav>
 
       <!-- ── TAB 1: Work / Visual Portfolio Grid (Matches Behance Artwork Grid) ── -->
@@ -1111,7 +1182,7 @@
       <div x-show="activeTab === 'packages'" x-cloak>
         <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <h2 style="font-size:18px; font-weight:800; color:#131B17; margin:0 0 4px;">Bookable Event Packages</h2>
+            <h2 style="font-size:20px; color:#131B17; margin:0 0 4px;">Bookable Event Packages</h2>
             <p style="font-size:13.5px; color:#6b7280; margin:0;">Transparent fixed pricing backed by 100% Tixdoo Escrow Protection.</p>
           </div>
           <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-accent" style="height:38px; font-size:13px;">
@@ -1164,7 +1235,7 @@
         {% else %}
         <div style="text-align:center; padding:48px 24px; background:#ffffff; border:1px solid #e5e7eb; border-radius:14px;">
           <span class="material-symbols-outlined" style="font-size:40px; color:#9ca3af; margin-bottom:12px;">inventory_2</span>
-          <h3 style="font-size:17px; font-weight:700; margin-bottom:6px;">No pre-built packages listed</h3>
+          <h3 style="font-size:18px; margin-bottom:6px;">No pre-built packages listed</h3>
           <p style="font-size:13.5px; color:#6b7280; max-width:440px; margin:0 auto 18px;">
             {{ vendor.business_name }} prepares tailored proposals on request. Send your event requirements for an itemized quotation.
           </p>
@@ -1179,7 +1250,7 @@
       <div x-show="activeTab === 'reviews'" x-cloak>
         <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <h2 style="font-size:18px; font-weight:800; color:#131B17; margin:0 0 4px;">Verified Client Reviews</h2>
+            <h2 style="font-size:20px; color:#131B17; margin:0 0 4px;">Verified Client Reviews</h2>
             <p style="font-size:13.5px; color:#6b7280; margin:0;">Reviews are posted exclusively after completed, escrow-verified bookings.</p>
           </div>
         </div>
@@ -1229,7 +1300,7 @@
         {% else %}
         <div style="text-align:center; padding:48px 24px; background:#ffffff; border:1px solid #e5e7eb; border-radius:14px;">
           <span class="material-symbols-outlined" style="font-size:40px; color:#f59e0b; margin-bottom:12px; font-variation-settings:'FILL' 1;">star</span>
-          <h3 style="font-size:17px; font-weight:700; margin-bottom:6px;">No customer reviews yet</h3>
+          <h3 style="font-size:18px; margin-bottom:6px;">No customer reviews yet</h3>
           <p style="font-size:13.5px; color:#6b7280; max-width:440px; margin:0 auto;">
             Be among the first event creators to book {{ vendor.business_name }} and leave a review.
           </p>
@@ -1240,7 +1311,7 @@
       <!-- ── TAB 4: About ──────────────────────────────────────────────────── -->
       <div x-show="activeTab === 'about'" x-cloak>
         <div class="vd-about-panel">
-          <h2 style="font-size:18px; font-weight:800; color:#131B17; margin:0 0 16px;">About {{ vendor.business_name }}</h2>
+          <h2 style="font-size:20px; color:#131B17; margin:0 0 16px;">About {{ vendor.business_name }}</h2>
           <div style="font-size:14.5px; line-height:1.7; color:#374151; margin-bottom:28px;">
             {{ vendor.description or (vendor.business_name ~ ' provides premier event services on the Tixdoo marketplace.') }}
           </div>
@@ -1284,7 +1355,7 @@
     {% if vendor.logo_url %}
     <img src="{{ vendor.logo_url }}" alt="{{ vendor.business_name }}" class="vd-floating-avatar">
     {% else %}
-    <div class="vd-floating-avatar" style="display:flex; align-items:center; justify-content:center; background:#131B17; color:#fff; font-size:14px; font-weight:800;">
+    <div class="vd-floating-avatar" style="display:flex; align-items:center; justify-content:center; background:#ffffff; color:#191919; font-size:13px; font-weight:800;">
       {{ vendor.business_name[0].upper() }}
     </div>
     {% endif %}
@@ -1294,8 +1365,7 @@
     </div>
 
     <button type="button" @click="showRfqModal = true" class="vd-floating-btn">
-      <span class="material-symbols-outlined" style="font-size:16px;">mail</span>
-      <span>Request Quote</span>
+      Hire {{ vendor.business_name }}
     </button>
   </div>
 
@@ -1303,7 +1373,7 @@
   <div class="vd-modal-overlay" x-show="showRfqModal" x-cloak x-transition>
     <div class="vd-modal" @click.outside="showRfqModal = false">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="font-size:20px; font-weight:800; margin:0;">Request Quote from {{ vendor.business_name }}</h3>
+        <h3 style="font-size:22px; margin:0;">Request Quote from {{ vendor.business_name }}</h3>
         <button type="button" @click="showRfqModal = false" style="background:none; border:none; cursor:pointer; font-size:22px; color:#6b7280; display:inline-flex; align-items:center;"><span class="material-symbols-outlined" style="font-size:20px;">close</span></button>
       </div>
 
@@ -1352,7 +1422,7 @@
       <template x-if="rfqSubmitted">
         <div style="text-align:center; padding:24px 0;">
           <span class="material-symbols-outlined" style="color:#16a34a; font-size:56px; margin-bottom:12px;">check_circle</span>
-          <h4 style="font-size:20px; font-weight:800; margin-bottom:8px;">Request Dispatched!</h4>
+          <h4 style="font-size:22px; margin-bottom:8px;">Request Dispatched!</h4>
           <p style="color:#4b5563; font-size:14.5px; line-height:1.6; margin-bottom:24px;">
             {{ vendor.business_name }} has received your specifications and will respond with an itemized quotation directly in your Tixdoo inbox.
           </p>
@@ -1366,7 +1436,7 @@
   <div class="vd-modal-overlay" x-show="showBookingModal" x-cloak x-transition>
     <div class="vd-modal" @click.outside="showBookingModal = false">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="font-size:20px; font-weight:800; margin:0;">Book Service Package</h3>
+        <h3 style="font-size:22px; margin:0;">Book Service Package</h3>
         <button type="button" @click="showBookingModal = false" style="background:none; border:none; cursor:pointer; font-size:22px; color:#6b7280; display:inline-flex; align-items:center;"><span class="material-symbols-outlined" style="font-size:20px;">close</span></button>
       </div>
 
@@ -1408,6 +1478,7 @@ function vendorPage() {
   return {
     activeTab: 'work',
     followed: false,
+    saved: false,
     showRfqModal: false,
     rfqLoading: false,
     rfqSubmitted: false,
@@ -1433,6 +1504,9 @@ function vendorPage() {
     },
     toggleFollow() {
       this.followed = !this.followed;
+    },
+    toggleSave() {
+      this.saved = !this.saved;
     },
     openDirectBooking(id, title, price) {
       this.selectedService = { id, title, price };
