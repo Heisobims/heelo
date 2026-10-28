@@ -59,7 +59,6 @@ block head %}
   .vd-be-container,
   .vd-be-sidebar,
   .vd-be-content,
-  .vd-floating-hire-bar,
   .vd-modal,
   button,
   input,
@@ -797,89 +796,6 @@ block head %}
     border-radius: 16px;
     padding: 28px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-  }
-
-  /* ── Floating Sticky Bottom Hire Bar (Matches Behance bottom pill) ───────── */
-  .vd-floating-hire-bar {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 50;
-    background: #191919;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 9999px;
-    padding: 6px 8px 6px 14px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
-    max-width: 90vw;
-    transition: transform 220ms ease;
-  }
-  @media (max-width: 580px) {
-    .vd-floating-hire-bar {
-      bottom: 14px;
-      padding: 5px 6px 5px 10px;
-      gap: 8px;
-      width: calc(100% - 24px);
-      max-width: 420px;
-    }
-    .vd-floating-text span:last-child {
-      display: none;
-    }
-    .vd-floating-btn {
-      height: 34px;
-      padding: 0 14px;
-      font-size: 12.5px;
-    }
-  }
-  .vd-floating-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #ffffff;
-    flex-shrink: 0;
-  }
-  .vd-floating-text {
-    color: #ffffff;
-    font-size: 13.5px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .vd-floating-text strong {
-    color: #ffffff;
-    font-weight: 700;
-  }
-  .vd-floating-btn {
-    height: 36px;
-    padding: 0 20px;
-    border-radius: 9999px;
-    background: #ffffff;
-    color: #191919;
-    font-size: 13px;
-    font-weight: 700;
-    border: none;
-    cursor: pointer;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition:
-      background 150ms,
-      transform 100ms;
-    flex-shrink: 0;
-  }
-  .vd-floating-btn:hover {
-    background: #f0f0ee;
-    transform: scale(1.02);
-  }
-  .vd-floating-btn:hover {
-    background: #cf492b;
-    transform: scale(1.02);
   }
 
   /* ── Shared Buttons & Modals ────────────────────────────────────────────── */
@@ -3532,48 +3448,6 @@ block head %}
         </div>
       </div>
     </main>
-  </div>
-
-  <!-- ── Floating Sticky Bottom Hire Bar (Matches Behance sticky bottom bar) ── -->
-  <div
-    class="vd-floating-hire-bar"
-    role="complementary"
-    aria-label="Quick booking bar"
-  >
-    {% if vendor.logo_url %}
-    <img
-      src="{{ vendor.logo_url }}"
-      alt="{{ vendor.business_name }}"
-      class="vd-floating-avatar"
-    />
-    {% else %}
-    <div
-      class="vd-floating-avatar"
-      style="
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #ffffff;
-        color: #191919;
-        font-size: 13px;
-        font-weight: 800;
-      "
-    >
-      {{ vendor.business_name[0].upper() }}
-    </div>
-    {% endif %}
-
-    <div class="vd-floating-text" style="display: flex; align-items: center; gap: 5px;">
-      <strong>{{ vendor.business_name }}</strong>
-      {% if vendor.is_verified or vendor.verification_status == 'verified' %}
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="#7C3AED" style="vertical-align: middle; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-      {% endif %}
-      <span>{% if vendor.category == 'venue' %}· Available for Events{% else %}is available for hire{% endif %}</span>
-    </div>
-
-    <button type="button" @click="showRfqModal = true" class="vd-floating-btn">
-      {% if vendor.category == 'venue' %}Request Proposal{% else %}Request a Quote{% endif %}
-    </button>
   </div>
 
   <!-- ── Request A Quote (RFQ) Modal ──────────────────────────────────────── -->
