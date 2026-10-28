@@ -951,7 +951,7 @@ block head %}
 
   /* ── Venue Building & Environment Hero Bento ─────────────────────────── */
   .vd-venue-breadcrumb-wrap {
-    max-width: 1360px;
+    max-width: 1280px;
     margin: 16px auto 14px;
     padding: 0 24px;
     box-sizing: border-box;
@@ -962,6 +962,13 @@ block head %}
     gap: 8px;
     font-size: 13px;
     color: #71717a;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .vd-venue-breadcrumb::-webkit-scrollbar {
+    display: none;
   }
   .vd-venue-breadcrumb a {
     color: #71717a;
@@ -982,7 +989,7 @@ block head %}
   }
 
   .vd-venue-bento-wrap {
-    max-width: 1360px;
+    max-width: 1280px;
     margin: 0 auto 24px;
     padding: 0 24px;
     box-sizing: border-box;
@@ -1042,9 +1049,9 @@ block head %}
     position: absolute;
     top: 12px;
     left: 12px;
-    background: rgba(19, 27, 23, 0.78);
+    background: rgba(19, 27, 23, 0.82);
     color: #ffffff;
-    padding: 5px 11px;
+    padding: 4px 10px;
     border-radius: 9999px;
     font-size: 11px;
     font-weight: 600;
@@ -1056,6 +1063,10 @@ block head %}
     pointer-events: none;
     border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    max-width: calc(100% - 24px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .vd-bento-overlay {
     position: absolute;
@@ -1105,16 +1116,38 @@ block head %}
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
   }
 
+  @media (max-width: 1024px) {
+    .vd-venue-bento-wrap {
+      padding: 0 20px;
+      margin-bottom: 20px;
+    }
+    .vd-venue-breadcrumb-wrap {
+      padding: 0 20px;
+      margin: 14px auto 10px;
+    }
+    .vd-venue-bento {
+      height: clamp(300px, 36vw, 420px);
+    }
+  }
+
   @media (max-width: 860px) {
     .vd-venue-bento {
       grid-template-columns: 1fr;
       height: auto;
+      border-radius: 16px;
     }
     .vd-bento-hero {
-      height: 260px;
+      height: 280px;
     }
     .vd-bento-grid {
-      height: 200px;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: 1fr;
+      height: 90px;
+      gap: 6px;
+      padding-top: 6px;
+    }
+    .vd-bento-item .vd-view-tag {
+      display: none;
     }
     .vd-venue-bento-wrap {
       padding: 0 16px;
@@ -1123,6 +1156,49 @@ block head %}
     .vd-venue-breadcrumb-wrap {
       padding: 0 16px;
       margin: 12px auto 10px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .vd-venue-bento {
+      border-radius: 14px;
+    }
+    .vd-bento-hero {
+      height: 230px;
+    }
+    .vd-bento-grid {
+      display: none;
+    }
+    .vd-bento-all-btn {
+      bottom: 12px;
+      right: 12px;
+      padding: 7px 14px;
+      font-size: 12px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .vd-venue-bento-wrap {
+      padding: 0 12px;
+    }
+    .vd-venue-breadcrumb-wrap {
+      padding: 0 12px;
+    }
+    .vd-bento-hero {
+      height: 200px;
+    }
+    .vd-view-tag {
+      top: 8px;
+      left: 8px;
+      font-size: 10px;
+      padding: 3px 8px;
+    }
+    .vd-bento-all-btn {
+      bottom: 10px;
+      right: 10px;
+      padding: 6px 12px;
+      font-size: 11px;
+      gap: 4px;
     }
   }
 
@@ -1363,6 +1439,11 @@ block head %}
     margin: 0 auto;
     overflow-x: auto;
     padding: 8px 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .vd-lightbox-thumbs::-webkit-scrollbar {
+    display: none;
   }
   .vd-lightbox-thumb {
     width: 60px;
@@ -1387,6 +1468,65 @@ block head %}
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  @media (max-width: 640px) {
+    .vd-lightbox-overlay {
+      padding: 12px 14px;
+    }
+    .vd-lightbox-topbar {
+      padding-bottom: 8px;
+    }
+    .vd-lightbox-title {
+      font-size: 14px;
+      max-width: 190px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .vd-lightbox-actions {
+      gap: 10px;
+    }
+    .vd-lightbox-counter {
+      font-size: 12.5px;
+    }
+    .vd-lightbox-close {
+      width: 34px;
+      height: 34px;
+    }
+    .vd-lightbox-content {
+      margin: 8px auto;
+    }
+    .vd-lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(6px);
+    }
+    .vd-lightbox-nav.prev {
+      left: 6px;
+    }
+    .vd-lightbox-nav.next {
+      right: 6px;
+    }
+    .vd-lightbox-img-wrap {
+      padding: 0;
+    }
+    .vd-lightbox-img {
+      max-height: calc(85vh - 110px);
+      border-radius: 8px;
+    }
+    .vd-lightbox-thumbs {
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .vd-lightbox-thumb {
+      width: 46px;
+      height: 32px;
+    }
   }
 
   /* ── Venue Organizer Specifications Tab & Minimal Architecture ────────── */
@@ -1452,6 +1592,19 @@ block head %}
   @media (max-width: 600px) {
     .vd-capacity-grid {
       grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .vd-capacity-card:last-child {
+      grid-column: span 2;
+    }
+    .vd-capacity-card {
+      padding: 10px 8px;
+    }
+    .vd-capacity-title {
+      font-size: 11px;
+    }
+    .vd-capacity-num {
+      font-size: 15.5px;
     }
   }
   .vd-capacity-card {
@@ -1496,10 +1649,22 @@ block head %}
     padding: 14px 16px;
     margin-bottom: 24px;
   }
-  @media (max-width: 768px) {
+  @media (max-width: 900px) {
     .vd-spatial-strip {
       grid-template-columns: repeat(2, 1fr);
       gap: 12px;
+    }
+  }
+  @media (max-width: 480px) {
+    .vd-spatial-strip {
+      padding: 12px;
+      gap: 10px;
+    }
+    .vd-spatial-val {
+      font-size: 13.5px;
+    }
+    .vd-spatial-detail {
+      font-size: 11px;
     }
   }
   .vd-spatial-item {
@@ -1534,6 +1699,7 @@ block head %}
   @media (max-width: 680px) {
     .vd-feature-card-grid {
       grid-template-columns: 1fr;
+      gap: 10px;
     }
   }
   .vd-feature-card {
@@ -1541,6 +1707,11 @@ block head %}
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 14px 16px;
+  }
+  @media (max-width: 480px) {
+    .vd-feature-card {
+      padding: 12px 14px;
+    }
   }
   .vd-feature-card-header {
     display: flex;
@@ -1563,7 +1734,7 @@ block head %}
   }
   .vd-feature-spec-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 7px;
     font-size: 12px;
     color: #374151;
@@ -1573,6 +1744,7 @@ block head %}
     font-size: 15px;
     color: #16a34a;
     flex-shrink: 0;
+    margin-top: 2px;
   }
 
   /* Included Inventory Tags Minimal */
@@ -1599,32 +1771,122 @@ block head %}
     color: #71717a;
   }
 
-  /* Gallery Prompt Banner */
-  .vd-gallery-prompt {
+  /* Architectural Perspectives Prompt Banner */
+  .vd-perspectives-prompt {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 14px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 12px 16px;
+    border-radius: 12px;
+    padding: 14px 18px;
     margin-bottom: 24px;
-    font-size: 12.5px;
-    color: #475569;
-  }
-  .vd-gallery-prompt button {
-    background: none;
-    border: none;
-    color: #2563eb;
-    font-weight: 700;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12.5px;
+    transition: all 160ms ease;
   }
-  .vd-gallery-prompt button:hover {
-    text-decoration: underline;
+  .vd-perspectives-prompt:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+  @media (max-width: 600px) {
+    .vd-perspectives-prompt {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+    }
+    .vd-perspectives-prompt button {
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+    }
+  }
+
+  /* Organizer Proposal CTA Banner */
+  .vd-organizer-cta {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .vd-organizer-cta-title {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: #131b17;
+    margin: 0 0 3px;
+  }
+  .vd-organizer-cta-sub {
+    font-size: 12.5px;
+    color: #6b7280;
+    margin: 0;
+  }
+  .vd-organizer-cta-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  @media (max-width: 600px) {
+    .vd-organizer-cta {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 16px 14px;
+      gap: 12px;
+    }
+    .vd-organizer-cta-actions {
+      width: 100%;
+    }
+    .vd-organizer-cta-btn {
+      flex: 1 1 0;
+      justify-content: center;
+      text-align: center;
+    }
+  }
+
+  /* Venue Action Buttons (Sidebar) */
+  .vd-venue-action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .vd-venue-btn-rfp {
+    width: 100%;
+    height: 44px;
+    border-radius: 9999px;
+    background: #131b17;
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 700;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(19, 27, 23, 0.16);
+    transition: all 160ms ease;
+  }
+  .vd-venue-btn-rfp:hover {
+    background: #27372e;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(19, 27, 23, 0.22);
+  }
+  .vd-venue-actions-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  @media (max-width: 768px) {
+    .vd-venue-action-buttons {
+      margin-bottom: 14px;
+    }
   }
 
   /* Venue Quick Specs Card (Left Sidebar) */
@@ -1644,6 +1906,10 @@ block head %}
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+  .vd-sidebar-specs-list {
+    display: flex;
+    flex-direction: column;
   }
   .vd-sidebar-spec-row {
     display: flex;
@@ -1666,6 +1932,76 @@ block head %}
   .vd-sidebar-spec-val {
     font-weight: 700;
     color: #111827;
+  }
+  @media (max-width: 768px) {
+    .vd-sidebar-specs-card {
+      padding: 12px 14px;
+    }
+    .vd-sidebar-specs-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px 10px;
+    }
+    .vd-sidebar-spec-row {
+      border-bottom: none;
+      padding: 6px 8px;
+      background: #fafaf9;
+      border: 1px solid #f0f0ee;
+      border-radius: 8px;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+    .vd-sidebar-spec-key {
+      font-size: 11px;
+    }
+    .vd-sidebar-spec-val {
+      font-size: 12.5px;
+      text-align: left;
+    }
+  }
+
+  /* Responsive Profile Header Refinements */
+  @media (max-width: 600px) {
+    .vd-be-avatar-box {
+      margin-top: -46px;
+      margin-bottom: 12px;
+    }
+    .vd-be-avatar {
+      width: 90px;
+      height: 90px;
+      font-size: 32px;
+      border-width: 3px;
+    }
+    .vd-be-name {
+      font-size: 22px;
+      margin-bottom: 8px;
+    }
+    .vd-be-details {
+      font-size: 12.5px;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+    .vd-be-tabs-bar {
+      gap: 18px;
+      margin-bottom: 20px;
+    }
+    .vd-be-tab-item {
+      font-size: 13.5px;
+      padding: 12px 2px;
+    }
+  }
+
+  /* Responsive Modal Refinements */
+  @media (max-width: 540px) {
+    .vd-modal-overlay {
+      padding: 12px;
+    }
+    .vd-modal {
+      padding: 20px 16px;
+      border-radius: 16px;
+      max-height: 94vh;
+    }
   }
 </style>
 {% endblock %} {% block body %} {% include "partials/site_nav.html" %}
@@ -1885,17 +2221,16 @@ block head %}
 
       {% if vendor.category == 'venue' %}
       <!-- Venue Organizer Action Buttons -->
-      <div class="vd-be-action-buttons" style="margin-bottom: 18px;">
+      <div class="vd-venue-action-buttons">
         <button
           type="button"
           @click="showRfqModal = true"
-          class="vd-btn vd-btn-primary"
-          style="width: 100%; height: 44px; border-radius: 9999px; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;"
+          class="vd-venue-btn-rfp"
         >
           <span class="material-symbols-outlined" style="font-size: 18px;">event_available</span>
           <span>Request Proposal (RFP)</span>
         </button>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="vd-venue-actions-row">
           <button
             type="button"
             @click="showRfqModal = true"
@@ -1967,54 +2302,56 @@ block head %}
         <div class="vd-sidebar-specs-title">
           <span>Venue Highlights</span>
         </div>
-        <div class="vd-sidebar-spec-row">
-          <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">groups</span>
-            Max Capacity
-          </span>
-          <span class="vd-sidebar-spec-val">{% if vendor.capacity %}{{ "{:,}".format(vendor.capacity) }} Guests{% else %}Flexible{% endif %}</span>
-        </div>
-        <div class="vd-sidebar-spec-row">
-          <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">aspect_ratio</span>
-            Floor Area
-          </span>
-          <span class="vd-sidebar-spec-val">{% if vendor.capacity %}{{ "{:,}".format(vendor.capacity * 12) }} sq ft{% else %}On Request{% endif %}</span>
-        </div>
-        <div class="vd-sidebar-spec-row">
-          <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">height</span>
-            Ceiling Height
-          </span>
-          <span class="vd-sidebar-spec-val">{% if vendor.capacity and vendor.capacity > 1000 %}28 ft (8.5m){% elif vendor.capacity and vendor.capacity > 500 %}22 ft (6.7m){% else %}16 ft (4.9m){% endif %}</span>
-        </div>
-        <div class="vd-sidebar-spec-row">
-          <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">local_shipping</span>
-            Loading Dock
-          </span>
-          <span class="vd-sidebar-spec-val">Ground-Level Roll-up</span>
-        </div>
-        <div class="vd-sidebar-spec-row">
-          <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">bolt</span>
-            Power &amp; Backup
-          </span>
-          <span class="vd-sidebar-spec-val">3-Phase + Generator</span>
-        </div>
-        <div class="vd-sidebar-spec-row">
-          <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">nightlife</span>
-            Sound Curfew
-          </span>
-          <span class="vd-sidebar-spec-val">02:00 AM (Indoor)</span>
-        </div>
-        <div class="vd-sidebar-spec-row">
-          <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">accessible</span>
-            Accessibility
-          </span>
-          <span class="vd-sidebar-spec-val">100% ADA Step-Free</span>
+        <div class="vd-sidebar-specs-list">
+          <div class="vd-sidebar-spec-row">
+            <span class="vd-sidebar-spec-key">
+              <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">groups</span>
+              Max Capacity
+            </span>
+            <span class="vd-sidebar-spec-val">{% if vendor.capacity %}{{ "{:,}".format(vendor.capacity) }} Guests{% else %}Flexible{% endif %}</span>
+          </div>
+          <div class="vd-sidebar-spec-row">
+            <span class="vd-sidebar-spec-key">
+              <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">aspect_ratio</span>
+              Floor Area
+            </span>
+            <span class="vd-sidebar-spec-val">{% if vendor.capacity %}{{ "{:,}".format(vendor.capacity * 12) }} sq ft{% else %}On Request{% endif %}</span>
+          </div>
+          <div class="vd-sidebar-spec-row">
+            <span class="vd-sidebar-spec-key">
+              <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">height</span>
+              Ceiling Height
+            </span>
+            <span class="vd-sidebar-spec-val">{% if vendor.capacity and vendor.capacity > 1000 %}28 ft (8.5m){% elif vendor.capacity and vendor.capacity > 500 %}22 ft (6.7m){% else %}16 ft (4.9m){% endif %}</span>
+          </div>
+          <div class="vd-sidebar-spec-row">
+            <span class="vd-sidebar-spec-key">
+              <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">local_shipping</span>
+              Loading Dock
+            </span>
+            <span class="vd-sidebar-spec-val">Ground-Level Roll-up</span>
+          </div>
+          <div class="vd-sidebar-spec-row">
+            <span class="vd-sidebar-spec-key">
+              <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">bolt</span>
+              Power &amp; Backup
+            </span>
+            <span class="vd-sidebar-spec-val">3-Phase + Gen</span>
+          </div>
+          <div class="vd-sidebar-spec-row">
+            <span class="vd-sidebar-spec-key">
+              <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">nightlife</span>
+              Sound Curfew
+            </span>
+            <span class="vd-sidebar-spec-val">02:00 AM (Indoor)</span>
+          </div>
+          <div class="vd-sidebar-spec-row">
+            <span class="vd-sidebar-spec-key">
+              <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">accessible</span>
+              Accessibility
+            </span>
+            <span class="vd-sidebar-spec-val">100% ADA Step-Free</span>
+          </div>
         </div>
       </div>
       {% endif %}
@@ -2653,16 +2990,16 @@ block head %}
         </div>
 
         <!-- 6. Organizer Call To Action Banner -->
-        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:20px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:28px;">
+        <div class="vd-organizer-cta">
           <div>
-            <h4 style="font-size:15.5px; font-weight:700; color:#131b17; margin:0 0 3px;">Reserve {{ vendor.business_name }} for your event</h4>
-            <p style="font-size:12.5px; color:#6b7280; margin:0;">Submit an Organizer Request for Proposal (RFP) to verify date availability, schedule a walkthrough, or receive itemized pricing.</p>
+            <h4 class="vd-organizer-cta-title">Reserve {{ vendor.business_name }} for your event</h4>
+            <p class="vd-organizer-cta-sub">Submit an Organizer Request for Proposal (RFP) to verify date availability, schedule a walkthrough, or receive itemized pricing.</p>
           </div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-primary" style="padding:9px 18px; font-size:13px;">
+          <div class="vd-organizer-cta-actions">
+            <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-primary vd-organizer-cta-btn">
               Request Proposal
             </button>
-            <button type="button" @click="activeTab = 'packages'" class="vd-btn vd-btn-outline" style="padding:9px 15px; font-size:13px;">
+            <button type="button" @click="activeTab = 'packages'" class="vd-btn vd-btn-outline vd-organizer-cta-btn">
               View Packages
             </button>
           </div>
@@ -3107,11 +3444,11 @@ block head %}
       {% if vendor.is_verified or vendor.verification_status == 'verified' %}
       <svg width="14" height="14" viewBox="0 0 24 24" fill="#7C3AED" style="vertical-align: middle; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
       {% endif %}
-      <span>is available for hire</span>
+      <span>{% if vendor.category == 'venue' %}· Available for Events{% else %}is available for hire{% endif %}</span>
     </div>
 
     <button type="button" @click="showRfqModal = true" class="vd-floating-btn">
-      Request a Quote
+      {% if vendor.category == 'venue' %}Request Proposal{% else %}Request a Quote{% endif %}
     </button>
   </div>
 
@@ -3619,7 +3956,12 @@ block head %}
       </div>
     </div>
 
-    <div class="vd-lightbox-content" @click.self="closeLightbox()">
+    <div
+      class="vd-lightbox-content"
+      @click.self="closeLightbox()"
+      @touchstart="handleTouchStart($event)"
+      @touchend="handleTouchEnd($event)"
+    >
       <button type="button" class="vd-lightbox-nav prev" @click="prevLightbox()" aria-label="Previous view">
         <span class="material-symbols-outlined">chevron_left</span>
       </button>
@@ -3698,6 +4040,22 @@ block head %}
       prevLightbox() {
         if (!this.venueViews.length) return;
         this.lightboxIndex = (this.lightboxIndex - 1 + this.venueViews.length) % this.venueViews.length;
+      },
+      touchStartX: 0,
+      handleTouchStart(e) {
+        if (e.touches && e.touches.length > 0) {
+          this.touchStartX = e.touches[0].clientX;
+        }
+      },
+      handleTouchEnd(e) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+          const diff = this.touchStartX - e.changedTouches[0].clientX;
+          if (diff > 45) {
+            this.nextLightbox();
+          } else if (diff < -45) {
+            this.prevLightbox();
+          }
+        }
       },
       get currentCaption() {
         if (this.viewCaptions[this.lightboxIndex]) {
