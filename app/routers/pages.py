@@ -3128,6 +3128,7 @@ async def venue_list(
     )
 
 
+@router_pages.get("/venues/{vendor_slug}", response_class=HTMLResponse)
 @router_pages.get("/vendors/{vendor_slug}", response_class=HTMLResponse)
 async def vendor_detail(vendor_slug: str, request: Request, db: DBSession):
     from app.services import vendor_service as vsvc

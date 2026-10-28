@@ -948,10 +948,505 @@ block head %}
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
     box-sizing: border-box;
   }
+
+  /* ── Venue Building & Environment Hero Bento ─────────────────────────── */
+  .vd-venue-breadcrumb-wrap {
+    max-width: 1360px;
+    margin: 16px auto 14px;
+    padding: 0 24px;
+    box-sizing: border-box;
+  }
+  .vd-venue-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #71717a;
+  }
+  .vd-venue-breadcrumb a {
+    color: #71717a;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .vd-venue-breadcrumb a:hover {
+    color: #131b17;
+    text-decoration: underline;
+  }
+  .vd-venue-breadcrumb .vd-bc-sep {
+    color: #d4d4d8;
+    font-size: 11px;
+  }
+  .vd-venue-breadcrumb .vd-bc-cur {
+    color: #131b17;
+    font-weight: 600;
+  }
+
+  .vd-venue-bento-wrap {
+    max-width: 1360px;
+    margin: 0 auto 24px;
+    padding: 0 24px;
+    box-sizing: border-box;
+  }
+  .vd-venue-bento {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 10px;
+    border-radius: 20px;
+    overflow: hidden;
+    height: clamp(340px, 34vw, 480px);
+    position: relative;
+    background: #0f1512;
+  }
+  .vd-bento-hero {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    cursor: pointer;
+    background: #19221d;
+  }
+  .vd-bento-hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .vd-bento-hero:hover img {
+    transform: scale(1.025);
+  }
+  .vd-bento-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    height: 100%;
+  }
+  .vd-bento-item {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    background: #19221d;
+    height: 100%;
+  }
+  .vd-bento-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .vd-bento-item:hover img {
+    transform: scale(1.04);
+  }
+  .vd-view-tag {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(19, 27, 23, 0.78);
+    color: #ffffff;
+    padding: 5px 11px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 2;
+    pointer-events: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+  .vd-bento-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.22);
+    opacity: 0;
+    transition: opacity 200ms ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    z-index: 1;
+  }
+  .vd-bento-overlay span {
+    font-size: 32px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 50%;
+    backdrop-filter: blur(4px);
+  }
+  .vd-bento-hero:hover .vd-bento-overlay,
+  .vd-bento-item:hover .vd-bento-overlay {
+    opacity: 1;
+  }
+  .vd-bento-all-btn {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: #ffffff;
+    color: #131b17;
+    padding: 9px 18px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 180ms ease;
+    z-index: 5;
+  }
+  .vd-bento-all-btn:hover {
+    transform: translateY(-1px);
+    background: #fbfbfa;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  @media (max-width: 860px) {
+    .vd-venue-bento {
+      grid-template-columns: 1fr;
+      height: auto;
+    }
+    .vd-bento-hero {
+      height: 260px;
+    }
+    .vd-bento-grid {
+      height: 200px;
+    }
+    .vd-venue-bento-wrap {
+      padding: 0 16px;
+      margin-bottom: 16px;
+    }
+    .vd-venue-breadcrumb-wrap {
+      padding: 0 16px;
+      margin: 12px auto 10px;
+    }
+  }
+
+  /* ── Venue Environment Summary Card ────────────────────────────────────── */
+  .vd-venue-env-card {
+    background: #fcfbf9;
+    border: 1px solid #ebe9e4;
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin-bottom: 24px;
+    box-sizing: border-box;
+  }
+  .vd-env-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+  }
+  .vd-env-col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .vd-env-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px solid #ebe9e4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #7c3aed;
+    margin-bottom: 6px;
+  }
+  .vd-env-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #71717a;
+  }
+  .vd-env-val {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #131b17;
+    line-height: 1.35;
+  }
+  .vd-env-sub {
+    font-size: 12.5px;
+    color: #52525b;
+    line-height: 1.45;
+  }
+  @media (max-width: 900px) {
+    .vd-env-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+  }
+  @media (max-width: 480px) {
+    .vd-env-grid {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .vd-venue-env-card {
+      padding: 16px;
+    }
+  }
+
+  .vd-gallery-header-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .vd-gallery-title {
+    font-family: "Lora", serif !important;
+    font-size: 20px !important;
+    font-weight: 500 !important;
+    margin: 0 0 4px !important;
+    color: #131b17 !important;
+  }
+  .vd-gallery-subtitle {
+    font-size: 13.5px;
+    color: #71717a;
+    margin: 0;
+  }
+  .vd-gallery-count {
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    background: #f4f4f5;
+    color: #52525b;
+    align-self: center;
+  }
+  .vd-card-zoom-pill {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 180ms ease;
+  }
+  .vd-be-work-card:hover .vd-card-zoom-pill {
+    opacity: 1;
+  }
+
+  /* ── Interactive Lightbox Modal ────────────────────────────────────────── */
+  .vd-lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 12, 10, 0.95);
+    backdrop-filter: blur(14px);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 24px;
+    box-sizing: border-box;
+  }
+  .vd-lightbox-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  .vd-lightbox-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .vd-lightbox-tag {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .vd-lightbox-title {
+    font-size: 16.5px;
+    font-weight: 600;
+    color: #ffffff;
+    margin: 0;
+  }
+  .vd-lightbox-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .vd-lightbox-counter {
+    font-size: 14px;
+    color: #d4d4d8;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .vd-lightbox-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 160ms ease;
+  }
+  .vd-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.05);
+  }
+  .vd-lightbox-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 1400px;
+    width: 100%;
+    margin: 12px auto;
+    position: relative;
+    overflow: hidden;
+  }
+  .vd-lightbox-nav {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 160ms ease;
+    z-index: 10;
+    flex-shrink: 0;
+  }
+  .vd-lightbox-nav:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.08);
+  }
+  .vd-lightbox-img-wrap {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    box-sizing: border-box;
+  }
+  .vd-lightbox-img {
+    max-height: calc(82vh - 120px);
+    max-width: 100%;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  }
+  .vd-lightbox-thumbs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    max-width: 1000px;
+    margin: 0 auto;
+    overflow-x: auto;
+    padding: 8px 0;
+  }
+  .vd-lightbox-thumb {
+    width: 60px;
+    height: 42px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    cursor: pointer;
+    opacity: 0.55;
+    transition: all 160ms ease;
+    padding: 0;
+    background: transparent;
+    flex-shrink: 0;
+  }
+  .vd-lightbox-thumb.active {
+    border-color: #ffffff;
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  .vd-lightbox-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
 </style>
 {% endblock %} {% block body %} {% include "partials/site_nav.html" %}
 
 <div class="vd-page-wrap" x-data="vendorPage()" id="vd-tabs-anchor">
+  {% set venue_views = ([vendor.cover_image_url] if vendor.cover_image_url else []) + (vendor.portfolio_urls or []) %}
+
+  {% if vendor.category == 'venue' %}
+  <!-- ── Venue Breadcrumb Navigation ────────────────────────────────────── -->
+  <div class="vd-venue-breadcrumb-wrap">
+    <div class="vd-venue-breadcrumb">
+      <a href="/venues">Venues</a>
+      <span class="vd-bc-sep">/</span>
+      {% if vendor.location_city %}
+      <a href="/venues?city={{ vendor.location_city }}">{{ vendor.location_city }}</a>
+      <span class="vd-bc-sep">/</span>
+      {% endif %}
+      <span class="vd-bc-cur">{{ vendor.business_name }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if vendor.category == 'venue' and venue_views | length > 1 %}
+  <!-- ── Architectural Multi-View Bento Showcase (Building & Environment) ───── -->
+  <div class="vd-venue-bento-wrap">
+    <div class="vd-venue-bento">
+      <!-- Main Building View (Left) -->
+      <div class="vd-bento-hero" @click="openLightbox(0)">
+        <img src="{{ venue_views[0] }}" alt="{{ vendor.business_name }} - Building Facade &amp; Architecture" loading="eager" />
+        <span class="vd-view-tag">
+          <span class="material-symbols-outlined" style="font-size:14px; vertical-align:-2px;">apartment</span>
+          Building &amp; Facade
+        </span>
+        <div class="vd-bento-overlay"><span class="material-symbols-outlined">zoom_in</span></div>
+      </div>
+
+      <!-- Secondary Views (Right 2x2 Grid) -->
+      <div class="vd-bento-grid">
+        {% set captions = ["Main Hall & Interior", "Surrounding Environment", "Outdoor Grounds & Terrace", "Evening Ambience"] %}
+        {% set icons = ["meeting_room", "landscape", "deck", "wb_twilight"] %}
+        {% for v_img in venue_views[1:5] %}
+        <div class="vd-bento-item" @click="openLightbox({{ loop.index }})">
+          <img src="{{ v_img }}" alt="{{ vendor.business_name }} - {{ captions[loop.index0] if loop.index0 < captions|length else 'Perspective' }}" loading="lazy" />
+          <span class="vd-view-tag">
+            <span class="material-symbols-outlined" style="font-size:13px; vertical-align:-2px;">{{ icons[loop.index0] if loop.index0 < icons|length else 'photo_camera' }}</span>
+            {{ captions[loop.index0] if loop.index0 < captions|length else 'Perspective' }}
+          </span>
+          <div class="vd-bento-overlay"><span class="material-symbols-outlined">zoom_in</span></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Floating "Show all photos" button -->
+      <button type="button" @click="openLightbox(0)" class="vd-bento-all-btn">
+        <span class="material-symbols-outlined" style="font-size: 18px">photo_library</span>
+        <span>Show all {{ venue_views | length }} views</span>
+      </button>
+    </div>
+  </div>
+  {% else %}
   <!-- ── Top Panoramic Cover Banner ───────────────────────────────────────── -->
   <div class="vd-banner-wrap">
     {% if vendor.cover_image_url %}
@@ -985,6 +1480,7 @@ block head %}
     </div>
     {% endif %}
   </div>
+  {% endif %}
 
   <!-- ── Main Behance Container: Left Sidebar + Right Tabs/Gallery ────────── -->
   <div class="vd-be-container">
@@ -1390,7 +1886,12 @@ block head %}
           class="vd-be-tab-item"
           :class="{ 'active': activeTab === 'work' }"
         >
+          {% if vendor.category == 'venue' %}
+          <span class="material-symbols-outlined" style="font-size: 17px; vertical-align: -2px;">apartment</span>
+          <span>Building &amp; Environment</span>
+          {% else %}
           Work
+          {% endif %}
         </button>
 
         <!-- Particular to Tixdoo: Replaces Adobe Stock tab with Event Packages! -->
@@ -1422,12 +1923,92 @@ block head %}
         </button>
       </nav>
 
-      <!-- ── TAB 1: Work / Visual Portfolio Grid (Real Uploads Only) ── -->
+      <!-- ── TAB 1: Work / Visual Portfolio Grid (Building & Environment) ── -->
       <div x-show="activeTab === 'work'" x-cloak>
-        {% if vendor.portfolio_urls and vendor.portfolio_urls | length > 0 %}
+        {% if vendor.category == 'venue' %}
+        <!-- Venue Architecture & Environment Highlights Summary -->
+        <div class="vd-venue-env-card">
+          <div class="vd-env-grid">
+            <div class="vd-env-col">
+              <div class="vd-env-icon"><span class="material-symbols-outlined">domain</span></div>
+              <div class="vd-env-label">Architecture &amp; Spaces</div>
+              <div class="vd-env-val">
+                {% if vendor.capacity and vendor.capacity >= 2000 %}
+                Monumental Convention Dome &amp; Arena
+                {% elif vendor.capacity and vendor.capacity >= 1000 %}
+                Grand Ballroom &amp; High-Ceiling Atrium
+                {% else %}
+                Boutique Architectural Salon &amp; Loft
+                {% endif %}
+              </div>
+              <div class="vd-env-sub">Column-free layout, acoustic engineering &amp; rigging points</div>
+            </div>
+
+            <div class="vd-env-col">
+              <div class="vd-env-icon"><span class="material-symbols-outlined">landscape</span></div>
+              <div class="vd-env-label">Environment &amp; Setting</div>
+              <div class="vd-env-val">
+                {{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}
+              </div>
+              <div class="vd-env-sub">{{ vendor.address or 'Prime metropolitan cultural & event district' }}</div>
+            </div>
+
+            <div class="vd-env-col">
+              <div class="vd-env-icon"><span class="material-symbols-outlined">deck</span></div>
+              <div class="vd-env-label">Outdoor Grounds &amp; Terraces</div>
+              <div class="vd-env-val">Panoramic Grounds</div>
+              <div class="vd-env-sub">Open-air cocktail decks, private courtyards &amp; sunset vistas</div>
+            </div>
+
+            <div class="vd-env-col">
+              <div class="vd-env-icon"><span class="material-symbols-outlined">groups</span></div>
+              <div class="vd-env-label">Guest Capacity</div>
+              <div class="vd-env-val">
+                {% if vendor.capacity %}Up to {{ "{:,}".format(vendor.capacity) }} Guests{% else %}Capacity on Request{% endif %}
+              </div>
+              <div class="vd-env-sub">Flexible banquet, theater, classroom &amp; reception layouts</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Heading -->
+        <div class="vd-gallery-header-row">
+          <div>
+            <h2 class="vd-gallery-title">Building &amp; Environment Gallery</h2>
+            <p class="vd-gallery-subtitle">Click any view to inspect high-resolution architectural &amp; environmental perspectives</p>
+          </div>
+          <span class="vd-gallery-count">{{ venue_views | length }} Perspectives</span>
+        </div>
+
+        <div class="vd-be-work-grid">
+          {% for img_url in venue_views %}
+          <div class="vd-be-work-card" @click="openLightbox({{ loop.index0 }})">
+            <img
+              src="{{ img_url }}"
+              alt="{{ vendor.business_name }} view {{ loop.index }}"
+              loading="lazy"
+            />
+            <div class="vd-be-work-overlay">
+              <span class="vd-be-work-tag">
+                {% if loop.index0 == 0 %}Building Facade &amp; Architecture
+                {% elif loop.index0 == 1 %}Main Event Hall &amp; Interior
+                {% elif loop.index0 == 2 %}Surrounding Environment &amp; Skyline
+                {% elif loop.index0 == 3 %}Outdoor Grounds &amp; Terrace
+                {% elif loop.index0 == 4 %}Evening &amp; Ambient Lighting
+                {% else %}Venue Perspective {{ loop.index }}
+                {% endif %}
+              </span>
+            </div>
+            <span class="vd-card-zoom-pill">
+              <span class="material-symbols-outlined" style="font-size:16px;">zoom_in</span>
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% elif vendor.portfolio_urls and vendor.portfolio_urls | length > 0 %}
         <div class="vd-be-work-grid">
           {% for img_url in vendor.portfolio_urls %}
-          <div class="vd-be-work-card">
+          <div class="vd-be-work-card" @click="openLightbox({{ loop.index0 }})">
             <img
               src="{{ img_url }}"
               alt="{{ vendor.business_name }} past work"
@@ -1436,6 +2017,9 @@ block head %}
             <div class="vd-be-work-overlay">
               <span class="vd-be-work-tag">{{ vendor.business_name }}</span>
             </div>
+            <span class="vd-card-zoom-pill">
+              <span class="material-symbols-outlined" style="font-size:16px;">zoom_in</span>
+            </span>
           </div>
           {% endfor %}
         </div>
@@ -2381,14 +2965,116 @@ block head %}
       </form>
     </div>
   </div>
+
+  <!-- ── Full-Screen Lightbox Modal for Building & Environment Views ──────── -->
+  <div
+    x-show="lightboxOpen"
+    x-cloak
+    class="vd-lightbox-overlay"
+    @click.self="closeLightbox()"
+    @keydown.window.escape="closeLightbox()"
+    @keydown.window.arrow-right="nextLightbox()"
+    @keydown.window.arrow-left="prevLightbox()"
+  >
+    <div class="vd-lightbox-topbar">
+      <div class="vd-lightbox-info">
+        <span class="vd-lightbox-tag" x-text="currentCaption"></span>
+        <h3 class="vd-lightbox-title">{{ vendor.business_name }}</h3>
+      </div>
+      <div class="vd-lightbox-actions">
+        <span class="vd-lightbox-counter" x-text="`${lightboxIndex + 1} / ${venueViews.length}`"></span>
+        <button type="button" class="vd-lightbox-close" @click="closeLightbox()" aria-label="Close Lightbox">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="vd-lightbox-content" @click.self="closeLightbox()">
+      <button type="button" class="vd-lightbox-nav prev" @click="prevLightbox()" aria-label="Previous view">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+
+      <div class="vd-lightbox-img-wrap" @click.self="closeLightbox()">
+        <template x-for="(img, idx) in venueViews" :key="idx">
+          <img
+            x-show="lightboxIndex === idx"
+            :src="img"
+            :alt="`{{ vendor.business_name }} - View ${idx + 1}`"
+            class="vd-lightbox-img"
+          />
+        </template>
+      </div>
+
+      <button type="button" class="vd-lightbox-nav next" @click="nextLightbox()" aria-label="Next view">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    </div>
+
+    <!-- Thumbnails strip at bottom of lightbox -->
+    <div class="vd-lightbox-thumbs">
+      <template x-for="(img, idx) in venueViews" :key="idx">
+        <button
+          type="button"
+          class="vd-lightbox-thumb"
+          :class="{ 'active': lightboxIndex === idx }"
+          @click="lightboxIndex = idx"
+        >
+          <img :src="img" alt="" />
+        </button>
+      </template>
+    </div>
+  </div>
 </div>
 
 <script>
   function vendorPage() {
+    const viewsList = [
+      {% if vendor.cover_image_url %}"{{ vendor.cover_image_url }}",{% endif %}
+      {% if vendor.portfolio_urls %}
+        {% for u in vendor.portfolio_urls %}"{{ u }}",{% endfor %}
+      {% endif %}
+    ];
+
+    const captionsList = [
+      "Building Facade & Architecture",
+      "Main Event Hall & Grand Interior",
+      "Surrounding Environment & Skyline",
+      "Outdoor Grounds & Private Terrace",
+      "Evening Ambience & Lighting",
+      "Architectural Perspective"
+    ];
+
     return {
       activeTab: "work",
       followed: false,
       saved: false,
+      venueViews: viewsList,
+      viewCaptions: captionsList,
+      lightboxOpen: false,
+      lightboxIndex: 0,
+      openLightbox(idx) {
+        this.lightboxIndex = idx || 0;
+        this.lightboxOpen = true;
+        document.body.style.overflow = "hidden";
+      },
+      closeLightbox() {
+        this.lightboxOpen = false;
+        document.body.style.overflow = "";
+      },
+      nextLightbox() {
+        if (!this.venueViews.length) return;
+        this.lightboxIndex = (this.lightboxIndex + 1) % this.venueViews.length;
+      },
+      prevLightbox() {
+        if (!this.venueViews.length) return;
+        this.lightboxIndex = (this.lightboxIndex - 1 + this.venueViews.length) % this.venueViews.length;
+      },
+      get currentCaption() {
+        if (this.viewCaptions[this.lightboxIndex]) {
+          return this.viewCaptions[this.lightboxIndex];
+        }
+        return `Building & Environment Perspective ${this.lightboxIndex + 1}`;
+      },
       showRfqModal: false,
       rfqLoading: false,
       rfqSubmitted: false,

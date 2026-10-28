@@ -524,7 +524,7 @@
 {% if vendors %}
 <div class="vm-grid">
   {% for v in vendors %}
-  <a href="/vendors/{{ v.slug }}" class="vm-card">
+  <a href="{% if venue_mode %}/venues/{{ v.slug }}{% else %}/vendors/{{ v.slug }}{% endif %}" class="vm-card">
     <div class="vm-card-cover">
       {% if venue_mode and v.capacity %}
       <span class="vm-card-badge">{{ "{:,}".format(v.capacity) }} Guests</span>
