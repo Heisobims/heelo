@@ -141,14 +141,6 @@
     }
   }
 
-  .vm-cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 0 24px 24px; max-width: 900px; margin: 0 auto; scrollbar-width: none; }
-  .vm-cat-pills::-webkit-scrollbar { display: none; }
-  .vm-cat-pill {
-    flex-shrink: 0; padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 600;
-    text-decoration: none; border: 1.5px solid var(--border-light); background: #fff; color: var(--text-muted);
-    transition: all 0.12s; white-space: nowrap;
-  }
-  .vm-cat-pill:hover, .vm-cat-pill.active { border-color: var(--text-primary); color: var(--text-primary); background: var(--bg-secondary); }
 
   .vm-results-header { max-width: 1240px; margin: 0 auto 16px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
   .vm-results-count { font-size: 13.5px; color: var(--text-muted); }
@@ -188,9 +180,6 @@
     }
     .vm-search-bar {
       padding: 0 16px;
-    }
-    .vm-cat-pills {
-      padding: 0 16px 20px;
     }
   }
   @media (max-width: 520px) {
@@ -452,58 +441,26 @@
   <button type="submit" class="vm-search-btn">Search</button>
 </form>
 
-{% if not venue_mode %}
-<!-- Category pills -->
-<div class="vm-cat-pills">
-  <a href="/vendors?{{ query_without_cat }}" class="vm-cat-pill {% if not category %}active{% endif %}">All</a>
-  {% set cat_icons = {
-    'catering': 'restaurant',
-    'photography': 'photo_camera',
-    'videography': 'videocam',
-    'decorations': 'auto_awesome',
-    'event_planning': 'event',
-    'sound_lighting': 'lightbulb',
-    'entertainment': 'music_note',
-    'djs': 'headphones',
-    'equipment_rentals': 'chair',
-    'branding': 'palette',
-    'security': 'security',
-    'logistics': 'local_shipping',
-    'makeup_beauty': 'face',
-    'ushers_staffing': 'badge',
-    'cakes_desserts': 'cake',
-    'venue': 'account_balance',
-    'mc': 'mic',
-    'other': 'more_horiz'
-  } %}
-  {% set cat_labels = {
-    'catering': 'Catering',
-    'photography': 'Photography',
-    'videography': 'Videography',
-    'decorations': 'Decorations',
-    'event_planning': 'Event Planning',
-    'sound_lighting': 'Sound & Lighting',
-    'entertainment': 'Entertainment',
-    'djs': 'DJs',
-    'equipment_rentals': 'Rentals',
-    'branding': 'Branding & Print',
-    'security': 'Security',
-    'logistics': 'Logistics',
-    'makeup_beauty': 'Makeup & Beauty',
-    'ushers_staffing': 'Ushers & Staff',
-    'cakes_desserts': 'Cakes & Desserts',
-    'venue': 'Venues',
-    'other': 'Other'
-  } %}
-  {% for cat_key, cat_label in cat_labels.items() %}
-  <a href="/vendors?{{ query_with_cat(cat_key) }}" class="vm-cat-pill {% if category == cat_key %}active{% endif %}">
-    <span class="material-symbols-outlined" style="font-size:13px;">{{ cat_icons.get(cat_key, 'more_horiz') }}</span> {{ cat_label }}
-  </a>
-  {% endfor %}
-</div>
-{% else %}
-{% set cat_icons = {'venue': 'account_balance'} %}
-{% endif %}
+{% set cat_icons = {
+  'catering': 'restaurant',
+  'photography': 'photo_camera',
+  'videography': 'videocam',
+  'decorations': 'auto_awesome',
+  'event_planning': 'event',
+  'sound_lighting': 'lightbulb',
+  'entertainment': 'music_note',
+  'djs': 'headphones',
+  'equipment_rentals': 'chair',
+  'branding': 'palette',
+  'security': 'security',
+  'logistics': 'local_shipping',
+  'makeup_beauty': 'face',
+  'ushers_staffing': 'badge',
+  'cakes_desserts': 'cake',
+  'venue': 'account_balance',
+  'mc': 'mic',
+  'other': 'more_horiz'
+} if not venue_mode else {'venue': 'account_balance'} %}
 
 <!-- Results header -->
 <div class="vm-results-header">
