@@ -1038,8 +1038,7 @@ block head %}
             target="_blank"
             rel="noopener noreferrer"
           >
-            {{ vendor.website_url | replace('https://', '') | replace('http://',
-            '') | rstrip('/') }}
+            {{ (vendor.website_url | replace('https://', '') | replace('http://', '')).rstrip('/') }}
           </a>
         </div>
         {% endif %}
