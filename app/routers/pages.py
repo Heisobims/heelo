@@ -3137,6 +3137,8 @@ async def vendor_detail(vendor_slug: str, request: Request, db: DBSession):
     services = await vsvc.list_vendor_services(db, vendor.id, active_only=True)
     reviews = await vsvc.list_vendor_reviews(db, vendor.id)
     reviews_total = len(reviews)
+    bookings = await vsvc.list_vendor_bookings(db, vendor.id)
+    completed_bookings_count = sum(1 for b in bookings if b.status in ("completed", "paid", "delivered"))
 
     return templates.TemplateResponse(
         "vendors/detail.html",
@@ -3147,6 +3149,7 @@ async def vendor_detail(vendor_slug: str, request: Request, db: DBSession):
             "services": services,
             "reviews": reviews,
             "reviews_total": reviews_total,
+            "completed_bookings_count": completed_bookings_count,
             "org": primary_org,
             "is_owner": is_owner,
         },

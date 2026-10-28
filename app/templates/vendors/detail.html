@@ -933,8 +933,10 @@
           <span>{{ vendor.business_name[0].upper() }}</span>
           {% endif %}
         </div>
-        {% if vendor.is_verified or vendor.verification_status == 'approved' or vendor.is_featured %}
-        <span class="vd-be-pro-tag">PRO</span>
+        {% if vendor.subscription_tier in ('pro', 'premium') %}
+        <span class="vd-be-pro-tag">{{ vendor.subscription_tier.upper() }}</span>
+        {% elif vendor.is_featured %}
+        <span class="vd-be-pro-tag">FEATURED</span>
         {% endif %}
       </div>
 
@@ -944,17 +946,21 @@
       <!-- Meta details list (Matches Behance items) -->
       <div class="vd-be-details">
         <div class="vd-be-detail-item">
-          <span class="vd-avail-dot"></span>
-          <span style="font-weight:600; color:#15803d;">Available for Events &amp; Bookings</span>
+          <span class="vd-avail-dot" {% if vendor.status != 'active' %}style="background:#9ca3af; box-shadow:none;"{% endif %}></span>
+          <span style="font-weight:600; {% if vendor.status == 'active' %}color:#15803d;{% else %}color:#6b7280;{% endif %}">
+            {% if vendor.status == 'active' %}Available for Events &amp; Bookings{% else %}Currently Unavailable{% endif %}
+          </span>
         </div>
         <div class="vd-be-detail-item">
           <span class="material-symbols-outlined" style="font-size:16px; color:#9ca3af;">work</span>
           <span>{{ vendor.category | replace('_', ' ') | title }}</span>
         </div>
-        {% if vendor.location_city %}
+        {% if vendor.location_city or vendor.location_country %}
         <div class="vd-be-detail-item">
           <span class="material-symbols-outlined" style="font-size:16px; color:#9ca3af;">location_on</span>
-          <span>{{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}</span>
+          <span>
+            {% if vendor.location_city %}{{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}{% else %}{{ vendor.location_country }}{% endif %}
+          </span>
         </div>
         {% endif %}
         {% if vendor.website_url %}
@@ -967,14 +973,16 @@
         {% endif %}
       </div>
 
-      <!-- Verified on Tixdoo Card (Matches Behance verification block) -->
+      <!-- Verified on Tixdoo Card (Shown exclusively when verified in DB) -->
+      {% if vendor.is_verified or vendor.verification_status == 'verified' %}
       <div class="vd-be-verified-box">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#7C3AED"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0057ff"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
         <div>
-          <strong style="display:block; color:#131B17; font-weight:700;">Verified on Tixdoo</strong>
-          <span>Identity, registered business &amp; escrow guarantee</span>
+          <strong style="display:block; color:#131B17; font-weight:700;">Verified Business</strong>
+          <span>Identity and business registration verified on Tixdoo{% if vendor.verified_at %} ({{ vendor.verified_at.strftime('%b %Y') }}){% endif %}</span>
         </div>
       </div>
+      {% endif %}
 
       <!-- Follow, Message, and Save Vendor Buttons (Stacked Behance style) -->
       <div class="vd-be-action-buttons">
@@ -996,7 +1004,7 @@
       <div class="vd-be-hire-box">
         <div class="vd-be-hire-title">
           <span>Hire {{ vendor.business_name }}</span>
-          <span class="material-symbols-outlined" style="font-size:16px; color:#16a34a;">verified</span>
+          {% if vendor.is_verified %}<span class="material-symbols-outlined" style="font-size:16px; color:#16a34a;">verified</span>{% endif %}
         </div>
 
         {% if services %}
@@ -1006,62 +1014,82 @@
         </div>
         {% endif %}
 
+        {% if reviews_total > 0 %}
         <div class="vd-be-hire-review-line" @click="activeTab = 'reviews'">
           <span class="material-symbols-outlined" style="font-size:16px; color:#f59e0b; font-variation-settings:'FILL' 1;">star</span>
-          <span><strong>{{ "%.1f"|format(vendor.rating_avg) if vendor.rating_avg else "4.9" }}</strong> ({{ vendor.reviews_count or (reviews | length) or 25 }} reviews · verified)</span>
+          <span><strong>{{ "%.1f"|format(vendor.rating_avg) }}</strong> ({{ reviews_total }} review{{ 's' if reviews_total != 1 else '' }} · verified)</span>
         </div>
+        {% else %}
+        <div class="vd-be-hire-review-line" style="cursor:default;">
+          <span class="material-symbols-outlined" style="font-size:16px; color:#9ca3af;">star_outline</span>
+          <span style="color:#6b7280;">No customer reviews yet</span>
+        </div>
+        {% endif %}
       </div>
 
-      <!-- Metrics Card (Project views, appreciations, completed bookings) -->
+      <!-- Metrics Card (Real database stats) -->
       <div class="vd-be-metrics-card">
         <div class="vd-be-metric-row">
-          <span>Profile Views</span>
-          <strong>{{ (vendor.lead_count * 53 + 1420) | default(2593) }}</strong>
-        </div>
-        <div class="vd-be-metric-row">
-          <span>Appreciations</span>
-          <strong>{{ (vendor.lead_count * 28 + 840) | default(1458) }}</strong>
+          <span>Inquiries Received</span>
+          <strong>{{ vendor.lead_count }}</strong>
         </div>
         <div class="vd-be-metric-row">
           <span>Completed Bookings</span>
-          <strong>{{ vendor.lead_count or (services | length * 4 + 18) }}</strong>
+          <strong>{{ completed_bookings_count }}</strong>
+        </div>
+        <div class="vd-be-metric-row">
+          <span>Active Packages</span>
+          <strong>{{ services | length }}</strong>
         </div>
         <div class="vd-be-metric-row">
           <span>Average Rating</span>
-          <strong style="color:#f59e0b;">★ {{ "%.1f"|format(vendor.rating_avg) if vendor.rating_avg else "4.9" }}</strong>
+          {% if reviews_total > 0 %}
+          <strong style="color:#f59e0b;">★ {{ "%.1f"|format(vendor.rating_avg) }} ({{ reviews_total }})</strong>
+          {% else %}
+          <span style="color:#6b7280; font-size:12.5px;">No reviews yet</span>
+          {% endif %}
         </div>
       </div>
 
-      <!-- Milestones Card (Matches Behance Milestones) -->
+      <!-- Milestones Card (Real database values) -->
       <div class="vd-be-milestones-card">
-        <div class="vd-be-milestone-title">Milestones</div>
+        <div class="vd-be-milestone-title">Platform Guarantees &amp; Status</div>
+        {% if vendor.total_earned and vendor.total_earned > 0 %}
         <div class="vd-be-milestone-item">
           <span class="material-symbols-outlined" style="font-size:18px; color:#16a34a;">payments</span>
-          <span>₦{{ "{:,.0f}".format(vendor.total_earned) if vendor.total_earned and vendor.total_earned > 0 else "1,500,000+" }} Escrow Fulfilled</span>
+          <span>{{ vendor.currency | currency_symbol }}{{ "{:,.0f}".format(vendor.total_earned) }} Escrow Fulfilled</span>
         </div>
+        {% endif %}
+        {% if completed_bookings_count and completed_bookings_count > 0 %}
+        <div class="vd-be-milestone-item">
+          <span class="material-symbols-outlined" style="font-size:18px; color:#0057ff;">task_alt</span>
+          <span>{{ completed_bookings_count }} Completed Booking{{ 's' if completed_bookings_count != 1 else '' }}</span>
+        </div>
+        {% endif %}
         <div class="vd-be-milestone-item">
           <span class="material-symbols-outlined" style="font-size:18px; color:#0057ff;">verified_user</span>
           <span>100% Escrow Protection Guaranteed</span>
         </div>
+        {% if vendor.is_verified %}
         <div class="vd-be-milestone-item">
-          <span class="material-symbols-outlined" style="font-size:18px; color:#e85938;">bolt</span>
-          <span>Fast Quote Response &lt; 2 hrs</span>
+          <span class="material-symbols-outlined" style="font-size:18px; color:#16a34a;">verified</span>
+          <span>Verified Business Credentials</span>
         </div>
+        {% endif %}
       </div>
 
-      <!-- On The Web Card (Matches Behance's "ON THE WEB" block) -->
+      <!-- On The Web Card (Only links actually configured by vendor) -->
+      {% set has_socials = vendor.social_links and (vendor.social_links.values() | select | list | length > 0) %}
+      {% if vendor.website_url or has_socials or vendor.contact_phone or vendor.contact_email %}
       <div class="vd-be-web-card">
-        <div class="vd-be-milestone-title">On The Web</div>
-        {% if vendor.social_links and vendor.social_links.get('instagram') %}
-        <a href="https://instagram.com/{{ vendor.social_links.get('instagram').lstrip('@') }}" target="_blank" rel="noopener noreferrer" class="vd-be-web-link">
-          <span>Instagram</span>
-          <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">open_in_new</span>
-        </a>
-        {% else %}
-        <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="vd-be-web-link">
-          <span>Instagram</span>
-          <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">open_in_new</span>
-        </a>
+        <div class="vd-be-milestone-title">On The Web &amp; Contact</div>
+        {% if vendor.social_links %}
+          {% for net, val in vendor.social_links.items() if val %}
+          <a href="{% if val.startswith('http') %}{{ val }}{% else %}https://{{ net }}.com/{{ val.lstrip('@') }}{% endif %}" target="_blank" rel="noopener noreferrer" class="vd-be-web-link">
+            <span>{{ net | title }}</span>
+            <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">open_in_new</span>
+          </a>
+          {% endfor %}
         {% endif %}
         {% if vendor.website_url %}
         <a href="{{ vendor.website_url }}" target="_blank" rel="noopener noreferrer" class="vd-be-web-link">
@@ -1071,11 +1099,18 @@
         {% endif %}
         {% if vendor.contact_phone %}
         <a href="tel:{{ vendor.contact_phone }}" class="vd-be-web-link">
-          <span>Phone Consultation</span>
+          <span>{{ vendor.contact_phone }}</span>
           <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">call</span>
         </a>
         {% endif %}
+        {% if vendor.contact_email %}
+        <a href="mailto:{{ vendor.contact_email }}" class="vd-be-web-link">
+          <span>{{ vendor.contact_email }}</span>
+          <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">mail</span>
+        </a>
+        {% endif %}
       </div>
+      {% endif %}
 
       <!-- Owner QR Code Card (Required by test suite) -->
       {% if is_owner %}
@@ -1120,40 +1155,33 @@
         </button>
       </nav>
 
-      <!-- ── TAB 1: Work / Visual Portfolio Grid (Matches Behance Artwork Grid) ── -->
+      <!-- ── TAB 1: Work / Visual Portfolio Grid (Real Uploads Only) ── -->
       <div x-show="activeTab === 'work'" x-cloak>
+        {% if vendor.portfolio_urls and vendor.portfolio_urls | length > 0 %}
         <div class="vd-be-work-grid">
-          {% if vendor.portfolio_urls %}
-            {% for img_url in vendor.portfolio_urls %}
-            <div class="vd-be-work-card">
-              <img src="{{ img_url }}" alt="{{ vendor.business_name }} past work" loading="lazy">
-              <div class="vd-be-work-overlay">
-                <span class="vd-be-work-tag">{{ vendor.business_name }}</span>
-              </div>
+          {% for img_url in vendor.portfolio_urls %}
+          <div class="vd-be-work-card">
+            <img src="{{ img_url }}" alt="{{ vendor.business_name }} past work" loading="lazy">
+            <div class="vd-be-work-overlay">
+              <span class="vd-be-work-tag">{{ vendor.business_name }}</span>
             </div>
-            {% endfor %}
-          {% else %}
-            <!-- Curated category portfolio showcase (Behance visual grid) -->
-            {% set sample_photos = [
-              'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=800&q=80',
-              'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=800&q=80',
-              'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
-              'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
-              'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80',
-              'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&w=800&q=80',
-              'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=800&q=80',
-              'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80'
-            ] %}
-            {% for sample_img in sample_photos %}
-            <div class="vd-be-work-card">
-              <img src="{{ sample_img }}" alt="{{ vendor.business_name }} showcase" loading="lazy">
-              <div class="vd-be-work-overlay">
-                <span class="vd-be-work-tag">{{ vendor.category | replace('_', ' ') | title }} Sample</span>
-              </div>
-            </div>
-            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center; padding:64px 24px; border:1px dashed #e5e7eb; border-radius:16px; background:#fafaf9;">
+          <span class="material-symbols-outlined" style="font-size:44px; color:#9ca3af; margin-bottom:12px;">photo_library</span>
+          <h3 style="font-size:18px; margin:0 0 6px; color:#191919;">No portfolio showcases published yet</h3>
+          <p style="font-size:13.5px; color:#6b7280; max-width:440px; margin:0 auto 16px; line-height:1.5;">
+            {{ vendor.business_name }} has not added showcase images to their portfolio gallery yet. Browse their packages or message them directly for work samples.
+          </p>
+          {% if services %}
+          <button type="button" @click="activeTab = 'packages'" class="vd-btn vd-btn-outline" style="font-size:13px; height:36px;">
+            View Available Packages ({{ services | length }}) →
+          </button>
           {% endif %}
         </div>
+        {% endif %}
       </div>
 
       <!-- ── TAB 2: Event Packages (Replaces Adobe Stock with Tixdoo Bookings) ── -->
@@ -1307,7 +1335,15 @@
             </div>
             <div>
               <strong style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; color:#9ca3af; margin-bottom:4px;">Location Base</strong>
-              <div style="font-size:14px; font-weight:600; color:#131B17;">{{ vendor.location_city or 'Lagos' }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}</div>
+              <div style="font-size:14px; font-weight:600; color:#131B17;">
+                {% if vendor.location_city %}
+                  {{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}
+                {% elif vendor.location_country %}
+                  {{ vendor.location_country }}
+                {% else %}
+                  Nationwide / Remote
+                {% endif %}
+              </div>
             </div>
             <div>
               <strong style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; color:#9ca3af; margin-bottom:4px;">Starting Budget</strong>
