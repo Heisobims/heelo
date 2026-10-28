@@ -145,12 +145,26 @@ block head %}
   .vd-banner-nav {
     position: absolute;
     top: 18px;
-    left: 24px;
-    right: 24px;
+    left: 0;
+    right: 0;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     z-index: 10;
+    box-sizing: border-box;
+  }
+  @media (max-width: 768px) {
+    .vd-banner-nav {
+      padding: 0 16px;
+    }
+  }
+  @media (max-width: 420px) {
+    .vd-banner-nav {
+      padding: 0 12px;
+    }
   }
   .vd-back-pill {
     display: inline-flex;
@@ -193,29 +207,34 @@ block head %}
     transform: translateY(-1px);
   }
 
-  /* ── Two-Column Layout (Behance Profile Architecture) ──────────────────── */
+  /* ── Two-Column Layout (Behance Profile Architecture aligned with Site Nav) ──────────────────── */
   .vd-be-container {
-    max-width: 1440px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: 0 32px 100px;
+    padding: 0 24px 100px;
     display: grid;
-    grid-template-columns: 310px 1fr;
-    gap: 40px;
+    grid-template-columns: 290px 1fr;
+    gap: 36px;
     position: relative;
     box-sizing: border-box;
   }
-  @media (max-width: 1080px) {
+  @media (max-width: 1024px) {
     .vd-be-container {
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: 270px 1fr;
       gap: 28px;
       padding: 0 20px 80px;
     }
   }
-  @media (max-width: 880px) {
+  @media (max-width: 768px) {
     .vd-be-container {
       grid-template-columns: 1fr;
       gap: 28px;
       padding: 0 16px 80px;
+    }
+  }
+  @media (max-width: 420px) {
+    .vd-be-container {
+      padding: 0 12px 60px;
     }
   }
 
