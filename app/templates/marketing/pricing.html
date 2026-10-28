@@ -57,11 +57,11 @@
 }
 </script>
 <style>
-  .pr-wrap { max-width: 1280px; margin: 0 auto; padding: 130px 24px 40px; box-sizing: border-box; }
+  .pr-wrap { max-width: 760px; margin: 0 auto; padding: 130px 24px 40px; }
 
   .pr-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary); margin-bottom: 12px; }
   .pr-title { font-family: var(--font-serif); font-size: clamp(30px, 5vw, 44px); font-weight: 500; line-height: 1.12; letter-spacing: -0.01em; margin-bottom: 14px; }
-  .pr-dek { font-size: 16px; line-height: 1.6; color: var(--text-secondary); max-width: 64ch; margin-bottom: 48px; }
+  .pr-dek { font-size: 16px; line-height: 1.6; color: var(--text-secondary); max-width: 52ch; margin-bottom: 48px; }
 
   .pr-fee-card {
     background: var(--primary-dark);
@@ -84,8 +84,7 @@
   .pr-section { margin-bottom: 56px; }
   .pr-section h2 { font-size: 20px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.005em; }
 
-  .pr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-  @media (max-width: 960px) { .pr-grid { grid-template-columns: repeat(2, 1fr); } }
+  .pr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
   @media (max-width: 560px) { .pr-grid { grid-template-columns: 1fr; } }
   .pr-item {
     display: flex;
@@ -99,8 +98,7 @@
   }
   .pr-item svg { flex-shrink: 0; margin-top: 2px; color: var(--primary); }
 
-  .pr-rules { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 32px; }
-  @media (max-width: 768px) { .pr-rules { grid-template-columns: 1fr; gap: 20px; } }
+  .pr-rules { display: flex; flex-direction: column; gap: 20px; }
   .pr-rule { display: grid; grid-template-columns: 28px 1fr; gap: 14px; }
   .pr-rule-mark { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); border: 2px solid var(--primary); margin-top: 6px; }
   .pr-rule h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
@@ -298,9 +296,6 @@
     .uc-card:nth-child(2), .uc-card:nth-child(3) { grid-row: auto; grid-column: auto; }
   }
   @media (max-width: 768px) {
-    .pr-wrap {
-      padding: 110px 16px 36px;
-    }
     .ln-section,
     .ln-usecases {
       padding: 64px 16px;
@@ -312,9 +307,6 @@
     .pr-stats-grid { grid-template-columns: 1fr; }
   }
   @media (max-width: 420px) {
-    .pr-wrap {
-      padding: 100px 12px 32px;
-    }
     .ln-section,
     .ln-usecases {
       padding: 56px 12px;
