@@ -686,7 +686,7 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
   }
   .ev-card-title-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 6px;
     min-width: 0;
   }
@@ -695,20 +695,18 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: 2px;
   }
   .ev-card-title {
     font-size: 16.5px;
     font-weight: 700;
     color: #131b17;
     line-height: 1.32;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     letter-spacing: -0.015em;
     min-width: 0;
+    flex: 0 1 auto;
   }
   .ev-card-location {
     font-size: 14px;
@@ -881,6 +879,9 @@ event.min_price_info %}
   </div>
   <div class="ev-card-body">
     <div class="ev-card-title-row">
+      <span class="ev-card-title" title="{{ event.title }}"
+        >{{ event.title }}</span
+      >
       {% if event.is_featured or (event.organization and event.organization.plan
       != 'free') %}
       <span class="ev-verified-icon" title="Verified Organizer">
@@ -903,9 +904,6 @@ event.min_price_info %}
         </svg>
       </span>
       {% endif %}
-      <span class="ev-card-title" title="{{ event.title }}"
-        >{{ event.title }}</span
-      >
     </div>
     <div class="ev-card-location">
       {% if event.format == 'virtual' %} Online {% else %} {{ [event.venue_name,

@@ -294,7 +294,7 @@
   }
   .vm-card-title-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 6px;
     min-width: 0;
   }
@@ -303,21 +303,18 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    margin-top: 2px;
   }
   .vm-card-name {
     font-size: 16.5px;
     font-weight: 800;
     color: #131b17;
     line-height: 1.32;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     letter-spacing: -0.015em;
     min-width: 0;
-    flex: 1;
+    flex: 0 1 auto;
   }
   .vm-card-location {
     font-size: 14px;
@@ -492,12 +489,12 @@
     </div>
     <div class="vm-card-body">
       <div class="vm-card-title-row">
+        <span class="vm-card-name" title="{{ v.business_name }}">{{ v.business_name }}</span>
         {% if v.is_verified or v.verification_status == 'verified' %}
         <span class="vm-verified-icon" title="Verified Business">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="#7C3AED" style="vertical-align: middle;"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
         </span>
         {% endif %}
-        <span class="vm-card-name" title="{{ v.business_name }}">{{ v.business_name }}</span>
       </div>
       <div class="vm-card-location">{{ v.address or v.location_city or ('Location TBA') }}</div>
       <div class="vm-card-tagline">
