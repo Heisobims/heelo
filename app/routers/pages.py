@@ -3113,6 +3113,8 @@ async def venue_list(
     max_capacity: int | None = None,
     capacity_tier: str | None = None,
     venue_type: str | None = None,
+    amenity: str | None = None,
+    event_date: str | None = None,
     price_range: str | None = None,
     sort_by: str | None = "featured",
     verified_only: bool = False,
@@ -3153,6 +3155,8 @@ async def venue_list(
         min_capacity=eff_min_cap,
         max_capacity=eff_max_cap,
         venue_type=venue_type,
+        amenity=amenity,
+        available_on=event_date,
         verified_only=verified_only,
         sort_by=sort_by,
         page=page,
@@ -3224,6 +3228,8 @@ async def venue_list(
             "max_capacity": max_capacity,
             "capacity_tier": capacity_tier,
             "venue_type": venue_type,
+            "amenity": amenity,
+            "event_date": event_date,
             "price_range": price_range,
             "sort_by": sort_by or "featured",
             "verified_only": verified_only,
@@ -3256,6 +3262,10 @@ async def vendor_detail(vendor_slug: str, request: Request, db: DBSession):
     bookings = await vsvc.list_vendor_bookings(db, vendor.id)
     completed_bookings_count = sum(1 for b in bookings if b.status in ("completed", "paid", "delivered"))
 
+    import json
+    unavailable_dates = await vsvc.get_vendor_unavailable_dates(db, vendor.id)
+    unavailable_dates_json = json.dumps(unavailable_dates)
+
     return templates.TemplateResponse(
         "vendors/detail.html",
         {
@@ -3266,6 +3276,8 @@ async def vendor_detail(vendor_slug: str, request: Request, db: DBSession):
             "reviews": reviews,
             "reviews_total": reviews_total,
             "completed_bookings_count": completed_bookings_count,
+            "unavailable_dates": unavailable_dates,
+            "unavailable_dates_json": unavailable_dates_json,
             "org": primary_org,
             "is_owner": is_owner,
         },
@@ -3328,6 +3340,7 @@ async def my_vendor_dashboard(request: Request, db: DBSession):
     inquiries = await vsvc.list_vendor_inquiries(db, vendor.id)
     bookings = await vsvc.list_vendor_bookings(db, vendor_id=vendor.id)
     reviews = await vsvc.list_vendor_reviews(db, vendor.id)
+    blackout_dates = await vsvc.list_vendor_blackout_dates(db, vendor.id)
 
     payouts = await db.scalars(
         select(VendorPayout)
@@ -3352,6 +3365,7 @@ async def my_vendor_dashboard(request: Request, db: DBSession):
             "inquiries": inquiries,
             "bookings": bookings,
             "reviews": reviews,
+            "blackout_dates": blackout_dates,
             "payouts": list(payouts.all()),
             "verif_req": verif_req,
             "plans": vsvc.get_vendor_subscription_plans(vendor.currency),

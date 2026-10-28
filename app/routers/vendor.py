@@ -60,6 +60,7 @@ class VendorCreateRequest(BaseModel):
     faqs: list[dict] | None = None
     portfolio_urls: list[str] | None = Field(None, max_length=_MAX_PORTFOLIO_IMAGES)
     portfolio_link: str | None = Field(None, max_length=500)
+    venue_specs: dict | None = None
 
     _check_portfolio = field_validator("portfolio_urls")(_validate_portfolio_urls)
 
@@ -87,6 +88,7 @@ class VendorUpdateRequest(BaseModel):
     faqs: list[dict] | None = None
     portfolio_urls: list[str] | None = None
     portfolio_link: str | None = Field(None, max_length=500)
+    venue_specs: dict | None = None
 
 
 class ContactVendorRequest(BaseModel):
@@ -134,6 +136,7 @@ def _vendor_dict(v) -> dict:
         "payable_balance": float(v.payable_balance) if v.payable_balance is not None else 0.0,
         "total_earned": float(v.total_earned) if v.total_earned is not None else 0.0,
         "lead_count": v.lead_count,
+        "venue_specs": v.venue_specs or {},
         "created_at": v.created_at.isoformat(),
     }
 
@@ -311,6 +314,95 @@ async def update_my_vendor_profile(
     updates = data.model_dump(exclude_none=True)
     vendor = await vsvc.update_vendor(db, vendor, **updates)
     return {"success": True, "data": _vendor_dict(vendor)}
+
+
+@router_vendor.get("/me/blackout-dates")
+async def list_my_blackout_dates(db: DBSession, current_user: CurrentUser):
+    vendor = await vsvc.get_vendor_by_user(db, current_user.id)
+    if not vendor:
+        raise HTTPException(404, "No vendor profile found.")
+    dates = await vsvc.list_vendor_blackout_dates(db, vendor.id)
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": str(d.id),
+                "start_date": d.start_date.isoformat(),
+                "end_date": d.end_date.isoformat(),
+                "reason": d.reason,
+                "created_at": d.created_at.isoformat(),
+            }
+            for d in dates
+        ],
+    }
+
+
+@router_vendor.post("/me/blackout-dates", status_code=201)
+async def create_my_blackout_date(
+    data: VendorBlackoutCreateRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    from datetime import datetime
+
+    vendor = await vsvc.get_vendor_by_user(db, current_user.id)
+    if not vendor:
+        raise HTTPException(404, "No vendor profile found.")
+
+    try:
+        s_date = datetime.fromisoformat(data.start_date.replace("Z", "+00:00"))
+        e_date = datetime.fromisoformat(data.end_date.replace("Z", "+00:00"))
+    except Exception:
+        raise HTTPException(400, "Invalid date format. Use ISO format YYYY-MM-DD.")
+
+    blackout = await vsvc.create_vendor_blackout_date(
+        db,
+        vendor_id=vendor.id,
+        start_date=s_date,
+        end_date=e_date,
+        reason=data.reason,
+    )
+    return {
+        "success": True,
+        "data": {
+            "id": str(blackout.id),
+            "start_date": blackout.start_date.isoformat(),
+            "end_date": blackout.end_date.isoformat(),
+            "reason": blackout.reason,
+        },
+    }
+
+
+@router_vendor.delete("/me/blackout-dates/{blackout_id}")
+async def delete_my_blackout_date(
+    blackout_id: uuid.UUID,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    vendor = await vsvc.get_vendor_by_user(db, current_user.id)
+    if not vendor:
+        raise HTTPException(404, "No vendor profile found.")
+
+    deleted = await vsvc.delete_vendor_blackout_date(db, vendor.id, blackout_id)
+    if not deleted:
+        raise HTTPException(404, "Blackout date not found.")
+    return {"success": True, "message": "Blackout date removed successfully."}
+
+
+@router_vendor.get("/{vendor_slug_or_id}/availability")
+async def get_vendor_availability(vendor_slug_or_id: str, db: DBSession):
+    vendor = None
+    try:
+        vid = uuid.UUID(vendor_slug_or_id)
+        vendor = await vsvc.get_vendor_by_id(db, vid)
+    except ValueError:
+        vendor = await vsvc.get_vendor_by_slug(db, vendor_slug_or_id)
+
+    if not vendor:
+        raise HTTPException(404, "Vendor not found.")
+
+    unavailable = await vsvc.get_vendor_unavailable_dates(db, vendor.id)
+    return {"success": True, "data": {"unavailable_dates": unavailable}}
 
 
 @router_vendor.get("/{vendor_slug}")
@@ -540,6 +632,21 @@ class VendorLeadCreditCheckoutRequest(BaseModel):
     credits_count: int = Field(5, ge=1)
 
 
+class VendorBlackoutCreateRequest(BaseModel):
+    start_date: str = Field(..., min_length=10)
+    end_date: str = Field(..., min_length=10)
+    reason: str | None = Field(None, max_length=255)
+
+
+class DepositRefundRequest(BaseModel):
+    reason: str = Field("Inspection passed - no damages", max_length=500)
+
+
+class DepositClaimRequest(BaseModel):
+    claim_amount: float = Field(..., gt=0)
+    claim_reason: str = Field(..., min_length=3, max_length=1000)
+
+
 # ── Serializers ───────────────────────────────────────────────────────────────
 def _service_listing_dict(s) -> dict:
     return {
@@ -624,6 +731,8 @@ def _booking_dict(b) -> dict:
         "platform_commission_rate": float(b.platform_commission_rate),
         "commission_amount": float(b.commission_amount),
         "vendor_earnings": float(b.vendor_earnings),
+        "security_deposit_amount": float(getattr(b, "security_deposit_amount", 0.0) or 0.0),
+        "security_deposit_status": getattr(b, "security_deposit_status", "none"),
         "currency": b.currency,
         "cancellation_policy": b.cancellation_policy,
         "cancellation_terms": b.cancellation_terms,
@@ -1311,6 +1420,58 @@ async def cancel_booking_endpoint(
 
     booking = await vsvc.cancel_booking(db, booking, reason=reason)
     return {"success": True, "data": _booking_dict(booking), "message": "Booking cancelled."}
+
+
+@router_vendor.post("/bookings/{booking_id}/refund-deposit")
+async def refund_booking_deposit(
+    booking_id: uuid.UUID,
+    data: DepositRefundRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    booking = await vsvc.get_booking_by_id(db, booking_id)
+    if not booking:
+        raise HTTPException(404, "Booking not found.")
+
+    vendor = await vsvc.get_vendor_by_id(db, booking.vendor_id)
+    if not vendor or vendor.user_id != current_user.id:
+        if getattr(current_user, "role", "") != "admin":
+            raise HTTPException(
+                403, "Only the venue owner or platform admin can process deposit refunds."
+            )
+
+    booking = await vsvc.refund_security_deposit(db, booking, reason=data.reason)
+    return {
+        "success": True,
+        "data": _booking_dict(booking),
+        "message": "Security deposit refunded to client.",
+    }
+
+
+@router_vendor.post("/bookings/{booking_id}/claim-deposit")
+async def claim_booking_deposit(
+    booking_id: uuid.UUID,
+    data: DepositClaimRequest,
+    db: DBSession,
+    current_user: CurrentUser,
+):
+    booking = await vsvc.get_booking_by_id(db, booking_id)
+    if not booking:
+        raise HTTPException(404, "Booking not found.")
+
+    vendor = await vsvc.get_vendor_by_id(db, booking.vendor_id)
+    if not vendor or vendor.user_id != current_user.id:
+        if getattr(current_user, "role", "") != "admin":
+            raise HTTPException(403, "Only the venue owner can submit damage claims.")
+
+    booking = await vsvc.claim_security_deposit(
+        db, booking, claim_amount=data.claim_amount, claim_reason=data.claim_reason
+    )
+    return {
+        "success": True,
+        "data": _booking_dict(booking),
+        "message": "Damage claim recorded and credited to payable balance.",
+    }
 
 
 # ── Reviews Endpoints (Phase 12) ──────────────────────────────────────────────

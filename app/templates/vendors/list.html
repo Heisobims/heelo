@@ -643,8 +643,8 @@
   <select name="capacity_tier" class="vm-filter-select">
     <option value="">Any Capacity</option>
     <option value="intimate" {% if capacity_tier == 'intimate' %}selected{% endif %}>Up to 150 guests</option>
-    <option value="medium" {% if capacity_tier == 'medium' %}selected{% endif %}>150 – 600 guests</option>
-    <option value="large" {% if capacity_tier == 'large' %}selected{% endif %}>600 – 1,500 guests</option>
+    <option value="medium" {% if capacity_tier == 'medium' %}selected{% endif %}>150 - 600 guests</option>
+    <option value="large" {% if capacity_tier == 'large' %}selected{% endif %}>600 - 1,500 guests</option>
     <option value="grand" {% if capacity_tier == 'grand' %}selected{% endif %}>1,500+ guests</option>
   </select>
 
@@ -658,6 +658,25 @@
     <option value="industrial" {% if venue_type == 'industrial' %}selected{% endif %}>Industrial Lofts</option>
     <option value="botanical" {% if venue_type == 'botanical' %}selected{% endif %}>Botanical Grounds</option>
   </select>
+
+  <select name="amenity" class="vm-filter-select">
+    <option value="">Any Key Amenity</option>
+    <option value="commercial_kitchen" {% if amenity == 'commercial_kitchen' %}selected{% endif %}>Commercial Kitchen</option>
+    <option value="in_house_av" {% if amenity == 'in_house_av' %}selected{% endif %}>In-House AV / Sound</option>
+    <option value="three_phase_power" {% if amenity == 'three_phase_power' %}selected{% endif %}>3-Phase Power / Gen</option>
+    <option value="parking_spaces" {% if amenity == 'parking_spaces' %}selected{% endif %}>Dedicated Parking</option>
+    <option value="loading_bay" {% if amenity == 'loading_bay' %}selected{% endif %}>Loading Dock</option>
+    <option value="wheelchair_accessible" {% if amenity == 'wheelchair_accessible' %}selected{% endif %}>ADA Accessible</option>
+  </select>
+
+  <input
+    type="date"
+    name="event_date"
+    value="{{ event_date or '' }}"
+    title="Filter by available event date"
+    class="vm-filter-select"
+    style="cursor: pointer; padding: 0 10px;"
+  />
 
   <select name="price_range" class="vm-filter-select">
     <option value="">Any Budget</option>
@@ -703,7 +722,7 @@
   <button type="submit" class="vm-search-btn">Filter Venues</button>
 </form>
 
-{% set has_active_filters = (q or city or country or capacity_tier or min_capacity or venue_type or price_range or (sort_by and sort_by != 'featured') or verified_only) if venue_mode else (q or city or price_range or (sort_by and sort_by != 'relevance') or verified_only) %}
+{% set has_active_filters = (q or city or country or capacity_tier or min_capacity or venue_type or amenity or event_date or price_range or (sort_by and sort_by != 'featured') or verified_only) if venue_mode else (q or city or price_range or (sort_by and sort_by != 'relevance') or verified_only) %}
 {% if has_active_filters %}
 <div class="vm-active-chips-wrap">
   <div class="vm-active-chips">
@@ -724,6 +743,12 @@
     {% endif %}
     {% if venue_type %}
     <span class="vm-active-chip">Style: {{ venue_type | capitalize }}</span>
+    {% endif %}
+    {% if amenity %}
+    <span class="vm-active-chip">Amenity: {{ amenity | replace('_', ' ') | title }}</span>
+    {% endif %}
+    {% if event_date %}
+    <span class="vm-active-chip">Available: {{ event_date }}</span>
     {% endif %}
     {% if price_range %}
     <span class="vm-active-chip">Budget: {{ price_range | capitalize }}</span>

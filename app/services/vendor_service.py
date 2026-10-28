@@ -12,6 +12,7 @@ from app.models.vendor import (
     BoothApplication,
     EventBoothPackage,
     Vendor,
+    VendorBlackoutDate,
     VendorBooking,
     VendorFeaturedCampaign,
     VendorLead,
@@ -146,11 +147,15 @@ async def list_vendors(
     min_capacity: int | None = None,
     max_capacity: int | None = None,
     venue_type: str | None = None,
+    amenity: str | None = None,
+    available_on: datetime | str | None = None,
     verified_only: bool = False,
     sort_by: str | None = None,
     page: int = 1,
     per_page: int = 24,
 ) -> tuple[list[Vendor], int]:
+    from sqlalchemy import Text
+
     stmt = select(Vendor).where(Vendor.status == "active")
 
     if q:
@@ -161,6 +166,7 @@ async def list_vendors(
                 Vendor.tagline.ilike(f"%{q}%"),
                 Vendor.address.ilike(f"%{q}%"),
                 Vendor.location_city.ilike(f"%{q}%"),
+                func.cast(Vendor.venue_specs, Text).ilike(f"%{q}%"),
             )
         )
     if category:
@@ -178,11 +184,51 @@ async def list_vendors(
     if verified_only:
         stmt = stmt.where(Vendor.is_verified.is_(True))
 
+    if amenity:
+        am_clean = amenity.lower().strip()
+        stmt = stmt.where(
+            or_(
+                func.cast(Vendor.venue_specs, Text).ilike(f"%{am_clean}%"),
+                Vendor.description.ilike(f"%{am_clean.replace('_', ' ')}%"),
+            )
+        )
+
+    if available_on:
+        from datetime import date, datetime, time, timezone
+
+        target_dt = None
+        if isinstance(available_on, str):
+            try:
+                target_dt = datetime.fromisoformat(available_on.replace("Z", "+00:00"))
+            except Exception:
+                pass
+        elif isinstance(available_on, datetime):
+            target_dt = available_on
+        elif isinstance(available_on, date):
+            target_dt = datetime.combine(available_on, time.min).replace(tzinfo=timezone.utc)
+
+        if target_dt:
+            start_of_day = target_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_of_day = target_dt.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+            booked_subq = select(VendorBooking.vendor_id).where(
+                VendorBooking.event_date >= start_of_day,
+                VendorBooking.event_date <= end_of_day,
+                VendorBooking.status.in_(["confirmed", "in_progress", "delivered", "paid", "in_escrow"]),
+            )
+            blackout_subq = select(VendorBlackoutDate.vendor_id).where(
+                VendorBlackoutDate.start_date <= end_of_day,
+                VendorBlackoutDate.end_date >= start_of_day,
+            )
+            stmt = stmt.where(Vendor.id.not_in(booked_subq)).where(Vendor.id.not_in(blackout_subq))
+
     if venue_type:
         vt = venue_type.lower().strip()
+        spec_cond = func.cast(Vendor.venue_specs, Text).ilike(f"%{vt}%")
         if vt == "ballroom":
             stmt = stmt.where(
                 or_(
+                    spec_cond,
                     Vendor.business_name.ilike("%ballroom%"),
                     Vendor.description.ilike("%ballroom%"),
                     Vendor.tagline.ilike("%ballroom%"),
@@ -191,6 +237,7 @@ async def list_vendors(
         elif vt == "convention":
             stmt = stmt.where(
                 or_(
+                    spec_cond,
                     Vendor.business_name.ilike("%convention%"),
                     Vendor.business_name.ilike("%dome%"),
                     Vendor.business_name.ilike("%arena%"),
@@ -202,6 +249,7 @@ async def list_vendors(
         elif vt == "historic":
             stmt = stmt.where(
                 or_(
+                    spec_cond,
                     Vendor.business_name.ilike("%historic%"),
                     Vendor.business_name.ilike("%palace%"),
                     Vendor.business_name.ilike("%castle%"),
@@ -216,6 +264,7 @@ async def list_vendors(
         elif vt in ("rooftop", "skyline"):
             stmt = stmt.where(
                 or_(
+                    spec_cond,
                     Vendor.business_name.ilike("%rooftop%"),
                     Vendor.business_name.ilike("%skyline%"),
                     Vendor.business_name.ilike("%penthouse%"),
@@ -228,6 +277,7 @@ async def list_vendors(
         elif vt in ("waterfront", "beach"):
             stmt = stmt.where(
                 or_(
+                    spec_cond,
                     Vendor.business_name.ilike("%oceanfront%"),
                     Vendor.business_name.ilike("%harbour%"),
                     Vendor.business_name.ilike("%lake%"),
@@ -242,6 +292,7 @@ async def list_vendors(
         elif vt == "industrial":
             stmt = stmt.where(
                 or_(
+                    spec_cond,
                     Vendor.business_name.ilike("%warehouse%"),
                     Vendor.business_name.ilike("%loft%"),
                     Vendor.business_name.ilike("%hangar%"),
@@ -254,6 +305,7 @@ async def list_vendors(
         elif vt in ("botanical", "outdoor", "estate"):
             stmt = stmt.where(
                 or_(
+                    spec_cond,
                     Vendor.business_name.ilike("%garden%"),
                     Vendor.business_name.ilike("%vineyard%"),
                     Vendor.business_name.ilike("%glasshouse%"),
@@ -263,6 +315,14 @@ async def list_vendors(
                     Vendor.business_name.ilike("%courtyard%"),
                     Vendor.description.ilike("%garden%"),
                     Vendor.description.ilike("%botanical%"),
+                )
+            )
+        else:
+            stmt = stmt.where(
+                or_(
+                    spec_cond,
+                    Vendor.business_name.ilike(f"%{vt}%"),
+                    Vendor.description.ilike(f"%{vt}%"),
                 )
             )
 
@@ -1054,6 +1114,145 @@ async def decline_quote_request(
     return recipient
 
 
+# ── Availability & Blackout Dates ─────────────────────────────────────────────
+async def check_vendor_date_availability(
+    db: AsyncSession,
+    vendor_id: uuid.UUID,
+    event_date: datetime,
+) -> tuple[bool, str | None]:
+    """Checks whether a vendor/venue is available on the specified event date.
+    Returns (True, None) if free, or (False, reason_message) if conflict exists.
+    """
+    start_of_day = event_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = event_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    # 1. Existing confirmed/paid bookings conflict
+    conflict_booking = await db.scalar(
+        select(VendorBooking).where(
+            VendorBooking.vendor_id == vendor_id,
+            VendorBooking.event_date >= start_of_day,
+            VendorBooking.event_date <= end_of_day,
+            VendorBooking.status.in_(["confirmed", "in_progress", "delivered", "paid", "in_escrow"]),
+        )
+    )
+    if conflict_booking:
+        date_str = event_date.strftime("%B %d, %Y")
+        return False, f"Venue is already booked and confirmed on {date_str}."
+
+    # 2. Blackout dates conflict
+    conflict_blackout = await db.scalar(
+        select(VendorBlackoutDate).where(
+            VendorBlackoutDate.vendor_id == vendor_id,
+            VendorBlackoutDate.start_date <= end_of_day,
+            VendorBlackoutDate.end_date >= start_of_day,
+        )
+    )
+    if conflict_blackout:
+        date_str = event_date.strftime("%B %d, %Y")
+        reason = f": {conflict_blackout.reason}" if conflict_blackout.reason else ""
+        return False, f"Venue is unavailable on {date_str}{reason}."
+
+    return True, None
+
+
+async def get_vendor_unavailable_dates(
+    db: AsyncSession,
+    vendor_id: uuid.UUID,
+) -> list[dict]:
+    """Returns all upcoming booked dates and blackout periods for a vendor."""
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Active bookings
+    bookings = await db.scalars(
+        select(VendorBooking)
+        .where(
+            VendorBooking.vendor_id == vendor_id,
+            VendorBooking.event_date >= now,
+            VendorBooking.status.in_(["confirmed", "in_progress", "delivered", "paid", "in_escrow"]),
+        )
+        .order_by(VendorBooking.event_date.asc())
+    )
+
+    # Blackouts
+    blackouts = await db.scalars(
+        select(VendorBlackoutDate)
+        .where(
+            VendorBlackoutDate.vendor_id == vendor_id,
+            VendorBlackoutDate.end_date >= now,
+        )
+        .order_by(VendorBlackoutDate.start_date.asc())
+    )
+
+    unavailable = []
+    for b in bookings.all():
+        if b.event_date:
+            unavailable.append({
+                "type": "booking",
+                "date": b.event_date.strftime("%Y-%m-%d"),
+                "label": "Booked",
+            })
+    for bo in blackouts.all():
+        unavailable.append({
+            "type": "blackout",
+            "start_date": bo.start_date.strftime("%Y-%m-%d"),
+            "end_date": bo.end_date.strftime("%Y-%m-%d"),
+            "reason": bo.reason or "Private Event / Maintenance",
+        })
+    return unavailable
+
+
+async def list_vendor_blackout_dates(
+    db: AsyncSession, vendor_id: uuid.UUID
+) -> list[VendorBlackoutDate]:
+    result = await db.scalars(
+        select(VendorBlackoutDate)
+        .where(VendorBlackoutDate.vendor_id == vendor_id)
+        .order_by(VendorBlackoutDate.start_date.asc())
+    )
+    return list(result.all())
+
+
+async def create_vendor_blackout_date(
+    db: AsyncSession,
+    *,
+    vendor_id: uuid.UUID,
+    start_date: datetime,
+    end_date: datetime,
+    reason: str | None = None,
+) -> VendorBlackoutDate:
+    if end_date < start_date:
+        raise HTTPException(400, "End date cannot be earlier than start date.")
+
+    blackout = VendorBlackoutDate(
+        vendor_id=vendor_id,
+        start_date=start_date,
+        end_date=end_date,
+        reason=reason,
+    )
+    db.add(blackout)
+    await db.commit()
+    await db.refresh(blackout)
+    return blackout
+
+
+async def delete_vendor_blackout_date(
+    db: AsyncSession, vendor_id: uuid.UUID, blackout_id: uuid.UUID
+) -> bool:
+    blackout = await db.scalar(
+        select(VendorBlackoutDate).where(
+            VendorBlackoutDate.id == blackout_id,
+            VendorBlackoutDate.vendor_id == vendor_id,
+        )
+    )
+    if not blackout:
+        return False
+    await db.delete(blackout)
+    await db.commit()
+    return True
+
+
 # ── Booking & Contract Lifecycle ──────────────────────────────────────────────
 async def create_booking_from_quotation(
     db: AsyncSession,
@@ -1066,6 +1265,12 @@ async def create_booking_from_quotation(
     if not vendor:
         raise HTTPException(404, "Vendor not found.")
 
+    ev_date = quotation.quote_request.event_date if quotation.quote_request else None
+    if ev_date:
+        is_avail, conflict_err = await check_vendor_date_availability(db, vendor.id, ev_date)
+        if not is_avail:
+            raise HTTPException(409, conflict_err)
+
     # Calculate platform commission (Model A)
     commission_rate = (
         float(vendor.custom_commission_rate)
@@ -1073,7 +1278,16 @@ async def create_booking_from_quotation(
         else DEFAULT_PLATFORM_COMMISSION_PERCENT
     )
     total_amount = float(quotation.total_amount)
-    commission_amount = round((total_amount * commission_rate) / 100.0, 2)
+
+    deposit_amount = 0.0
+    if vendor.venue_specs and isinstance(vendor.venue_specs, dict):
+        try:
+            deposit_amount = float(vendor.venue_specs.get("security_deposit_amount", 0.0) or 0.0)
+        except (ValueError, TypeError):
+            deposit_amount = 0.0
+
+    service_amount = max(0.0, total_amount - deposit_amount)
+    commission_amount = round((service_amount * commission_rate) / 100.0, 2)
     vendor_earnings = round(total_amount - commission_amount, 2)
 
     ref = f"VB-{uuid.uuid4().hex[:8].upper()}"
@@ -1086,13 +1300,15 @@ async def create_booking_from_quotation(
         org_id=quotation.quote_request.org_id if quotation.quote_request else None,
         event_id=quotation.quote_request.event_id if quotation.quote_request else None,
         event_name=quotation.quote_request.event_name if quotation.quote_request else quotation.title,
-        event_date=quotation.quote_request.event_date if quotation.quote_request else None,
+        event_date=ev_date,
         event_location=quotation.quote_request.event_location if quotation.quote_request else None,
         service_summary=f"{quotation.title}\n{quotation.scope_of_work}",
         total_amount=total_amount,
         platform_commission_rate=commission_rate,
         commission_amount=commission_amount,
         vendor_earnings=vendor_earnings,
+        security_deposit_amount=deposit_amount,
+        security_deposit_status="none" if deposit_amount <= 0 else "pending",
         currency=quotation.currency,
         cancellation_policy=cancellation_policy,
         cancellation_terms=cancellation_terms or "Standard Tixdoo cancellation terms apply.",
@@ -1121,13 +1337,27 @@ async def create_direct_booking(
     if not vendor or not listing:
         raise HTTPException(404, "Vendor or service not found.")
 
+    if event_date:
+        is_avail, conflict_err = await check_vendor_date_availability(db, vendor_id, event_date)
+        if not is_avail:
+            raise HTTPException(409, conflict_err)
+
     commission_rate = (
         float(vendor.custom_commission_rate)
         if vendor.custom_commission_rate is not None
         else DEFAULT_PLATFORM_COMMISSION_PERCENT
     )
     total_amount = float(listing.price)
-    commission_amount = round((total_amount * commission_rate) / 100.0, 2)
+
+    deposit_amount = 0.0
+    if vendor.venue_specs and isinstance(vendor.venue_specs, dict):
+        try:
+            deposit_amount = float(vendor.venue_specs.get("security_deposit_amount", 0.0) or 0.0)
+        except (ValueError, TypeError):
+            deposit_amount = 0.0
+
+    service_amount = max(0.0, total_amount - deposit_amount)
+    commission_amount = round((service_amount * commission_rate) / 100.0, 2)
     vendor_earnings = round(total_amount - commission_amount, 2)
 
     ref = f"VB-{uuid.uuid4().hex[:8].upper()}"
@@ -1145,6 +1375,8 @@ async def create_direct_booking(
         platform_commission_rate=commission_rate,
         commission_amount=commission_amount,
         vendor_earnings=vendor_earnings,
+        security_deposit_amount=deposit_amount,
+        security_deposit_status="none" if deposit_amount <= 0 else "pending",
         currency=listing.currency,
         cancellation_policy=cancellation_policy,
         payment_reference=f"vbook_{uuid.uuid4().hex[:12]}_{uuid.uuid4().hex[:6]}",
@@ -1234,6 +1466,8 @@ async def confirm_booking_payment(
 
     booking.status = "confirmed"
     booking.escrow_status = "held_in_escrow"
+    if float(getattr(booking, "security_deposit_amount", 0.0) or 0.0) > 0.0:
+        booking.security_deposit_status = "held_in_escrow"
     booking.payment_reference = payment_reference
     booking.payment_method = payment_method
     booking.paid_at = datetime.now(UTC)
@@ -1364,6 +1598,86 @@ async def release_booking_escrow(
 async def complete_booking(db: AsyncSession, booking: VendorBooking) -> VendorBooking:
     """Manual completion that delegates directly to escrow release."""
     return await release_booking_escrow(db, booking, reason="manual_completion")
+
+
+async def refund_security_deposit(
+    db: AsyncSession,
+    booking: VendorBooking,
+    *,
+    reason: str = "Inspection passed - no damages",
+) -> VendorBooking:
+    """Refunds the escrowed security deposit back to the client with no platform fee deduction."""
+    from datetime import UTC, datetime
+
+    if getattr(booking, "security_deposit_status", "none") != "held_in_escrow":
+        raise HTTPException(
+            400, f"Deposit status is '{booking.security_deposit_status}', cannot refund."
+        )
+
+    booking.security_deposit_status = "refunded"
+    tx = VendorTransaction(
+        reference=f"TX-DEP-REF-{booking.booking_reference}",
+        vendor_id=booking.vendor_id,
+        booking_id=booking.id,
+        type="deposit_refund",
+        gross_amount=booking.security_deposit_amount,
+        platform_fee=0.0,
+        net_amount=booking.security_deposit_amount,
+        currency=booking.currency,
+        status="completed",
+        metadata_json={
+            "description": f"Refund of security deposit for booking {booking.booking_reference}: {reason}",
+            "refunded_at": datetime.now(UTC).isoformat(),
+        },
+    )
+    db.add(tx)
+    await db.commit()
+    await db.refresh(booking)
+    return booking
+
+
+async def claim_security_deposit(
+    db: AsyncSession,
+    booking: VendorBooking,
+    *,
+    claim_amount: float,
+    claim_reason: str,
+) -> VendorBooking:
+    """Awards the security deposit (or portion) to the venue owner for physical property damage."""
+    from datetime import UTC, datetime
+
+    if getattr(booking, "security_deposit_status", "none") != "held_in_escrow":
+        raise HTTPException(
+            400, f"Deposit status is '{booking.security_deposit_status}', cannot claim."
+        )
+
+    if claim_amount > float(booking.security_deposit_amount):
+        raise HTTPException(400, "Claim amount cannot exceed total security deposit held.")
+
+    booking.security_deposit_status = "claimed_by_vendor"
+    vendor = await db.get(Vendor, booking.vendor_id)
+    if vendor:
+        vendor.payable_balance = float(vendor.payable_balance) + claim_amount
+
+    tx = VendorTransaction(
+        reference=f"TX-DEP-CLM-{booking.booking_reference}",
+        vendor_id=booking.vendor_id,
+        booking_id=booking.id,
+        type="deposit_claim",
+        gross_amount=claim_amount,
+        platform_fee=0.0,
+        net_amount=claim_amount,
+        currency=booking.currency,
+        status="completed",
+        metadata_json={
+            "description": f"Damage claim deducted from deposit for booking {booking.booking_reference}: {claim_reason}",
+            "claimed_at": datetime.now(UTC).isoformat(),
+        },
+    )
+    db.add(tx)
+    await db.commit()
+    await db.refresh(booking)
+    return booking
 
 
 async def dispute_booking(

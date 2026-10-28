@@ -513,6 +513,9 @@
       <div class="vd-nav-tab" :class="{ 'active': activeTab === 'profile' }" @click="activeTab = 'profile'">
         <span class="material-symbols-outlined" style="font-size:18px;">storefront</span> Profile &amp; Settings
       </div>
+      <div class="vd-nav-tab" :class="{ 'active': activeTab === 'venue' }" @click="activeTab = 'venue'">
+        <span class="material-symbols-outlined" style="font-size:18px;">apartment</span> Venue Specs &amp; Calendar
+      </div>
       <div class="vd-nav-tab" :class="{ 'active': activeTab === 'monetization' }" @click="activeTab = 'monetization'">
         <span class="material-symbols-outlined" style="font-size:18px;">rocket_launch</span> Growth &amp; Upgrades
       </div>
@@ -628,7 +631,21 @@
                 </td>
                 <td>{{ b.requester.full_name if b.requester else 'Client' }}</td>
                 <td>{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</td>
-                <td><strong style="color:#15803d;">{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.vendor_earnings) }}</strong></td>
+                <td>
+                  <strong style="color:#15803d;">{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.vendor_earnings) }}</strong>
+                  {% if b.security_deposit_amount and b.security_deposit_amount > 0 %}
+                  <div style="font-size:11px; margin-top:4px;">
+                    <span style="color:var(--text-muted);">Deposit:</span> {{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.security_deposit_amount) }}
+                    {% if b.security_deposit_status == 'held_in_escrow' %}
+                    <span class="vd-pill" style="font-size:10px; background:#eff6ff; color:#1e40af; padding:1px 5px;">In Escrow</span>
+                    {% elif b.security_deposit_status == 'refunded' %}
+                    <span class="vd-pill" style="font-size:10px; background:#f0fdf4; color:#166534; padding:1px 5px;">Refunded</span>
+                    {% elif b.security_deposit_status == 'claimed_by_vendor' %}
+                    <span class="vd-pill" style="font-size:10px; background:#fef2f2; color:#991b1b; padding:1px 5px;">Claimed</span>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </td>
                 <td><span class="vd-pill {{ b.status }}">{{ b.status }}</span></td>
               </tr>
               {% endfor %}
@@ -854,7 +871,21 @@
                 </td>
                 <td>{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.total_amount) }}</td>
                 <td style="color:#b91c1c;">-{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.commission_amount) }}</td>
-                <td><strong style="color:#15803d;">{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.vendor_earnings) }}</strong></td>
+                <td>
+                  <strong style="color:#15803d;">{{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.vendor_earnings) }}</strong>
+                  {% if b.security_deposit_amount and b.security_deposit_amount > 0 %}
+                  <div style="font-size:11px; margin-top:4px;">
+                    <span style="color:var(--text-muted);">Deposit:</span> {{ b.currency | currency_symbol }}{{ "{:,.2f}".format(b.security_deposit_amount) }}
+                    {% if b.security_deposit_status == 'held_in_escrow' %}
+                    <span class="vd-pill" style="font-size:10px; background:#eff6ff; color:#1e40af; padding:1px 5px;">In Escrow</span>
+                    {% elif b.security_deposit_status == 'refunded' %}
+                    <span class="vd-pill" style="font-size:10px; background:#f0fdf4; color:#166534; padding:1px 5px;">Refunded</span>
+                    {% elif b.security_deposit_status == 'claimed_by_vendor' %}
+                    <span class="vd-pill" style="font-size:10px; background:#fef2f2; color:#991b1b; padding:1px 5px;">Claimed</span>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </td>
                 <td>
                   {% if b.status == 'confirmed' %}
                   <span class="vd-pill pending" style="background:#fef3c7; color:#92400e; border-color:#fde68a;">Held in Escrow</span>
@@ -1215,6 +1246,242 @@
       </div>
     </div>
 
+    <!-- TAB: VENUE SPECIFICATIONS & CALENDAR -->
+    <div x-show="activeTab === 'venue'" x-cloak>
+      <div class="vd-card" style="margin-bottom: 24px;">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Venue Specifications &amp; Architectural Features</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">
+              These structured dimensions and capacities power your venue profile accordions, seating matrices, and discovery filters.
+            </div>
+          </div>
+        </div>
+
+        <form @submit.prevent="saveVenueSpecs()" style="max-width:960px;">
+          <!-- Venue Style -->
+          <div class="vd-form-group">
+            <label class="vd-form-label">Primary Venue Classification / Style</label>
+            <select x-model="venueSpecs.venue_type" class="vd-form-select">
+              <option value="ballroom">Ballroom &amp; Banquet Hall</option>
+              <option value="convention">Convention Dome &amp; Arena</option>
+              <option value="historic">Historic Palace &amp; Manor</option>
+              <option value="rooftop">Rooftop, Skyline &amp; Penthouse</option>
+              <option value="waterfront">Waterfront, Beach &amp; Harbor</option>
+              <option value="industrial">Industrial Loft &amp; Warehouse</option>
+              <option value="botanical">Botanical Garden &amp; Vineyard</option>
+              <option value="auditorium">Auditorium &amp; Theater</option>
+              <option value="villa">Luxury Villa &amp; Estate</option>
+              <option value="gallery">Gallery &amp; Exhibition Space</option>
+            </select>
+          </div>
+
+          <!-- Seating Configurations Grid -->
+          <div style="margin-top:24px; margin-bottom:16px;">
+            <h3 style="font-size:16px; font-weight:800; margin:0 0 4px; display:flex; align-items:center; gap:8px;">
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--cyan);">groups</span>
+              Capacity by Seating Configuration
+            </h3>
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px;">Maximum guest counts supported across common event layouts.</p>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:12px;">
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Cocktail / Standing</label>
+                <input type="number" x-model.number="venueSpecs.seating_capacities.cocktail" class="vd-form-input" min="0" placeholder="e.g. 1000">
+              </div>
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Banquet (Round Tables)</label>
+                <input type="number" x-model.number="venueSpecs.seating_capacities.banquet" class="vd-form-input" min="0" placeholder="e.g. 650">
+              </div>
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Theater (Rows)</label>
+                <input type="number" x-model.number="venueSpecs.seating_capacities.theater" class="vd-form-input" min="0" placeholder="e.g. 850">
+              </div>
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Classroom</label>
+                <input type="number" x-model.number="venueSpecs.seating_capacities.classroom" class="vd-form-input" min="0" placeholder="e.g. 450">
+              </div>
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Boardroom / U-Shape</label>
+                <input type="number" x-model.number="venueSpecs.seating_capacities.boardroom" class="vd-form-input" min="0" placeholder="e.g. 40">
+              </div>
+            </div>
+          </div>
+
+          <!-- Spatial Dimensions Grid -->
+          <div style="margin-top:28px; margin-bottom:16px;">
+            <h3 style="font-size:16px; font-weight:800; margin:0 0 4px; display:flex; align-items:center; gap:8px;">
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--cyan);">straighten</span>
+              Spatial &amp; Physical Dimensions
+            </h3>
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px;">Physical floor, height, and room specs for production teams.</p>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Gross Floor Area (Sq Ft)</label>
+                <input type="number" x-model.number="venueSpecs.dimensions.floor_area_sqft" class="vd-form-input" min="0" placeholder="e.g. 12000">
+              </div>
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Clear Ceiling Height (Ft)</label>
+                <input type="number" step="0.5" x-model.number="venueSpecs.dimensions.ceiling_height_ft" class="vd-form-input" min="0" placeholder="e.g. 24">
+              </div>
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Breakout Suites / Green Rooms</label>
+                <input type="number" x-model.number="venueSpecs.dimensions.breakout_rooms" class="vd-form-input" min="0" placeholder="e.g. 4">
+              </div>
+              <div class="vd-form-group" style="margin-bottom:0;">
+                <label class="vd-form-label">Floor Load Rating</label>
+                <input type="text" x-model="venueSpecs.dimensions.floor_load_rating" class="vd-form-input" placeholder="e.g. 15 kN / m²">
+              </div>
+            </div>
+          </div>
+
+          <!-- Amenities & Infrastructure Checklist -->
+          <div style="margin-top:28px; margin-bottom:16px;">
+            <h3 style="font-size:16px; font-weight:800; margin:0 0 4px; display:flex; align-items:center; gap:8px;">
+              <span class="material-symbols-outlined" style="font-size:18px; color:var(--cyan);">tune</span>
+              Included Amenities &amp; Production Infrastructure
+            </h3>
+            <p style="font-size:12.5px; color:var(--text-muted); margin:0 0 14px;">Select the operational capabilities available on-site.</p>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('commercial_kitchen')" @change="toggleAmenity('commercial_kitchen')" style="accent-color:var(--cyan);">
+                <span>Commercial Kitchen</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('in_house_av')" @change="toggleAmenity('in_house_av')" style="accent-color:var(--cyan);">
+                <span>In-House Sound &amp; AV</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('three_phase_power')" @change="toggleAmenity('three_phase_power')" style="accent-color:var(--cyan);">
+                <span>3-Phase Camlock Power</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('backup_generator')" @change="toggleAmenity('backup_generator')" style="accent-color:var(--cyan);">
+                <span>100% Backup Generator</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('parking_spaces')" @change="toggleAmenity('parking_spaces')" style="accent-color:var(--cyan);">
+                <span>Dedicated Parking Lots</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('loading_bay')" @change="toggleAmenity('loading_bay')" style="accent-color:var(--cyan);">
+                <span>Freight Dock &amp; Ramp</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('wheelchair_accessible')" @change="toggleAmenity('wheelchair_accessible')" style="accent-color:var(--cyan);">
+                <span>Wheelchair / ADA Accessible</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('byo_alcohol_allowed')" @change="toggleAmenity('byo_alcohol_allowed')" style="accent-color:var(--cyan);">
+                <span>BYO Alcohol Allowed</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--border-light); background:#ffffff; cursor:pointer; font-size:13px; font-weight:600;">
+                <input type="checkbox" :checked="venueSpecs.amenities.includes('late_night_curfew')" @change="toggleAmenity('late_night_curfew')" style="accent-color:var(--cyan);">
+                <span>Late Night Curfew (Post 12 AM)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Refundable Security Deposit -->
+          <div style="margin-top:28px; margin-bottom:24px; padding:18px 20px; border-radius:14px; background:#f0fdf4; border:1px solid #bbf7d0;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span class="material-symbols-outlined" style="font-size:20px; color:#16a34a;">verified_user</span>
+              <h4 style="font-size:15px; font-weight:800; color:#166534; margin:0;">Refundable Security / Damage Deposit</h4>
+            </div>
+            <p style="font-size:12.5px; color:#166534; margin:0 0 12px; line-height:1.5;">
+              Held safely in escrow upon booking payment with <strong>0% platform commission</strong>. Returned automatically to the organizer post-event unless you submit a damage claim within 72 hours.
+            </p>
+            <div style="max-width:280px;">
+              <label class="vd-form-label" style="color:#166534;">Security Deposit Amount ({{ vendor.currency }})</label>
+              <input type="number" step="100" x-model.number="venueSpecs.security_deposit_amount" class="vd-form-input" min="0" placeholder="e.g. 50000">
+            </div>
+          </div>
+
+          <div style="margin-top:24px;">
+            <button type="submit" class="vd-btn vd-btn-accent" :disabled="savingSpecs">
+              <span x-text="savingSpecs ? 'Saving Specifications...' : 'Save Venue Specifications'"></span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Blackout Dates & Availability Calendar Card -->
+      <div class="vd-card">
+        <div class="vd-card-header">
+          <div>
+            <h2 class="vd-card-title">Calendar Availability &amp; Blackout Dates</h2>
+            <div style="font-size:13px; color:var(--text-muted); margin-top:2px;">
+              Block out dates for private venue hires, renovations, or holidays. Organizers will be automatically prevented from double-booking these dates.
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Blackout Date Form -->
+        <form @submit.prevent="addBlackoutDate()" style="padding:18px 20px; background:var(--bg-secondary); border-radius:14px; border:1px solid var(--border-light); margin-bottom:24px;">
+          <div style="font-size:14px; font-weight:800; margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+            <span class="material-symbols-outlined" style="font-size:18px; color:var(--cyan);">event_busy</span>
+            Block Out Date Range
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; align-items:flex-end;">
+            <div class="vd-form-group" style="margin-bottom:0;">
+              <label class="vd-form-label">Start Date *</label>
+              <input type="date" x-model="newBlackout.start_date" class="vd-form-input" required>
+            </div>
+            <div class="vd-form-group" style="margin-bottom:0;">
+              <label class="vd-form-label">End Date *</label>
+              <input type="date" x-model="newBlackout.end_date" class="vd-form-input" required>
+            </div>
+            <div class="vd-form-group" style="margin-bottom:0;">
+              <label class="vd-form-label">Reason / Notes</label>
+              <input type="text" x-model="newBlackout.reason" class="vd-form-input" placeholder="e.g. Private Buyout / Maintenance">
+            </div>
+            <div>
+              <button type="submit" class="vd-btn vd-btn-primary" style="width:100%;" :disabled="addingBlackout">
+                <span x-text="addingBlackout ? 'Blocking...' : 'Block Date Range'"></span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Current Blackout List -->
+        <template x-if="blackoutDates.length === 0">
+          <div style="text-align:center; padding:32px 20px; color:var(--text-muted); font-size:13.5px;">
+            <span class="material-symbols-outlined" style="font-size:36px; color:#9ca3af; display:block; margin-bottom:8px;">event_available</span>
+            No dates are currently blocked out. Your venue is fully open for calendar bookings.
+          </div>
+        </template>
+
+        <template x-if="blackoutDates.length > 0">
+          <div class="vd-table-wrap">
+            <table class="vd-table">
+              <thead>
+                <tr>
+                  <th>Start Date</th>
+                  <th>End Date</th>
+                  <th>Reason</th>
+                  <th style="text-align:right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="bd in blackoutDates" :key="bd.id">
+                  <tr>
+                    <td style="font-weight:700;" x-text="bd.start_date"></td>
+                    <td style="font-weight:700;" x-text="bd.end_date"></td>
+                    <td style="color:var(--text-muted);" x-text="bd.reason || 'Private Event / Maintenance'"></td>
+                    <td style="text-align:right;">
+                      <button type="button" @click="removeBlackoutDate(bd.id)" style="border:none; background:none; color:#dc2626; cursor:pointer; font-size:12.5px; font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                        <span class="material-symbols-outlined" style="font-size:16px;">delete</span>
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </template>
+      </div>
+    </div>
+
     <!-- TAB 8: GROWTH & UPGRADES -->
     <div x-show="activeTab === 'monetization'" x-cloak>
       <div class="vd-card">
@@ -1467,10 +1734,47 @@ function vendorHub() {
     showPayoutModal: false,
     showQuoteModal: false,
     savingProfile: false,
+    savingSpecs: false,
+    addingBlackout: false,
     uploadingLogo: false,
     uploadingCover: false,
     uploadingQuoteAttachment: false,
     selectedInquiry: { id: '', event_name: '' },
+    venueSpecs: {
+      venue_type: {{ (vendor.venue_specs.venue_type if vendor.venue_specs and vendor.venue_specs.venue_type else 'ballroom') | tojson }},
+      seating_capacities: {
+        cocktail: {{ (vendor.venue_specs.seating_capacities.cocktail if vendor.venue_specs and vendor.venue_specs.seating_capacities and vendor.venue_specs.seating_capacities.cocktail else (vendor.capacity or 500)) | int }},
+        banquet: {{ (vendor.venue_specs.seating_capacities.banquet if vendor.venue_specs and vendor.venue_specs.seating_capacities and vendor.venue_specs.seating_capacities.banquet else ((vendor.capacity or 500) * 0.65)|int) | int }},
+        theater: {{ (vendor.venue_specs.seating_capacities.theater if vendor.venue_specs and vendor.venue_specs.seating_capacities and vendor.venue_specs.seating_capacities.theater else ((vendor.capacity or 500) * 0.85)|int) | int }},
+        classroom: {{ (vendor.venue_specs.seating_capacities.classroom if vendor.venue_specs and vendor.venue_specs.seating_capacities and vendor.venue_specs.seating_capacities.classroom else ((vendor.capacity or 500) * 0.45)|int) | int }},
+        boardroom: {{ (vendor.venue_specs.seating_capacities.boardroom if vendor.venue_specs and vendor.venue_specs.seating_capacities and vendor.venue_specs.seating_capacities.boardroom else 40) | int }},
+      },
+      dimensions: {
+        floor_area_sqft: {{ (vendor.venue_specs.dimensions.floor_area_sqft if vendor.venue_specs and vendor.venue_specs.dimensions and vendor.venue_specs.dimensions.floor_area_sqft else ((vendor.capacity or 500) * 12)|int) | int }},
+        ceiling_height_ft: {{ (vendor.venue_specs.dimensions.ceiling_height_ft if vendor.venue_specs and vendor.venue_specs.dimensions and vendor.venue_specs.dimensions.ceiling_height_ft else 24.0) | float }},
+        breakout_rooms: {{ (vendor.venue_specs.dimensions.breakout_rooms if vendor.venue_specs and vendor.venue_specs.dimensions and vendor.venue_specs.dimensions.breakout_rooms else 4) | int }},
+        floor_load_rating: {{ (vendor.venue_specs.dimensions.floor_load_rating if vendor.venue_specs and vendor.venue_specs.dimensions and vendor.venue_specs.dimensions.floor_load_rating else '15 kN / m²') | tojson }},
+      },
+      amenities: {{ (vendor.venue_specs.amenities or []) | tojson if vendor.venue_specs and vendor.venue_specs.amenities else '["commercial_kitchen", "in_house_av", "three_phase_power", "backup_generator", "parking_spaces", "wheelchair_accessible"]' }},
+      security_deposit_amount: {{ (vendor.venue_specs.security_deposit_amount if vendor.venue_specs and vendor.venue_specs.security_deposit_amount else 0.0) | float }},
+      virtual_tour_url: {{ (vendor.venue_specs.virtual_tour_url if vendor.venue_specs and vendor.venue_specs.virtual_tour_url else '') | tojson }},
+      floorplan_pdf_url: {{ (vendor.venue_specs.floorplan_pdf_url if vendor.venue_specs and vendor.venue_specs.floorplan_pdf_url else '') | tojson }},
+    },
+    blackoutDates: [
+      {% for bd in blackout_dates %}
+      {
+        id: "{{ bd.id }}",
+        start_date: "{{ bd.start_date.strftime('%Y-%m-%d') }}",
+        end_date: "{{ bd.end_date.strftime('%Y-%m-%d') }}",
+        reason: "{{ bd.reason or '' }}",
+      },
+      {% endfor %}
+    ],
+    newBlackout: {
+      start_date: '',
+      end_date: '',
+      reason: '',
+    },
     alertModal: {
       open: false,
       type: 'success',
@@ -1837,6 +2141,134 @@ function vendorHub() {
         this.showAlert('Documents Submitted Successfully!', j.message || 'Your verification documents have been received for administrative review.', 'success', 'Continue', () => window.location.reload());
       } catch (e) {
         this.showAlert('Submission Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    toggleAmenity(code) {
+      if (!Array.isArray(this.venueSpecs.amenities)) {
+        this.venueSpecs.amenities = [];
+      }
+      const idx = this.venueSpecs.amenities.indexOf(code);
+      if (idx > -1) {
+        this.venueSpecs.amenities.splice(idx, 1);
+      } else {
+        this.venueSpecs.amenities.push(code);
+      }
+    },
+
+    async saveVenueSpecs() {
+      this.savingSpecs = true;
+      try {
+        const res = await fetch('/api/v1/vendors/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            venue_specs: this.venueSpecs,
+            capacity: this.venueSpecs.seating_capacities.cocktail || this.profileForm.capacity || null,
+          }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to save venue specs.');
+        this.showAlert(
+          'Venue Specs Saved Successfully!',
+          'Your seating capacities, floor dimensions, amenities, and security deposit terms have been updated.',
+          'success',
+          'Continue'
+        );
+      } catch (e) {
+        this.showAlert('Save Failed', e.message, 'error', 'Close');
+      } finally {
+        this.savingSpecs = false;
+      }
+    },
+
+    async addBlackoutDate() {
+      if (!this.newBlackout.start_date || !this.newBlackout.end_date) {
+        this.showAlert('Missing Dates', 'Please provide both start date and end date.', 'error', 'Close');
+        return;
+      }
+      this.addingBlackout = true;
+      try {
+        const res = await fetch('/api/v1/vendors/me/blackout-dates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(this.newBlackout),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to block dates.');
+        this.blackoutDates.push({
+          id: j.data.id,
+          start_date: j.data.start_date.split('T')[0],
+          end_date: j.data.end_date.split('T')[0],
+          reason: j.data.reason || '',
+        });
+        this.newBlackout = { start_date: '', end_date: '', reason: '' };
+        this.showAlert('Dates Blocked Out!', 'Calendar has been updated to prevent bookings during this period.', 'success', 'Continue');
+      } catch (e) {
+        this.showAlert('Failed to Block Dates', e.message, 'error', 'Close');
+      } finally {
+        this.addingBlackout = false;
+      }
+    },
+
+    async removeBlackoutDate(id) {
+      if (!confirm('Remove this blocked date range? This will re-open these dates for booking.')) return;
+      try {
+        const res = await fetch(`/api/v1/vendors/me/blackout-dates/${id}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to remove blackout date.');
+        this.blackoutDates = this.blackoutDates.filter(b => b.id !== id);
+        this.showAlert('Date Unblocked', 'These dates are now available for booking.', 'success', 'Continue');
+      } catch (e) {
+        this.showAlert('Action Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async refundDeposit(id) {
+      const reason = prompt('Reason for releasing security deposit:', 'Inspection passed - no damages');
+      if (reason === null) return;
+      try {
+        const res = await fetch(`/api/v1/vendors/bookings/${id}/refund-deposit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ reason: reason || 'Inspection passed - no damages' }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to refund deposit.');
+        this.showAlert('Security Deposit Refunded!', 'Escrowed deposit funds have been released back to client.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Refund Failed', e.message, 'error', 'Close');
+      }
+    },
+
+    async claimDeposit(id, maxAmt) {
+      const amtStr = prompt(`Enter damage claim amount to deduct from security deposit (up to ${maxAmt}):`, maxAmt);
+      if (!amtStr) return;
+      const amt = parseFloat(amtStr);
+      if (isNaN(amt) || amt <= 0 || amt > maxAmt) {
+        this.showAlert('Invalid Amount', `Please enter a valid amount between 0.01 and ${maxAmt}.`, 'error', 'Close');
+        return;
+      }
+      const reason = prompt('Specify the damage or policy breach:', 'Property repairs / cleaning required');
+      if (!reason) return;
+      try {
+        const res = await fetch(`/api/v1/vendors/bookings/${id}/claim-deposit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ claim_amount: amt, claim_reason: reason }),
+        });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to claim deposit.');
+        this.showAlert('Damage Claim Processed!', 'Deposit claim amount has been credited to your payable balance.', 'success', 'Continue', () => window.location.reload());
+      } catch (e) {
+        this.showAlert('Claim Failed', e.message, 'error', 'Close');
       }
     },
   };

@@ -2705,6 +2705,31 @@ block head %}
         </div>
         {% endif %}
 
+        {% set vs = vendor.venue_specs or {} %}
+        {% set seats = vs.seating_capacities or {} %}
+        {% set dims = vs.dimensions or {} %}
+        {% set rider = vs.technical_rider or {} %}
+        {% set inv = vs.inventory_furnishings or {} %}
+        {% set cap = vendor.capacity or 500 %}
+
+        {% if vs.amenities %}
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+          {% for am in vs.amenities %}
+          <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 5px 11px; border-radius: 9999px; background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0;">
+            <span class="material-symbols-outlined" style="font-size: 14px; color: #059669;">check</span>
+            {{ am | replace('_', ' ') | title }}
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if vs.security_deposit_amount %}
+        <div style="margin-bottom: 16px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; display: flex; align-items: center; gap: 8px; font-size: 13px; color: #166534;">
+          <span class="material-symbols-outlined" style="font-size: 18px; color: #16a34a;">verified_user</span>
+          <span>Refundable Security Deposit: <strong>{{ vendor.currency | currency_symbol }}{{ "{:,.2f}".format(vs.security_deposit_amount) }}</strong> held in escrow and returned post-event inspection.</span>
+        </div>
+        {% endif %}
+
         <!-- Capacity by Seating Configuration (Accordion) -->
         <div class="vd-specs-accordion" x-data="{ open: false }" style="margin-bottom: 16px;">
           <button
@@ -2734,34 +2759,37 @@ block head %}
             x-transition:enter-end="opacity-100 translate-y-0"
             class="vd-specs-accordion-content"
           >
-            {% set cap = vendor.capacity or 500 %}
             <div class="vd-capacity-grid" style="margin-top: 14px; margin-bottom: 0;">
               <div class="vd-capacity-card">
                 <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">local_bar</span>
                 <span class="vd-capacity-title">Cocktail</span>
-                <span class="vd-capacity-num">{{ "{:,}".format(cap) }}</span>
+                <span class="vd-capacity-num">{{ seats.cocktail or "{:,}".format(cap) }}</span>
               </div>
               <div class="vd-capacity-card">
                 <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">table_restaurant</span>
                 <span class="vd-capacity-title">Banquet</span>
-                <span class="vd-capacity-num">{{ "{:,}".format((cap * 0.65)|int) }}</span>
+                <span class="vd-capacity-num">{{ seats.banquet or "{:,}".format((cap * 0.65)|int) }}</span>
               </div>
               <div class="vd-capacity-card">
                 <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">chair</span>
                 <span class="vd-capacity-title">Theater</span>
-                <span class="vd-capacity-num">{{ "{:,}".format((cap * 0.85)|int) }}</span>
+                <span class="vd-capacity-num">{{ seats.theater or "{:,}".format((cap * 0.85)|int) }}</span>
               </div>
               <div class="vd-capacity-card">
                 <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">school</span>
                 <span class="vd-capacity-title">Classroom</span>
-                <span class="vd-capacity-num">{{ "{:,}".format((cap * 0.45)|int) }}</span>
+                <span class="vd-capacity-num">{{ seats.classroom or "{:,}".format((cap * 0.45)|int) }}</span>
               </div>
               <div class="vd-capacity-card">
                 <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">meeting_room</span>
                 <span class="vd-capacity-title">Boardroom</span>
                 <span class="vd-capacity-num">
-                  {% set b_cap = (cap * 0.1)|int %}
-                  {{ [b_cap, 24]|max if [b_cap, 24]|max <= 80 else 80 }}
+                  {% if seats.boardroom %}
+                    {{ seats.boardroom }}
+                  {% else %}
+                    {% set b_cap = (cap * 0.1)|int %}
+                    {{ [b_cap, 24]|max if [b_cap, 24]|max <= 80 else 80 }}
+                  {% endif %}
                 </span>
               </div>
             </div>
@@ -2800,22 +2828,42 @@ block head %}
             <div class="vd-spatial-strip" style="margin-top: 14px; margin-bottom: 0;">
               <div class="vd-spatial-item">
                 <span class="vd-spatial-label">Gross Floor Area</span>
-                <span class="vd-spatial-val">{{ "{:,}".format(cap * 12) }} sq ft</span>
-                <span class="vd-spatial-detail">{{ "{:,}".format((cap * 12 * 0.0929)|int) }} m²</span>
+                <span class="vd-spatial-val">{{ dims.floor_area_sqft ~ " sq ft" if dims.floor_area_sqft else "{:,}".format(cap * 12) ~ " sq ft" }}</span>
+                <span class="vd-spatial-detail">{{ "{:,}".format(((dims.floor_area_sqft or (cap * 12)) * 0.0929)|int) }} m²</span>
               </div>
               <div class="vd-spatial-item">
                 <span class="vd-spatial-label">Clear Ceiling Height</span>
-                <span class="vd-spatial-val">{% if cap >= 1500 %}32 ft (9.8m){% elif cap >= 800 %}24 ft (7.3m){% else %}18 ft (5.5m){% endif %}</span>
+                <span class="vd-spatial-val">
+                  {% if dims.ceiling_height_ft %}
+                    {{ dims.ceiling_height_ft }} ft ({{ (dims.ceiling_height_ft * 0.3048)|round(1) }}m)
+                  {% elif cap >= 1500 %}
+                    32 ft (9.8m)
+                  {% elif cap >= 800 %}
+                    24 ft (7.3m)
+                  {% else %}
+                    18 ft (5.5m)
+                  {% endif %}
+                </span>
                 <span class="vd-spatial-detail">Rigging clearance</span>
               </div>
               <div class="vd-spatial-item">
                 <span class="vd-spatial-label">Breakout Suites</span>
-                <span class="vd-spatial-val">{% if cap >= 1500 %}6 Salons + 2 VIP{% elif cap >= 800 %}4 Salons + 1 VIP{% else %}2 VIP Green Rooms{% endif %}</span>
+                <span class="vd-spatial-val">
+                  {% if dims.breakout_rooms %}
+                    {{ dims.breakout_rooms }} Suites
+                  {% elif cap >= 1500 %}
+                    6 Salons + 2 VIP
+                  {% elif cap >= 800 %}
+                    4 Salons + 1 VIP
+                  {% else %}
+                    2 VIP Green Rooms
+                  {% endif %}
+                </span>
                 <span class="vd-spatial-detail">Acoustic isolation</span>
               </div>
               <div class="vd-spatial-item">
                 <span class="vd-spatial-label">Floor Load Rating</span>
-                <span class="vd-spatial-val">15 kN / m²</span>
+                <span class="vd-spatial-val">{{ dims.floor_load_rating or "15 kN / m²" }}</span>
                 <span class="vd-spatial-detail">Rigging &amp; vehicle rated</span>
               </div>
             </div>
@@ -3533,6 +3581,8 @@ block head %}
               <input
                 type="date"
                 x-model="rfqForm.event_date"
+                @change="checkRfqDate()"
+                :min="todayStr"
                 style="
                   width: 100%;
                   height: 44px;
@@ -3544,6 +3594,11 @@ block head %}
                   box-sizing: border-box;
                 "
               />
+              <div
+                x-show="rfqDateWarning"
+                x-text="rfqDateWarning"
+                style="margin-top: 6px; font-size: 12px; color: #dc2626; font-weight: 600;"
+              ></div>
             </div>
             <div>
               <label
@@ -3863,6 +3918,8 @@ block head %}
           <input
             type="date"
             x-model="bookingForm.event_date"
+            @change="checkBookingDate()"
+            :min="todayStr"
             required
             style="
               width: 100%;
@@ -3875,6 +3932,11 @@ block head %}
               box-sizing: border-box;
             "
           />
+          <div
+            x-show="bookingDateWarning"
+            x-text="bookingDateWarning"
+            style="margin-top: 6px; font-size: 12px; color: #dc2626; font-weight: 600;"
+          ></div>
         </div>
         <div style="margin-bottom: 14px">
           <label
@@ -4061,6 +4123,50 @@ block head %}
         }
         return `Building & Environment Perspective ${this.lightboxIndex + 1}`;
       },
+      todayStr: new Date().toISOString().split("T")[0],
+      unavailableDates: {{ unavailable_dates_json | safe if unavailable_dates_json else '[]' }},
+      rfqDateWarning: "",
+      bookingDateWarning: "",
+      checkRfqDate() {
+        this.rfqDateWarning = "";
+        const d = this.rfqForm.event_date;
+        if (!d) return true;
+        for (const item of this.unavailableDates) {
+          if (item.type === "booking" && item.date === d) {
+            this.rfqDateWarning = `Warning: This venue already has a confirmed event booked on ${d}.`;
+            return false;
+          }
+          if (item.type === "blackout") {
+            const s = (item.start_date || "").split("T")[0];
+            const e = (item.end_date || "").split("T")[0];
+            if (d >= s && d <= e) {
+              this.rfqDateWarning = `Notice: Venue is blocked out from ${s} to ${e} (${item.reason || "Private Event"}).`;
+              return false;
+            }
+          }
+        }
+        return true;
+      },
+      checkBookingDate() {
+        this.bookingDateWarning = "";
+        const d = this.bookingForm.event_date;
+        if (!d) return true;
+        for (const item of this.unavailableDates) {
+          if (item.type === "booking" && item.date === d) {
+            this.bookingDateWarning = `Conflict: Venue is already booked on ${d}. Please pick another date.`;
+            return false;
+          }
+          if (item.type === "blackout") {
+            const s = (item.start_date || "").split("T")[0];
+            const e = (item.end_date || "").split("T")[0];
+            if (d >= s && d <= e) {
+              this.bookingDateWarning = `Unavailable: Venue is blocked from ${s} to ${e} (${item.reason || "Private Event"}).`;
+              return false;
+            }
+          }
+        }
+        return true;
+      },
       showRfqModal: false,
       rfqLoading: false,
       rfqSubmitted: false,
@@ -4148,6 +4254,10 @@ block head %}
         }
       },
       async submitDirectBooking() {
+        if (!this.checkBookingDate()) {
+          this.bookingError = this.bookingDateWarning;
+          return;
+        }
         this.bookingLoading = true;
         this.bookingError = "";
         try {

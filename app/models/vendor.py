@@ -120,6 +120,9 @@ class Vendor(Base, TimestampMixin):
     total_earned: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0.0)
     total_withdrawn: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0.0)
 
+    # Venue Specifications & Amenities
+    venue_specs: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     user: Mapped[User] = relationship("User")
     leads: Mapped[list[VendorLead]] = relationship(
         "VendorLead", back_populates="vendor", cascade="all, delete-orphan"
@@ -159,6 +162,9 @@ class Vendor(Base, TimestampMixin):
     )
     lead_credit_purchases: Mapped[list[VendorLeadCreditPurchase]] = relationship(
         "VendorLeadCreditPurchase", back_populates="vendor"
+    )
+    blackout_dates: Mapped[list[VendorBlackoutDate]] = relationship(
+        "VendorBlackoutDate", back_populates="vendor", cascade="all, delete-orphan"
     )
 
     @property
@@ -512,6 +518,8 @@ class VendorBooking(Base, TimestampMixin):
     platform_commission_rate: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=10.0)
     commission_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0.0)
     vendor_earnings: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0.0)
+    security_deposit_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0.0)
+    security_deposit_status: Mapped[str] = mapped_column(String(30), nullable=False, default="none")  # none, held_in_escrow, refunded, claimed_by_vendor
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="NGN")
     cancellation_policy: Mapped[str] = mapped_column(String(50), nullable=False, default="moderate")  # flexible, moderate, strict
     cancellation_terms: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -777,3 +785,28 @@ class VendorVerificationRequest(Base, TimestampMixin):
 
     def __repr__(self) -> str:
         return f"<VendorVerificationRequest vendor={self.vendor_id} status={self.status}>"
+
+
+class VendorBlackoutDate(Base, TimestampMixin):
+    """Calendar dates blocked out for a vendor or venue."""
+
+    __tablename__ = "vendor_blackout_dates"
+    __table_args__ = (
+        Index("ix_blackout_vendor_dates", "vendor_id", "start_date", "end_date"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    vendor_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("vendors.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    start_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    vendor: Mapped[Vendor] = relationship("Vendor", back_populates="blackout_dates")
+
+    def __repr__(self) -> str:
+        return f"<VendorBlackoutDate vendor={self.vendor_id} {self.start_date.isoformat()} to {self.end_date.isoformat()}>"
+
