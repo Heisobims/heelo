@@ -1690,6 +1690,78 @@ block head %}
   }
 
   /* Technical Specs Minimal (2x2 Grid) */
+  .vd-specs-accordion {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    margin-bottom: 24px;
+    overflow: hidden;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+  .vd-specs-accordion:hover {
+    border-color: #d1d5db;
+  }
+  .vd-specs-accordion-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 140ms ease;
+  }
+  .vd-specs-accordion-trigger:hover {
+    background: #fafaf9;
+  }
+  .vd-specs-accordion-title {
+    font-family: "Lora", serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #131b17;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+  }
+  .vd-specs-accordion-badge {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #4b5563;
+    background: #f4f4f5;
+    padding: 3px 9px;
+    border-radius: 9999px;
+    transition: all 140ms ease;
+  }
+  .vd-specs-accordion-chevron {
+    color: #6b7280;
+    font-size: 20px;
+    transition: transform 200ms ease;
+  }
+  .vd-specs-accordion-chevron.rotate-180 {
+    transform: rotate(180deg);
+  }
+  .vd-specs-accordion-content {
+    padding: 0 18px 18px;
+    border-top: 1px solid #f4f4f5;
+  }
+  @media (max-width: 600px) {
+    .vd-specs-accordion-trigger {
+      padding: 14px;
+    }
+    .vd-specs-accordion-title {
+      font-size: 14.5px;
+    }
+    .vd-specs-accordion-badge {
+      display: none;
+    }
+    .vd-specs-accordion-content {
+      padding: 0 14px 14px;
+    }
+  }
+
   .vd-feature-card-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -2781,114 +2853,137 @@ block head %}
           </div>
         </div>
 
-        <!-- 3. Technical & Production Feature Matrix (Minimal 4 Cards in 2x2 Grid) -->
-        <div style="margin-bottom: 24px;">
-          <h3 class="vd-specs-section-title">
-            <span class="material-symbols-outlined" style="color:#d97706; font-size:18px;">engineering</span>
-            Production Infrastructure &amp; Technical Rider
-          </h3>
-
-          <div class="vd-feature-card-grid">
-            <!-- Card 1: Audio & Visual -->
-            <div class="vd-feature-card">
-              <div class="vd-feature-card-header">
-                <span class="material-symbols-outlined" style="color:#7c3aed; font-size:18px;">volume_up</span>
-                <h4 class="vd-feature-card-title">Audio &amp; Visual Systems</h4>
-              </div>
-              <div class="vd-feature-spec-list">
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Concert-grade line array PA with digital mixing console</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Wireless handheld &amp; lapel microphones with multi-zone routing</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>High-resolution 4K LED video wall &amp; laser stage projectors</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Dedicated live-streaming &amp; broadcast fiber umbilical hookups</span>
-                </div>
-              </div>
+        <!-- 3. Technical & Production Feature Matrix (Accordion) -->
+        <div class="vd-specs-accordion" x-data="{ open: false }">
+          <button
+            type="button"
+            class="vd-specs-accordion-trigger"
+            @click="open = !open"
+            :aria-expanded="open"
+          >
+            <h3 class="vd-specs-accordion-title">
+              <span class="material-symbols-outlined" style="color:#d97706; font-size:18px;">engineering</span>
+              <span>Production Infrastructure &amp; Technical Rider</span>
+            </h3>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="vd-specs-accordion-badge" x-text="open ? 'Hide Specs' : 'View Specs'">View Specs</span>
+              <span
+                class="material-symbols-outlined vd-specs-accordion-chevron"
+                :class="{ 'rotate-180': open }"
+              >expand_more</span>
             </div>
+          </button>
 
-            <!-- Card 2: Power & Connectivity -->
-            <div class="vd-feature-card">
-              <div class="vd-feature-card-header">
-                <span class="material-symbols-outlined" style="color:#dc2626; font-size:18px;">bolt</span>
-                <h4 class="vd-feature-card-title">Power &amp; Connectivity</h4>
+          <div
+            x-show="open"
+            x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 -translate-y-2"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            class="vd-specs-accordion-content"
+          >
+            <div class="vd-feature-card-grid" style="margin-top: 14px; margin-bottom: 0;">
+              <!-- Card 1: Audio & Visual -->
+              <div class="vd-feature-card">
+                <div class="vd-feature-card-header">
+                  <span class="material-symbols-outlined" style="color:#7c3aed; font-size:18px;">volume_up</span>
+                  <h4 class="vd-feature-card-title">Audio &amp; Visual Systems</h4>
+                </div>
+                <div class="vd-feature-spec-list">
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Concert-grade line array PA with digital mixing console</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Wireless handheld &amp; lapel microphones with multi-zone routing</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>High-resolution 4K LED video wall &amp; laser stage projectors</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Dedicated live-streaming &amp; broadcast fiber umbilical hookups</span>
+                  </div>
+                </div>
               </div>
-              <div class="vd-feature-spec-list">
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Dual 400A 3-Phase Camlock disconnects adjacent to stage</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>100% on-site diesel generator with automatic failover</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Dedicated 1 Gbps symmetrical enterprise fiber uplink</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>High-density Wi-Fi 6E supporting thousands of concurrent devices</span>
-                </div>
-              </div>
-            </div>
 
-            <!-- Card 3: Catering & Hospitality -->
-            <div class="vd-feature-card">
-              <div class="vd-feature-card-header">
-                <span class="material-symbols-outlined" style="color:#c026d3; font-size:18px;">restaurant</span>
-                <h4 class="vd-feature-card-title">Catering &amp; Hospitality</h4>
+              <!-- Card 2: Power & Connectivity -->
+              <div class="vd-feature-card">
+                <div class="vd-feature-card-header">
+                  <span class="material-symbols-outlined" style="color:#dc2626; font-size:18px;">bolt</span>
+                  <h4 class="vd-feature-card-title">Power &amp; Connectivity</h4>
+                </div>
+                <div class="vd-feature-spec-list">
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Dual 400A 3-Phase Camlock disconnects adjacent to stage</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>100% on-site diesel generator with automatic failover</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Dedicated 1 Gbps symmetrical enterprise fiber uplink</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>High-density Wi-Fi 6E supporting thousands of concurrent devices</span>
+                  </div>
+                </div>
               </div>
-              <div class="vd-feature-spec-list">
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Commercial finishing kitchen with warming ovens &amp; cold storage</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Outside licensed caterers welcome with staging area</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Full on-premise liquor license &amp; built-in bar service stations</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Private VIP green rooms, artist suites &amp; production offices</span>
-                </div>
-              </div>
-            </div>
 
-            <!-- Card 4: Logistics & Operations -->
-            <div class="vd-feature-card">
-              <div class="vd-feature-card-header">
-                <span class="material-symbols-outlined" style="color:#0284c7; font-size:18px;">local_shipping</span>
-                <h4 class="vd-feature-card-title">Logistics &amp; Safety</h4>
+              <!-- Card 3: Catering & Hospitality -->
+              <div class="vd-feature-card">
+                <div class="vd-feature-card-header">
+                  <span class="material-symbols-outlined" style="color:#c026d3; font-size:18px;">restaurant</span>
+                  <h4 class="vd-feature-card-title">Catering &amp; Hospitality</h4>
+                </div>
+                <div class="vd-feature-spec-list">
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Commercial finishing kitchen with warming ovens &amp; cold storage</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Outside licensed caterers welcome with staging area</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Full on-premise liquor license &amp; built-in bar service stations</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Private VIP green rooms, artist suites &amp; production offices</span>
+                  </div>
+                </div>
               </div>
-              <div class="vd-feature-spec-list">
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Ground-level drive-in freight loading bay (14 ft clearance)</span>
+
+              <!-- Card 4: Logistics & Operations -->
+              <div class="vd-feature-card">
+                <div class="vd-feature-card-header">
+                  <span class="material-symbols-outlined" style="color:#0284c7; font-size:18px;">local_shipping</span>
+                  <h4 class="vd-feature-card-title">Logistics &amp; Safety</h4>
                 </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>100% ADA compliant step-free access throughout all facilities</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>Secure on-site parking concourse with valet drop-off</span>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <span>24/7 uniformed security, active CCTV &amp; overnight lock-up</span>
+                <div class="vd-feature-spec-list">
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Ground-level drive-in freight loading bay (14 ft clearance)</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>100% ADA compliant step-free access throughout all facilities</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>Secure on-site parking concourse with valet drop-off</span>
+                  </div>
+                  <div class="vd-feature-spec-row">
+                    <span class="material-symbols-outlined">check_circle</span>
+                    <span>24/7 uniformed security, active CCTV &amp; overnight lock-up</span>
+                  </div>
                 </div>
               </div>
             </div>
