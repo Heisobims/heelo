@@ -149,7 +149,7 @@
   .vm-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 24px 20px;
+    gap: 28px 20px;
     max-width: 1280px;
     margin: 0 auto;
     padding: 0 24px 80px;
@@ -158,7 +158,7 @@
   @media (max-width: 1080px) {
     .vm-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 22px 18px;
+      gap: 24px 18px;
     }
   }
   @media (max-width: 768px) {
@@ -174,14 +174,14 @@
     }
     .vm-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px 14px;
+      gap: 20px 14px;
       padding-bottom: 64px;
     }
   }
-  @media (max-width: 520px) {
+  @media (max-width: 480px) {
     .vm-grid {
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 20px;
       padding-bottom: 56px;
     }
   }
@@ -199,33 +199,27 @@
   }
 
   .vm-card {
-    background: #ffffff;
-    border: 1px solid rgba(19, 27, 23, 0.08);
-    border-radius: 20px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     text-decoration: none;
     color: inherit;
     display: flex;
     flex-direction: column;
     cursor: pointer;
-    overflow: hidden;
-    box-shadow: 0 2px 6px rgba(19, 27, 23, 0.03), 0 8px 20px -4px rgba(19, 27, 23, 0.04);
-    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s ease, border-color 0.24s ease;
+    box-shadow: none;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     -webkit-tap-highlight-color: transparent;
-    position: relative;
   }
   .vm-card:hover {
-    transform: translateY(-5px);
-    border-color: rgba(232, 89, 56, 0.4);
-    box-shadow: 0 16px 36px -6px rgba(19, 27, 23, 0.12), 0 4px 12px rgba(19, 27, 23, 0.04);
-  }
-  .vm-card:active {
-    transform: scale(0.99);
+    transform: translateY(-3px);
   }
   .vm-card-cover {
     width: 100%;
     aspect-ratio: 16 / 10;
     position: relative;
     overflow: hidden;
+    border-radius: 12px;
     background: #f4f4f5;
   }
   .vm-card-cover img {
@@ -233,10 +227,11 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 12px;
+    transition: transform 0.35s ease;
   }
   .vm-card:hover .vm-card-cover img {
-    transform: scale(1.05);
+    transform: scale(1.03);
   }
   .vm-card-cover-placeholder {
     position: absolute;
@@ -244,82 +239,62 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at 50% 35%, #25332b 0%, #111713 100%);
+    background: linear-gradient(135deg, #18181b, #27272a);
+    border-radius: 12px;
   }
-  .vm-card-cover-placeholder-icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: transform 0.35s ease, background 0.35s ease, border-color 0.35s ease;
+  .vm-card-cover-placeholder .material-symbols-outlined {
+    font-size: 2.2rem;
+    color: rgba(255, 255, 255, 0.45);
+    transition: transform 0.35s ease;
   }
-  .vm-card:hover .vm-card-cover-placeholder-icon {
-    transform: scale(1.1);
-    background: rgba(232, 89, 56, 0.24);
-    border-color: rgba(232, 89, 56, 0.45);
-  }
-  .vm-card-cover-placeholder-icon .material-symbols-outlined {
-    font-size: 1.65rem;
-    color: #ffffff;
+  .vm-card:hover .vm-card-cover-placeholder .material-symbols-outlined {
+    transform: scale(1.08);
   }
   .vm-card-badge {
     position: absolute;
-    top: 12px;
-    left: 12px;
+    top: 10px;
+    left: 10px;
     z-index: 2;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3.5px 11px;
     border-radius: 9999px;
-    background: rgba(19, 27, 23, 0.82);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(19, 27, 23, 0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     color: #ffffff;
-    max-width: calc(100% - 88px);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    letter-spacing: 0.01em;
   }
   .vm-card-rating {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
     z-index: 2;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 800;
-    padding: 4px 10px;
+    padding: 3.5px 9px;
     border-radius: 9999px;
-    background: rgba(19, 27, 23, 0.82);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(19, 27, 23, 0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     color: #FBBF24;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    gap: 3px;
   }
   .vm-card-body {
-    padding: 16px 18px 18px;
+    padding-top: 12px;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    flex: 1;
+    gap: 4px;
     min-width: 0;
   }
   .vm-card-title-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
     min-width: 0;
   }
@@ -328,109 +303,62 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    margin-top: 2px;
   }
   .vm-card-name {
     font-size: 16.5px;
     font-weight: 800;
-    color: #0d1411;
-    line-height: 1.25;
-    white-space: nowrap;
+    color: #131b17;
+    line-height: 1.32;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
     min-width: 0;
     flex: 1;
   }
   .vm-card-location {
-    font-size: 13px;
-    font-weight: 700;
-    color: #4b5563;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    font-size: 14px;
+    color: #52525b;
+    font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     line-height: 1.35;
-  }
-  .vm-card-location svg {
-    flex-shrink: 0;
-    opacity: 0.85;
   }
   .vm-card-tagline {
-    font-size: 13px;
-    font-weight: 700;
-    color: #1f2937;
-    line-height: 1.45;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    white-space: normal;
-    margin-top: 2px;
-    min-height: 2.9em;
-  }
-  .vm-card-price {
-    margin-top: auto;
-    padding-top: 12px;
-    border-top: 1.5px solid rgba(19, 27, 23, 0.08);
-    font-size: 14.5px;
-    font-weight: 800;
-    color: #0d1411;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    line-height: 1.35;
-    letter-spacing: -0.01em;
-  }
-  .vm-card-price-left {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
+    font-size: 13.5px;
+    color: #52525b;
+    font-weight: 600;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.35;
+  }
+  .vm-card-price {
+    margin-top: 4px;
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #047857;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    line-height: 1.35;
   }
   .vm-card-price svg {
     flex-shrink: 0;
-    stroke: #e85938;
-  }
-  .vm-card-price-arrow {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: rgba(19, 27, 23, 0.05);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #131b17;
-    flex-shrink: 0;
-    transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease;
-  }
-  .vm-card:hover .vm-card-price-arrow {
-    background: #131b17;
-    color: #ffffff;
-    transform: translateX(2px);
+    stroke: #047857;
   }
 
   @media (max-width: 520px) {
-    .vm-card {
-      border-radius: 18px;
-    }
     .vm-card-body {
-      padding: 14px 16px 16px;
-      gap: 5px;
-    }
-    .vm-card-tagline {
-      min-height: auto;
-      font-size: 12.5px;
+      padding-top: 10px;
+      gap: 3px;
     }
     .vm-card-name {
       font-size: 15.5px;
-    }
-    .vm-card-cover {
-      aspect-ratio: 16 / 9.5;
     }
   }
 
@@ -558,9 +486,7 @@
       <img src="{{ v.cover_image_url }}" alt="{{ v.business_name }}" loading="lazy">
       {% else %}
       <div class="vm-card-cover-placeholder">
-        <div class="vm-card-cover-placeholder-icon">
-          <span class="material-symbols-outlined">{{ cat_icons.get(v.category, 'account_balance' if venue_mode else 'more_horiz') }}</span>
-        </div>
+        <span class="material-symbols-outlined" style="font-size:2rem; opacity:0.35; color:#fff;">{{ cat_icons.get(v.category, 'account_balance' if venue_mode else 'more_horiz') }}</span>
       </div>
       {% endif %}
     </div>
@@ -573,10 +499,7 @@
         {% endif %}
         <span class="vm-card-name" title="{{ v.business_name }}">{{ v.business_name }}</span>
       </div>
-      <div class="vm-card-location">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span>{{ v.address or v.location_city or ('Location TBA') }}</span>
-      </div>
+      <div class="vm-card-location">{{ v.address or v.location_city or ('Location TBA') }}</div>
       <div class="vm-card-tagline">
         {% if venue_mode and v.capacity %}
         Up to {{ "{:,}".format(v.capacity) }} guests · Venue
@@ -585,21 +508,16 @@
         {% endif %}
       </div>
       <div class="vm-card-price">
-        <div class="vm-card-price-left">
-          {% if v.starting_price %}
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
-          <span>From {{ v.currency | currency_symbol }}{{ "{:,.2f}".format(v.starting_price) }}</span>
-          {% elif venue_mode and v.capacity %}
-          <span>Capacity: {{ "{:,}".format(v.capacity) }}</span>
-          {% elif v.price_range %}
-          <span>{{ {'budget': 'Budget-friendly', 'mid': 'Mid-range', 'premium': 'Premium'}.get(v.price_range, v.price_range) }}</span>
-          {% else %}
-          <span>Contact for Quote</span>
-          {% endif %}
-        </div>
-        <span class="vm-card-price-arrow">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-        </span>
+        {% if v.starting_price %}
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg>
+        <span>From {{ v.currency | currency_symbol }}{{ "{:,.2f}".format(v.starting_price) }}</span>
+        {% elif venue_mode and v.capacity %}
+        <span>Capacity: {{ "{:,}".format(v.capacity) }}</span>
+        {% elif v.price_range %}
+        <span>{{ {'budget': 'Budget-friendly', 'mid': 'Mid-range', 'premium': 'Premium'}.get(v.price_range, v.price_range) }}</span>
+        {% else %}
+        <span>Contact for Quote</span>
+        {% endif %}
       </div>
     </div>
   </a>
