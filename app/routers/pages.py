@@ -2834,14 +2834,20 @@ async def public_events_list(
 
     if raw_section and not is_view_all:
         norm_key = raw_section.lower().replace("-", "_").strip()
-        if norm_key in ("zero_dime", "zerodime"):
+        if norm_key in ("zero_dime", "zerodime", "below_10k", "below10k", "under_10k", "under10k", "free_admission"):
             norm_key = "free"
         elif norm_key in ("this_weekend",):
             norm_key = "weekend"
         elif norm_key in ("new_on_tixdoo",):
             norm_key = "new"
-        elif norm_key in ("under_10k", "under10k"):
-            norm_key = "below_10k"
+        elif norm_key in ("above_10k", "above10k", "business_networking", "leadership"):
+            norm_key = "business"
+        elif norm_key in ("tech", "tech_innovation", "innovation"):
+            norm_key = "technology"
+        elif norm_key in ("music", "music_shows", "concerts_festivals"):
+            norm_key = "concerts"
+        elif norm_key in ("arts", "culture", "design"):
+            norm_key = "arts_culture"
         active_section = norm_key
         active_section_info = ev_svc.CURATED_EVENT_SECTIONS.get(norm_key)
 

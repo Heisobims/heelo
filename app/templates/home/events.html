@@ -993,8 +993,7 @@ event.min_price_info %}
         <path d="M13 17v2" />
         <path d="M13 11v2" />
       </svg>
-      From {{ '₦' if price_info[1] == 'NGN' else (price_info[1] ~ ' ') }}{{
-      "{:,.2f}".format(price_info[0]) }} {% else %} Free Entry {% endif %}
+      From {{ price_info[1] | currency_symbol }}{{ "{:,.2f}".format(price_info[0]) }} {% else %} Free Entry {% endif %}
     </div>
   </div>
 </a>
@@ -1002,10 +1001,9 @@ event.min_price_info %}
 
 <!-- Hero -->
 <div class="ev-hero">
-  <h1>Discover events near you</h1>
+  <h1>Discover events worldwide</h1>
   <p>
-    Browse thousands of events across Africa and beyond: concerts, tech meetups,
-    workshops, and more.
+    Explore conferences, festivals, tech summits, and cultural gatherings across top global destinations.
   </p>
 </div>
 

@@ -646,50 +646,58 @@ async def get_spotlight_event(db: AsyncSession) -> Event | dict | None:
 CURATED_EVENT_SECTIONS: dict[str, dict] = {
     "featured": {
         "key": "featured",
-        "title": "Featured Events",
-        "subtitle": "Hand-picked and spotlighted events you shouldn't miss",
+        "title": "Featured Worldwide",
+        "subtitle": "Hand-picked international summits, flagship festivals, and spotlighted gatherings",
         "anchor": "featured",
-        "badge": "Featured",
+        "badge": "Spotlight",
         "icon": "auto_awesome",
     },
     "weekend": {
         "key": "weekend",
-        "title": "Upcoming This Weekend",
-        "subtitle": "Get out and explore exciting events happening this weekend",
+        "title": "Happening This Weekend",
+        "subtitle": "Exciting parties, concerts, and weekend cultural outings near you",
         "anchor": "weekend",
         "badge": "This Weekend",
-        "icon": "weekend",
+        "icon": "calendar_month",
     },
-    "new": {
-        "key": "new",
-        "title": "New on Tixdoo",
-        "subtitle": "Freshly added events and newly published experiences",
-        "anchor": "new",
-        "badge": "Just Added",
-        "icon": "fiber_new",
+    "technology": {
+        "key": "technology",
+        "title": "Tech, AI & Innovation",
+        "subtitle": "Artificial intelligence, cloud architecture, Web3 forums, and developer masterclasses",
+        "anchor": "tech-innovation",
+        "badge": "Innovation",
+        "icon": "terminal",
     },
-    "above_10k": {
-        "key": "above_10k",
-        "title": "Events Above 10,000",
-        "subtitle": "Conferences, festivals, and premium VIP experiences",
-        "anchor": "above-10k",
-        "badge": "Above 10k",
-        "icon": "diamond",
+    "concerts": {
+        "key": "concerts",
+        "title": "Concerts, Festivals & Nightlife",
+        "subtitle": "Live music stages, Afrobeats showcases, electronic soundscapes, and club nights",
+        "anchor": "concerts",
+        "badge": "Live Music",
+        "icon": "music_note",
     },
-    "below_10k": {
-        "key": "below_10k",
-        "title": "Events Under 10,000",
-        "subtitle": "Affordable outings, community gatherings, and meetups under ₦10,000",
-        "anchor": "under-10k",
-        "badge": "Under 10k",
-        "icon": "confirmation_number",
+    "business": {
+        "key": "business",
+        "title": "Business, Leadership & Finance",
+        "subtitle": "Executive forums, founder pitch stages, sustainability summits, and investor conclaves",
+        "anchor": "business",
+        "badge": "Leadership",
+        "icon": "business_center",
+    },
+    "arts_culture": {
+        "key": "arts_culture",
+        "title": "Arts, Culture & Design",
+        "subtitle": "Fashion runways, museum galas, architectural expos, and creative showcases",
+        "anchor": "arts-culture",
+        "badge": "Culture",
+        "icon": "palette",
     },
     "free": {
         "key": "free",
-        "title": "Zero Dime Event",
-        "subtitle": "Free entry events: reserve your spot without spending a dime",
-        "anchor": "zero-dime",
-        "badge": "Zero Dime",
+        "title": "Free Admission & Open Access",
+        "subtitle": "Free entry workshops, community hackathons, and global webinars",
+        "anchor": "free",
+        "badge": "Free Entry",
         "icon": "savings",
     },
 }
@@ -754,22 +762,34 @@ async def search_public_events(
             stmt = stmt.where(extract("isodow", Event.start_datetime).in_([5, 6, 7]))
         elif sec in ("new", "new_on_tixdoo"):
             order_by_clause = Event.created_at.desc()
-        elif sec in ("above_10k", "above10k"):
+        elif sec in ("technology", "tech", "tech_innovation"):
+            stmt = (
+                stmt.join(event_category_link, Event.id == event_category_link.c.event_id)
+                .join(EventCategory, EventCategory.id == event_category_link.c.category_id)
+                .where(EventCategory.slug.in_(["technology", "startup-innovation"]))
+            )
+        elif sec in ("concerts", "music", "music_shows", "concerts_festivals"):
+            stmt = (
+                stmt.join(event_category_link, Event.id == event_category_link.c.event_id)
+                .join(EventCategory, EventCategory.id == event_category_link.c.category_id)
+                .where(EventCategory.slug.in_(["music", "concerts-live-shows", "nightlife-parties"]))
+            )
+        elif sec in ("business", "business_networking", "finance", "above_10k", "above10k"):
+            stmt = (
+                stmt.join(event_category_link, Event.id == event_category_link.c.event_id)
+                .join(EventCategory, EventCategory.id == event_category_link.c.category_id)
+                .where(EventCategory.slug.in_(["business", "finance", "networking"]))
+            )
+        elif sec in ("arts_culture", "arts", "culture"):
+            stmt = (
+                stmt.join(event_category_link, Event.id == event_category_link.c.event_id)
+                .join(EventCategory, EventCategory.id == event_category_link.c.category_id)
+                .where(EventCategory.slug.in_(["arts-culture", "community", "food-drink"]))
+            )
+        elif sec in ("free", "zero_dime", "zerodime", "below_10k", "below10k", "under_10k", "under10k"):
             stmt = stmt.where(
                 Event.ticket_types.any(
-                    and_(TicketType.is_visible == True, TicketType.price >= 10000)
-                )
-            )
-        elif sec in ("below_10k", "below10k", "under_10k", "under10k"):
-            stmt = stmt.where(
-                Event.ticket_types.any(
-                    and_(TicketType.is_visible == True, TicketType.price > 0, TicketType.price < 10000)
-                )
-            )
-        elif sec in ("free", "zero_dime", "zerodime"):
-            stmt = stmt.where(
-                ~Event.ticket_types.any(
-                    and_(TicketType.is_visible == True, TicketType.price > 0)
+                    and_(TicketType.is_visible == True, TicketType.price == 0)
                 )
             )
 
