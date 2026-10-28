@@ -2877,8 +2877,8 @@ block head %}
           </div>
         </div>
 
-        <!-- 3. Technical & Production Feature Matrix (Accordion) -->
-        <div class="vd-specs-accordion" x-data="{ open: false }">
+        <!-- Technical & Production Feature Matrix (Accordion) -->
+        <div class="vd-specs-accordion" x-data="{ open: false }" style="margin-bottom: 16px;">
           <button
             type="button"
             class="vd-specs-accordion-trigger"
@@ -3014,48 +3014,72 @@ block head %}
           </div>
         </div>
 
-        <!-- 4. Included Inventory & Furnishings -->
-        <div style="margin-bottom: 24px;">
-          <h3 class="vd-specs-section-title">
-            <span class="material-symbols-outlined" style="color:#059669; font-size:18px;">inventory_2</span>
-            Included Inventory &amp; Furnishings
-          </h3>
-          <div class="vd-inventory-grid">
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">table_restaurant</span>
-              <span>Round Banquet Tables</span>
+        <!-- Included Inventory & Furnishings (Accordion) -->
+        <div class="vd-specs-accordion" x-data="{ open: false }">
+          <button
+            type="button"
+            class="vd-specs-accordion-trigger"
+            @click="open = !open"
+            :aria-expanded="open"
+          >
+            <h3 class="vd-specs-accordion-title">
+              <span class="material-symbols-outlined" style="color:#059669; font-size:18px;">inventory_2</span>
+              <span>Included Inventory &amp; Furnishings</span>
+            </h3>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="vd-specs-accordion-badge" x-text="open ? 'Hide Inventory' : 'View Inventory'">View Inventory</span>
+              <span
+                class="material-symbols-outlined vd-specs-accordion-chevron"
+                :class="{ 'rotate-180': open }"
+              >expand_more</span>
             </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">table_chart</span>
-              <span>Seminar Classroom Tables</span>
-            </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">chair</span>
-              <span>Padded Banquet Chairs</span>
-            </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">podium</span>
-              <span>Speaker Digital Lecterns</span>
-            </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">styler</span>
-              <span>Velvet Crowd Stanchions</span>
-            </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">checkroom</span>
-              <span>Mobile Garment Racks</span>
-            </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">curtains</span>
-              <span>Stage Pipe-and-Drape Masking</span>
-            </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">wine_bar</span>
-              <span>Cocktail High-Top Tables</span>
-            </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">accessible</span>
-              <span>ADA Modular Stage Access Ramp</span>
+          </button>
+
+          <div
+            x-show="open"
+            x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 -translate-y-2"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            class="vd-specs-accordion-content"
+          >
+            <div class="vd-inventory-grid" style="margin-top: 14px; margin-bottom: 0;">
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">table_restaurant</span>
+                <span>Round Banquet Tables</span>
+              </div>
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">table_chart</span>
+                <span>Seminar Classroom Tables</span>
+              </div>
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">chair</span>
+                <span>Padded Banquet Chairs</span>
+              </div>
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">podium</span>
+                <span>Speaker Digital Lecterns</span>
+              </div>
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">styler</span>
+                <span>Velvet Crowd Stanchions</span>
+              </div>
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">checkroom</span>
+                <span>Mobile Garment Racks</span>
+              </div>
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">curtains</span>
+                <span>Stage Pipe-and-Drape Masking</span>
+              </div>
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">wine_bar</span>
+                <span>Cocktail High-Top Tables</span>
+              </div>
+              <div class="vd-inventory-tag">
+                <span class="material-symbols-outlined">accessible</span>
+                <span>ADA Modular Stage Access Ramp</span>
+              </div>
             </div>
           </div>
         </div>
