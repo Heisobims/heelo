@@ -1771,38 +1771,6 @@ block head %}
     color: #71717a;
   }
 
-  /* Architectural Perspectives Prompt Banner */
-  .vd-perspectives-prompt {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 14px 18px;
-    margin-bottom: 24px;
-    cursor: pointer;
-    transition: all 160ms ease;
-  }
-  .vd-perspectives-prompt:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-  }
-  @media (max-width: 600px) {
-    .vd-perspectives-prompt {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 12px 14px;
-    }
-    .vd-perspectives-prompt button {
-      width: 100%;
-      text-align: center;
-      justify-content: center;
-    }
-  }
-
   /* Organizer Proposal CTA Banner */
   .vd-organizer-cta {
     background: #ffffff;
@@ -2973,23 +2941,7 @@ block head %}
           </div>
         </div>
 
-        <!-- 5. Architectural Perspectives Prompt Banner -->
-        <div class="vd-perspectives-prompt" @click="openLightbox(0)">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:38px; height:38px; border-radius:8px; background:#eff6ff; display:flex; align-items:center; justify-content:center; color:#2563eb; flex-shrink:0;">
-              <span class="material-symbols-outlined" style="font-size:22px;">photo_library</span>
-            </div>
-            <div>
-              <div style="font-size:13.5px; font-weight:700; color:#131b17;">Explore 5 Architectural &amp; Environmental Perspectives</div>
-              <div style="font-size:12px; color:#6b7280;">High-resolution views of the interior hall, skyline, grounds, and evening ambience.</div>
-            </div>
-          </div>
-          <button type="button" class="vd-btn vd-btn-outline" style="padding:7px 14px; font-size:12.5px; white-space:nowrap;">
-            Open Gallery
-          </button>
-        </div>
-
-        <!-- 6. Organizer Call To Action Banner -->
+        <!-- Organizer Call To Action Banner -->
         <div class="vd-organizer-cta">
           <div>
             <h4 class="vd-organizer-cta-title">Reserve {{ vendor.business_name }} for your event</h4>
