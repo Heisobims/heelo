@@ -529,18 +529,13 @@
   .vd-be-tabs-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 32px;
     border-bottom: 1px solid #e5e7eb;
     margin-bottom: 24px;
-  }
-  .vd-be-tabs-left {
-    display: flex;
-    align-items: center;
-    gap: 32px;
     overflow-x: auto;
     scrollbar-width: none;
   }
-  .vd-be-tabs-left::-webkit-scrollbar {
+  .vd-be-tabs-bar::-webkit-scrollbar {
     display: none;
   }
   .vd-be-tab-item {
@@ -566,49 +561,6 @@
   .vd-be-tab-item.active {
     color: #191919;
     border-bottom-color: #191919;
-  }
-  .vd-be-tabs-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .vd-be-badges-stack {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    margin-bottom: 2px;
-    text-decoration: none;
-    cursor: default;
-  }
-  .vd-be-ribbons-row {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-  }
-  .vd-be-ribbon-tag {
-    width: 17px;
-    height: 22px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 2px 2px 0 0;
-    position: relative;
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 84%, 0 100%);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
-  }
-  .vd-ribbon-curated {
-    background: #a37039;
-  }
-  .vd-ribbon-platform {
-    background: #001e36;
-  }
-  .vd-be-ribbons-count {
-    font-size: 11px;
-    font-weight: 700;
-    color: #6b7280;
-    line-height: 1;
-    font-family: 'Bricolage Grotesque', sans-serif;
   }
 
   /* ── Work / Portfolio Grid (Matches Behance Masonry Artwork Grid) ────────── */
@@ -1155,39 +1107,22 @@
 
       <!-- Behance-Style Tabs Header (Replacing Adobe Stock with Event Packages) -->
       <nav class="vd-be-tabs-bar" aria-label="Vendor profile navigation">
-        <div class="vd-be-tabs-left">
-          <button type="button" @click="activeTab = 'work'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'work' }">
-            Work
-          </button>
+        <button type="button" @click="activeTab = 'work'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'work' }">
+          Work
+        </button>
 
-          <!-- Particular to Tixdoo: Replaces Adobe Stock tab with Event Packages! -->
-          <button type="button" @click="activeTab = 'packages'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'packages' }">
-            Event Packages
-          </button>
+        <!-- Particular to Tixdoo: Replaces Adobe Stock tab with Event Packages! -->
+        <button type="button" @click="activeTab = 'packages'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'packages' }">
+          Event Packages
+        </button>
 
-          <button type="button" @click="activeTab = 'reviews'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'reviews' }">
-            Reviews
-          </button>
+        <button type="button" @click="activeTab = 'reviews'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'reviews' }">
+          Reviews
+        </button>
 
-          <button type="button" @click="activeTab = 'about'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'about' }">
-            About
-          </button>
-        </div>
-
-        <div class="vd-be-tabs-right">
-          <!-- Behance-style Curated / Platform Ribbon Badges -->
-          <div class="vd-be-badges-stack" title="Curated &amp; Verified Tixdoo Professional">
-            <div class="vd-be-ribbons-row">
-              <span class="vd-be-ribbon-tag vd-ribbon-curated" title="Curated / Featured Pro">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="#ffffff"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              </span>
-              <span class="vd-be-ribbon-tag vd-ribbon-platform" title="Verified Business">
-                <span style="font-size:8.5px; font-weight:900; color:#ffffff; line-height:1; letter-spacing:-0.5px;">Tx</span>
-              </span>
-            </div>
-            <span class="vd-be-ribbons-count">3</span>
-          </div>
-        </div>
+        <button type="button" @click="activeTab = 'about'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'about' }">
+          About
+        </button>
       </nav>
 
       <!-- ── TAB 1: Work / Visual Portfolio Grid (Matches Behance Artwork Grid) ── -->
