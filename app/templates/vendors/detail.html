@@ -1389,182 +1389,149 @@ block head %}
     display: block;
   }
 
-  /* ── Venue Organizer Specifications Tab & Cards ────────────────────────── */
-  .vd-specs-hero {
-    background: linear-gradient(135deg, #131b17 0%, #1e2e26 100%);
-    border-radius: 16px;
-    padding: 24px 26px;
-    color: #ffffff;
-    margin-bottom: 26px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  /* ── Venue Organizer Specifications Tab & Minimal Architecture ────────── */
+  .vd-venue-about-box {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f0f0ee;
   }
-  .vd-specs-hero-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #a78bfa;
-    margin-bottom: 8px;
-  }
-  .vd-specs-hero-title {
-    font-family: "Lora", serif;
-    font-size: 22px;
-    font-weight: 500;
-    color: #ffffff;
-    margin: 0 0 8px;
-  }
-  .vd-specs-hero-sub {
-    font-size: 13.5px;
-    color: #cbd5e1;
-    line-height: 1.5;
-    margin: 0;
-    max-width: 720px;
-  }
-
-  .vd-specs-section-title {
+  .vd-venue-about-heading {
     font-family: "Lora", serif;
     font-size: 18px;
     font-weight: 500;
     color: #131b17;
-    margin: 0 0 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    margin: 0 0 8px;
   }
-  .vd-specs-section-sub {
-    font-size: 13px;
-    color: #6b7280;
-    margin: 0 0 16px;
+  .vd-venue-about-text {
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: #4b5563;
+    margin: 0;
+  }
+  .vd-venue-meta-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .vd-venue-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: #f4f4f5;
+    color: #52525b;
+    font-size: 11.5px;
+    font-weight: 600;
   }
 
-  /* Capacity Grid */
+  .vd-min-section-title {
+    font-family: "Lora", serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #131b17;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  /* Capacity Grid Minimal */
   .vd-capacity-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 12px;
-    margin-bottom: 28px;
+    gap: 10px;
+    margin-bottom: 24px;
   }
   @media (max-width: 1024px) {
     .vd-capacity-grid {
       grid-template-columns: repeat(3, 1fr);
     }
   }
-  @media (max-width: 640px) {
+  @media (max-width: 600px) {
     .vd-capacity-grid {
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-  }
-  @media (max-width: 400px) {
-    .vd-capacity-grid {
-      grid-template-columns: 1fr;
     }
   }
   .vd-capacity-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 16px 12px;
+    border-radius: 10px;
+    padding: 12px 10px;
     text-align: center;
-    transition: all 180ms ease;
+    transition: all 160ms ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
   }
   .vd-capacity-card:hover {
-    border-color: #7c3aed;
-    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.08);
-    transform: translateY(-2px);
+    border-color: #131b17;
   }
-  .vd-capacity-icon-wrap {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    background: #f5f3ff;
-    color: #7c3aed;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 8px;
+  .vd-capacity-icon {
+    color: #4b5563;
+    margin-bottom: 4px;
   }
   .vd-capacity-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 4px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 3px;
   }
   .vd-capacity-num {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 800;
     color: #131b17;
-    line-height: 1.2;
-    margin-bottom: 4px;
-  }
-  .vd-capacity-note {
-    font-size: 11px;
-    color: #6b7280;
-    line-height: 1.35;
+    line-height: 1.1;
   }
 
-  /* Spatial Dimensions Bar */
+  /* Spatial Dimensions Bar Minimal */
   .vd-spatial-strip {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    background: #fbfbfa;
+    gap: 12px;
+    background: #fafaf9;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 16px 18px;
-    margin-bottom: 28px;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
   }
-  @media (max-width: 860px) {
+  @media (max-width: 768px) {
     .vd-spatial-strip {
       grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-    }
-  }
-  @media (max-width: 480px) {
-    .vd-spatial-strip {
-      grid-template-columns: 1fr;
+      gap: 12px;
     }
   }
   .vd-spatial-item {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
   }
   .vd-spatial-label {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #6b7280;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    letter-spacing: 0.04em;
+    color: #71717a;
   }
   .vd-spatial-val {
-    font-size: 15px;
+    font-size: 14.5px;
     font-weight: 800;
     color: #131b17;
   }
   .vd-spatial-detail {
-    font-size: 12px;
-    color: #52525b;
+    font-size: 11.5px;
+    color: #71717a;
   }
 
-  /* Technical Specs Feature Matrix */
+  /* Technical Specs Minimal (2x2 Grid) */
   .vd-feature-card-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
+    gap: 12px;
+    margin-bottom: 24px;
   }
-  @media (max-width: 768px) {
+  @media (max-width: 680px) {
     .vd-feature-card-grid {
       grid-template-columns: 1fr;
     }
@@ -1572,105 +1539,108 @@ block head %}
   .vd-feature-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 18px 20px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    border-radius: 10px;
+    padding: 14px 16px;
   }
   .vd-feature-card-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #f3f4f6;
-  }
-  .vd-feature-card-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: #eff6ff;
-    color: #2563eb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    gap: 7px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f4f4f5;
   }
   .vd-feature-card-title {
-    font-size: 14.5px;
+    font-size: 13px;
     font-weight: 700;
-    color: #111827;
-    margin: 0;
-  }
-  .vd-feature-card-subtitle {
-    font-size: 11.5px;
-    color: #6b7280;
+    color: #131b17;
     margin: 0;
   }
   .vd-feature-spec-list {
     display: flex;
     flex-direction: column;
-    gap: 9px;
+    gap: 7px;
   }
   .vd-feature-spec-row {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    font-size: 12.5px;
-    line-height: 1.45;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: #374151;
+    line-height: 1.4;
   }
   .vd-feature-spec-row .material-symbols-outlined {
     font-size: 15px;
     color: #16a34a;
-    margin-top: 1px;
     flex-shrink: 0;
   }
-  .vd-feature-spec-row strong {
-    color: #1f2937;
-    font-weight: 600;
-  }
-  .vd-feature-spec-row span {
-    color: #4b5563;
-  }
 
-  /* Included Inventory Tags */
+  /* Included Inventory Tags Minimal */
   .vd-inventory-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 28px;
+    gap: 6px;
+    margin-bottom: 24px;
   }
   .vd-inventory-tag {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #334155;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #374151;
   }
   .vd-inventory-tag .material-symbols-outlined {
-    font-size: 15px;
-    color: #059669;
+    font-size: 14px;
+    color: #71717a;
+  }
+
+  /* Gallery Prompt Banner */
+  .vd-gallery-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    font-size: 12.5px;
+    color: #475569;
+  }
+  .vd-gallery-prompt button {
+    background: none;
+    border: none;
+    color: #2563eb;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12.5px;
+  }
+  .vd-gallery-prompt button:hover {
+    text-decoration: underline;
   }
 
   /* Venue Quick Specs Card (Left Sidebar) */
   .vd-sidebar-specs-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 22px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
   }
   .vd-sidebar-specs-title {
     font-family: "Lora", serif;
-    font-size: 15px;
+    font-size: 14.5px;
     font-weight: 500;
     color: #131b17;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1679,8 +1649,8 @@ block head %}
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0;
-    border-bottom: 1px solid #f3f4f6;
+    padding: 5px 0;
+    border-bottom: 1px solid #f4f4f5;
     font-size: 12px;
   }
   .vd-sidebar-spec-row:last-child {
@@ -1886,8 +1856,8 @@ block head %}
         {% endif %}
       </div>
 
-      <!-- Verified on Tixdoo Card (Shown exclusively when verified in DB) -->
-      {% if vendor.is_verified or vendor.verification_status == 'verified' %}
+      <!-- Verified on Tixdoo Card (Shown exclusively for non-venue vendors) -->
+      {% if vendor.category != 'venue' and (vendor.is_verified or vendor.verification_status == 'verified') %}
       <div class="vd-be-verified-box">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="#7C3AED">
           <circle cx="12" cy="12" r="10" />
@@ -1913,7 +1883,42 @@ block head %}
       </div>
       {% endif %}
 
-      <!-- Follow, Message, and Save Vendor Buttons (Stacked Behance style) -->
+      {% if vendor.category == 'venue' %}
+      <!-- Venue Organizer Action Buttons -->
+      <div class="vd-be-action-buttons" style="margin-bottom: 18px;">
+        <button
+          type="button"
+          @click="showRfqModal = true"
+          class="vd-btn vd-btn-primary"
+          style="width: 100%; height: 44px; border-radius: 9999px; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px;"
+        >
+          <span class="material-symbols-outlined" style="font-size: 18px;">event_available</span>
+          <span>Request Proposal (RFP)</span>
+        </button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button
+            type="button"
+            @click="showRfqModal = true"
+            class="vd-be-btn-msg"
+            style="height: 38px; font-size: 13px;"
+          >
+            <span class="material-symbols-outlined" style="font-size: 16px;">mail</span>
+            <span>Message</span>
+          </button>
+          <button
+            type="button"
+            @click="toggleSave()"
+            class="vd-be-btn-save"
+            :class="{ 'active': saved }"
+            style="height: 38px; font-size: 13px;"
+          >
+            <span class="material-symbols-outlined" style="font-size: 16px;" x-text="saved ? 'bookmark_added' : 'bookmark_border'">bookmark_border</span>
+            <span x-text="saved ? 'Saved' : 'Save'">Save</span>
+          </button>
+        </div>
+      </div>
+      {% else %}
+      <!-- Follow, Message, and Save Vendor Buttons (Freelancer style) -->
       <div class="vd-be-action-buttons">
         <button
           type="button"
@@ -1954,59 +1959,59 @@ block head %}
           <span x-text="saved ? 'Saved' : 'Save Vendor'">Save Vendor</span>
         </button>
       </div>
+      {% endif %}
 
       {% if vendor.category == 'venue' %}
       <!-- Organizer Venue Quick Specs Card -->
       <div class="vd-sidebar-specs-card">
         <div class="vd-sidebar-specs-title">
-          <span>Venue Organizer Specs</span>
-          <button type="button" @click="activeTab = 'specs'" style="background:none; border:none; color:#7c3aed; font-size:12px; font-weight:700; cursor:pointer; text-decoration:underline;">Full Rider</button>
+          <span>Venue Highlights</span>
         </div>
         <div class="vd-sidebar-spec-row">
           <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#7c3aed;">groups</span>
+            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">groups</span>
             Max Capacity
           </span>
           <span class="vd-sidebar-spec-val">{% if vendor.capacity %}{{ "{:,}".format(vendor.capacity) }} Guests{% else %}Flexible{% endif %}</span>
         </div>
         <div class="vd-sidebar-spec-row">
           <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#2563eb;">square_foot</span>
-            Gross Floor Area
+            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">aspect_ratio</span>
+            Floor Area
           </span>
           <span class="vd-sidebar-spec-val">{% if vendor.capacity %}{{ "{:,}".format(vendor.capacity * 12) }} sq ft{% else %}On Request{% endif %}</span>
         </div>
         <div class="vd-sidebar-spec-row">
           <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#d97706;">height</span>
-            Ceiling Clearance
+            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">height</span>
+            Ceiling Height
           </span>
           <span class="vd-sidebar-spec-val">{% if vendor.capacity and vendor.capacity > 1000 %}28 ft (8.5m){% elif vendor.capacity and vendor.capacity > 500 %}22 ft (6.7m){% else %}16 ft (4.9m){% endif %}</span>
         </div>
         <div class="vd-sidebar-spec-row">
           <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#059669;">local_shipping</span>
+            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">local_shipping</span>
             Loading Dock
           </span>
-          <span class="vd-sidebar-spec-val">Ground-Level Rollup</span>
+          <span class="vd-sidebar-spec-val">Ground-Level Roll-up</span>
         </div>
         <div class="vd-sidebar-spec-row">
           <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#dc2626;">bolt</span>
+            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">bolt</span>
             Power &amp; Backup
           </span>
           <span class="vd-sidebar-spec-val">3-Phase + Generator</span>
         </div>
         <div class="vd-sidebar-spec-row">
           <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#6366f1;">nightlife</span>
+            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">nightlife</span>
             Sound Curfew
           </span>
           <span class="vd-sidebar-spec-val">02:00 AM (Indoor)</span>
         </div>
         <div class="vd-sidebar-spec-row">
           <span class="vd-sidebar-spec-key">
-            <span class="material-symbols-outlined" style="font-size:15px; color:#16a34a;">accessible</span>
+            <span class="material-symbols-outlined" style="font-size:15px; color:#4b5563;">accessible</span>
             Accessibility
           </span>
           <span class="vd-sidebar-spec-val">100% ADA Step-Free</span>
@@ -2014,6 +2019,7 @@ block head %}
       </div>
       {% endif %}
 
+      {% if vendor.category != 'venue' %}
       <!-- Hire Box (Matches Behance's "Hire" panel) -->
       <div class="vd-be-hire-box">
         <div class="vd-be-hire-title">
@@ -2140,6 +2146,7 @@ block head %}
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       <!-- On The Web Card (Only links actually configured by vendor) -->
       {% set has_socials = vendor.social_links and (vendor.social_links.values()
@@ -2248,20 +2255,6 @@ block head %}
     <main class="vd-be-content">
       <!-- Behance-Style Tabs Header (Replacing Adobe Stock with Event Packages) -->
       <nav class="vd-be-tabs-bar" aria-label="Vendor profile navigation">
-        <button
-          type="button"
-          @click="activeTab = 'work'"
-          class="vd-be-tab-item"
-          :class="{ 'active': activeTab === 'work' }"
-        >
-          {% if vendor.category == 'venue' %}
-          <span class="material-symbols-outlined" style="font-size: 17px; vertical-align: -2px;">apartment</span>
-          <span>Building &amp; Environment</span>
-          {% else %}
-          Work
-          {% endif %}
-        </button>
-
         {% if vendor.category == 'venue' %}
         <button
           type="button"
@@ -2270,18 +2263,17 @@ block head %}
           :class="{ 'active': activeTab === 'specs' }"
         >
           <span class="material-symbols-outlined" style="font-size: 17px; vertical-align: -2px;">tune</span>
-          <span>Event Specifications</span>
+          <span>Overview &amp; Specifications</span>
         </button>
-        {% endif %}
 
-        <!-- Particular to Tixdoo: Replaces Adobe Stock tab with Event Packages! -->
         <button
           type="button"
           @click="activeTab = 'packages'"
           class="vd-be-tab-item"
           :class="{ 'active': activeTab === 'packages' }"
         >
-          Event Packages
+          <span>Packages &amp; Rates</span>
+          {% if services %}<span class="vd-tab-count" style="margin-left:4px; font-size:11px; padding:2px 7px; background:#f4f4f5; border-radius:9999px;">{{ services | length }}</span>{% endif %}
         </button>
 
         <button
@@ -2290,9 +2282,34 @@ block head %}
           class="vd-be-tab-item"
           :class="{ 'active': activeTab === 'reviews' }"
         >
+          <span>Reviews</span>
+          {% if reviews_total > 0 %}<span class="vd-tab-count" style="margin-left:4px; font-size:11px; padding:2px 7px; background:#f4f4f5; border-radius:9999px;">{{ reviews_total }}</span>{% endif %}
+        </button>
+        {% else %}
+        <button
+          type="button"
+          @click="activeTab = 'work'"
+          class="vd-be-tab-item"
+          :class="{ 'active': activeTab === 'work' }"
+        >
+          Work
+        </button>
+        <button
+          type="button"
+          @click="activeTab = 'packages'"
+          class="vd-be-tab-item"
+          :class="{ 'active': activeTab === 'packages' }"
+        >
+          Event Packages
+        </button>
+        <button
+          type="button"
+          @click="activeTab = 'reviews'"
+          class="vd-be-tab-item"
+          :class="{ 'active': activeTab === 'reviews' }"
+        >
           Reviews
         </button>
-
         <button
           type="button"
           @click="activeTab = 'about'"
@@ -2301,91 +2318,13 @@ block head %}
         >
           About
         </button>
+        {% endif %}
       </nav>
 
-      <!-- ── TAB 1: Work / Visual Portfolio Grid (Building & Environment) ── -->
+      {% if vendor.category != 'venue' %}
+      <!-- ── TAB 1: Work / Visual Portfolio Grid (Freelance / Service Vendors) ── -->
       <div x-show="activeTab === 'work'" x-cloak>
-        {% if vendor.category == 'venue' %}
-        <!-- Venue Architecture & Environment Highlights Summary -->
-        <div class="vd-venue-env-card">
-          <div class="vd-env-grid">
-            <div class="vd-env-col">
-              <div class="vd-env-icon"><span class="material-symbols-outlined">domain</span></div>
-              <div class="vd-env-label">Architecture &amp; Spaces</div>
-              <div class="vd-env-val">
-                {% if vendor.capacity and vendor.capacity >= 2000 %}
-                Monumental Convention Dome &amp; Arena
-                {% elif vendor.capacity and vendor.capacity >= 1000 %}
-                Grand Ballroom &amp; High-Ceiling Atrium
-                {% else %}
-                Boutique Architectural Salon &amp; Loft
-                {% endif %}
-              </div>
-              <div class="vd-env-sub">Column-free layout, acoustic engineering &amp; rigging points</div>
-            </div>
-
-            <div class="vd-env-col">
-              <div class="vd-env-icon"><span class="material-symbols-outlined">landscape</span></div>
-              <div class="vd-env-label">Environment &amp; Setting</div>
-              <div class="vd-env-val">
-                {{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}
-              </div>
-              <div class="vd-env-sub">{{ vendor.address or 'Prime metropolitan cultural & event district' }}</div>
-            </div>
-
-            <div class="vd-env-col">
-              <div class="vd-env-icon"><span class="material-symbols-outlined">deck</span></div>
-              <div class="vd-env-label">Outdoor Grounds &amp; Terraces</div>
-              <div class="vd-env-val">Panoramic Grounds</div>
-              <div class="vd-env-sub">Open-air cocktail decks, private courtyards &amp; sunset vistas</div>
-            </div>
-
-            <div class="vd-env-col">
-              <div class="vd-env-icon"><span class="material-symbols-outlined">groups</span></div>
-              <div class="vd-env-label">Guest Capacity</div>
-              <div class="vd-env-val">
-                {% if vendor.capacity %}Up to {{ "{:,}".format(vendor.capacity) }} Guests{% else %}Capacity on Request{% endif %}
-              </div>
-              <div class="vd-env-sub">Flexible banquet, theater, classroom &amp; reception layouts</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section Heading -->
-        <div class="vd-gallery-header-row">
-          <div>
-            <h2 class="vd-gallery-title">Building &amp; Environment Gallery</h2>
-            <p class="vd-gallery-subtitle">Click any view to inspect high-resolution architectural &amp; environmental perspectives</p>
-          </div>
-          <span class="vd-gallery-count">{{ venue_views | length }} Perspectives</span>
-        </div>
-
-        <div class="vd-be-work-grid">
-          {% for img_url in venue_views %}
-          <div class="vd-be-work-card" @click="openLightbox({{ loop.index0 }})">
-            <img
-              src="{{ img_url }}"
-              alt="{{ vendor.business_name }} view {{ loop.index }}"
-              loading="lazy"
-            />
-            <div class="vd-be-work-overlay">
-              <span class="vd-be-work-tag">
-                {% if loop.index0 == 0 %}Building Facade &amp; Architecture
-                {% elif loop.index0 == 1 %}Main Event Hall &amp; Interior
-                {% elif loop.index0 == 2 %}Surrounding Environment &amp; Skyline
-                {% elif loop.index0 == 3 %}Outdoor Grounds &amp; Terrace
-                {% elif loop.index0 == 4 %}Evening &amp; Ambient Lighting
-                {% else %}Venue Perspective {{ loop.index }}
-                {% endif %}
-              </span>
-            </div>
-            <span class="vd-card-zoom-pill">
-              <span class="material-symbols-outlined" style="font-size:16px;">zoom_in</span>
-            </span>
-          </div>
-          {% endfor %}
-        </div>
-        {% elif vendor.portfolio_urls and vendor.portfolio_urls | length > 0 %}
+        {% if vendor.portfolio_urls and vendor.portfolio_urls | length > 0 %}
         <div class="vd-be-work-grid">
           {% for img_url in vendor.portfolio_urls %}
           <div class="vd-be-work-card" @click="openLightbox({{ loop.index0 }})">
@@ -2447,391 +2386,204 @@ block head %}
         </div>
         {% endif %}
       </div>
+      {% endif %}
 
       {% if vendor.category == 'venue' %}
       <!-- ── TAB: Event Specifications & Organizer Technical Rider ────────── -->
       <div x-show="activeTab === 'specs'" x-cloak>
-        <!-- Specs Hero Summary -->
-        <div class="vd-specs-hero">
-          <div class="vd-specs-hero-tag">
-            <span class="material-symbols-outlined" style="font-size:14px;">verified</span>
-            Professional Organizer Specifications &amp; Technical Rider
+        <!-- 1. Editorial Overview / Description -->
+        {% if vendor.description %}
+        <div class="vd-venue-about-box">
+          <h2 class="vd-venue-about-heading">About the Venue</h2>
+          <p class="vd-venue-about-text">{{ vendor.description }}</p>
+          {% if vendor.service_areas %}
+          <div class="vd-venue-meta-pills">
+            {% for area in vendor.service_areas %}
+            <span class="vd-venue-meta-pill">{{ area }}</span>
+            {% endfor %}
           </div>
-          <h2 class="vd-specs-hero-title">Technical, Spatial &amp; Operational Capabilities</h2>
-          <p class="vd-specs-hero-sub">
-            Complete organizer documentation for {{ vendor.business_name }}. Review verified capacities by seating configuration, audio/visual rigging, 3-phase power distribution, commercial kitchen facilities, and loading logistics.
-          </p>
+          {% endif %}
         </div>
+        {% endif %}
 
-        <!-- 1. Capacity by Seating Configuration -->
-        <div style="margin-bottom: 28px;">
-          <h3 class="vd-specs-section-title">
-            <span class="material-symbols-outlined" style="color:#7c3aed; font-size:20px;">event_seat</span>
-            Capacity by Seating Configuration
+        <!-- 2. Capacity by Seating Configuration -->
+        <div style="margin-bottom: 24px;">
+          <h3 class="vd-min-section-title">
+            <span class="material-symbols-outlined" style="font-size: 18px; color: #4b5563;">groups</span>
+            <span>Capacity by Seating Configuration</span>
           </h3>
-          <p class="vd-specs-section-sub">Standard layout limits verified in accordance with municipal fire and safety codes.</p>
           
           {% set cap = vendor.capacity or 500 %}
           <div class="vd-capacity-grid">
-            <!-- Standing Reception -->
             <div class="vd-capacity-card">
-              <div class="vd-capacity-icon-wrap">
-                <span class="material-symbols-outlined">groups</span>
-              </div>
-              <div class="vd-capacity-title">Standing Cocktail</div>
-              <div class="vd-capacity-num">{{ "{:,}".format(cap) }}</div>
-              <div class="vd-capacity-note">Reception, galas &amp; brand launches</div>
+              <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">local_bar</span>
+              <span class="vd-capacity-title">Cocktail</span>
+              <span class="vd-capacity-num">{{ "{:,}".format(cap) }}</span>
             </div>
-
-            <!-- Seated Banquet -->
             <div class="vd-capacity-card">
-              <div class="vd-capacity-icon-wrap">
-                <span class="material-symbols-outlined">table_restaurant</span>
-              </div>
-              <div class="vd-capacity-title">Seated Banquet</div>
-              <div class="vd-capacity-num">{{ "{:,}".format((cap * 0.65)|int) }}</div>
-              <div class="vd-capacity-note">60" round tables seating 8 to 10</div>
+              <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">table_restaurant</span>
+              <span class="vd-capacity-title">Banquet</span>
+              <span class="vd-capacity-num">{{ "{:,}".format((cap * 0.65)|int) }}</span>
             </div>
-
-            <!-- Theater / Keynote -->
             <div class="vd-capacity-card">
-              <div class="vd-capacity-icon-wrap">
-                <span class="material-symbols-outlined">chair</span>
-              </div>
-              <div class="vd-capacity-title">Theater / Keynote</div>
-              <div class="vd-capacity-num">{{ "{:,}".format((cap * 0.85)|int) }}</div>
-              <div class="vd-capacity-note">Rowed seating facing main stage</div>
+              <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">chair</span>
+              <span class="vd-capacity-title">Theater</span>
+              <span class="vd-capacity-num">{{ "{:,}".format((cap * 0.85)|int) }}</span>
             </div>
-
-            <!-- Classroom / Workshop -->
             <div class="vd-capacity-card">
-              <div class="vd-capacity-icon-wrap">
-                <span class="material-symbols-outlined">school</span>
-              </div>
-              <div class="vd-capacity-title">Classroom / Training</div>
-              <div class="vd-capacity-num">{{ "{:,}".format((cap * 0.45)|int) }}</div>
-              <div class="vd-capacity-note">Tables with front-facing chairs</div>
+              <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">school</span>
+              <span class="vd-capacity-title">Classroom</span>
+              <span class="vd-capacity-num">{{ "{:,}".format((cap * 0.45)|int) }}</span>
             </div>
-
-            <!-- Boardroom / U-Shape -->
             <div class="vd-capacity-card">
-              <div class="vd-capacity-icon-wrap">
-                <span class="material-symbols-outlined">meeting_room</span>
-              </div>
-              <div class="vd-capacity-title">Executive U-Shape</div>
-              <div class="vd-capacity-num">
+              <span class="material-symbols-outlined vd-capacity-icon" style="font-size:20px;">meeting_room</span>
+              <span class="vd-capacity-title">Boardroom</span>
+              <span class="vd-capacity-num">
                 {% set b_cap = (cap * 0.1)|int %}
                 {{ [b_cap, 24]|max if [b_cap, 24]|max <= 80 else 80 }}
-              </div>
-              <div class="vd-capacity-note">Conference &amp; panel discussions</div>
+              </span>
             </div>
           </div>
         </div>
 
-        <!-- 2. Spatial & Architectural Dimensions Bar -->
-        <div style="margin-bottom: 28px;">
-          <h3 class="vd-specs-section-title">
-            <span class="material-symbols-outlined" style="color:#2563eb; font-size:20px;">straighten</span>
-            Spatial &amp; Structural Dimensions
+        <!-- 3. Spatial & Structural Dimensions -->
+        <div style="margin-bottom: 24px;">
+          <h3 class="vd-min-section-title">
+            <span class="material-symbols-outlined" style="font-size: 18px; color: #4b5563;">straighten</span>
+            <span>Spatial Dimensions</span>
           </h3>
-          <p class="vd-specs-section-sub">Physical specifications for stage rigging, scenic design, and booth installations.</p>
-
           <div class="vd-spatial-strip">
             <div class="vd-spatial-item">
-              <span class="vd-spatial-label">
-                <span class="material-symbols-outlined" style="font-size:15px; color:#2563eb;">aspect_ratio</span>
-                Gross Floor Area
-              </span>
+              <span class="vd-spatial-label">Gross Floor Area</span>
               <span class="vd-spatial-val">{{ "{:,}".format(cap * 12) }} sq ft</span>
-              <span class="vd-spatial-detail">{{ "{:,}".format((cap * 12 * 0.0929)|int) }} m² usable floor space</span>
+              <span class="vd-spatial-detail">{{ "{:,}".format((cap * 12 * 0.0929)|int) }} m²</span>
             </div>
-
             <div class="vd-spatial-item">
-              <span class="vd-spatial-label">
-                <span class="material-symbols-outlined" style="font-size:15px; color:#7c3aed;">height</span>
-                Clear Ceiling Height
-              </span>
-              <span class="vd-spatial-val">
-                {% if cap >= 1500 %}32 ft (9.8 m){% elif cap >= 800 %}24 ft (7.3 m){% else %}18 ft (5.5 m){% endif %}
-              </span>
-              <span class="vd-spatial-detail">Clearance beneath rigging truss</span>
+              <span class="vd-spatial-label">Clear Ceiling Height</span>
+              <span class="vd-spatial-val">{% if cap >= 1500 %}32 ft (9.8m){% elif cap >= 800 %}24 ft (7.3m){% else %}18 ft (5.5m){% endif %}</span>
+              <span class="vd-spatial-detail">Rigging clearance</span>
             </div>
-
             <div class="vd-spatial-item">
-              <span class="vd-spatial-label">
-                <span class="material-symbols-outlined" style="font-size:15px; color:#059669;">door_front</span>
-                Breakout &amp; VIP Rooms
-              </span>
-              <span class="vd-spatial-val">
-                {% if cap >= 1500 %}6 Breakouts + 2 VIP Suites{% elif cap >= 800 %}4 Breakouts + 1 VIP Suite{% else %}2 VIP Green Rooms{% endif %}
-              </span>
-              <span class="vd-spatial-detail">Acoustically isolated private spaces</span>
+              <span class="vd-spatial-label">Breakout Suites</span>
+              <span class="vd-spatial-val">{% if cap >= 1500 %}6 Salons + 2 VIP{% elif cap >= 800 %}4 Salons + 1 VIP{% else %}2 VIP Green Rooms{% endif %}</span>
+              <span class="vd-spatial-detail">Acoustic isolation</span>
             </div>
-
             <div class="vd-spatial-item">
-              <span class="vd-spatial-label">
-                <span class="material-symbols-outlined" style="font-size:15px; color:#d97706;">fitness_center</span>
-                Floor Load Rating
-              </span>
+              <span class="vd-spatial-label">Floor Load Rating</span>
               <span class="vd-spatial-val">15 kN / m²</span>
-              <span class="vd-spatial-detail">Supports vehicles &amp; heavy rigging</span>
+              <span class="vd-spatial-detail">Rigging &amp; vehicle rated</span>
             </div>
           </div>
         </div>
 
-        <!-- 3. Technical & Production Feature Matrix (8 Grid Cards) -->
-        <div style="margin-bottom: 28px;">
+        <!-- 3. Technical & Production Feature Matrix (Minimal 4 Cards in 2x2 Grid) -->
+        <div style="margin-bottom: 24px;">
           <h3 class="vd-specs-section-title">
-            <span class="material-symbols-outlined" style="color:#d97706; font-size:20px;">engineering</span>
+            <span class="material-symbols-outlined" style="color:#d97706; font-size:18px;">engineering</span>
             Production Infrastructure &amp; Technical Rider
           </h3>
-          <p class="vd-specs-section-sub">In-house technical assets, stage equipment, utilities, and logistics capabilities.</p>
 
           <div class="vd-feature-card-grid">
-            <!-- Card 1: Audio / Sound -->
+            <!-- Card 1: Audio & Visual -->
             <div class="vd-feature-card">
               <div class="vd-feature-card-header">
-                <div class="vd-feature-card-icon" style="background:#f5f3ff; color:#7c3aed;">
-                  <span class="material-symbols-outlined">volume_up</span>
-                </div>
-                <div>
-                  <h4 class="vd-feature-card-title">Audio &amp; Sound Reinforcement</h4>
-                  <p class="vd-feature-card-subtitle">Concert-grade acoustics &amp; speech reinforcement</p>
-                </div>
+                <span class="material-symbols-outlined" style="color:#7c3aed; font-size:18px;">volume_up</span>
+                <h4 class="vd-feature-card-title">Audio &amp; Visual Systems</h4>
               </div>
               <div class="vd-feature-spec-list">
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>PA System:</strong> <span>L-Acoustics / Meyer Sound Line Array with distributed delay speakers</span></div>
+                  <span>Concert-grade line array PA with digital mixing console</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>FOH Console:</strong> <span>32+ Channel Digital Mixing Desk (Yamaha / DiGiCo) with Dante networking</span></div>
+                  <span>Wireless handheld &amp; lapel microphones with multi-zone routing</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Microphones:</strong> <span>8x Shure Axient Digital wireless handhelds &amp; lavaliers with auto-scan</span></div>
+                  <span>High-resolution 4K LED video wall &amp; laser stage projectors</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Acoustic Isolation:</strong> <span>Engineered acoustic wall &amp; ceiling baffles (RT60 &lt; 0.85s)</span></div>
+                  <span>Dedicated live-streaming &amp; broadcast fiber umbilical hookups</span>
                 </div>
               </div>
             </div>
 
-            <!-- Card 2: Visual & Video -->
+            <!-- Card 2: Power & Connectivity -->
             <div class="vd-feature-card">
               <div class="vd-feature-card-header">
-                <div class="vd-feature-card-icon" style="background:#eff6ff; color:#2563eb;">
-                  <span class="material-symbols-outlined">videocam</span>
-                </div>
-                <div>
-                  <h4 class="vd-feature-card-title">Video, LED &amp; Laser Projection</h4>
-                  <p class="vd-feature-card-subtitle">Ultra-HD stage backdrop &amp; live switching</p>
-                </div>
+                <span class="material-symbols-outlined" style="color:#dc2626; font-size:18px;">bolt</span>
+                <h4 class="vd-feature-card-title">Power &amp; Connectivity</h4>
               </div>
               <div class="vd-feature-spec-list">
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>LED Video Wall:</strong> <span>2.6mm fine-pitch ultra-black LED stage backdrop (16:9 widescreen)</span></div>
+                  <span>Dual 400A 3-Phase Camlock disconnects adjacent to stage</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Laser Projectors:</strong> <span>Dual 4K Barco/Christie 20,000-lumen laser projectors on drop screens</span></div>
+                  <span>100% on-site diesel generator with automatic failover</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Video Switching:</strong> <span>Blackmagic ATEM 4K SDI/HDMI switcher with confidence monitors</span></div>
+                  <span>Dedicated 1 Gbps symmetrical enterprise fiber uplink</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Broadcast Outlets:</strong> <span>Fiber umbilical pass-through to outside satellite broadcast vehicles</span></div>
+                  <span>High-density Wi-Fi 6E supporting thousands of concurrent devices</span>
                 </div>
               </div>
             </div>
 
-            <!-- Card 3: Lighting & Rigging -->
+            <!-- Card 3: Catering & Hospitality -->
             <div class="vd-feature-card">
               <div class="vd-feature-card-header">
-                <div class="vd-feature-card-icon" style="background:#fffbeb; color:#d97706;">
-                  <span class="material-symbols-outlined">lightbulb</span>
-                </div>
-                <div>
-                  <h4 class="vd-feature-card-title">Stage Lighting &amp; Motorized Rigging</h4>
-                  <p class="vd-feature-card-subtitle">Pre-hung fixtures &amp; certified load points</p>
-                </div>
+                <span class="material-symbols-outlined" style="color:#c026d3; font-size:18px;">restaurant</span>
+                <h4 class="vd-feature-card-title">Catering &amp; Hospitality</h4>
               </div>
               <div class="vd-feature-spec-list">
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Rigging Points:</strong> <span>Certified 1-ton motorized chain hoists across hall structural grid</span></div>
+                  <span>Commercial finishing kitchen with warming ovens &amp; cold storage</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Lighting Console:</strong> <span>GrandMA3 / ETC lighting desk with full DMX512 universe routing</span></div>
+                  <span>Outside licensed caterers welcome with staging area</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Stage Fixtures:</strong> <span>Martin MAC &amp; Robe moving head washes, spots, and warm key profiles</span></div>
+                  <span>Full on-premise liquor license &amp; built-in bar service stations</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>House Controls:</strong> <span>Architectural dimmable color-temperature tunable mood illumination</span></div>
+                  <span>Private VIP green rooms, artist suites &amp; production offices</span>
                 </div>
               </div>
             </div>
 
-            <!-- Card 4: Electrical Power & Backup -->
+            <!-- Card 4: Logistics & Operations -->
             <div class="vd-feature-card">
               <div class="vd-feature-card-header">
-                <div class="vd-feature-card-icon" style="background:#fef2f2; color:#dc2626;">
-                  <span class="material-symbols-outlined">bolt</span>
-                </div>
-                <div>
-                  <h4 class="vd-feature-card-title">Electrical Power &amp; Redundancy</h4>
-                  <p class="vd-feature-card-subtitle">Industrial 3-phase supply &amp; generator backup</p>
-                </div>
+                <span class="material-symbols-outlined" style="color:#0284c7; font-size:18px;">local_shipping</span>
+                <h4 class="vd-feature-card-title">Logistics &amp; Safety</h4>
               </div>
               <div class="vd-feature-spec-list">
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Main Supply:</strong> <span>Dual 400A 3-Phase 5-wire Camlock disconnects located adjacent to stage</span></div>
+                  <span>Ground-level drive-in freight loading bay (14 ft clearance)</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Auxiliary Utility:</strong> <span>Secondary 200A 3-Phase tie-ins for catering trucks &amp; external exhibits</span></div>
+                  <span>100% ADA compliant step-free access throughout all facilities</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>100% Backup:</strong> <span>Dedicated on-site diesel generator with seamless automatic transfer</span></div>
+                  <span>Secure on-site parking concourse with valet drop-off</span>
                 </div>
                 <div class="vd-feature-spec-row">
                   <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Clean Technical Ground:</strong> <span>Isolated technical grounds preventing audio interference and hum</span></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card 5: High-Speed Internet & WiFi -->
-            <div class="vd-feature-card">
-              <div class="vd-feature-card-header">
-                <div class="vd-feature-card-icon" style="background:#ecfdf5; color:#059669;">
-                  <span class="material-symbols-outlined">wifi</span>
-                </div>
-                <div>
-                  <h4 class="vd-feature-card-title">Fiber Internet &amp; Digital Infrastructure</h4>
-                  <p class="vd-feature-card-subtitle">Gigabit symmetrical pipe &amp; high-density WiFi 6E</p>
-                </div>
-              </div>
-              <div class="vd-feature-spec-list">
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Fiber Uplink:</strong> <span>Dedicated 1 Gbps symmetrical commercial fiber with 99.99% SLA guarantee</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>WiFi 6E Capacity:</strong> <span>High-density access points supporting up to 5,000 concurrent devices</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Private Organizer VLAN:</strong> <span>Secure isolated network with hardwired RJ45 drops at FOH &amp; stage</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Live Streaming:</strong> <span>Unthrottled dedicated upload allocation for global hybrid broadcasts</span></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card 6: Kitchen & Catering Policies -->
-            <div class="vd-feature-card">
-              <div class="vd-feature-card-header">
-                <div class="vd-feature-card-icon" style="background:#fdf4ff; color:#c026d3;">
-                  <span class="material-symbols-outlined">restaurant</span>
-                </div>
-                <div>
-                  <h4 class="vd-feature-card-title">Kitchen Facilities &amp; Catering Policy</h4>
-                  <p class="vd-feature-card-subtitle">Commercial finishing kitchen &amp; liquor licensing</p>
-                </div>
-              </div>
-              <div class="vd-feature-spec-list">
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Finishing Kitchen:</strong> <span>Equipped with combi ovens, hot holding cabinets &amp; commercial chillers</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>External Catering:</strong> <span>Outside licensed caterers welcome with safety certificates &amp; staging deposit</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Bar Licensing:</strong> <span>Full on-premise commercial liquor license with built-in marble bar stations</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Clean-up &amp; Drainage:</strong> <span>High-temp commercial dishwashers, heavy grease traps &amp; waste chutes</span></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card 7: Load-in Logistics & Parking -->
-            <div class="vd-feature-card">
-              <div class="vd-feature-card-header">
-                <div class="vd-feature-card-icon" style="background:#e0f2fe; color:#0284c7;">
-                  <span class="material-symbols-outlined">local_shipping</span>
-                </div>
-                <div>
-                  <h4 class="vd-feature-card-title">Load-in Logistics &amp; Transport Concourse</h4>
-                  <p class="vd-feature-card-subtitle">Direct drive-in freight access &amp; on-site parking</p>
-                </div>
-              </div>
-              <div class="vd-feature-spec-list">
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Freight Loading Bay:</strong> <span>Ground-level drive-in roll-up door (14ft clearance) with direct stage roll-in</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Vehicle Access:</strong> <span>Direct interior vehicle drive-in permitted for car displays &amp; heavy equipment</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>On-Site Parking:</strong> <span>Secure covered parking concourse with 350+ stalls &amp; valet drop-off</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Rapid Transit:</strong> <span>3-minute walking proximity to metropolitan rapid transit &amp; taxi concourses</span></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Card 8: Operational Policies & Safety -->
-            <div class="vd-feature-card">
-              <div class="vd-feature-card-header">
-                <div class="vd-feature-card-icon" style="background:#fef3c7; color:#b45309;">
-                  <span class="material-symbols-outlined">gavel</span>
-                </div>
-                <div>
-                  <h4 class="vd-feature-card-title">Operational Policies, Safety &amp; Security</h4>
-                  <p class="vd-feature-card-subtitle">Curfews, security escorts &amp; liability coverage</p>
-                </div>
-              </div>
-              <div class="vd-feature-spec-list">
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Music Curfew:</strong> <span>Indoor amplified sound permitted until 02:00 AM; quiet load-out until 04:00 AM</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>24/7 Security:</strong> <span>Uniformed perimeter security, active CCTV recording &amp; lockable storage suites</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Emergency Medical:</strong> <span>On-site Automated External Defibrillator (AED) and trauma first-aid kit</span></div>
-                </div>
-                <div class="vd-feature-spec-row">
-                  <span class="material-symbols-outlined">check_circle</span>
-                  <div><strong>Accessibility:</strong> <span>100% ADA compliant step-free access throughout with wide elevators &amp; ramps</span></div>
+                  <span>24/7 uniformed security, active CCTV &amp; overnight lock-up</span>
                 </div>
               </div>
             </div>
@@ -2839,69 +2591,79 @@ block head %}
         </div>
 
         <!-- 4. Included Inventory & Furnishings -->
-        <div style="margin-bottom: 32px;">
+        <div style="margin-bottom: 24px;">
           <h3 class="vd-specs-section-title">
-            <span class="material-symbols-outlined" style="color:#059669; font-size:20px;">inventory_2</span>
-            Complimentary Inventory &amp; Staging Furnishings
+            <span class="material-symbols-outlined" style="color:#059669; font-size:18px;">inventory_2</span>
+            Included Inventory &amp; Furnishings
           </h3>
-          <p class="vd-specs-section-sub">Standard furnishings and venue accessories included with primary hall rental at no additional charge.</p>
-
           <div class="vd-inventory-grid">
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">table_restaurant</span>
-              <span>60-Inch Round Banquet Tables (Seating 8-10)</span>
+              <span>Round Banquet Tables</span>
             </div>
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">table_chart</span>
-              <span>6-Foot Rectangular Seminar Tables</span>
+              <span>Seminar Classroom Tables</span>
             </div>
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">chair</span>
-              <span>Padded Banquet &amp; Chiavari Chairs</span>
+              <span>Padded Banquet Chairs</span>
             </div>
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">podium</span>
-              <span>Speaker Lecterns with Microphone Clips</span>
+              <span>Speaker Digital Lecterns</span>
             </div>
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">styler</span>
-              <span>Crowd Control Stanchions &amp; Velvet Ropes</span>
+              <span>Velvet Crowd Stanchions</span>
             </div>
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">checkroom</span>
-              <span>Mobile Garment Coat Racks &amp; Numbered Tags</span>
+              <span>Mobile Garment Racks</span>
             </div>
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">curtains</span>
-              <span>Black Stage Perimeter Pipe-and-Drape Masking</span>
+              <span>Stage Pipe-and-Drape Masking</span>
             </div>
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">wine_bar</span>
-              <span>High-Top Cocktail Tables with Fitted Spandex Covers</span>
+              <span>Cocktail High-Top Tables</span>
             </div>
             <div class="vd-inventory-tag">
               <span class="material-symbols-outlined">accessible</span>
-              <span>ADA Compliant Modular Stage Access Ramp</span>
-            </div>
-            <div class="vd-inventory-tag">
-              <span class="material-symbols-outlined">tv</span>
-              <span>Digital Easel Wayfinding &amp; Agenda Displays</span>
+              <span>ADA Modular Stage Access Ramp</span>
             </div>
           </div>
         </div>
 
-        <!-- 5. Organizer Call To Action Banner -->
-        <div style="background:#ffffff; border:1.5px solid #e5e7eb; border-radius:14px; padding:24px 26px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:32px; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-          <div>
-            <h4 style="font-size:17px; font-weight:700; color:#131b17; margin:0 0 4px;">Ready to host your event at {{ vendor.business_name }}?</h4>
-            <p style="font-size:13px; color:#6b7280; margin:0;">Submit an Organizer Request for Proposal (RFP) to reserve dates, arrange a technical walkthrough, or request itemized pricing.</p>
+        <!-- 5. Architectural Perspectives Prompt Banner -->
+        <div class="vd-perspectives-prompt" @click="openLightbox(0)">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:38px; height:38px; border-radius:8px; background:#eff6ff; display:flex; align-items:center; justify-content:center; color:#2563eb; flex-shrink:0;">
+              <span class="material-symbols-outlined" style="font-size:22px;">photo_library</span>
+            </div>
+            <div>
+              <div style="font-size:13.5px; font-weight:700; color:#131b17;">Explore 5 Architectural &amp; Environmental Perspectives</div>
+              <div style="font-size:12px; color:#6b7280;">High-resolution views of the interior hall, skyline, grounds, and evening ambience.</div>
+            </div>
           </div>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-primary" style="padding:10px 20px; font-size:13.5px;">
-              Request Organizer RFP →
+          <button type="button" class="vd-btn vd-btn-outline" style="padding:7px 14px; font-size:12.5px; white-space:nowrap;">
+            Open Gallery
+          </button>
+        </div>
+
+        <!-- 6. Organizer Call To Action Banner -->
+        <div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:12px; padding:20px 22px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:28px;">
+          <div>
+            <h4 style="font-size:15.5px; font-weight:700; color:#131b17; margin:0 0 3px;">Reserve {{ vendor.business_name }} for your event</h4>
+            <p style="font-size:12.5px; color:#6b7280; margin:0;">Submit an Organizer Request for Proposal (RFP) to verify date availability, schedule a walkthrough, or receive itemized pricing.</p>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-primary" style="padding:9px 18px; font-size:13px;">
+              Request Proposal
             </button>
-            <button type="button" @click="activeTab = 'packages'" class="vd-btn vd-btn-outline" style="padding:10px 18px; font-size:13.5px;">
-              View Fixed Packages
+            <button type="button" @click="activeTab = 'packages'" class="vd-btn vd-btn-outline" style="padding:9px 15px; font-size:13px;">
+              View Packages
             </button>
           </div>
         </div>
@@ -3913,7 +3675,7 @@ block head %}
     ];
 
     return {
-      activeTab: "work",
+      activeTab: "{{ 'specs' if vendor.category == 'venue' else 'work' }}",
       followed: false,
       saved: false,
       venueViews: viewsList,
