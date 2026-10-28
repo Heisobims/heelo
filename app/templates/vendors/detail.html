@@ -1803,52 +1803,6 @@ block head %}
     }
   }
 
-  /* Organizer Proposal CTA Banner */
-  .vd-organizer-cta {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 20px 22px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 14px;
-    margin-bottom: 28px;
-  }
-  .vd-organizer-cta-title {
-    font-size: 15.5px;
-    font-weight: 700;
-    color: #131b17;
-    margin: 0 0 3px;
-  }
-  .vd-organizer-cta-sub {
-    font-size: 12.5px;
-    color: #6b7280;
-    margin: 0;
-  }
-  .vd-organizer-cta-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  @media (max-width: 600px) {
-    .vd-organizer-cta {
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 16px 14px;
-      gap: 12px;
-    }
-    .vd-organizer-cta-actions {
-      width: 100%;
-    }
-    .vd-organizer-cta-btn {
-      flex: 1 1 0;
-      justify-content: center;
-      text-align: center;
-    }
-  }
-
   /* Venue Action Buttons (Sidebar) */
   .vd-venue-action-buttons {
     display: flex;
@@ -2987,22 +2941,6 @@ block head %}
           <button type="button" class="vd-btn vd-btn-outline" style="padding:7px 14px; font-size:12.5px; white-space:nowrap;">
             Open Gallery
           </button>
-        </div>
-
-        <!-- 6. Organizer Call To Action Banner -->
-        <div class="vd-organizer-cta">
-          <div>
-            <h4 class="vd-organizer-cta-title">Reserve {{ vendor.business_name }} for your event</h4>
-            <p class="vd-organizer-cta-sub">Submit an Organizer Request for Proposal (RFP) to verify date availability, schedule a walkthrough, or receive itemized pricing.</p>
-          </div>
-          <div class="vd-organizer-cta-actions">
-            <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-primary vd-organizer-cta-btn">
-              Request Proposal
-            </button>
-            <button type="button" @click="activeTab = 'packages'" class="vd-btn vd-btn-outline vd-organizer-cta-btn">
-              View Packages
-            </button>
-          </div>
         </div>
       </div>
       {% endif %}
