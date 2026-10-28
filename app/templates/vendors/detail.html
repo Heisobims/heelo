@@ -691,12 +691,9 @@
         </div>
         {% endif %}
 
+        {% if services or vendor.contact_phone or vendor.website_url %}
         <!-- Quick Action CTAs -->
         <div class="vd-header-actions">
-          <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-accent">
-            <span class="material-symbols-outlined" style="font-size:16px;">mail</span>
-            Request a Custom Quote
-          </button>
           {% if services %}
           <button type="button" @click="scrollToServices()" class="vd-btn vd-btn-outline">
             <span class="material-symbols-outlined" style="font-size:16px;">layers</span>
@@ -716,6 +713,7 @@
           </a>
           {% endif %}
         </div>
+        {% endif %}
       </div>
 
       <!-- Services & Packages Section -->
