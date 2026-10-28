@@ -3080,12 +3080,17 @@ async def venue_list(
     db: DBSession,
     q: str | None = None,
     city: str | None = None,
+    country: str | None = None,
     min_capacity: int | None = None,
+    max_capacity: int | None = None,
+    capacity_tier: str | None = None,
+    venue_type: str | None = None,
+    price_range: str | None = None,
+    sort_by: str | None = "featured",
+    verified_only: bool = False,
     page: int = 1,
 ):
-    """Venue discovery - a pre-filtered, location-first view of vendors in the
-    "venue" category, so event planners can find a hall near their proposed
-    event location without wading through the general vendor marketplace."""
+    """Venue discovery - comprehensive search & filter options across global venues."""
     from sqlalchemy import distinct
     from sqlalchemy import select as _select
 
@@ -3094,8 +3099,35 @@ async def venue_list(
 
     user, orgs = await _get_auth_context(request, db)
 
+    # Resolve capacity tier
+    eff_min_cap = min_capacity
+    eff_max_cap = max_capacity
+    if capacity_tier:
+        ct = capacity_tier.lower().strip()
+        if ct == "intimate":
+            eff_max_cap = 150
+        elif ct == "medium":
+            eff_min_cap = 150
+            eff_max_cap = 600
+        elif ct == "large":
+            eff_min_cap = 600
+            eff_max_cap = 1500
+        elif ct == "grand":
+            eff_min_cap = 1500
+
     vendors, total = await vsvc.list_vendors(
-        db, q=q, category="venue", city=city, min_capacity=min_capacity, page=page
+        db,
+        q=q,
+        category="venue",
+        city=city,
+        country=country,
+        price_range=price_range,
+        min_capacity=eff_min_cap,
+        max_capacity=eff_max_cap,
+        venue_type=venue_type,
+        verified_only=verified_only,
+        sort_by=sort_by,
+        page=page,
     )
 
     city_rows = await db.scalars(
@@ -3104,9 +3136,50 @@ async def venue_list(
             Vendor.location_city.isnot(None), Vendor.status == "active", Vendor.category == "venue"
         )
         .order_by(Vendor.location_city)
-        .limit(50)
+        .limit(60)
     )
     cities = [c for c in city_rows.all() if c]
+
+    country_rows = await db.scalars(
+        _select(distinct(Vendor.location_country))
+        .where(
+            Vendor.location_country.isnot(None), Vendor.status == "active", Vendor.category == "venue"
+        )
+        .order_by(Vendor.location_country)
+        .limit(60)
+    )
+    countries = [c for c in country_rows.all() if c]
+
+    COUNTRY_NAMES = {
+        "GB": "United Kingdom",
+        "US": "United States",
+        "FR": "France",
+        "JP": "Japan",
+        "NG": "Nigeria",
+        "AE": "United Arab Emirates",
+        "DE": "Germany",
+        "SG": "Singapore",
+        "KE": "Kenya",
+        "ZA": "South Africa",
+        "CA": "Canada",
+        "AU": "Australia",
+        "NL": "Netherlands",
+        "CH": "Switzerland",
+        "BR": "Brazil",
+        "GH": "Ghana",
+        "RW": "Rwanda",
+        "KR": "South Korea",
+        "IT": "Italy",
+        "ES": "Spain",
+        "SE": "Sweden",
+        "AT": "Austria",
+        "IE": "Ireland",
+        "IN": "India",
+        "MX": "Mexico",
+    }
+
+    country_options = [{"code": c, "name": COUNTRY_NAMES.get(c.upper(), c)} for c in countries]
+    country_options.sort(key=lambda x: x["name"])
 
     return templates.TemplateResponse(
         "vendors/list.html",
@@ -3118,9 +3191,16 @@ async def venue_list(
             "q": q,
             "category": "venue",
             "city": city,
+            "country": country,
             "min_capacity": min_capacity,
-            "price_range": None,
+            "max_capacity": max_capacity,
+            "capacity_tier": capacity_tier,
+            "venue_type": venue_type,
+            "price_range": price_range,
+            "sort_by": sort_by or "featured",
+            "verified_only": verified_only,
             "cities": cities,
+            "country_options": country_options,
             "query_without_cat": "",
             "query_with_cat": lambda cat: "",
             "venue_mode": True,

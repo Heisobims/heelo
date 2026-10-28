@@ -144,6 +144,10 @@ async def list_vendors(
     country: str | None = None,
     price_range: str | None = None,
     min_capacity: int | None = None,
+    max_capacity: int | None = None,
+    venue_type: str | None = None,
+    verified_only: bool = False,
+    sort_by: str | None = None,
     page: int = 1,
     per_page: int = 24,
 ) -> tuple[list[Vendor], int]:
@@ -155,6 +159,8 @@ async def list_vendors(
                 Vendor.business_name.ilike(f"%{q}%"),
                 Vendor.description.ilike(f"%{q}%"),
                 Vendor.tagline.ilike(f"%{q}%"),
+                Vendor.address.ilike(f"%{q}%"),
+                Vendor.location_city.ilike(f"%{q}%"),
             )
         )
     if category:
@@ -167,10 +173,124 @@ async def list_vendors(
         stmt = stmt.where(Vendor.price_range == price_range)
     if min_capacity:
         stmt = stmt.where(Vendor.capacity.is_not(None), Vendor.capacity >= min_capacity)
+    if max_capacity:
+        stmt = stmt.where(Vendor.capacity.is_not(None), Vendor.capacity <= max_capacity)
+    if verified_only:
+        stmt = stmt.where(Vendor.is_verified.is_(True))
+
+    if venue_type:
+        vt = venue_type.lower().strip()
+        if vt == "ballroom":
+            stmt = stmt.where(
+                or_(
+                    Vendor.business_name.ilike("%ballroom%"),
+                    Vendor.description.ilike("%ballroom%"),
+                    Vendor.tagline.ilike("%ballroom%"),
+                )
+            )
+        elif vt == "convention":
+            stmt = stmt.where(
+                or_(
+                    Vendor.business_name.ilike("%convention%"),
+                    Vendor.business_name.ilike("%dome%"),
+                    Vendor.business_name.ilike("%arena%"),
+                    Vendor.business_name.ilike("%rotunda%"),
+                    Vendor.business_name.ilike("%hall%"),
+                    Vendor.description.ilike("%convention%"),
+                )
+            )
+        elif vt == "historic":
+            stmt = stmt.where(
+                or_(
+                    Vendor.business_name.ilike("%historic%"),
+                    Vendor.business_name.ilike("%palace%"),
+                    Vendor.business_name.ilike("%castle%"),
+                    Vendor.business_name.ilike("%palazzo%"),
+                    Vendor.business_name.ilike("%hofburg%"),
+                    Vendor.business_name.ilike("%heritage%"),
+                    Vendor.description.ilike("%historic%"),
+                    Vendor.description.ilike("%renaissance%"),
+                    Vendor.description.ilike("%victorian%"),
+                )
+            )
+        elif vt in ("rooftop", "skyline"):
+            stmt = stmt.where(
+                or_(
+                    Vendor.business_name.ilike("%rooftop%"),
+                    Vendor.business_name.ilike("%skyline%"),
+                    Vendor.business_name.ilike("%penthouse%"),
+                    Vendor.business_name.ilike("%terrace%"),
+                    Vendor.tagline.ilike("%skyline%"),
+                    Vendor.tagline.ilike("%terrace%"),
+                    Vendor.description.ilike("%skyline%"),
+                )
+            )
+        elif vt in ("waterfront", "beach"):
+            stmt = stmt.where(
+                or_(
+                    Vendor.business_name.ilike("%oceanfront%"),
+                    Vendor.business_name.ilike("%harbour%"),
+                    Vendor.business_name.ilike("%lake%"),
+                    Vendor.business_name.ilike("%sea%"),
+                    Vendor.business_name.ilike("%beach%"),
+                    Vendor.business_name.ilike("%canal%"),
+                    Vendor.business_name.ilike("%waterfront%"),
+                    Vendor.description.ilike("%waterfront%"),
+                    Vendor.description.ilike("%ocean%"),
+                )
+            )
+        elif vt == "industrial":
+            stmt = stmt.where(
+                or_(
+                    Vendor.business_name.ilike("%warehouse%"),
+                    Vendor.business_name.ilike("%loft%"),
+                    Vendor.business_name.ilike("%hangar%"),
+                    Vendor.business_name.ilike("%kraftwerk%"),
+                    Vendor.business_name.ilike("%arena%"),
+                    Vendor.description.ilike("%industrial%"),
+                    Vendor.description.ilike("%concrete%"),
+                )
+            )
+        elif vt in ("botanical", "outdoor", "estate"):
+            stmt = stmt.where(
+                or_(
+                    Vendor.business_name.ilike("%garden%"),
+                    Vendor.business_name.ilike("%vineyard%"),
+                    Vendor.business_name.ilike("%glasshouse%"),
+                    Vendor.business_name.ilike("%amphitheatre%"),
+                    Vendor.business_name.ilike("%safari%"),
+                    Vendor.business_name.ilike("%conservatory%"),
+                    Vendor.business_name.ilike("%courtyard%"),
+                    Vendor.description.ilike("%garden%"),
+                    Vendor.description.ilike("%botanical%"),
+                )
+            )
 
     total = await db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+
+    if sort_by == "capacity_desc":
+        order_clauses = [Vendor.capacity.desc().nullslast(), Vendor.is_verified.desc()]
+    elif sort_by == "capacity_asc":
+        order_clauses = [Vendor.capacity.asc().nullslast(), Vendor.is_verified.desc()]
+    elif sort_by == "rating":
+        order_clauses = [Vendor.rating_avg.desc(), Vendor.reviews_count.desc()]
+    elif sort_by == "price_asc":
+        order_clauses = [Vendor.starting_price.asc().nullslast()]
+    elif sort_by == "price_desc":
+        order_clauses = [Vendor.starting_price.desc().nullslast()]
+    elif sort_by == "name":
+        order_clauses = [Vendor.business_name.asc()]
+    else:
+        order_clauses = [
+            Vendor.is_featured.desc(),
+            Vendor.is_verified.desc(),
+            Vendor.rating_avg.desc(),
+            Vendor.lead_count.desc(),
+            Vendor.created_at.desc(),
+        ]
+
     result = await db.scalars(
-        stmt.order_by(Vendor.is_verified.desc(), Vendor.lead_count.desc(), Vendor.created_at.desc())
+        stmt.order_by(*order_clauses)
         .offset((page - 1) * per_page)
         .limit(per_page)
     )

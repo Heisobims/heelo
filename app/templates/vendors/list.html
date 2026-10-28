@@ -170,6 +170,99 @@
     }
   }
 
+  /* Venue Quick Type Pills Strip */
+  .vm-pill-strip-wrap {
+    max-width: 1280px;
+    margin: 0 auto 20px;
+    padding: 0 24px;
+    box-sizing: border-box;
+  }
+  .vm-pill-strip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .vm-pill-strip::-webkit-scrollbar { display: none; }
+  .vm-pill-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text-primary);
+    background: #ffffff;
+    border: 1px solid var(--border-light);
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+  .vm-pill-item:hover {
+    border-color: rgba(19, 27, 23, 0.4);
+    background: #fafaf8;
+    transform: translateY(-1px);
+  }
+  .vm-pill-item.active {
+    background: var(--text-primary);
+    color: #ffffff;
+    border-color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+  .vm-pill-item .material-symbols-outlined {
+    font-size: 16px;
+  }
+
+  /* Active Filter Chips */
+  .vm-active-chips-wrap {
+    max-width: 1280px;
+    margin: 0 auto 16px;
+    padding: 0 24px;
+    box-sizing: border-box;
+  }
+  .vm-active-chips {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .vm-active-title {
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+  .vm-active-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f4f4f5;
+    color: #18181b;
+    border: 1px solid #e4e4e7;
+    border-radius: 9999px;
+    padding: 4px 12px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: all 0.12s;
+  }
+  .vm-active-chip:hover {
+    background: #e4e4e7;
+  }
+  .vm-active-chip .material-symbols-outlined {
+    font-size: 14px;
+  }
+  .vm-clear-all-link {
+    color: #dc2626;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: underline;
+    margin-left: 4px;
+  }
 
   .vm-results-header { max-width: 1280px; margin: 0 auto 16px; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; }
   .vm-results-count { font-size: 13.5px; color: var(--text-muted); }
@@ -452,27 +545,110 @@
   </div>
 </div>
 
+{% if venue_mode %}
+<!-- Venue Types / Architecture Category Bar -->
+<div class="vm-pill-strip-wrap">
+  <div class="vm-pill-strip">
+    <a href="/venues{% if city %}?city={{ city }}{% endif %}" class="vm-pill-item {% if not venue_type %}active{% endif %}">
+      <span class="material-symbols-outlined">domain</span>
+      <span>All Venues</span>
+    </a>
+    <a href="/venues?venue_type=ballroom{% if city %}&city={{ city }}{% endif %}" class="vm-pill-item {% if venue_type == 'ballroom' %}active{% endif %}">
+      <span class="material-symbols-outlined">meeting_room</span>
+      <span>Ballrooms &amp; Halls</span>
+    </a>
+    <a href="/venues?venue_type=convention{% if city %}&city={{ city }}{% endif %}" class="vm-pill-item {% if venue_type == 'convention' %}active{% endif %}">
+      <span class="material-symbols-outlined">stadium</span>
+      <span>Convention Domes</span>
+    </a>
+    <a href="/venues?venue_type=historic{% if city %}&city={{ city }}{% endif %}" class="vm-pill-item {% if venue_type == 'historic' %}active{% endif %}">
+      <span class="material-symbols-outlined">castle</span>
+      <span>Historic Palaces</span>
+    </a>
+    <a href="/venues?venue_type=rooftop{% if city %}&city={{ city }}{% endif %}" class="vm-pill-item {% if venue_type == 'rooftop' %}active{% endif %}">
+      <span class="material-symbols-outlined">roofing</span>
+      <span>Rooftops &amp; Penthouses</span>
+    </a>
+    <a href="/venues?venue_type=waterfront{% if city %}&city={{ city }}{% endif %}" class="vm-pill-item {% if venue_type == 'waterfront' %}active{% endif %}">
+      <span class="material-symbols-outlined">water</span>
+      <span>Waterfront &amp; Beach</span>
+    </a>
+    <a href="/venues?venue_type=industrial{% if city %}&city={{ city }}{% endif %}" class="vm-pill-item {% if venue_type == 'industrial' %}active{% endif %}">
+      <span class="material-symbols-outlined">warehouse</span>
+      <span>Industrial Lofts</span>
+    </a>
+    <a href="/venues?venue_type=botanical{% if city %}&city={{ city }}{% endif %}" class="vm-pill-item {% if venue_type == 'botanical' %}active{% endif %}">
+      <span class="material-symbols-outlined">nature_people</span>
+      <span>Botanical Grounds</span>
+    </a>
+  </div>
+</div>
+{% endif %}
+
 <!-- Search & filters -->
 <form method="GET" action="{{ '/venues' if venue_mode else '/vendors' }}" class="vm-search-bar">
   <div class="vm-search-input">
     <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="search" name="q" placeholder="{{ 'Search venues by name…' if venue_mode else 'Search vendors by name or service…' }}" value="{{ q or '' }}">
+    <input type="search" name="q" placeholder="{{ 'Search venues by name, style, landmark…' if venue_mode else 'Search vendors by name or service…' }}" value="{{ q or '' }}">
   </div>
+
   <select name="city" class="vm-filter-select">
-    <option value="">{{ 'Event location: any city' if venue_mode else 'All cities' }}</option>
+    <option value="">{{ 'City: Any destination' if venue_mode else 'All cities' }}</option>
     {% for c in cities %}
     <option value="{{ c }}" {% if city == c %}selected{% endif %}>{{ c }}</option>
     {% endfor %}
   </select>
+
   {% if venue_mode %}
-  <select name="min_capacity" class="vm-filter-select">
-    <option value="">Any capacity</option>
-    <option value="50" {% if min_capacity == 50 %}selected{% endif %}>50+ guests</option>
-    <option value="100" {% if min_capacity == 100 %}selected{% endif %}>100+ guests</option>
-    <option value="250" {% if min_capacity == 250 %}selected{% endif %}>250+ guests</option>
-    <option value="500" {% if min_capacity == 500 %}selected{% endif %}>500+ guests</option>
-    <option value="1000" {% if min_capacity == 1000 %}selected{% endif %}>1,000+ guests</option>
+  {% if country_options %}
+  <select name="country" class="vm-filter-select">
+    <option value="">Country: Any</option>
+    {% for co in country_options %}
+    <option value="{{ co.code }}" {% if country == co.code %}selected{% endif %}>{{ co.name }}</option>
+    {% endfor %}
   </select>
+  {% endif %}
+
+  <select name="capacity_tier" class="vm-filter-select">
+    <option value="">Any Capacity</option>
+    <option value="intimate" {% if capacity_tier == 'intimate' %}selected{% endif %}>Up to 150 guests</option>
+    <option value="medium" {% if capacity_tier == 'medium' %}selected{% endif %}>150 – 600 guests</option>
+    <option value="large" {% if capacity_tier == 'large' %}selected{% endif %}>600 – 1,500 guests</option>
+    <option value="grand" {% if capacity_tier == 'grand' %}selected{% endif %}>1,500+ guests</option>
+  </select>
+
+  <select name="venue_type" class="vm-filter-select">
+    <option value="">All Venue Styles</option>
+    <option value="ballroom" {% if venue_type == 'ballroom' %}selected{% endif %}>Ballrooms &amp; Halls</option>
+    <option value="convention" {% if venue_type == 'convention' %}selected{% endif %}>Convention Domes</option>
+    <option value="historic" {% if venue_type == 'historic' %}selected{% endif %}>Historic Palaces</option>
+    <option value="rooftop" {% if venue_type == 'rooftop' %}selected{% endif %}>Rooftops &amp; Skylines</option>
+    <option value="waterfront" {% if venue_type == 'waterfront' %}selected{% endif %}>Waterfront &amp; Beach</option>
+    <option value="industrial" {% if venue_type == 'industrial' %}selected{% endif %}>Industrial Lofts</option>
+    <option value="botanical" {% if venue_type == 'botanical' %}selected{% endif %}>Botanical Grounds</option>
+  </select>
+
+  <select name="price_range" class="vm-filter-select">
+    <option value="">Any Budget</option>
+    <option value="budget" {% if price_range == 'budget' %}selected{% endif %}>Budget-Friendly</option>
+    <option value="mid" {% if price_range == 'mid' %}selected{% endif %}>Mid-Range</option>
+    <option value="premium" {% if price_range == 'premium' %}selected{% endif %}>Luxury / Premium</option>
+  </select>
+
+  <select name="sort_by" class="vm-filter-select">
+    <option value="featured" {% if sort_by == 'featured' %}selected{% endif %}>Sort: Recommended</option>
+    <option value="capacity_desc" {% if sort_by == 'capacity_desc' %}selected{% endif %}>Sort: Capacity High → Low</option>
+    <option value="capacity_asc" {% if sort_by == 'capacity_asc' %}selected{% endif %}>Sort: Capacity Low → High</option>
+    <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Sort: Highest Rated</option>
+    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Sort: Price Low → High</option>
+    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Sort: Price High → Low</option>
+    <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Sort: Alphabetical (A-Z)</option>
+  </select>
+
+  <label class="vm-verified-label">
+    <input type="checkbox" name="verified_only" value="true" {% if verified_only %}checked{% endif %} style="accent-color:var(--cyan); cursor:pointer;">
+    <span>Verified only</span>
+  </label>
   {% else %}
   <select name="price_range" class="vm-filter-select">
     <option value="">Any budget</option>
@@ -492,33 +668,49 @@
     <span>Verified only</span>
   </label>
   {% endif %}
-  <button type="submit" class="vm-search-btn">Search</button>
+
+  <button type="submit" class="vm-search-btn">Filter Venues</button>
 </form>
 
-{% set cat_icons = {
-  'catering': 'restaurant',
-  'photography': 'photo_camera',
-  'videography': 'videocam',
-  'decorations': 'auto_awesome',
-  'event_planning': 'event',
-  'sound_lighting': 'lightbulb',
-  'entertainment': 'music_note',
-  'djs': 'headphones',
-  'equipment_rentals': 'chair',
-  'branding': 'palette',
-  'security': 'security',
-  'logistics': 'local_shipping',
-  'makeup_beauty': 'face',
-  'ushers_staffing': 'badge',
-  'cakes_desserts': 'cake',
-  'venue': 'account_balance',
-  'mc': 'mic',
-  'other': 'more_horiz'
-} if not venue_mode else {'venue': 'account_balance'} %}
+{% set has_active_filters = (q or city or country or capacity_tier or min_capacity or venue_type or price_range or (sort_by and sort_by != 'featured') or verified_only) if venue_mode else (q or city or price_range or (sort_by and sort_by != 'relevance') or verified_only) %}
+{% if has_active_filters %}
+<div class="vm-active-chips-wrap">
+  <div class="vm-active-chips">
+    <span class="vm-active-title">Active Filters:</span>
+    {% if q %}
+    <span class="vm-active-chip">Keyword: "{{ q }}"</span>
+    {% endif %}
+    {% if city %}
+    <span class="vm-active-chip">City: {{ city }}</span>
+    {% endif %}
+    {% if country %}
+    <span class="vm-active-chip">Country: {{ country }}</span>
+    {% endif %}
+    {% if capacity_tier %}
+    <span class="vm-active-chip">Capacity: {{ capacity_tier | capitalize }}</span>
+    {% elif min_capacity %}
+    <span class="vm-active-chip">Min {{ min_capacity }}+ guests</span>
+    {% endif %}
+    {% if venue_type %}
+    <span class="vm-active-chip">Style: {{ venue_type | capitalize }}</span>
+    {% endif %}
+    {% if price_range %}
+    <span class="vm-active-chip">Budget: {{ price_range | capitalize }}</span>
+    {% endif %}
+    {% if sort_by and sort_by != 'featured' and sort_by != 'relevance' %}
+    <span class="vm-active-chip">Sorted: {{ sort_by | replace('_', ' ') | title }}</span>
+    {% endif %}
+    {% if verified_only %}
+    <span class="vm-active-chip">Verified Only</span>
+    {% endif %}
+    <a href="{{ '/venues' if venue_mode else '/vendors' }}" class="vm-clear-all-link">Clear all filters</a>
+  </div>
+</div>
+{% endif %}
 
 <!-- Results header -->
 <div class="vm-results-header">
-  <span class="vm-results-count">{{ total }} vendor{{ 's' if total != 1 }}</span>
+  <span class="vm-results-count">{{ total }} {{ 'venue' if venue_mode else 'vendor' }}{{ 's' if total != 1 }} found</span>
 </div>
 
 {% if vendors %}
