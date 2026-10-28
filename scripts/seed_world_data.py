@@ -1204,3 +1204,4 @@ async def seed_world_events_and_vendors():
 
 if __name__ == "__main__":
     asyncio.run(seed_world_events_and_vendors())
+

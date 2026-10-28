@@ -462,9 +462,7 @@
   {% for v in vendors %}
   <a href="/vendors/{{ v.slug }}" class="vm-card">
     <div class="vm-card-cover">
-      {% if v.is_featured %}
-      <span class="vm-card-badge" style="background:rgba(217,119,6,0.92); color:#fff; border-color:rgba(255,255,255,0.25);"><span class="material-symbols-outlined" style="font-size:13px; vertical-align:-2px;">star</span> Featured</span>
-      {% elif venue_mode and v.capacity %}
+      {% if venue_mode and v.capacity %}
       <span class="vm-card-badge">{{ "{:,}".format(v.capacity) }} Guests</span>
       {% elif venue_mode %}
       <span class="vm-card-badge">Venue</span>
@@ -479,8 +477,9 @@
       </span>
       {% endif %}
 
-      {% if v.cover_image_url %}
-      <img src="{{ v.cover_image_url }}" alt="{{ v.business_name }}" loading="lazy">
+      {% set profile_img = v.logo_url or (v.user.avatar_url if v.user else None) or v.cover_image_url %}
+      {% if profile_img %}
+      <img src="{{ profile_img }}" alt="{{ v.business_name }}" loading="lazy">
       {% else %}
       <div class="vm-card-cover-placeholder">
         <span class="material-symbols-outlined" style="font-size:2rem; opacity:0.35; color:#fff;">{{ cat_icons.get(v.category, 'account_balance' if venue_mode else 'more_horiz') }}</span>

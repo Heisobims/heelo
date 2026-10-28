@@ -735,7 +735,9 @@ async def list_vendors_advanced(
             Vendor.created_at.desc(),
         )
 
-    result = await db.scalars(stmt.offset((page - 1) * per_page).limit(per_page))
+    from sqlalchemy.orm import selectinload
+
+    result = await db.scalars(stmt.options(selectinload(Vendor.user)).offset((page - 1) * per_page).limit(per_page))
     return list(result.all()), total
 
 
