@@ -972,7 +972,17 @@ block head %}
       </div>
 
       <!-- Business Name -->
-      <h1 class="vd-be-name">{{ vendor.business_name }}</h1>
+      <h1 class="vd-be-name" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span>{{ vendor.business_name }}</span>
+        {% if vendor.is_verified or vendor.verification_status == 'verified' %}
+        <span class="vd-verified-badge" title="Verified Business" style="display: inline-flex; align-items: center; flex-shrink: 0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#7C3AED" style="vertical-align: middle;">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          </svg>
+        </span>
+        {% endif %}
+      </h1>
 
       <!-- Meta details list (Matches Behance items) -->
       <div class="vd-be-details">
@@ -1870,8 +1880,12 @@ block head %}
     </div>
     {% endif %}
 
-    <div class="vd-floating-text">
-      <strong>{{ vendor.business_name }}</strong> is available for hire
+    <div class="vd-floating-text" style="display: flex; align-items: center; gap: 5px;">
+      <strong>{{ vendor.business_name }}</strong>
+      {% if vendor.is_verified or vendor.verification_status == 'verified' %}
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#7C3AED" style="vertical-align: middle; flex-shrink: 0;"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      {% endif %}
+      <span>is available for hire</span>
     </div>
 
     <button type="button" @click="showRfqModal = true" class="vd-floating-btn">
