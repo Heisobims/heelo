@@ -3000,6 +3000,33 @@ async def discover_feed(request: Request, db: DBSession, page: int = 1):
 
 # ── Vendor marketplace ────────────────────────────────────────────────────────
 
+VENDOR_CAT_ICONS = {
+    "venue": "account_balance",
+    "venues": "account_balance",
+    "catering": "restaurant",
+    "caterer": "restaurant",
+    "photography": "photo_camera",
+    "photographer": "photo_camera",
+    "videography": "videocam",
+    "videographer": "videocam",
+    "dj": "music_note",
+    "music": "library_music",
+    "decoration": "palette",
+    "decorator": "palette",
+    "makeup": "brush",
+    "hair": "face",
+    "security": "shield",
+    "mc": "mic",
+    "sound_lighting": "speaker",
+    "av_production": "speaker",
+    "transportation": "directions_car",
+    "cake": "cake",
+    "event_planning": "event",
+    "cleaning": "cleaning_services",
+    "staffing": "groups",
+    "other": "more_horiz",
+}
+
 
 @router_pages.get("/vendors", response_class=HTMLResponse)
 async def vendor_list(
@@ -3070,6 +3097,7 @@ async def vendor_list(
             "query_without_cat": qs_without_cat(),
             "query_with_cat": qs_with_cat,
             "venue_mode": False,
+            "cat_icons": VENDOR_CAT_ICONS,
         },
     )
 
@@ -3204,6 +3232,7 @@ async def venue_list(
             "query_without_cat": "",
             "query_with_cat": lambda cat: "",
             "venue_mode": True,
+            "cat_icons": VENDOR_CAT_ICONS,
         },
     )
 

@@ -524,6 +524,37 @@
 {% block body %}
 {% include "partials/site_nav.html" %}
 
+{% set cat_icons = {
+  'venue': 'account_balance',
+  'venues': 'account_balance',
+  'catering': 'restaurant',
+  'caterer': 'restaurant',
+  'photography': 'photo_camera',
+  'photographer': 'photo_camera',
+  'videography': 'videocam',
+  'videographer': 'videocam',
+  'dj': 'music_note',
+  'music': 'library_music',
+  'musician': 'library_music',
+  'decoration': 'palette',
+  'decorator': 'palette',
+  'makeup': 'brush',
+  'makeup_artist': 'brush',
+  'hair': 'face',
+  'security': 'shield',
+  'mc': 'mic',
+  'sound_lighting': 'speaker',
+  'av_production': 'speaker',
+  'transportation': 'directions_car',
+  'cake': 'cake',
+  'baker': 'cake',
+  'event_planning': 'event',
+  'planner': 'event',
+  'cleaning': 'cleaning_services',
+  'staffing': 'groups',
+  'other': 'more_horiz'
+} %}
+
 <!-- Hero -->
 <div class="vm-hero">
   {% if venue_mode %}
@@ -738,7 +769,7 @@
       <img src="{{ profile_img }}" alt="{{ v.business_name }}" loading="lazy">
       {% else %}
       <div class="vm-card-cover-placeholder">
-        <span class="material-symbols-outlined" style="font-size:2rem; opacity:0.35; color:#fff;">{{ cat_icons.get(v.category, 'account_balance' if venue_mode else 'more_horiz') }}</span>
+        <span class="material-symbols-outlined" style="font-size:2rem; opacity:0.35; color:#fff;">{{ cat_icons.get(v.category, 'account_balance' if venue_mode else 'more_horiz') if (cat_icons is defined and cat_icons) else ('account_balance' if venue_mode else 'more_horiz') }}</span>
       </div>
       {% endif %}
     </div>
