@@ -541,31 +541,6 @@ Discover conferences, workshops, concerts, and festivals happening near you and 
     margin-bottom: 24px;
     flex-wrap: wrap;
   }
-  .ev-results-breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-muted, #71717a);
-    margin-bottom: 6px;
-  }
-  .ev-results-breadcrumb a {
-    color: var(--text-muted, #71717a);
-    text-decoration: none;
-    font-weight: 500;
-  }
-  .ev-results-breadcrumb a:hover {
-    color: var(--text-primary, #131b17);
-    text-decoration: underline;
-  }
-  .ev-results-breadcrumb .ev-bc-sep {
-    color: #d4d4d8;
-    font-size: 11px;
-  }
-  .ev-results-breadcrumb .ev-bc-cur {
-    color: var(--text-primary, #131b17);
-    font-weight: 600;
-  }
   .ev-results-title {
     font-size: clamp(24px, 2.6vw, 28px);
     font-weight: 700;
@@ -1196,15 +1171,6 @@ event.min_price_info %}
 
   <div class="ev-results-header">
     <div>
-      <div class="ev-results-breadcrumb">
-        <a href="/events">Events</a>
-        <span class="ev-bc-sep">/</span>
-        <span class="ev-bc-cur">
-          {% if is_view_all %}All Events{% elif active_section_info %}{{
-          active_section_info.title }}{% elif q %}Search: "{{ q }}"{% elif
-          category_name %}{{ category_name }}{% else %}All{% endif %}
-        </span>
-      </div>
       <h2 class="ev-results-title">
         {% if is_view_all %} All Events {% elif active_section_info %} {{
         active_section_info.title }} {% elif q %} Search: "{{ q }}" {% elif
