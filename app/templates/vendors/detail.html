@@ -1,57 +1,57 @@
-{% extends "base.html" %}
-{% block title %}{{ vendor.business_name }} | Tixdoo Vendors{% endblock %}
-{% block meta_description %}{{ vendor.tagline or vendor.description[:160] if vendor.description else vendor.business_name + ' on Tixdoo vendor marketplace' }}{% endblock %}
-{% block og_title %}{{ vendor.business_name }}{% endblock %}
-{% block og_description %}{{ self.meta_description() }}{% endblock %}
-{% block og_image %}{{ vendor.cover_image_url or '/static/icons/og-default.png' }}{% endblock %}
-
-{% block head %}
+{% extends "base.html" %} {% block title %}{{ vendor.business_name }} | Tixdoo
+Vendors{% endblock %} {% block meta_description %}{{ vendor.tagline or
+vendor.description[:160] if vendor.description else vendor.business_name + ' on
+Tixdoo vendor marketplace' }}{% endblock %} {% block og_title %}{{
+vendor.business_name }}{% endblock %} {% block og_description %}{{
+self.meta_description() }}{% endblock %} {% block og_image %}{{
+vendor.cover_image_url or '/static/icons/og-default.png' }}{% endblock %} {%
+block head %}
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  "name": {{ vendor.business_name | tojson }},
-  {% if vendor.description or vendor.tagline %}"description": {{ (vendor.description or vendor.tagline) | tojson }},{% endif %}
-  {% if vendor.cover_image_url %}"image": [{{ vendor.cover_image_url | tojson }}],{% endif %}
-  {% if vendor.website_url %}"url": {{ vendor.website_url | tojson }},{% endif %}
-  {% if vendor.contact_phone %}"telephone": {{ vendor.contact_phone | tojson }},{% endif %}
-  {% if vendor.location_city or vendor.location_country %}
-  "address": {
-    "@type": "PostalAddress"
-    {% if vendor.location_city %},"addressLocality": {{ vendor.location_city | tojson }}{% endif %}
-    {% if vendor.location_country %},"addressCountry": {{ vendor.location_country | tojson }}{% endif %}
-  },
-  {% endif %}
-  "priceRange": {{ ((vendor.currency | currency_symbol) * 3 if vendor.price_range == 'premium' else (vendor.currency | currency_symbol) * 2 if vendor.price_range == 'mid' else (vendor.currency | currency_symbol)) | tojson }}
-}
+  {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "name": {{ vendor.business_name | tojson }},
+    {% if vendor.description or vendor.tagline %}"description": {{ (vendor.description or vendor.tagline) | tojson }},{% endif %}
+    {% if vendor.cover_image_url %}"image": [{{ vendor.cover_image_url | tojson }}],{% endif %}
+    {% if vendor.website_url %}"url": {{ vendor.website_url | tojson }},{% endif %}
+    {% if vendor.contact_phone %}"telephone": {{ vendor.contact_phone | tojson }},{% endif %}
+    {% if vendor.location_city or vendor.location_country %}
+    "address": {
+      "@type": "PostalAddress"
+      {% if vendor.location_city %},"addressLocality": {{ vendor.location_city | tojson }}{% endif %}
+      {% if vendor.location_country %},"addressCountry": {{ vendor.location_country | tojson }}{% endif %}
+    },
+    {% endif %}
+    "priceRange": {{ ((vendor.currency | currency_symbol) * 3 if vendor.price_range == 'premium' else (vendor.currency | currency_symbol) * 2 if vendor.price_range == 'mid' else (vendor.currency | currency_symbol)) | tojson }}
+  }
 </script>
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Vendors",
-      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/vendors"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": {{ vendor.business_name | tojson }},
-      "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/vendors/{{ vendor.slug }}"
-    }
-  ]
-}
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Vendors",
+        "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/vendors"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": {{ vendor.business_name | tojson }},
+        "item": "{{ settings.FRONTEND_URL.rstrip('/') }}/vendors/{{ vendor.slug }}"
+      }
+    ]
+  }
 </script>
-<link rel="stylesheet" href="/static/css/dashboard.css">
+<link rel="stylesheet" href="/static/css/dashboard.css" />
 <style>
   /* ── Typography Combination: Lora (Headings) + Bricolage Grotesque (Body & UI) ── */
   body,
@@ -64,22 +64,33 @@
   button,
   input,
   textarea,
-  select { 
-    font-family: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  select {
+    font-family:
+      "Bricolage Grotesque",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
   }
 
   body {
-    background: #ffffff; 
+    background: #ffffff;
     color: #191919;
   }
 
   /* Typography for Headings: Lora 400, no italics, letter-spacing -0.02rem */
-  h1, h2, h3, h4, h5, h6,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
   .vd-be-name,
   .vd-service-title,
   .vd-be-hire-title,
   .vd-section-head {
-    font-family: 'Lora', var(--font-serif, Georgia, serif) !important;
+    font-family: "Lora", var(--font-serif, Georgia, serif) !important;
     font-weight: 400 !important;
     font-style: normal !important;
     letter-spacing: -0.02rem !important;
@@ -109,17 +120,25 @@
   .vd-banner-fallback {
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 20% 30%, #2a3a30 0%, #151f19 60%, #0c120f 100%);
+    background: radial-gradient(
+      circle at 20% 30%,
+      #2a3a30 0%,
+      #151f19 60%,
+      #0c120f 100%
+    );
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
   }
   .vd-banner-fallback::after {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-image: radial-gradient(
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px
+    );
     background-size: 24px 24px;
     opacity: 0.7;
   }
@@ -144,29 +163,29 @@
     padding: 7px 16px;
     font-size: 13px;
     font-weight: 700;
-    color: #131B17;
+    color: #131b17;
     text-decoration: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     transition: all 160ms ease;
   }
   .vd-back-pill:hover {
     background: #ffffff;
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
   }
   .vd-owner-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #131B17;
-    border: 1px solid rgba(255,255,255,0.18);
+    background: #131b17;
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
     padding: 7px 16px;
     font-size: 13px;
     font-weight: 700;
     color: #ffffff;
     text-decoration: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     transition: all 160ms ease;
   }
   .vd-owner-pill:hover {
@@ -217,7 +236,7 @@
     height: 112px;
     border-radius: 50%;
     border: 4px solid #ffffff;
-    background: #131B17;
+    background: #131b17;
     color: #ffffff;
     display: flex;
     align-items: center;
@@ -225,7 +244,7 @@
     font-size: 42px;
     font-weight: 800;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   }
   .vd-be-avatar img {
     width: 100%;
@@ -249,13 +268,13 @@
   }
 
   .vd-be-name {
-    font-family: 'Lora', var(--font-serif, Georgia, serif);
+    font-family: "Lora", var(--font-serif, Georgia, serif);
     font-size: 28px;
     font-weight: 400;
     font-style: normal;
     letter-spacing: -0.02rem;
     line-height: 1.25;
-    color: #131B17;
+    color: #131b17;
     margin: 0 0 12px;
     word-break: break-word;
   }
@@ -284,7 +303,7 @@
     white-space: nowrap;
   }
   .vd-be-detail-item a:hover {
-    color: #131B17;
+    color: #131b17;
     text-decoration: underline;
   }
   .vd-avail-dot {
@@ -336,7 +355,9 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: background 160ms, transform 120ms;
+    transition:
+      background 160ms,
+      transform 120ms;
   }
   .vd-be-btn-follow:hover {
     background: #0045cc;
@@ -399,10 +420,10 @@
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 22px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   }
   .vd-be-hire-title {
-    font-family: 'Lora', var(--font-serif, Georgia, serif);
+    font-family: "Lora", var(--font-serif, Georgia, serif);
     font-size: 16px;
     font-weight: 400;
     font-style: normal;
@@ -595,12 +616,14 @@
     aspect-ratio: 4 / 3;
     background: #eae8e3;
     cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    transition: transform 220ms ease, box-shadow 220ms ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    transition:
+      transform 220ms ease,
+      box-shadow 220ms ease;
   }
   .vd-be-work-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
   .vd-be-work-card img {
     width: 100%;
@@ -615,7 +638,11 @@
   .vd-be-work-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.65) 100%);
+    background: linear-gradient(
+      180deg,
+      transparent 50%,
+      rgba(0, 0, 0, 0.65) 100%
+    );
     opacity: 0;
     transition: opacity 200ms ease;
     display: flex;
@@ -631,7 +658,7 @@
     font-size: 11.5px;
     font-weight: 700;
     letter-spacing: 0.02em;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   /* ── Event Packages Tab (Replaces Adobe Stock with Tixdoo Packages) ───────── */
@@ -655,7 +682,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   }
   .vd-service-card:hover {
     border-color: #0057ff;
@@ -670,13 +697,13 @@
     margin-bottom: 12px;
   }
   .vd-service-title {
-    font-family: 'Lora', var(--font-serif, Georgia, serif);
+    font-family: "Lora", var(--font-serif, Georgia, serif);
     font-size: 19px;
     font-weight: 400;
     font-style: normal;
     letter-spacing: -0.02rem;
     margin: 0 0 4px;
-    color: #131B17;
+    color: #131b17;
   }
   .vd-service-cat {
     font-size: 11px;
@@ -733,7 +760,7 @@
     border-radius: 14px;
     padding: 20px;
     margin-bottom: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   }
   .vd-vendor-reply {
     margin-top: 14px;
@@ -750,7 +777,7 @@
     border: 1px solid #e5e7eb;
     border-radius: 16px;
     padding: 28px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   }
 
   /* ── Floating Sticky Bottom Hire Bar (Matches Behance bottom pill) ───────── */
@@ -805,7 +832,9 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: background 150ms, transform 100ms;
+    transition:
+      background 150ms,
+      transform 100ms;
     flex-shrink: 0;
   }
   .vd-floating-btn:hover {
@@ -834,7 +863,7 @@
     transition: all 160ms ease;
   }
   .vd-btn-primary {
-    background: #131B17;
+    background: #131b17;
     color: #ffffff;
   }
   .vd-btn-primary:hover {
@@ -852,10 +881,10 @@
   .vd-btn-outline {
     background: #ffffff;
     border-color: #e5e7eb;
-    color: #131B17;
+    color: #131b17;
   }
   .vd-btn-outline:hover {
-    border-color: #131B17;
+    border-color: #131b17;
     background: #fafaf9;
     transform: translateY(-1px);
   }
@@ -884,20 +913,28 @@
     box-sizing: border-box;
   }
 </style>
-{% endblock %}
-
-{% block body %}
-{% include "partials/site_nav.html" %}
+{% endblock %} {% block body %} {% include "partials/site_nav.html" %}
 
 <div class="vd-page-wrap" x-data="vendorPage()" id="vd-tabs-anchor">
-
   <!-- ── Top Panoramic Cover Banner ───────────────────────────────────────── -->
   <div class="vd-banner-wrap">
     {% if vendor.cover_image_url %}
-    <img src="{{ vendor.cover_image_url }}" alt="{{ vendor.business_name }}" class="vd-banner-img">
+    <img
+      src="{{ vendor.cover_image_url }}"
+      alt="{{ vendor.business_name }}"
+      class="vd-banner-img"
+    />
     {% else %}
     <div class="vd-banner-fallback">
-      <div style="font-family:var(--font-serif); font-size:48px; color:rgba(255,255,255,0.15); font-weight:700; letter-spacing:-0.02em;">
+      <div
+        style="
+          font-family: var(--font-serif);
+          font-size: 48px;
+          color: rgba(255, 255, 255, 0.15);
+          font-weight: 700;
+          letter-spacing: -0.02em;
+        "
+      >
         {{ vendor.business_name }}
       </div>
     </div>
@@ -905,13 +942,24 @@
 
     <div class="vd-banner-nav">
       <a href="/vendors" class="vd-back-pill">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
         <span>Back to Vendors</span>
       </a>
 
       {% if is_owner %}
       <a href="/my-vendor-dashboard" class="vd-owner-pill">
-        <span class="material-symbols-outlined" style="font-size:16px;">dashboard</span>
+        <span class="material-symbols-outlined" style="font-size: 16px"
+          >dashboard</span
+        >
         <span>Vendor Dashboard &amp; Edit</span>
       </a>
       {% endif %}
@@ -920,21 +968,21 @@
 
   <!-- ── Main Behance Container: Left Sidebar + Right Tabs/Gallery ────────── -->
   <div class="vd-be-container">
-
     <!-- ── Left Profile Sidebar ───────────────────────────────────────────── -->
     <aside class="vd-be-sidebar">
-      
       <!-- Avatar with PRO tag -->
       <div class="vd-be-avatar-box">
         <div class="vd-be-avatar">
           {% if vendor.logo_url %}
-          <img src="{{ vendor.logo_url }}" alt="{{ vendor.business_name }}">
+          <img src="{{ vendor.logo_url }}" alt="{{ vendor.business_name }}" />
           {% else %}
           <span>{{ vendor.business_name[0].upper() }}</span>
           {% endif %}
         </div>
         {% if vendor.subscription_tier in ('pro', 'premium') %}
-        <span class="vd-be-pro-tag">{{ vendor.subscription_tier.upper() }}</span>
+        <span class="vd-be-pro-tag"
+          >{{ vendor.subscription_tier.upper() }}</span
+        >
         {% elif vendor.is_featured %}
         <span class="vd-be-pro-tag">FEATURED</span>
         {% endif %}
@@ -946,28 +994,59 @@
       <!-- Meta details list (Matches Behance items) -->
       <div class="vd-be-details">
         <div class="vd-be-detail-item">
-          <span class="vd-avail-dot" {% if vendor.status != 'active' %}style="background:#9ca3af; box-shadow:none;"{% endif %}></span>
-          <span style="font-weight:600; {% if vendor.status == 'active' %}color:#15803d;{% else %}color:#6b7280;{% endif %}">
-            {% if vendor.status == 'active' %}Available for Events &amp; Bookings{% else %}Currently Unavailable{% endif %}
+          <span
+            class="vd-avail-dot"
+            {%
+            if
+            vendor.status
+            !="active"
+            %}style="background:#9ca3af; box-shadow:none;"
+            {%
+            endif
+            %}
+          ></span>
+          <span
+            style="font-weight:600; {% if vendor.status == 'active' %}color:#15803d;{% else %}color:#6b7280;{% endif %}"
+          >
+            {% if vendor.status == 'active' %}Available for Events &amp;
+            Bookings{% else %}Currently Unavailable{% endif %}
           </span>
         </div>
         <div class="vd-be-detail-item">
-          <span class="material-symbols-outlined" style="font-size:16px; color:#9ca3af;">work</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 16px; color: #9ca3af"
+            >work</span
+          >
           <span>{{ vendor.category | replace('_', ' ') | title }}</span>
         </div>
         {% if vendor.location_city or vendor.location_country %}
         <div class="vd-be-detail-item">
-          <span class="material-symbols-outlined" style="font-size:16px; color:#9ca3af;">location_on</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 16px; color: #9ca3af"
+            >location_on</span
+          >
           <span>
-            {% if vendor.location_city %}{{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}{% else %}{{ vendor.location_country }}{% endif %}
+            {% if vendor.location_city %}{{ vendor.location_city }}{% if
+            vendor.location_country %}, {{ vendor.location_country }}{% endif
+            %}{% else %}{{ vendor.location_country }}{% endif %}
           </span>
         </div>
-        {% endif %}
-        {% if vendor.website_url %}
+        {% endif %} {% if vendor.website_url %}
         <div class="vd-be-detail-item">
-          <span class="material-symbols-outlined" style="font-size:16px; color:#9ca3af;">link</span>
-          <a href="{{ vendor.website_url }}" target="_blank" rel="noopener noreferrer">
-            {{ vendor.website_url | replace('https://', '') | replace('http://', '') | rstrip('/') }}
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 16px; color: #9ca3af"
+            >link</span
+          >
+          <a
+            href="{{ vendor.website_url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ vendor.website_url | replace('https://', '') | replace('http://',
+            '') | rstrip('/') }}
           </a>
         </div>
         {% endif %}
@@ -976,26 +1055,68 @@
       <!-- Verified on Tixdoo Card (Shown exclusively when verified in DB) -->
       {% if vendor.is_verified or vendor.verification_status == 'verified' %}
       <div class="vd-be-verified-box">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0057ff"><circle cx="12" cy="12" r="10"/><path d="m8.5 12 2.5 2.5 4.5-4.5" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#0057ff">
+          <circle cx="12" cy="12" r="10" />
+          <path
+            d="m8.5 12 2.5 2.5 4.5-4.5"
+            stroke="#ffffff"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"
+          />
+        </svg>
         <div>
-          <strong style="display:block; color:#131B17; font-weight:700;">Verified Business</strong>
-          <span>Identity and business registration verified on Tixdoo{% if vendor.verified_at %} ({{ vendor.verified_at.strftime('%b %Y') }}){% endif %}</span>
+          <strong style="display: block; color: #131b17; font-weight: 700"
+            >Verified Business</strong
+          >
+          <span
+            >Identity and business registration verified on Tixdoo{% if
+            vendor.verified_at %} ({{ vendor.verified_at.strftime('%b %Y') }}){%
+            endif %}</span
+          >
         </div>
       </div>
       {% endif %}
 
       <!-- Follow, Message, and Save Vendor Buttons (Stacked Behance style) -->
       <div class="vd-be-action-buttons">
-        <button type="button" @click="toggleFollow()" class="vd-be-btn-follow" :class="{ 'active': followed }">
-          <span class="material-symbols-outlined" style="font-size:17px;" x-text="followed ? 'check' : 'add'">add</span>
+        <button
+          type="button"
+          @click="toggleFollow()"
+          class="vd-be-btn-follow"
+          :class="{ 'active': followed }"
+        >
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 17px"
+            x-text="followed ? 'check' : 'add'"
+            >add</span
+          >
           <span x-text="followed ? 'Following' : 'Follow'">Follow</span>
         </button>
-        <button type="button" @click="showRfqModal = true" class="vd-be-btn-msg">
-          <span class="material-symbols-outlined" style="font-size:17px;">mail</span>
+        <button
+          type="button"
+          @click="showRfqModal = true"
+          class="vd-be-btn-msg"
+        >
+          <span class="material-symbols-outlined" style="font-size: 17px"
+            >mail</span
+          >
           <span>Message</span>
         </button>
-        <button type="button" @click="toggleSave()" class="vd-be-btn-save" :class="{ 'active': saved }">
-          <span class="material-symbols-outlined" style="font-size:17px;" x-text="saved ? 'bookmark_added' : 'bookmark_border'">bookmark_border</span>
+        <button
+          type="button"
+          @click="toggleSave()"
+          class="vd-be-btn-save"
+          :class="{ 'active': saved }"
+        >
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 17px"
+            x-text="saved ? 'bookmark_added' : 'bookmark_border'"
+            >bookmark_border</span
+          >
           <span x-text="saved ? 'Saved' : 'Save Vendor'">Save Vendor</span>
         </button>
       </div>
@@ -1004,25 +1125,47 @@
       <div class="vd-be-hire-box">
         <div class="vd-be-hire-title">
           <span>Hire {{ vendor.business_name }}</span>
-          {% if vendor.is_verified %}<span class="material-symbols-outlined" style="font-size:16px; color:#16a34a;">verified</span>{% endif %}
+          {% if vendor.is_verified %}<span
+            class="material-symbols-outlined"
+            style="font-size: 16px; color: #16a34a"
+            >verified</span
+          >{% endif %}
         </div>
 
         {% if services %}
         <div class="vd-be-hire-link" @click="activeTab = 'packages'">
           <span>Event Packages ({{ services | length }})</span>
-          <span class="material-symbols-outlined" style="font-size:17px; color:#9ca3af;">chevron_right</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 17px; color: #9ca3af"
+            >chevron_right</span
+          >
         </div>
-        {% endif %}
-
-        {% if reviews_total > 0 %}
+        {% endif %} {% if reviews_total > 0 %}
         <div class="vd-be-hire-review-line" @click="activeTab = 'reviews'">
-          <span class="material-symbols-outlined" style="font-size:16px; color:#f59e0b; font-variation-settings:'FILL' 1;">star</span>
-          <span><strong>{{ "%.1f"|format(vendor.rating_avg) }}</strong> ({{ reviews_total }} review{{ 's' if reviews_total != 1 else '' }} · verified)</span>
+          <span
+            class="material-symbols-outlined"
+            style="
+              font-size: 16px;
+              color: #f59e0b;
+              font-variation-settings: &quot;FILL&quot; 1;
+            "
+            >star</span
+          >
+          <span
+            ><strong>{{ "%.1f"|format(vendor.rating_avg) }}</strong> ({{
+            reviews_total }} review{{ 's' if reviews_total != 1 else '' }} ·
+            verified)</span
+          >
         </div>
         {% else %}
-        <div class="vd-be-hire-review-line" style="cursor:default;">
-          <span class="material-symbols-outlined" style="font-size:16px; color:#9ca3af;">star_outline</span>
-          <span style="color:#6b7280;">No customer reviews yet</span>
+        <div class="vd-be-hire-review-line" style="cursor: default">
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 16px; color: #9ca3af"
+            >star_outline</span
+          >
+          <span style="color: #6b7280">No customer reviews yet</span>
         </div>
         {% endif %}
       </div>
@@ -1044,69 +1187,119 @@
         <div class="vd-be-metric-row">
           <span>Average Rating</span>
           {% if reviews_total > 0 %}
-          <strong style="color:#f59e0b;">★ {{ "%.1f"|format(vendor.rating_avg) }} ({{ reviews_total }})</strong>
+          <strong style="color: #f59e0b"
+            >★ {{ "%.1f"|format(vendor.rating_avg) }} ({{ reviews_total
+            }})</strong
+          >
           {% else %}
-          <span style="color:#6b7280; font-size:12.5px;">No reviews yet</span>
+          <span style="color: #6b7280; font-size: 12.5px">No reviews yet</span>
           {% endif %}
         </div>
       </div>
 
       <!-- Milestones Card (Real database values) -->
       <div class="vd-be-milestones-card">
-        <div class="vd-be-milestone-title">Platform Guarantees &amp; Status</div>
+        <div class="vd-be-milestone-title">
+          Platform Guarantees &amp; Status
+        </div>
         {% if vendor.total_earned and vendor.total_earned > 0 %}
         <div class="vd-be-milestone-item">
-          <span class="material-symbols-outlined" style="font-size:18px; color:#16a34a;">payments</span>
-          <span>{{ vendor.currency | currency_symbol }}{{ "{:,.0f}".format(vendor.total_earned) }} Escrow Fulfilled</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 18px; color: #16a34a"
+            >payments</span
+          >
+          <span
+            >{{ vendor.currency | currency_symbol }}{{
+            "{:,.0f}".format(vendor.total_earned) }} Escrow Fulfilled</span
+          >
+        </div>
+        {% endif %} {% if completed_bookings_count and completed_bookings_count
+        > 0 %}
+        <div class="vd-be-milestone-item">
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 18px; color: #0057ff"
+            >task_alt</span
+          >
+          <span
+            >{{ completed_bookings_count }} Completed Booking{{ 's' if
+            completed_bookings_count != 1 else '' }}</span
+          >
         </div>
         {% endif %}
-        {% if completed_bookings_count and completed_bookings_count > 0 %}
         <div class="vd-be-milestone-item">
-          <span class="material-symbols-outlined" style="font-size:18px; color:#0057ff;">task_alt</span>
-          <span>{{ completed_bookings_count }} Completed Booking{{ 's' if completed_bookings_count != 1 else '' }}</span>
-        </div>
-        {% endif %}
-        <div class="vd-be-milestone-item">
-          <span class="material-symbols-outlined" style="font-size:18px; color:#0057ff;">verified_user</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 18px; color: #0057ff"
+            >verified_user</span
+          >
           <span>100% Escrow Protection Guaranteed</span>
         </div>
         {% if vendor.is_verified %}
         <div class="vd-be-milestone-item">
-          <span class="material-symbols-outlined" style="font-size:18px; color:#16a34a;">verified</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 18px; color: #16a34a"
+            >verified</span
+          >
           <span>Verified Business Credentials</span>
         </div>
         {% endif %}
       </div>
 
       <!-- On The Web Card (Only links actually configured by vendor) -->
-      {% set has_socials = vendor.social_links and (vendor.social_links.values() | select | list | length > 0) %}
-      {% if vendor.website_url or has_socials or vendor.contact_phone or vendor.contact_email %}
+      {% set has_socials = vendor.social_links and (vendor.social_links.values()
+      | select | list | length > 0) %} {% if vendor.website_url or has_socials
+      or vendor.contact_phone or vendor.contact_email %}
       <div class="vd-be-web-card">
         <div class="vd-be-milestone-title">On The Web &amp; Contact</div>
-        {% if vendor.social_links %}
-          {% for net, val in vendor.social_links.items() if val %}
-          <a href="{% if val.startswith('http') %}{{ val }}{% else %}https://{{ net }}.com/{{ val.lstrip('@') }}{% endif %}" target="_blank" rel="noopener noreferrer" class="vd-be-web-link">
-            <span>{{ net | title }}</span>
-            <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">open_in_new</span>
-          </a>
-          {% endfor %}
-        {% endif %}
-        {% if vendor.website_url %}
-        <a href="{{ vendor.website_url }}" target="_blank" rel="noopener noreferrer" class="vd-be-web-link">
-          <span>Official Website</span>
-          <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">open_in_new</span>
+        {% if vendor.social_links %} {% for net, val in
+        vendor.social_links.items() if val %}
+        <a
+          href="{% if val.startswith('http') %}{{ val }}{% else %}https://{{ net }}.com/{{ val.lstrip('@') }}{% endif %}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="vd-be-web-link"
+        >
+          <span>{{ net | title }}</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 15px; color: #9ca3af"
+            >open_in_new</span
+          >
         </a>
-        {% endif %}
-        {% if vendor.contact_phone %}
+        {% endfor %} {% endif %} {% if vendor.website_url %}
+        <a
+          href="{{ vendor.website_url }}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="vd-be-web-link"
+        >
+          <span>Official Website</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 15px; color: #9ca3af"
+            >open_in_new</span
+          >
+        </a>
+        {% endif %} {% if vendor.contact_phone %}
         <a href="tel:{{ vendor.contact_phone }}" class="vd-be-web-link">
           <span>{{ vendor.contact_phone }}</span>
-          <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">call</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 15px; color: #9ca3af"
+            >call</span
+          >
         </a>
-        {% endif %}
-        {% if vendor.contact_email %}
+        {% endif %} {% if vendor.contact_email %}
         <a href="mailto:{{ vendor.contact_email }}" class="vd-be-web-link">
           <span>{{ vendor.contact_email }}</span>
-          <span class="material-symbols-outlined" style="font-size:15px; color:#9ca3af;">mail</span>
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 15px; color: #9ca3af"
+            >mail</span
+          >
         </a>
         {% endif %}
       </div>
@@ -1115,42 +1308,87 @@
       <!-- Owner QR Code Card (Required by test suite) -->
       {% if is_owner %}
       <div class="vd-be-milestones-card">
-        <h3 style="font-size:16px; margin:0 0 8px; color:#131B17;">Your QR code</h3>
-        <p style="font-size:12.5px; color:#4b5563; line-height:1.5; margin:0 0 12px;">
-          Share your direct booking QR code at physical events or exhibitor booths.
+        <h3 style="font-size: 16px; margin: 0 0 8px; color: #131b17">
+          Your QR code
+        </h3>
+        <p
+          style="
+            font-size: 12.5px;
+            color: #4b5563;
+            line-height: 1.5;
+            margin: 0 0 12px;
+          "
+        >
+          Share your direct booking QR code at physical events or exhibitor
+          booths.
         </p>
-        <div style="text-align:center; padding:12px; background:#fafaf9; border-radius:10px; border:1px solid #f0f0ee;">
-          <img src="/api/v1/vendors/me/qr.png" alt="Vendor QR Code" style="width:140px; height:140px; display:inline-block;">
-          <div style="margin-top:8px;">
-            <a href="/api/v1/vendors/me/qr.png" download="{{ vendor.slug }}-qr.png" class="vd-btn vd-btn-outline" style="font-size:12px; height:32px; padding:0 14px;">
+        <div
+          style="
+            text-align: center;
+            padding: 12px;
+            background: #fafaf9;
+            border-radius: 10px;
+            border: 1px solid #f0f0ee;
+          "
+        >
+          <img
+            src="/api/v1/vendors/me/qr.png"
+            alt="Vendor QR Code"
+            style="width: 140px; height: 140px; display: inline-block"
+          />
+          <div style="margin-top: 8px">
+            <a
+              href="/api/v1/vendors/me/qr.png"
+              download="{{ vendor.slug }}-qr.png"
+              class="vd-btn vd-btn-outline"
+              style="font-size: 12px; height: 32px; padding: 0 14px"
+            >
               Download PNG
             </a>
           </div>
         </div>
       </div>
       {% endif %}
-
     </aside>
 
     <!-- ── Right Main Content Area (Tabs & Showcase) ──────────────────────── -->
     <main class="vd-be-content">
-
       <!-- Behance-Style Tabs Header (Replacing Adobe Stock with Event Packages) -->
       <nav class="vd-be-tabs-bar" aria-label="Vendor profile navigation">
-        <button type="button" @click="activeTab = 'work'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'work' }">
+        <button
+          type="button"
+          @click="activeTab = 'work'"
+          class="vd-be-tab-item"
+          :class="{ 'active': activeTab === 'work' }"
+        >
           Work
         </button>
 
         <!-- Particular to Tixdoo: Replaces Adobe Stock tab with Event Packages! -->
-        <button type="button" @click="activeTab = 'packages'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'packages' }">
+        <button
+          type="button"
+          @click="activeTab = 'packages'"
+          class="vd-be-tab-item"
+          :class="{ 'active': activeTab === 'packages' }"
+        >
           Event Packages
         </button>
 
-        <button type="button" @click="activeTab = 'reviews'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'reviews' }">
+        <button
+          type="button"
+          @click="activeTab = 'reviews'"
+          class="vd-be-tab-item"
+          :class="{ 'active': activeTab === 'reviews' }"
+        >
           Reviews
         </button>
 
-        <button type="button" @click="activeTab = 'about'" class="vd-be-tab-item" :class="{ 'active': activeTab === 'about' }">
+        <button
+          type="button"
+          @click="activeTab = 'about'"
+          class="vd-be-tab-item"
+          :class="{ 'active': activeTab === 'about' }"
+        >
           About
         </button>
       </nav>
@@ -1161,7 +1399,11 @@
         <div class="vd-be-work-grid">
           {% for img_url in vendor.portfolio_urls %}
           <div class="vd-be-work-card">
-            <img src="{{ img_url }}" alt="{{ vendor.business_name }} past work" loading="lazy">
+            <img
+              src="{{ img_url }}"
+              alt="{{ vendor.business_name }} past work"
+              loading="lazy"
+            />
             <div class="vd-be-work-overlay">
               <span class="vd-be-work-tag">{{ vendor.business_name }}</span>
             </div>
@@ -1169,14 +1411,43 @@
           {% endfor %}
         </div>
         {% else %}
-        <div style="text-align:center; padding:64px 24px; border:1px dashed #e5e7eb; border-radius:16px; background:#fafaf9;">
-          <span class="material-symbols-outlined" style="font-size:44px; color:#9ca3af; margin-bottom:12px;">photo_library</span>
-          <h3 style="font-size:18px; margin:0 0 6px; color:#191919;">No portfolio showcases published yet</h3>
-          <p style="font-size:13.5px; color:#6b7280; max-width:440px; margin:0 auto 16px; line-height:1.5;">
-            {{ vendor.business_name }} has not added showcase images to their portfolio gallery yet. Browse their packages or message them directly for work samples.
+        <div
+          style="
+            text-align: center;
+            padding: 64px 24px;
+            border: 1px dashed #e5e7eb;
+            border-radius: 16px;
+            background: #fafaf9;
+          "
+        >
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 44px; color: #9ca3af; margin-bottom: 12px"
+            >photo_library</span
+          >
+          <h3 style="font-size: 18px; margin: 0 0 6px; color: #191919">
+            No portfolio showcases published yet
+          </h3>
+          <p
+            style="
+              font-size: 13.5px;
+              color: #6b7280;
+              max-width: 440px;
+              margin: 0 auto 16px;
+              line-height: 1.5;
+            "
+          >
+            {{ vendor.business_name }} has not added showcase images to their
+            portfolio gallery yet. Browse their packages or message them
+            directly for work samples.
           </p>
           {% if services %}
-          <button type="button" @click="activeTab = 'packages'" class="vd-btn vd-btn-outline" style="font-size:13px; height:36px;">
+          <button
+            type="button"
+            @click="activeTab = 'packages'"
+            class="vd-btn vd-btn-outline"
+            style="font-size: 13px; height: 36px"
+          >
             View Available Packages ({{ services | length }}) →
           </button>
           {% endif %}
@@ -1186,9 +1457,13 @@
 
       <!-- ── TAB 2: Event Packages (Replaces Adobe Stock with Tixdoo Bookings) ── -->
       <div x-show="activeTab === 'packages'" x-cloak>
-        <div style="margin-bottom:20px;">
-          <h2 style="font-size:20px; color:#131B17; margin:0 0 4px;">Bookable Event Packages</h2>
-          <p style="font-size:13.5px; color:#6b7280; margin:0;">Transparent fixed pricing backed by 100% Tixdoo Escrow Protection.</p>
+        <div style="margin-bottom: 20px">
+          <h2 style="font-size: 20px; color: #131b17; margin: 0 0 4px">
+            Bookable Event Packages
+          </h2>
+          <p style="font-size: 13.5px; color: #6b7280; margin: 0">
+            Transparent fixed pricing backed by 100% Tixdoo Escrow Protection.
+          </p>
         </div>
 
         {% if services %}
@@ -1198,23 +1473,28 @@
             <div class="vd-service-top">
               <div>
                 <h3 class="vd-service-title">{{ s.title }}</h3>
-                <span class="vd-service-cat">{{ s.category | replace('_', ' ') }}</span>
+                <span class="vd-service-cat"
+                  >{{ s.category | replace('_', ' ') }}</span
+                >
               </div>
               <div class="vd-service-price">
-                {{ s.currency | currency_symbol }}{{ "{:,.0f}".format(s.price) }}
+                {{ s.currency | currency_symbol }}{{ "{:,.0f}".format(s.price)
+                }}
                 <span>fixed price</span>
               </div>
             </div>
 
             {% if s.description %}
             <div class="vd-service-desc">{{ s.description }}</div>
-            {% endif %}
-
-            {% if s.inclusions %}
+            {% endif %} {% if s.inclusions %}
             <div class="vd-inclusions-list">
               {% for inc in s.inclusions %}
               <div class="vd-inclusion-item">
-                <span class="material-symbols-outlined" style="font-size:16px; color:#16a34a; flex-shrink:0;">check_circle</span>
+                <span
+                  class="material-symbols-outlined"
+                  style="font-size: 16px; color: #16a34a; flex-shrink: 0"
+                  >check_circle</span
+                >
                 <span>{{ inc }}</span>
               </div>
               {% endfor %}
@@ -1222,11 +1502,26 @@
             {% endif %}
 
             <div class="vd-service-bottom">
-              <div style="font-size:13px; color:#6b7280; display:flex; align-items:center; gap:6px;">
-                <span class="material-symbols-outlined" style="font-size:16px;">schedule</span>
-                {% if s.duration_hours %}{{ s.duration_hours }} hours coverage{% else %}Standard Package{% endif %}
+              <div
+                style="
+                  font-size: 13px;
+                  color: #6b7280;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                "
+              >
+                <span class="material-symbols-outlined" style="font-size: 16px"
+                  >schedule</span
+                >
+                {% if s.duration_hours %}{{ s.duration_hours }} hours coverage{%
+                else %}Standard Package{% endif %}
               </div>
-              <button type="button" @click="openDirectBooking('{{ s.id }}', '{{ s.title }}', '{{ s.price }}')" class="vd-btn vd-btn-primary">
+              <button
+                type="button"
+                @click="openDirectBooking('{{ s.id }}', '{{ s.title }}', '{{ s.price }}')"
+                class="vd-btn vd-btn-primary"
+              >
                 Book Package →
               </button>
             </div>
@@ -1234,13 +1529,39 @@
           {% endfor %}
         </div>
         {% else %}
-        <div style="text-align:center; padding:48px 24px; background:#ffffff; border:1px solid #e5e7eb; border-radius:14px;">
-          <span class="material-symbols-outlined" style="font-size:40px; color:#9ca3af; margin-bottom:12px;">inventory_2</span>
-          <h3 style="font-size:18px; margin-bottom:6px;">No pre-built packages listed</h3>
-          <p style="font-size:13.5px; color:#6b7280; max-width:440px; margin:0 auto 18px;">
-            {{ vendor.business_name }} prepares tailored proposals on request. Send your event requirements for an itemized quotation.
+        <div
+          style="
+            text-align: center;
+            padding: 48px 24px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+          "
+        >
+          <span
+            class="material-symbols-outlined"
+            style="font-size: 40px; color: #9ca3af; margin-bottom: 12px"
+            >inventory_2</span
+          >
+          <h3 style="font-size: 18px; margin-bottom: 6px">
+            No pre-built packages listed
+          </h3>
+          <p
+            style="
+              font-size: 13.5px;
+              color: #6b7280;
+              max-width: 440px;
+              margin: 0 auto 18px;
+            "
+          >
+            {{ vendor.business_name }} prepares tailored proposals on request.
+            Send your event requirements for an itemized quotation.
           </p>
-          <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-accent">
+          <button
+            type="button"
+            @click="showRfqModal = true"
+            class="vd-btn vd-btn-accent"
+          >
             Request a Custom Quote
           </button>
         </div>
@@ -1249,61 +1570,174 @@
 
       <!-- ── TAB 3: Reviews ────────────────────────────────────────────────── -->
       <div x-show="activeTab === 'reviews'" x-cloak>
-        <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+        <div
+          style="
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
           <div>
-            <h2 style="font-size:20px; color:#131B17; margin:0 0 4px;">Verified Client Reviews</h2>
-            <p style="font-size:13.5px; color:#6b7280; margin:0;">Reviews are posted exclusively after completed, escrow-verified bookings.</p>
+            <h2 style="font-size: 20px; color: #131b17; margin: 0 0 4px">
+              Verified Client Reviews
+            </h2>
+            <p style="font-size: 13.5px; color: #6b7280; margin: 0">
+              Reviews are posted exclusively after completed, escrow-verified
+              bookings.
+            </p>
           </div>
         </div>
 
-        {% if reviews %}
-          {% for rev in reviews %}
-          <div class="vd-review-card">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:12px;">
-              <div>
-                <div style="font-weight:700; font-size:15px; color:#131B17; display:flex; align-items:center; gap:6px;">
-                  <span>{{ rev.reviewer.full_name if rev.reviewer else 'Verified Event Organizer' }}</span>
-                  <span style="color:#16a34a; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:2px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    Verified Client
-                  </span>
-                </div>
-                {% if rev.created_at %}
-                <div style="font-size:12px; color:#9ca3af; margin-top:2px;">
-                  {{ rev.created_at.strftime("%B %d, %Y") }}
-                </div>
-                {% endif %}
+        {% if reviews %} {% for rev in reviews %}
+        <div class="vd-review-card">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              margin-bottom: 8px;
+              gap: 12px;
+            "
+          >
+            <div>
+              <div
+                style="
+                  font-weight: 700;
+                  font-size: 15px;
+                  color: #131b17;
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                "
+              >
+                <span
+                  >{{ rev.reviewer.full_name if rev.reviewer else 'Verified
+                  Event Organizer' }}</span
+                >
+                <span
+                  style="
+                    color: #16a34a;
+                    font-size: 12px;
+                    font-weight: 600;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 2px;
+                  "
+                >
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Verified Client
+                </span>
               </div>
-              <div style="display:flex; align-items:center; gap:2px; color:#f59e0b;">
-                {% for i in range(rev.rating) %}
-                <span class="material-symbols-outlined" style="font-size:16px; font-variation-settings:'FILL' 1;">star</span>
-                {% endfor %}
+              {% if rev.created_at %}
+              <div style="font-size: 12px; color: #9ca3af; margin-top: 2px">
+                {{ rev.created_at.strftime("%B %d, %Y") }}
               </div>
+              {% endif %}
             </div>
-
-            {% if rev.title %}
-            <div style="font-weight:700; font-size:14px; margin-bottom:6px; color:#131B17;">{{ rev.title }}</div>
-            {% endif %}
-
-            <div style="font-size:14px; color:#4b5563; line-height:1.6;">{{ rev.content }}</div>
-
-            {% if rev.response_from_vendor %}
-            <div class="vd-vendor-reply">
-              <strong style="color:#131B17; display:flex; align-items:center; gap:6px;">
-                <span class="material-symbols-outlined" style="font-size:16px; color:#0057ff;">reply</span>
-                Response from {{ vendor.business_name }}:
-              </strong>
-              <div style="margin-top:6px; color:#4b5563; line-height:1.5;">{{ rev.response_from_vendor }}</div>
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                color: #f59e0b;
+              "
+            >
+              {% for i in range(rev.rating) %}
+              <span
+                class="material-symbols-outlined"
+                style="
+                  font-size: 16px;
+                  font-variation-settings: &quot;FILL&quot; 1;
+                "
+                >star</span
+              >
+              {% endfor %}
             </div>
-            {% endif %}
           </div>
-          {% endfor %}
-        {% else %}
-        <div style="text-align:center; padding:48px 24px; background:#ffffff; border:1px solid #e5e7eb; border-radius:14px;">
-          <span class="material-symbols-outlined" style="font-size:40px; color:#f59e0b; margin-bottom:12px; font-variation-settings:'FILL' 1;">star</span>
-          <h3 style="font-size:18px; margin-bottom:6px;">No customer reviews yet</h3>
-          <p style="font-size:13.5px; color:#6b7280; max-width:440px; margin:0 auto;">
-            Be among the first event creators to book {{ vendor.business_name }} and leave a review.
+
+          {% if rev.title %}
+          <div
+            style="
+              font-weight: 700;
+              font-size: 14px;
+              margin-bottom: 6px;
+              color: #131b17;
+            "
+          >
+            {{ rev.title }}
+          </div>
+          {% endif %}
+
+          <div style="font-size: 14px; color: #4b5563; line-height: 1.6">
+            {{ rev.content }}
+          </div>
+
+          {% if rev.response_from_vendor %}
+          <div class="vd-vendor-reply">
+            <strong
+              style="
+                color: #131b17;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+              "
+            >
+              <span
+                class="material-symbols-outlined"
+                style="font-size: 16px; color: #0057ff"
+                >reply</span
+              >
+              Response from {{ vendor.business_name }}:
+            </strong>
+            <div style="margin-top: 6px; color: #4b5563; line-height: 1.5">
+              {{ rev.response_from_vendor }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %} {% else %}
+        <div
+          style="
+            text-align: center;
+            padding: 48px 24px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+          "
+        >
+          <span
+            class="material-symbols-outlined"
+            style="
+              font-size: 40px;
+              color: #f59e0b;
+              margin-bottom: 12px;
+              font-variation-settings: &quot;FILL&quot; 1;
+            "
+            >star</span
+          >
+          <h3 style="font-size: 18px; margin-bottom: 6px">
+            No customer reviews yet
+          </h3>
+          <p
+            style="
+              font-size: 13.5px;
+              color: #6b7280;
+              max-width: 440px;
+              margin: 0 auto;
+            "
+          >
+            Be among the first event creators to book {{ vendor.business_name }}
+            and leave a review.
           </p>
         </div>
         {% endif %}
@@ -1312,59 +1746,150 @@
       <!-- ── TAB 4: About ──────────────────────────────────────────────────── -->
       <div x-show="activeTab === 'about'" x-cloak>
         <div class="vd-about-panel">
-          <h2 style="font-size:20px; color:#131B17; margin:0 0 16px;">About {{ vendor.business_name }}</h2>
-          <div style="font-size:14.5px; line-height:1.7; color:#374151; margin-bottom:28px;">
-            {{ vendor.description or (vendor.business_name ~ ' provides premier event services on the Tixdoo marketplace.') }}
+          <h2 style="font-size: 20px; color: #131b17; margin: 0 0 16px">
+            About {{ vendor.business_name }}
+          </h2>
+          <div
+            style="
+              font-size: 14.5px;
+              line-height: 1.7;
+              color: #374151;
+              margin-bottom: 28px;
+            "
+          >
+            {{ vendor.description or (vendor.business_name ~ ' provides premier
+            event services on the Tixdoo marketplace.') }}
           </div>
 
           {% if vendor.service_areas %}
-          <div style="margin-bottom:24px; padding-top:20px; border-top:1px solid #f3f4f6;">
-            <strong style="display:block; font-size:13.5px; font-weight:700; color:#131B17; margin-bottom:8px;">Service Coverage Areas:</strong>
-            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+          <div
+            style="
+              margin-bottom: 24px;
+              padding-top: 20px;
+              border-top: 1px solid #f3f4f6;
+            "
+          >
+            <strong
+              style="
+                display: block;
+                font-size: 13.5px;
+                font-weight: 700;
+                color: #131b17;
+                margin-bottom: 8px;
+              "
+              >Service Coverage Areas:</strong
+            >
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
               {% for area in vendor.service_areas %}
-              <span style="font-size:12.5px; padding:4px 12px; background:#f3f4f6; border-radius:9999px; color:#374151;">{{ area }}</span>
+              <span
+                style="
+                  font-size: 12.5px;
+                  padding: 4px 12px;
+                  background: #f3f4f6;
+                  border-radius: 9999px;
+                  color: #374151;
+                "
+                >{{ area }}</span
+              >
               {% endfor %}
             </div>
           </div>
           {% endif %}
 
-          <div style="padding-top:20px; border-top:1px solid #f3f4f6; display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:18px;">
+          <div
+            style="
+              padding-top: 20px;
+              border-top: 1px solid #f3f4f6;
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+              gap: 18px;
+            "
+          >
             <div>
-              <strong style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; color:#9ca3af; margin-bottom:4px;">Primary Category</strong>
-              <div style="font-size:14px; font-weight:600; color:#131B17;">{{ vendor.category | replace('_', ' ') | title }}</div>
-            </div>
-            <div>
-              <strong style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; color:#9ca3af; margin-bottom:4px;">Location Base</strong>
-              <div style="font-size:14px; font-weight:600; color:#131B17;">
-                {% if vendor.location_city %}
-                  {{ vendor.location_city }}{% if vendor.location_country %}, {{ vendor.location_country }}{% endif %}
-                {% elif vendor.location_country %}
-                  {{ vendor.location_country }}
-                {% else %}
-                  Nationwide / Remote
-                {% endif %}
+              <strong
+                style="
+                  display: block;
+                  font-size: 12px;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  color: #9ca3af;
+                  margin-bottom: 4px;
+                "
+                >Primary Category</strong
+              >
+              <div style="font-size: 14px; font-weight: 600; color: #131b17">
+                {{ vendor.category | replace('_', ' ') | title }}
               </div>
             </div>
             <div>
-              <strong style="display:block; font-size:12px; font-weight:700; text-transform:uppercase; color:#9ca3af; margin-bottom:4px;">Starting Budget</strong>
-              <div style="font-size:14px; font-weight:600; color:#059669;">
-                {% if vendor.starting_price %}From {{ vendor.currency | currency_symbol }}{{ "{:,.0f}".format(vendor.starting_price) }}{% else %}Contact for Quote{% endif %}
+              <strong
+                style="
+                  display: block;
+                  font-size: 12px;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  color: #9ca3af;
+                  margin-bottom: 4px;
+                "
+                >Location Base</strong
+              >
+              <div style="font-size: 14px; font-weight: 600; color: #131b17">
+                {% if vendor.location_city %} {{ vendor.location_city }}{% if
+                vendor.location_country %}, {{ vendor.location_country }}{%
+                endif %} {% elif vendor.location_country %} {{
+                vendor.location_country }} {% else %} Nationwide / Remote {%
+                endif %}
+              </div>
+            </div>
+            <div>
+              <strong
+                style="
+                  display: block;
+                  font-size: 12px;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  color: #9ca3af;
+                  margin-bottom: 4px;
+                "
+                >Starting Budget</strong
+              >
+              <div style="font-size: 14px; font-weight: 600; color: #059669">
+                {% if vendor.starting_price %}From {{ vendor.currency |
+                currency_symbol }}{{ "{:,.0f}".format(vendor.starting_price)
+                }}{% else %}Contact for Quote{% endif %}
               </div>
             </div>
           </div>
         </div>
       </div>
-
     </main>
-
   </div>
 
   <!-- ── Floating Sticky Bottom Hire Bar (Matches Behance sticky bottom bar) ── -->
-  <div class="vd-floating-hire-bar" role="complementary" aria-label="Quick booking bar">
+  <div
+    class="vd-floating-hire-bar"
+    role="complementary"
+    aria-label="Quick booking bar"
+  >
     {% if vendor.logo_url %}
-    <img src="{{ vendor.logo_url }}" alt="{{ vendor.business_name }}" class="vd-floating-avatar">
+    <img
+      src="{{ vendor.logo_url }}"
+      alt="{{ vendor.business_name }}"
+      class="vd-floating-avatar"
+    />
     {% else %}
-    <div class="vd-floating-avatar" style="display:flex; align-items:center; justify-content:center; background:#ffffff; color:#191919; font-size:13px; font-weight:800;">
+    <div
+      class="vd-floating-avatar"
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        color: #191919;
+        font-size: 13px;
+        font-weight: 800;
+      "
+    >
       {{ vendor.business_name[0].upper() }}
     </div>
     {% endif %}
@@ -1381,47 +1906,250 @@
   <!-- ── Request A Quote (RFQ) Modal ──────────────────────────────────────── -->
   <div class="vd-modal-overlay" x-show="showRfqModal" x-cloak x-transition>
     <div class="vd-modal" @click.outside="showRfqModal = false">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="font-size:22px; margin:0;">Request Quote from {{ vendor.business_name }}</h3>
-        <button type="button" @click="showRfqModal = false" style="background:none; border:none; cursor:pointer; font-size:22px; color:#6b7280; display:inline-flex; align-items:center;"><span class="material-symbols-outlined" style="font-size:20px;">close</span></button>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        "
+      >
+        <h3 style="font-size: 22px; margin: 0">
+          Request Quote from {{ vendor.business_name }}
+        </h3>
+        <button
+          type="button"
+          @click="showRfqModal = false"
+          style="
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 22px;
+            color: #6b7280;
+            display: inline-flex;
+            align-items: center;
+          "
+        >
+          <span class="material-symbols-outlined" style="font-size: 20px"
+            >close</span
+          >
+        </button>
       </div>
 
       <template x-if="!rfqSubmitted">
         <form @submit.prevent="submitRfq()">
-          <div style="margin-bottom:14px;">
-            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Name *</label>
-            <input type="text" x-model="rfqForm.event_name" placeholder="e.g. Annual Gala 2026 / Wedding" required style="width:100%; height:44px; padding:0 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+          <div style="margin-bottom: 14px">
+            <label
+              style="
+                display: block;
+                font-size: 13px;
+                font-weight: 700;
+                margin-bottom: 5px;
+              "
+              >Event Name *</label
+            >
+            <input
+              type="text"
+              x-model="rfqForm.event_name"
+              placeholder="e.g. Annual Gala 2026 / Wedding"
+              required
+              style="
+                width: 100%;
+                height: 44px;
+                padding: 0 14px;
+                border: 1.5px solid #d1d5db;
+                border-radius: 10px;
+                font-family: inherit;
+                font-size: 14px;
+                box-sizing: border-box;
+              "
+            />
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              margin-bottom: 14px;
+            "
+          >
             <div>
-              <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Date</label>
-              <input type="date" x-model="rfqForm.event_date" style="width:100%; height:44px; padding:0 12px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+              <label
+                style="
+                  display: block;
+                  font-size: 13px;
+                  font-weight: 700;
+                  margin-bottom: 5px;
+                "
+                >Event Date</label
+              >
+              <input
+                type="date"
+                x-model="rfqForm.event_date"
+                style="
+                  width: 100%;
+                  height: 44px;
+                  padding: 0 12px;
+                  border: 1.5px solid #d1d5db;
+                  border-radius: 10px;
+                  font-family: inherit;
+                  font-size: 14px;
+                  box-sizing: border-box;
+                "
+              />
             </div>
             <div>
-              <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Expected Attendance</label>
-              <input type="number" x-model="rfqForm.expected_attendance" placeholder="e.g. 250" style="width:100%; height:44px; padding:0 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+              <label
+                style="
+                  display: block;
+                  font-size: 13px;
+                  font-weight: 700;
+                  margin-bottom: 5px;
+                "
+                >Expected Attendance</label
+              >
+              <input
+                type="number"
+                x-model="rfqForm.expected_attendance"
+                placeholder="e.g. 250"
+                style="
+                  width: 100%;
+                  height: 44px;
+                  padding: 0 14px;
+                  border: 1.5px solid #d1d5db;
+                  border-radius: 10px;
+                  font-family: inherit;
+                  font-size: 14px;
+                  box-sizing: border-box;
+                "
+              />
             </div>
           </div>
-          <div style="margin-bottom:14px;">
-            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Venue / Event Location</label>
-            <input type="text" x-model="rfqForm.event_location" placeholder="e.g. Landmark Centre, Victoria Island" style="width:100%; height:44px; padding:0 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+          <div style="margin-bottom: 14px">
+            <label
+              style="
+                display: block;
+                font-size: 13px;
+                font-weight: 700;
+                margin-bottom: 5px;
+              "
+              >Venue / Event Location</label
+            >
+            <input
+              type="text"
+              x-model="rfqForm.event_location"
+              placeholder="e.g. Landmark Centre, Victoria Island"
+              style="
+                width: 100%;
+                height: 44px;
+                padding: 0 14px;
+                border: 1.5px solid #d1d5db;
+                border-radius: 10px;
+                font-family: inherit;
+                font-size: 14px;
+                box-sizing: border-box;
+              "
+            />
           </div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div
+            style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              margin-bottom: 14px;
+            "
+          >
             <div>
-              <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Budget Min ({{ vendor.currency | currency_symbol }})</label>
-              <input type="number" x-model="rfqForm.budget_min" placeholder="50" style="width:100%; height:44px; padding:0 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+              <label
+                style="
+                  display: block;
+                  font-size: 13px;
+                  font-weight: 700;
+                  margin-bottom: 5px;
+                "
+                >Budget Min ({{ vendor.currency | currency_symbol }})</label
+              >
+              <input
+                type="number"
+                x-model="rfqForm.budget_min"
+                placeholder="50"
+                style="
+                  width: 100%;
+                  height: 44px;
+                  padding: 0 14px;
+                  border: 1.5px solid #d1d5db;
+                  border-radius: 10px;
+                  font-family: inherit;
+                  font-size: 14px;
+                  box-sizing: border-box;
+                "
+              />
             </div>
             <div>
-              <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Budget Max ({{ vendor.currency | currency_symbol }})</label>
-              <input type="number" x-model="rfqForm.budget_max" placeholder="250" style="width:100%; height:44px; padding:0 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+              <label
+                style="
+                  display: block;
+                  font-size: 13px;
+                  font-weight: 700;
+                  margin-bottom: 5px;
+                "
+                >Budget Max ({{ vendor.currency | currency_symbol }})</label
+              >
+              <input
+                type="number"
+                x-model="rfqForm.budget_max"
+                placeholder="250"
+                style="
+                  width: 100%;
+                  height: 44px;
+                  padding: 0 14px;
+                  border: 1.5px solid #d1d5db;
+                  border-radius: 10px;
+                  font-family: inherit;
+                  font-size: 14px;
+                  box-sizing: border-box;
+                "
+              />
             </div>
           </div>
-          <div style="margin-bottom:18px;">
-            <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Detailed Requirements *</label>
-            <textarea x-model="rfqForm.requirements" rows="4" placeholder="Detail your timing, expectations, equipment, or specific deliverables..." required style="width:100%; padding:12px 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; line-height:1.6; box-sizing:border-box;"></textarea>
+          <div style="margin-bottom: 18px">
+            <label
+              style="
+                display: block;
+                font-size: 13px;
+                font-weight: 700;
+                margin-bottom: 5px;
+              "
+              >Detailed Requirements *</label
+            >
+            <textarea
+              x-model="rfqForm.requirements"
+              rows="4"
+              placeholder="Detail your timing, expectations, equipment, or specific deliverables..."
+              required
+              style="
+                width: 100%;
+                padding: 12px 14px;
+                border: 1.5px solid #d1d5db;
+                border-radius: 10px;
+                font-family: inherit;
+                font-size: 14px;
+                line-height: 1.6;
+                box-sizing: border-box;
+              "
+            ></textarea>
           </div>
-          <div x-show="rfqError" x-text="rfqError" style="color:#dc2626; font-size:13px; margin-bottom:12px;"></div>
-          <button type="submit" :disabled="rfqLoading" class="vd-btn vd-btn-accent" style="width:100%; padding:14px; font-size:15px;">
+          <div
+            x-show="rfqError"
+            x-text="rfqError"
+            style="color: #dc2626; font-size: 13px; margin-bottom: 12px"
+          ></div>
+          <button
+            type="submit"
+            :disabled="rfqLoading"
+            class="vd-btn vd-btn-accent"
+            style="width: 100%; padding: 14px; font-size: 15px"
+          >
             <span x-show="!rfqLoading">Submit Quote Request →</span>
             <span x-show="rfqLoading">Sending Request…</span>
           </button>
@@ -1429,13 +2157,33 @@
       </template>
 
       <template x-if="rfqSubmitted">
-        <div style="text-align:center; padding:24px 0;">
-          <span class="material-symbols-outlined" style="color:#16a34a; font-size:56px; margin-bottom:12px;">check_circle</span>
-          <h4 style="font-size:22px; margin-bottom:8px;">Request Dispatched!</h4>
-          <p style="color:#4b5563; font-size:14.5px; line-height:1.6; margin-bottom:24px;">
-            {{ vendor.business_name }} has received your specifications and will respond with an itemized quotation directly in your Tixdoo inbox.
+        <div style="text-align: center; padding: 24px 0">
+          <span
+            class="material-symbols-outlined"
+            style="color: #16a34a; font-size: 56px; margin-bottom: 12px"
+            >check_circle</span
+          >
+          <h4 style="font-size: 22px; margin-bottom: 8px">
+            Request Dispatched!
+          </h4>
+          <p
+            style="
+              color: #4b5563;
+              font-size: 14.5px;
+              line-height: 1.6;
+              margin-bottom: 24px;
+            "
+          >
+            {{ vendor.business_name }} has received your specifications and will
+            respond with an itemized quotation directly in your Tixdoo inbox.
           </p>
-          <button type="button" @click="showRfqModal = false" class="vd-btn vd-btn-primary">Done</button>
+          <button
+            type="button"
+            @click="showRfqModal = false"
+            class="vd-btn vd-btn-primary"
+          >
+            Done
+          </button>
         </div>
       </template>
     </div>
@@ -1444,141 +2192,288 @@
   <!-- ── Direct Package Booking Modal ────────────────────────────────────── -->
   <div class="vd-modal-overlay" x-show="showBookingModal" x-cloak x-transition>
     <div class="vd-modal" @click.outside="showBookingModal = false">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h3 style="font-size:22px; margin:0;">Book Service Package</h3>
-        <button type="button" @click="showBookingModal = false" style="background:none; border:none; cursor:pointer; font-size:22px; color:#6b7280; display:inline-flex; align-items:center;"><span class="material-symbols-outlined" style="font-size:20px;">close</span></button>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        "
+      >
+        <h3 style="font-size: 22px; margin: 0">Book Service Package</h3>
+        <button
+          type="button"
+          @click="showBookingModal = false"
+          style="
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 22px;
+            color: #6b7280;
+            display: inline-flex;
+            align-items: center;
+          "
+        >
+          <span class="material-symbols-outlined" style="font-size: 20px"
+            >close</span
+          >
+        </button>
       </div>
 
-      <div style="padding:16px 20px; background:#f7f7f6; border-radius:14px; margin-bottom:20px; border:1px solid #e5e7eb;">
-        <div style="font-weight:700; font-size:16px;" x-text="selectedService.title"></div>
-        <div style="font-weight:800; font-size:20px; color:#059669; margin-top:4px;" x-text="'{{ vendor.currency | currency_symbol }}' + Number(selectedService.price).toLocaleString()"></div>
-        <div style="font-size:12px; color:#6b7280; margin-top:2px;">100% Escrow Protection Guarantee</div>
+      <div
+        style="
+          padding: 16px 20px;
+          background: #f7f7f6;
+          border-radius: 14px;
+          margin-bottom: 20px;
+          border: 1px solid #e5e7eb;
+        "
+      >
+        <div
+          style="font-weight: 700; font-size: 16px"
+          x-text="selectedService.title"
+        ></div>
+        <div
+          style="
+            font-weight: 800;
+            font-size: 20px;
+            color: #059669;
+            margin-top: 4px;
+          "
+          x-text="'{{ vendor.currency | currency_symbol }}' + Number(selectedService.price).toLocaleString()"
+        ></div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 2px">
+          100% Escrow Protection Guarantee
+        </div>
       </div>
 
       <form @submit.prevent="submitDirectBooking()">
-        <div style="margin-bottom:14px;">
-          <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Name *</label>
-          <input type="text" x-model="bookingForm.event_name" placeholder="e.g. Lagos Tech Gala 2026" required style="width:100%; height:44px; padding:0 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+        <div style="margin-bottom: 14px">
+          <label
+            style="
+              display: block;
+              font-size: 13px;
+              font-weight: 700;
+              margin-bottom: 5px;
+            "
+            >Event Name *</label
+          >
+          <input
+            type="text"
+            x-model="bookingForm.event_name"
+            placeholder="e.g. Lagos Tech Gala 2026"
+            required
+            style="
+              width: 100%;
+              height: 44px;
+              padding: 0 14px;
+              border: 1.5px solid #d1d5db;
+              border-radius: 10px;
+              font-family: inherit;
+              font-size: 14px;
+              box-sizing: border-box;
+            "
+          />
         </div>
-        <div style="margin-bottom:14px;">
-          <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Date *</label>
-          <input type="date" x-model="bookingForm.event_date" required style="width:100%; height:44px; padding:0 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+        <div style="margin-bottom: 14px">
+          <label
+            style="
+              display: block;
+              font-size: 13px;
+              font-weight: 700;
+              margin-bottom: 5px;
+            "
+            >Event Date *</label
+          >
+          <input
+            type="date"
+            x-model="bookingForm.event_date"
+            required
+            style="
+              width: 100%;
+              height: 44px;
+              padding: 0 14px;
+              border: 1.5px solid #d1d5db;
+              border-radius: 10px;
+              font-family: inherit;
+              font-size: 14px;
+              box-sizing: border-box;
+            "
+          />
         </div>
-        <div style="margin-bottom:14px;">
-          <label style="display:block; font-size:13px; font-weight:700; margin-bottom:5px;">Event Venue / Location</label>
-          <input type="text" x-model="bookingForm.event_location" placeholder="e.g. Eko Hotel Grand Ballroom" style="width:100%; height:44px; padding:0 14px; border:1.5px solid #d1d5db; border-radius:10px; font-family:inherit; font-size:14px; box-sizing:border-box;">
+        <div style="margin-bottom: 14px">
+          <label
+            style="
+              display: block;
+              font-size: 13px;
+              font-weight: 700;
+              margin-bottom: 5px;
+            "
+            >Event Venue / Location</label
+          >
+          <input
+            type="text"
+            x-model="bookingForm.event_location"
+            placeholder="e.g. Eko Hotel Grand Ballroom"
+            style="
+              width: 100%;
+              height: 44px;
+              padding: 0 14px;
+              border: 1.5px solid #d1d5db;
+              border-radius: 10px;
+              font-family: inherit;
+              font-size: 14px;
+              box-sizing: border-box;
+            "
+          />
         </div>
-        <div style="margin-bottom:20px; font-size:12.5px; color:#6b7280; line-height:1.5;">
-          By proceeding, your payment will be held securely in escrow by Tixdoo until you confirm completion of the event service.
+        <div
+          style="
+            margin-bottom: 20px;
+            font-size: 12.5px;
+            color: #6b7280;
+            line-height: 1.5;
+          "
+        >
+          By proceeding, your payment will be held securely in escrow by Tixdoo
+          until you confirm completion of the event service.
         </div>
-        <div x-show="bookingError" x-text="bookingError" style="color:#dc2626; font-size:13px; margin-bottom:12px;"></div>
-        <button type="submit" :disabled="bookingLoading" class="vd-btn vd-btn-primary" style="width:100%; padding:14px; font-size:15px;">
+        <div
+          x-show="bookingError"
+          x-text="bookingError"
+          style="color: #dc2626; font-size: 13px; margin-bottom: 12px"
+        ></div>
+        <button
+          type="submit"
+          :disabled="bookingLoading"
+          class="vd-btn vd-btn-primary"
+          style="width: 100%; padding: 14px; font-size: 15px"
+        >
           <span x-show="!bookingLoading">Proceed to Secure Checkout →</span>
           <span x-show="bookingLoading">Initializing Booking…</span>
         </button>
       </form>
     </div>
   </div>
-
 </div>
 
 <script>
-function vendorPage() {
-  return {
-    activeTab: 'work',
-    followed: false,
-    saved: false,
-    showRfqModal: false,
-    rfqLoading: false,
-    rfqSubmitted: false,
-    rfqError: '',
-    rfqForm: {
-      event_name: '',
-      service_category: '{{ vendor.category }}',
-      event_date: '',
-      expected_attendance: '',
-      event_location: '',
-      budget_min: '',
-      budget_max: '',
-      requirements: '',
-    },
-    showBookingModal: false,
-    bookingLoading: false,
-    bookingError: '',
-    selectedService: { id: '', title: '', price: 0 },
-    bookingForm: {
-      event_name: '',
-      event_date: '',
-      event_location: '',
-    },
-    toggleFollow() {
-      this.followed = !this.followed;
-    },
-    toggleSave() {
-      this.saved = !this.saved;
-    },
-    openDirectBooking(id, title, price) {
-      this.selectedService = { id, title, price };
-      this.showBookingModal = true;
-    },
-    async submitRfq() {
-      this.rfqLoading = true;
-      this.rfqError = '';
-      try {
-        const payload = {
-          event_name: this.rfqForm.event_name,
-          service_category: this.rfqForm.service_category,
-          requirements: this.rfqForm.requirements,
-          event_date: this.rfqForm.event_date ? new Date(this.rfqForm.event_date).toISOString() : null,
-          event_location: this.rfqForm.event_location || null,
-          expected_attendance: this.rfqForm.expected_attendance ? parseInt(this.rfqForm.expected_attendance) : null,
-          budget_min: this.rfqForm.budget_min ? parseFloat(this.rfqForm.budget_min) : null,
-          budget_max: this.rfqForm.budget_max ? parseFloat(this.rfqForm.budget_max) : null,
-          vendor_ids: ['{{ vendor.id }}'],
-        };
-        const res = await fetch('/api/v1/vendors/quotes/requests', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(payload),
-        });
-        const j = await res.json();
-        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to submit quote request. Please sign in first.');
-        this.rfqSubmitted = true;
-      } catch (err) {
-        this.rfqError = err.message;
-      } finally {
-        this.rfqLoading = false;
-      }
-    },
-    async submitDirectBooking() {
-      this.bookingLoading = true;
-      this.bookingError = '';
-      try {
-        const payload = {
-          vendor_id: '{{ vendor.id }}',
-          service_listing_id: this.selectedService.id,
-          event_name: this.bookingForm.event_name,
-          event_date: this.bookingForm.event_date ? new Date(this.bookingForm.event_date).toISOString() : null,
-          event_location: this.bookingForm.event_location || null,
-        };
-        const res = await fetch('/api/v1/vendors/bookings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(payload),
-        });
-        const j = await res.json();
-        if (!res.ok) throw new Error(j.detail || j.error?.message || 'Failed to initialize booking. Please sign in first.');
-        const bookingId = j.data.id;
-        window.location.href = `/vendors/bookings/${bookingId}/pay`;
-      } catch (err) {
-        this.bookingError = err.message;
-      } finally {
-        this.bookingLoading = false;
-      }
-    },
-  };
-}
+  function vendorPage() {
+    return {
+      activeTab: "work",
+      followed: false,
+      saved: false,
+      showRfqModal: false,
+      rfqLoading: false,
+      rfqSubmitted: false,
+      rfqError: "",
+      rfqForm: {
+        event_name: "",
+        service_category: "{{ vendor.category }}",
+        event_date: "",
+        expected_attendance: "",
+        event_location: "",
+        budget_min: "",
+        budget_max: "",
+        requirements: "",
+      },
+      showBookingModal: false,
+      bookingLoading: false,
+      bookingError: "",
+      selectedService: { id: "", title: "", price: 0 },
+      bookingForm: {
+        event_name: "",
+        event_date: "",
+        event_location: "",
+      },
+      toggleFollow() {
+        this.followed = !this.followed;
+      },
+      toggleSave() {
+        this.saved = !this.saved;
+      },
+      openDirectBooking(id, title, price) {
+        this.selectedService = { id, title, price };
+        this.showBookingModal = true;
+      },
+      async submitRfq() {
+        this.rfqLoading = true;
+        this.rfqError = "";
+        try {
+          const payload = {
+            event_name: this.rfqForm.event_name,
+            service_category: this.rfqForm.service_category,
+            requirements: this.rfqForm.requirements,
+            event_date: this.rfqForm.event_date
+              ? new Date(this.rfqForm.event_date).toISOString()
+              : null,
+            event_location: this.rfqForm.event_location || null,
+            expected_attendance: this.rfqForm.expected_attendance
+              ? parseInt(this.rfqForm.expected_attendance)
+              : null,
+            budget_min: this.rfqForm.budget_min
+              ? parseFloat(this.rfqForm.budget_min)
+              : null,
+            budget_max: this.rfqForm.budget_max
+              ? parseFloat(this.rfqForm.budget_max)
+              : null,
+            vendor_ids: ["{{ vendor.id }}"],
+          };
+          const res = await fetch("/api/v1/vendors/quotes/requests", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(payload),
+          });
+          const j = await res.json();
+          if (!res.ok)
+            throw new Error(
+              j.detail ||
+                j.error?.message ||
+                "Failed to submit quote request. Please sign in first.",
+            );
+          this.rfqSubmitted = true;
+        } catch (err) {
+          this.rfqError = err.message;
+        } finally {
+          this.rfqLoading = false;
+        }
+      },
+      async submitDirectBooking() {
+        this.bookingLoading = true;
+        this.bookingError = "";
+        try {
+          const payload = {
+            vendor_id: "{{ vendor.id }}",
+            service_listing_id: this.selectedService.id,
+            event_name: this.bookingForm.event_name,
+            event_date: this.bookingForm.event_date
+              ? new Date(this.bookingForm.event_date).toISOString()
+              : null,
+            event_location: this.bookingForm.event_location || null,
+          };
+          const res = await fetch("/api/v1/vendors/bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(payload),
+          });
+          const j = await res.json();
+          if (!res.ok)
+            throw new Error(
+              j.detail ||
+                j.error?.message ||
+                "Failed to initialize booking. Please sign in first.",
+            );
+          const bookingId = j.data.id;
+          window.location.href = `/vendors/bookings/${bookingId}/pay`;
+        } catch (err) {
+          this.bookingError = err.message;
+        } finally {
+          this.bookingLoading = false;
+        }
+      },
+    };
+  }
 </script>
 {% endblock %}
