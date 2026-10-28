@@ -1194,14 +1194,9 @@
 
       <!-- ── TAB 2: Event Packages (Replaces Adobe Stock with Tixdoo Bookings) ── -->
       <div x-show="activeTab === 'packages'" x-cloak>
-        <div style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <h2 style="font-size:20px; color:#131B17; margin:0 0 4px;">Bookable Event Packages</h2>
-            <p style="font-size:13.5px; color:#6b7280; margin:0;">Transparent fixed pricing backed by 100% Tixdoo Escrow Protection.</p>
-          </div>
-          <button type="button" @click="showRfqModal = true" class="vd-btn vd-btn-accent" style="height:38px; font-size:13px;">
-            Request Custom Quote →
-          </button>
+        <div style="margin-bottom:20px;">
+          <h2 style="font-size:20px; color:#131B17; margin:0 0 4px;">Bookable Event Packages</h2>
+          <p style="font-size:13.5px; color:#6b7280; margin:0;">Transparent fixed pricing backed by 100% Tixdoo Escrow Protection.</p>
         </div>
 
         {% if services %}
