@@ -9,6 +9,17 @@
      logged-out state if neither is passed.
      Renders dark mode on the homepage hero, and crisp warm-sand
      light mode (.site-nav-light) across all other pages. -->
+<style>
+  .site-nav-links,
+  .site-nav-link,
+  .site-nav-login,
+  .site-nav-cta,
+  .site-nav-mobile-menu a,
+  .site-nav-seg,
+  .site-nav-mobile-seg {
+    font-family: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  }
+</style>
 <nav class="site-nav {% if _is_light %}site-nav-light{% endif %}" id="site-nav">
   <div class="site-nav-inner">
     <a href="/" class="site-nav-logo">tixdoo</a>
